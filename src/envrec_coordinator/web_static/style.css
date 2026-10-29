@@ -84,6 +84,7 @@ a { color: var(--teal-link); }
 .code { margin: .25rem 0; font: 700 clamp(2.25rem, 12vw, 3.5rem)/1.1 var(--mono); letter-spacing: .18em; color: var(--navy); }
 .countdown { margin: 0 0 .75rem; font-weight: 700; color: var(--teal-link); font-variant-numeric: tabular-nums; }
 .panel > p:first-child { margin-top: 0; }
+.panel > p:last-child { margin-bottom: 0; }
 .confirm { border: 2px solid var(--teal); }
 .notice { background: var(--bad-bg); color: var(--bad-ink); border-radius: 10px; padding: .6rem .9rem; margin: 0 0 1rem; }
 .panel.ok { background: var(--online-bg); color: var(--online-ink); border-color: var(--online-ink); }
@@ -100,3 +101,6 @@ code { font-family: var(--mono); background: #f1ede0; padding: .05rem .35rem; bo
   .facts dt { margin-top: .4rem; }
 }
 @media (prefers-reduced-motion: no-preference) { .btn { transition: background-color .12s; } }
+
+.sub-h { margin: 2rem 0 .25rem; font-size: 1.25rem; }
+.card .btn { margin-top: .9rem; }

@@ -40,9 +40,15 @@ def cmd_coordinator_start(a) -> int:
     state = _state(a)
 
     async def run() -> None:
-        coord = Coordinator(state, a.bind, a.port, idle_timeout_s=a.idle_timeout, web=a.web, web_port=a.web_port)
+        coord = Coordinator(state, a.bind, a.port, idle_timeout_s=a.idle_timeout, web=a.web, web_port=a.web_port, name=a.name, include_virtual=a.include_virtual,
+                            discovery_port=None if a.no_discovery else a.discovery_port)
         await coord.start()
         print(f"coordinator listening on {coord.host}:{coord.port} (one port, TLS). fingerprint {coord.identity.fingerprint}", flush=True)
+        if coord._udp is not None:
+            print(f"discovery on UDP port {coord._discovery_port}: computers with the program installed on this network can find this coordinator as '{coord.display_name}'. "
+                  "If your firewall asks, allow it; this program never changes a firewall itself.", flush=True)
+        else:
+            print("discovery is off: computers must be given this coordinator's address.", flush=True)
         if coord.web is not None:
             print(f"web screen, this computer only (the link opens once; do not share it):\n  {coord.web.link}", flush=True)
         stop = asyncio.Event()
@@ -76,7 +82,7 @@ def cmd_pair_coordinator(a) -> int:
     ctl = control_dir(_state(a) / "coordinator")
     oid = uuid.uuid4().hex[:12]
     code = pake.new_code()
-    write_json(layer, ctl / "pair-offer.json", {"id": oid, "code": code})
+    write_json(layer, ctl / "pair-offer.json", {"id": oid, "code": code, **({"node": a.node} if getattr(a, "node", None) else {})})
     status_file = ctl / f"offer-{oid}.json"
     t0 = time.monotonic()
     while read_json(status_file) is None:
@@ -85,7 +91,8 @@ def cmd_pair_coordinator(a) -> int:
             print("The coordinator is not running here (nobody picked up the request). Start it with `mas coordinator start`.", file=sys.stderr)
             return 1
         time.sleep(0.1)
-    print(f"\n  Pairing code:  {code}\n  Valid for 2 minutes, one attempt. On the other computer run:  mas pair HOST:PORT  and type this code.\n", flush=True)
+    where = "On that computer (it is waiting) type this code where it asks." if getattr(a, "node", None) else "On the other computer run:  mas join  (or  mas pair HOST:PORT ) and type this code."
+    print(f"\n  Pairing code:  {code}\n  Valid for 2 minutes, one attempt. {where}\n", flush=True)
     answered = False
     while True:
         st = read_json(status_file) or {}
@@ -120,10 +127,86 @@ def cmd_nodes(a) -> int:
     return 0
 
 
+def cmd_waiting(a) -> int:
+    """Computers that found this coordinator and are waiting for the owner to pair them (written by the running coordinator; nothing listens for this command)."""
+    from envrec_coordinator.control import control_dir, read_json
+    d = read_json(control_dir(_state(a) / "coordinator") / "waiting.json")
+    if d is None:
+        print("The coordinator is not running here, or nothing has been published yet. Start it with `mas coordinator start`.", file=sys.stderr)
+        return 1
+    rows = d.get("waiting", [])
+    if not rows:
+        print("No computers are waiting. On another computer with the program installed, run `mas join`.")
+        return 0
+    now = time.time()
+    print(f"{'ID':<14} {'NAME':<22} {'SYSTEM':<16} {'WAITING':<10} FINGERPRINT (claimed)")
+    for w in rows:
+        print(f"{w['id']:<14} {w['name']:<22} {w['os'] + '/' + w['arch']:<16} {_age(w['since'], now):<10} {w['fingerprint']}")
+    print("\nPair one with:  mas pair --node ID")
+    return 0
+
+
+def cmd_join(a) -> int:
+    """On a node: find coordinators, let the owner pick one, register as waiting, then pair with the code the owner types."""
+    from envrec_net import discovery
+    from envrec_net.log import EventLog
+    from envrec_node.discover import DiscoveryFailed, discover, parse_address
+    from envrec_node.join import join
+    from envrec_node.pair import PairingFailed
+    from envrec_node.state import NodeState
+    state_dir = _state(a)
+    log = EventLog(NodeState(state_dir).log_dir)
+    try:
+        if a.coordinator:
+            try:
+                chosen = parse_address(a.coordinator)
+            except ValueError:
+                print("The coordinator address looks like HOST:PORT (an IP address and a port).", file=sys.stderr)
+                return EXIT_USAGE
+            log.add("coordinator_named", {"address": a.coordinator})
+        else:
+            print("Looking for coordinators on this network...", flush=True)
+            try:
+                found = discover(a.discovery_port, include_virtual=a.include_virtual)
+            except DiscoveryFailed as exc:
+                log.add("discovery_failed", {"reason": exc.code})
+                print(f"{exc}\n" + "\n".join(f"  - {g}" for g in exc.guidance), file=sys.stderr)
+                return 1
+            log.add("discovery_answers", {"count": len(found)})
+            print("Found (an answer before pairing is only a hint; the owner's approval and the code protect the pairing):")
+            for i, f in enumerate(found, 1):
+                print(f"  {i}. {f.name}   {f.address}:{f.port}   {f.fingerprint}")
+            try:
+                pick = input(f"Join which one? type a number 1-{len(found)} (or nothing to cancel): ").strip()  # always the owner's choice, even when only one answered
+            except EOFError:
+                pick = ""
+            if not pick.isdigit() or not 1 <= int(pick) <= len(found):
+                print("Cancelled. Nothing was changed.")
+                return 1
+            chosen = found[int(pick) - 1]
+            log.add("owner_picked_coordinator", {"name": chosen.name, "address": f"{chosen.address}:{chosen.port}", "fingerprint": chosen.fingerprint}, owner=True)
+
+        async def ask_code() -> str:
+            if a.code:
+                return a.code
+            return await asyncio.to_thread(lambda: getpass.getpass("Pairing code shown on the coordinator: ") if sys.stdin.isatty() else sys.stdin.readline().strip())
+
+        try:
+            pin = asyncio.run(join(chosen, state_dir, name=a.name, ask_code=ask_code, on_waiting=lambda m: print(m, flush=True), on_event=lambda t, p: log.add(t, p)))
+        except PairingFailed as exc:
+            print(f"Not paired: {exc}", file=sys.stderr)
+            return 1
+        print(f"Paired with the coordinator at {pin.address}. Start the agent with `mas node run`.")
+        return 0
+    finally:
+        log.close()
+
+
 # ---- node --------------------------------------------------------------------------------------------------------------------------------------
 
 def cmd_pair_node(a) -> int:
     from envrec_node.pair import PairingFailed, pair
+    a.address = a.address or a.coordinator
     code = a.code or (getpass.getpass("Pairing code shown on the coordinator: ") if sys.stdin.isatty() else sys.stdin.readline().strip())
     try:
         pin = asyncio.run(pair(a.address, code.strip(), _state(a), name=a.name))
@@ -138,7 +221,7 @@ def cmd_node_run(a) -> int:
     from envrec_node.agent import NodeAgent
 
     async def run() -> None:
-        agent = NodeAgent(_state(a), interval_s=a.interval)
+        agent = NodeAgent(_state(a), interval_s=a.interval, rediscover=not a.no_discovery, discovery_port=a.discovery_port)
         loop = asyncio.get_running_loop()
         for sig in (signal.SIGINT, signal.SIGTERM):
             try:
@@ -166,17 +249,33 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--bind", required=True, help="the address of the interface to listen on (loopback, private or link-local; never every interface)")
     c.add_argument("--port", type=int, default=7443)
     c.add_argument("--idle-timeout", type=float, default=30.0)
+    c.add_argument("--discovery-port", type=int, default=7444, help="the UDP port computers use to find this coordinator (default 7444)")
+    c.add_argument("--no-discovery", action="store_true", help="do not open the discovery UDP socket")
+    c.add_argument("--name", default=None, help="the name shown to computers that find this coordinator (default: the host name)")
+    c.add_argument("--include-virtual", action="store_true", help="also answer on VPN, container and virtual-machine interfaces")
     c.add_argument("--web", action="store_true", help="also serve the owner's screen on this computer only (loopback; prints a one-time link). Off by default")
     c.add_argument("--web-port", type=int, default=0, help="the loopback port of the web screen (default: any free one)")
     c.set_defaults(fn=cmd_coordinator_start)
     pr = sub.add_parser("pair", help="on the coordinator: show a code and confirm a node; on a node: `mas pair HOST:PORT`")
     pr.add_argument("address", nargs="?", default=None)
+    pr.add_argument("--node", default=None, help="on the coordinator: make the code for this waiting computer (see `mas waiting`)")
+    pr.add_argument("--coordinator", default=None, help="on a node: the coordinator's HOST:PORT (same as the positional address)")
     pr.add_argument("--code", default=None, help="the code (prefer typing it when asked: it stays out of your shell history)")
     pr.add_argument("--name", default=None, help="the name this node shows the owner (default: its host name)")
-    pr.set_defaults(fn=lambda a: cmd_pair_node(a) if a.address else cmd_pair_coordinator(a))
+    pr.set_defaults(fn=lambda a: cmd_pair_node(a) if (a.address or a.coordinator) else cmd_pair_coordinator(a))
+    sub.add_parser("waiting", help="computers that found this coordinator and wait for the owner to pair them").set_defaults(fn=cmd_waiting)
+    j = sub.add_parser("join", help="on a node: find coordinators on this network, pick one, and pair without typing an address")
+    j.add_argument("--coordinator", default=None, help="skip discovery: the coordinator's HOST:PORT")
+    j.add_argument("--discovery-port", type=int, default=7444)
+    j.add_argument("--include-virtual", action="store_true", help="also look on VPN, container and virtual-machine interfaces")
+    j.add_argument("--name", default=None, help="the name this computer shows the owner (default: its host name)")
+    j.add_argument("--code", default=None, help="the code (prefer typing it when asked)")
+    j.set_defaults(fn=cmd_join)
     sub.add_parser("nodes", help="the paired nodes and their last heartbeat").set_defaults(fn=cmd_nodes)
     n = sub.add_parser("node", help="the node agent").add_subparsers(dest="sub", required=True).add_parser("run", help="dial out and send heartbeats")
     n.add_argument("--interval", type=float, default=10.0)
+    n.add_argument("--no-discovery", action="store_true", help="never look for the coordinator again after its address changes")
+    n.add_argument("--discovery-port", type=int, default=7444)
     n.set_defaults(fn=cmd_node_run)
     a = p.parse_args(argv)
     return a.fn(a)

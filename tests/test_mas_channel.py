@@ -139,8 +139,8 @@ def test_a_heartbeat_is_acknowledged_with_a_message_signed_by_the_coordinator_an
             ack = Verifier({pin.coordinator_id: pin.public_raw}.get, clock=c.clock).open(await read_frame(r, timeout=3))
             assert ack.type == "ack" and ack.sender == c.identity.node_id
             assert c.registry.get(me.node_id).last_heartbeat == c.clock()  # stamped with the coordinator's clock at the moment it arrived
-            hb = events(c, "heartbeat")
-            assert hb and hb[0].payload["hostname"] == "box" and hb[0].effective_tag == "GUARD"
+            card = events(c, "node_card")
+            assert card and card[0].payload["hostname"] == "box" and card[0].effective_tag == "GUARD"
             w.close()
     run(go())
 
@@ -186,7 +186,7 @@ def test_the_agent_connects_sends_heartbeats_and_walks_protocol_node_connect(tmp
             assert agent.heartbeats_acked >= 3
             assert [h["state"] for h in agent.guard.history][:3] == ["card", "connect", "online"] and agent.guard.state == "stopped"
             kinds = [e.type for e in events(c)]
-            assert "node_connected" in kinds and kinds.count("heartbeat") >= 3
+            assert "node_connected" in kinds and "heartbeat" not in kinds  # a heartbeat is not an event of its own
             node = c.registry.all()[0]
             assert node.last_heartbeat == c.clock()
             assert all(e.effective_tag in ("GUARD", "OWNER") for e in events(c))
@@ -354,3 +354,36 @@ def test_the_owners_offer_file_is_picked_up_and_deleted_and_the_decision_file_an
         assert await asyncio.wait_for(ask, 3) is True
         assert not (w.dir / "confirm-abc.json").exists() and not (w.dir / "decision-abc.json").exists()
     run(go())
+
+
+def test_heartbeats_do_not_grow_the_log_one_card_event_and_a_summary_per_period_and_one_at_disconnect(tmp_path):
+    clock = Clock()
+
+    async def go():
+        async with coordinator(tmp_path, clock=clock) as c:
+            c.summary_every_s = 60.0
+            me, pin, r, w = await paired_client(c, tmp_path)
+            for seq in range(1, 31):
+                await write_frame(w, seal(me, "heartbeat", {"hostname": "box", "os": "linux", "arch": "x86_64", "seq": seq}, clock=c.clock))
+                await read_frame(r, timeout=3)
+                clock.advance(10)  # 30 heartbeats over 300 s
+            w.close()
+            await wait_event(c, "node_disconnected")
+            kinds = [e.type for e in events(c)]
+            assert kinds.count("node_card") == 1 and "heartbeat" not in kinds
+            summaries = events(c, "heartbeat_summary")
+            assert 4 <= len(summaries) <= 6 and sum(e.payload["beats"] for e in summaries) == 30  # every beat is counted, none is its own event
+            assert len(events(c)) < 25
+            await write_frame_changed_card(c, tmp_path)
+    run(go())
+
+
+async def write_frame_changed_card(c, tmp):
+    """A changed card is logged again; an unchanged one is not."""
+    me, pin, r, w = await paired_client(c, tmp, node="node2")
+    for os_name in ("linux", "linux", "darwin"):
+        await write_frame(w, seal(me, "heartbeat", {"hostname": "b", "os": os_name, "arch": "x", "seq": 1}, clock=c.clock))
+        await read_frame(r, timeout=3)
+    w.close()
+    cards = [e for e in events(c, "node_card") if e.payload["node"] == me.node_id]
+    assert [e.payload["os"] for e in cards] == ["linux", "darwin"]

@@ -15,6 +15,7 @@ from envrec_net.envelope import EnvelopeRejected, Verifier, seal
 from envrec_net.log import EventLog
 from envrec_net.protocol import IllegalTransition, ProtocolGuard
 from envrec_net.wire import FrameError, read_frame, write_frame
+from envrec_node.discover import DiscoveryFailed, discover
 from envrec_node.state import NodeState, Pin
 
 AGENT = "mas-node 0.1"
@@ -30,15 +31,18 @@ def backoff_delays(base: float = 1.0, cap: float = 60.0, jitter: Callable[[], fl
 
 
 class NodeAgent:
-    def __init__(self, state_dir, *, interval_s: float = 10.0, clock=time.time, sleep=asyncio.sleep, jitter: Callable[[], float] = random.random, base_delay_s: float = 1.0) -> None:
+    def __init__(self, state_dir, *, interval_s: float = 10.0, clock=time.time, sleep=asyncio.sleep, jitter: Callable[[], float] = random.random, base_delay_s: float = 1.0,
+                 rediscover: bool = False, discovery_port: int = 7444, discovery_targets: list | None = None) -> None:
         self.state = NodeState(state_dir)
         self.identity = self.state.identity()
         self.pin: Pin | None = self.state.pin()
         self.interval_s, self.clock, self.sleep, self.jitter, self.base_delay_s = interval_s, clock, sleep, jitter, base_delay_s
         self.log = EventLog(self.state.log_dir)
         self.guard = ProtocolGuard("protocol-node-connect", lambda t, p: self.log.add(t, p), clock=clock, subject=self.identity.node_id)
+        self.rediscover, self.discovery_port, self.discovery_targets = rediscover, discovery_port, discovery_targets
         self.connected = False
         self.heartbeats_acked = 0
+        self._acked_this_session = 0
         self.stop_event = asyncio.Event()
         self._kick = asyncio.Event()
         self._seq = 0
@@ -75,6 +79,8 @@ class NodeAgent:
                     await asyncio.wait_for(self.stop_event.wait(), delay)
                 except TimeoutError:
                     pass
+                if self.rediscover and reason.startswith("connect failed"):
+                    await self._find_coordinator_again()
                 self.guard.record("net.retry_due", True)
                 self._step("connect")
                 if self.heartbeats_acked_in_last_session:
@@ -87,10 +93,28 @@ class NodeAgent:
 
     heartbeats_acked_in_last_session = False
 
+    async def _find_coordinator_again(self) -> None:
+        """The coordinator may have a new address. Ask the network; accept only an answer signed by the key pinned at pairing (an unsigned or differently signed answer is ignored)."""
+        assert self.pin is not None
+        try:
+            answers = await asyncio.to_thread(discover, self.discovery_port, 2.0, pinned=(self.pin.coordinator_id, self.pin.public_raw), clock=self.clock, targets=self.discovery_targets)
+        except DiscoveryFailed as exc:
+            self.log.add("rediscovery_failed", {"reason": exc.code})
+            return
+        for a in answers:
+            if a.signed and a.coordinator_id == self.pin.coordinator_id:
+                new = f"{a.address}:{a.port}"
+                if new != self.pin.address:
+                    old = self.pin.address
+                    self.pin = self.state.save_pin(new, self.pin.cert_der, clock=lambda: self.pin.paired_at)  # type: ignore[union-attr]
+                    self.log.add("coordinator_moved", {"from": old, "to": new})
+                return
+
     async def _one_session(self) -> str:
         assert self.pin is not None
         host, port = self.pin.host_port
         self.heartbeats_acked_in_last_session = False
+        self._acked_this_session = 0
         try:
             ctx = tls.client_context(self.state.identity_dir, self.pin.cert_der)
             reader, writer = await asyncio.wait_for(asyncio.open_connection(host, port, ssl=ctx), CONNECT_TIMEOUT_S)
@@ -112,7 +136,7 @@ class NodeAgent:
         finally:
             self.connected = False
             writer.close()
-            self.log.add("disconnected", {"reason": reason[:80]})
+            self.log.add("disconnected", {"reason": reason[:80], "heartbeats_acked": self._acked_this_session})  # one count per session, not one event per heartbeat
         return reason
 
     async def _wait_for_next_beat(self) -> None:
@@ -140,7 +164,7 @@ class NodeAgent:
             return False, "unexpected message from the coordinator"
         self.heartbeats_acked += 1
         self.heartbeats_acked_in_last_session = True
-        self.log.add("heartbeat_acked", {"seq": self._seq})
+        self._acked_this_session += 1
         return True, ""
 
     # ---- for the typed tool `node_heartbeat_send`, called from another thread ------------------------------------------------------------------------------

@@ -12,13 +12,13 @@ from pathlib import Path
 import yaml
 
 # A node must not open ANY listening socket: these call names are all suspect in node code.
-NODE_ATTRS = {"listen", "bind", "serve_forever", "start_server", "start_unix_server", "create_server", "serve", "run_app", "serve_unix"}
+NODE_ATTRS = {"listen", "bind", "serve_forever", "start_server", "start_unix_server", "create_server", "serve", "run_app", "serve_unix", "create_datagram_endpoint"}
 SERVER_CLASSES = {"HTTPServer", "ThreadingHTTPServer", "TCPServer", "ThreadingTCPServer", "UDPServer", "ThreadingUDPServer", "UnixStreamServer", "UnixDatagramServer",
                   "SimpleXMLRPCServer", "WSGIServer"}
 SERVER_MODULES = {"uvicorn", "hypercorn", "waitress", "gunicorn", "aiohttp", "websockets"}  # `<module>.run(...)` / `.serve(...)` on these starts a listener
 WILDCARDS = {"0.0.0.0", "::", ""}  # a bind to everything (the empty string means INADDR_ANY in socket.bind)
 # What counts as ONE listening socket when the coordinator is measured (bind alone and serve_forever alone are the same socket as the call that makes it).
-COUNT_ATTRS = {"listen", "start_server", "start_unix_server", "create_server", "serve", "run_app", "serve_unix"}
+COUNT_ATTRS = {"listen", "start_server", "start_unix_server", "create_server", "serve", "run_app", "serve_unix", "create_datagram_endpoint"}
 LOOPBACK_LITERALS = {"127.0.0.1", "::1", "[::1]"}  # `localhost` is NOT accepted: it depends on the machine's name resolution
 DYNAMIC_EXEC_NAMES = {"exec", "eval", "compile"}
 DYNAMIC_EXEC_ATTRS = {("runpy", "run_path"), ("runpy", "run_module"), ("util", "spec_from_file_location"), ("machinery", "SourceFileLoader")}
@@ -104,7 +104,7 @@ def listener_sites(root: Path) -> list[tuple[str, str]]:
                 continue
             recv, name = _name(node.func)
             if name in COUNT_ATTRS or name in SERVER_CLASSES or (recv in SERVER_MODULES and name in ("run", "serve", "Server", "start_server", "run_app")):
-                kind = "loopback" if _host_of_site(node, consts) in LOOPBACK_LITERALS else "open"
+                kind = "udp" if name == "create_datagram_endpoint" else "loopback" if _host_of_site(node, consts) in LOOPBACK_LITERALS else "open"
                 out.append((f"{p.name}:{node.lineno}: {(recv + '.') if recv else ''}{name}(...) [{kind}]", kind))
     return out
 
@@ -115,17 +115,31 @@ def count_listeners(root: Path) -> list[str]:
 
 
 def coordinator_verdict(root: Path) -> tuple[bool, str]:
-    """(ok, detail). No coordinator code yet: nothing to measure, so ok. With code (docs/NETWORK_CONTRACT.md 1.1 and 1.7): exactly ONE LAN-facing listening site (its bind host is
-    chosen by the owner, so it is not a loopback literal) and AT MOST ONE loopback-only site (the owner's web screen). A second site that is not a loopback literal fails, whatever it serves."""
+    """(ok, detail). No coordinator code yet: nothing to measure, so ok. With code (docs/NETWORK_CONTRACT.md 1.1, 1.7, 1.8): exactly ONE LAN-facing TCP listening site (its bind host is
+    chosen by the owner, so it is not a loopback literal), AT MOST ONE loopback-only TCP site (the owner's web screen) and AT MOST ONE UDP discovery site. A second TCP site that is not a
+    loopback literal fails, whatever it serves; so does a second UDP site."""
     if not Path(root).exists() or not _files(root):
         return True, "no coordinator code in the tree yet (nothing to measure)"
     sites = listener_sites(root)
     lan = [d for d, k in sites if k == "open"]
     loop = [d for d, k in sites if k == "loopback"]
-    detail = f"{len(lan)} LAN-facing listening site(s) (must be exactly 1), {len(loop)} loopback-only site(s) (at most 1): " + "; ".join(d for d, _ in sites)
+    udp = [d for d, k in sites if k == "udp"]
+    detail = (f"{len(lan)} LAN-facing listening site(s) (must be exactly 1), {len(loop)} loopback-only site(s) (at most 1), {len(udp)} UDP discovery site(s) (at most 1): "
+              + "; ".join(d for d, _ in sites))
     if not sites:
         detail = "0 listening sites in the coordinator code (it must open exactly one LAN-facing socket)"
-    return len(lan) == 1 and len(loop) <= 1, detail
+    return len(lan) == 1 and len(loop) <= 1 and len(udp) <= 1, detail
+
+
+def udp_socket_sites(root: Path) -> list[str]:
+    """Every `socket.socket(..., SOCK_DGRAM)` creation: the node's one short-lived discovery socket is the only one allowed in node code, and only in its discovery module."""
+    out = []
+    for p in _files(root):
+        for node in _calls(p):
+            recv, name = _name(node.func)
+            if name == "socket" and recv in ("socket", None) and any("SOCK_DGRAM" in ast.unparse(a) for a in node.args):
+                out.append(f"{p.name}:{node.lineno}: UDP socket")
+    return out
 
 
 def dynamic_exec_sites(root: Path) -> list[str]:

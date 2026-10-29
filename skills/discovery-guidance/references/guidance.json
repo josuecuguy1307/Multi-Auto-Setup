@@ -1,0 +1,52 @@
+{
+ "nothing_answered": {
+  "common": [
+   "No coordinator answered on this network.",
+   "Check that `mas coordinator start` is running on the other computer and shows a discovery port.",
+   "Check that both computers are on the same Wi-Fi or the same cable network and the same subnet; a guest network, a VPN or a different router usually separates them.",
+   "Some routers isolate Wi-Fi clients from each other (called client isolation or AP isolation); it is a router setting only you can change.",
+   "If you know the coordinator's address, `--coordinator HOST:PORT` skips discovery."
+  ],
+  "windows": [
+   "On this Windows computer, the network profile must be Private, not Public: Settings, Network & internet, open the Wi-Fi or Ethernet network, then Network profile type, then Private. The Public profile blocks the replies."
+  ],
+  "darwin": [
+   "On a Mac, if the firewall is on, allow incoming connections for Python when macOS asks; System Settings, Network, Firewall."
+  ],
+  "linux": [
+   "On Linux, a firewall may drop the replies; allow the discovery UDP port from your own subnet (the exact command depends on your firewall tool)."
+  ]
+ },
+ "coordinator_firewall": {
+  "common": [
+   "If the coordinator computer's firewall asks whether to allow incoming connections, accept it, or discovery and pairing cannot reach it."
+  ],
+  "windows": [
+   "On the coordinator, Windows asks the first time: allow on Private networks only."
+  ],
+  "darwin": [
+   "On the coordinator Mac, choose Allow in the incoming connections prompt."
+  ],
+  "linux": [
+   "On the coordinator, allow the discovery UDP port and the pairing TCP port from your own subnet."
+  ]
+ },
+ "no_interface": {
+  "common": [
+   "No private network interface is up on this computer, so there is nothing to send on. Connect to your Wi-Fi or cable network, then try again. Virtual interfaces (VPN, containers) are skipped unless you pass --include-virtual."
+  ],
+  "windows": [],
+  "darwin": [],
+  "linux": []
+ },
+ "blocked_locally": {
+  "common": [
+   "This computer refused to send the discovery query. A local firewall or security product may be blocking the program from using the network."
+  ],
+  "windows": [
+   "Allow Python through Windows Security on Private networks, then try again."
+  ],
+  "darwin": [],
+  "linux": []
+ }
+}

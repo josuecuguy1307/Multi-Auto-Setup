@@ -23,7 +23,7 @@ dependencies = [
 
 [project.optional-dependencies]
 # Discovery adapters import these lazily and report `unavailable` with the reason when they are missing.
-discovery = ["bleak>=0.22", "pyserial>=3.5", "zeroconf>=0.130"]
+discovery = ["bleak>=0.22", "pyserial>=3.5"]
 
 [project.scripts]
 mas = "envrec_mas.cli:main"

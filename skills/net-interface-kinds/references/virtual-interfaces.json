@@ -1,0 +1,6 @@
+{
+ "common": ["docker", "veth", "br-", "virbr", "vmnet", "vboxnet", "vmenet", "tun", "tap", "wg", "ppp", "zt", "tailscale", "utun", "bridge", "awdl", "llw", "anpi", "gif", "stf", "hyper-v", "vethernet", "vmware", "virtualbox", "wsl", "loopback pseudo", "isatap", "teredo"],
+ "darwin": ["utun", "bridge", "awdl", "llw", "anpi", "vmenet", "gif", "stf"],
+ "linux": ["docker", "veth", "br-", "virbr", "tun", "tap", "wg", "tailscale", "zt", "lxc", "flannel", "cni", "cali", "kube"],
+ "windows": ["vethernet", "hyper-v", "vmware", "virtualbox", "wsl", "tap-", "tailscale", "zerotier", "wintun", "isatap", "teredo", "loopback pseudo", "bluetooth"]
+}

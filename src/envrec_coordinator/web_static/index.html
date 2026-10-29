@@ -42,12 +42,18 @@
       <p class="muted" data-i18n="machines.empty_hint"></p>
     </div>
     <ul id="machines" class="cards"></ul>
+
+    <h2 class="sub-h" id="waiting-title" data-i18n="waiting.title"></h2>
+    <p class="muted" data-i18n="waiting.hint"></p>
+    <p id="waiting-empty" class="muted" data-i18n="waiting.empty"></p>
+    <ul id="waiting" class="cards"></ul>
   </section>
 
   <section id="view-pair" aria-labelledby="pair-title" hidden>
     <h2 id="pair-title" data-i18n="pair.title"></h2>
     <p class="muted" data-i18n="pair.intro"></p>
 
+    <div id="pair-for" class="panel" hidden><p id="pair-for-text"></p></div>
     <div id="pair-idle" class="panel">
       <button id="start-pair" type="button" class="btn primary" data-i18n="pair.start"></button>
     </div>
@@ -57,7 +63,7 @@
       <p id="code" class="code" aria-labelledby="code-label"></p>
       <p id="countdown" class="countdown" role="timer" aria-live="off"></p>
       <p class="muted" data-i18n="pair.one_attempt"></p>
-      <p class="muted"><span data-i18n="pair.how_to"></span> <code>mas pair HOST:PORT</code></p>
+      <p class="muted"><span data-i18n="pair.how_to"></span> <code>mas join</code></p>
     </div>
 
     <div id="pair-exchange" class="panel" hidden>

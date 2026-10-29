@@ -47,7 +47,7 @@ def test_N2_coordinator_code_opens_exactly_one_lan_facing_socket_and_at_most_one
 
 def test_N2_sees_both_of_the_real_coordinators_sockets_so_it_is_not_vacuous():
     sites = netrules.listener_sites(COORDINATOR_ROOT)
-    assert sorted(k for _, k in sites) == ["loopback", "open"], sites  # the node-facing server.py site and the loopback web.py site
+    assert sorted(k for _, k in sites) == ["loopback", "open", "udp"], sites  # the node-facing server.py site, the loopback web.py site and the UDP discovery site
 
 
 def test_N2_fails_on_a_coordinator_with_two_listening_sockets():
@@ -86,6 +86,31 @@ def test_N2_fails_on_a_second_loopback_socket():
     assert not ok and "2 loopback-only" in detail, detail
 
 
+def test_N2_passes_one_tcp_lan_socket_plus_one_udp_discovery_socket():
+    ok, detail = netrules.coordinator_verdict(FIX / "coordinator_udp_ok")
+    assert ok and "1 UDP discovery site(s)" in detail, detail
+
+
+def test_N2_fails_on_a_second_udp_socket():
+    ok, detail = netrules.coordinator_verdict(FIX / "coordinator_udp_two")
+    assert not ok and "2 UDP discovery site(s)" in detail, detail
+
+
+def test_N1_a_node_has_one_short_lived_udp_socket_in_its_discovery_module_and_nowhere_else():
+    hits = [h for root in NODE_ROOTS for h in netrules.udp_socket_sites(root)]
+    assert [h.split(":")[0] for h in hits] == ["discover.py"], hits
+
+
+def test_N1_fails_on_a_node_bound_to_a_fixed_udp_port_or_answering_queries():
+    hits = " ".join(netrules.listen_sites(FIX / "node_udp_bound"))
+    assert "bind(" in hits and "create_datagram_endpoint" in hits, hits
+
+
+def test_N1_passes_a_node_that_only_sends_a_query_and_closes_its_socket():
+    assert netrules.listen_sites(FIX / "node_udp_ok") == []
+    assert [h.split(":")[0] for h in netrules.udp_socket_sites(FIX / "node_udp_ok")] == ["discover.py"]
+
+
 def test_N4_at_runtime_the_node_holds_no_listening_socket_and_the_coordinator_holds_exactly_one(tmp_path):
     """SIMULATED-LOCAL: the coordinator and the node are two real processes on this machine, paired through the `mas` commands, heartbeats flowing; each process's listening sockets are read.
     Without `--web` the coordinator holds ONE socket."""
@@ -108,7 +133,20 @@ def test_N4_with_the_web_screen_the_coordinator_holds_one_node_socket_and_one_lo
     assert res["node_listening"] == [], res["node_listening"]
 
 
+def test_N4_with_discovery_the_coordinator_holds_one_udp_socket_more_and_the_node_still_none(tmp_path):
+    """SIMULATED-LOCAL: `mas coordinator start --web --discovery-port N`: the node-facing TCP socket, the loopback web socket and ONE UDP discovery socket; nothing else."""
+    from mas_procs import free_port, run_local_network, socket_verdict
+    dport = free_port()
+    res = run_local_network(tmp_path, web=True, discovery_port=dport)
+    ok, detail = socket_verdict(res["coordinator_listening"], "127.0.0.1", res["port"], udp_port=dport)
+    assert ok, (detail, res["coordinator_listening"])
+    assert any(x[1] == dport for x in res["coordinator_listening"]), res["coordinator_listening"]  # the discovery socket exists: the check is not blind
+    assert len(res["coordinator_listening"]) == 3 and res["node_listening"] == [], res
+
+
 @pytest.mark.parametrize("listening,why", [
+    ([("192.168.1.5", 7443), ("0.0.0.0", 7444), ("0.0.0.0", 7445)], "a second socket that is not loopback"),  # a second wildcard socket on another port
+    ([("192.168.1.5", 7443), ("0.0.0.0", 7444), ("192.168.1.5", 7444)], "more than one UDP discovery socket"),
     ([("192.168.1.5", 7443), ("0.0.0.0", 9000)], "a second socket that is not loopback"),  # the web screen bound to every interface
     ([("192.168.1.5", 7443), ("::", 9000)], "a second socket that is not loopback"),
     ([("192.168.1.5", 7443), ("192.168.1.5", 9000)], "a second socket that is not loopback"),  # the web screen on the LAN address
@@ -118,7 +156,7 @@ def test_N4_with_the_web_screen_the_coordinator_holds_one_node_socket_and_one_lo
 ])
 def test_N4_the_runtime_verdict_fails_on_every_second_socket_that_is_not_the_one_loopback_web_socket(listening, why):
     from mas_procs import socket_verdict
-    ok, detail = socket_verdict(listening, "192.168.1.5", 7443)
+    ok, detail = socket_verdict(listening, "192.168.1.5", 7443, udp_port=7444)
     assert not ok and why in detail, detail
 
 
@@ -127,6 +165,7 @@ def test_N4_the_runtime_verdict_passes_the_lan_socket_alone_and_with_the_loopbac
     assert socket_verdict([("192.168.1.5", 7443)], "192.168.1.5", 7443)[0]
     assert socket_verdict([("192.168.1.5", 7443), ("127.0.0.1", 9000)], "192.168.1.5", 7443)[0]
     assert socket_verdict([("192.168.1.5", 7443), ("::1", 9000)], "192.168.1.5", 7443)[0]
+    assert socket_verdict([("192.168.1.5", 7443), ("0.0.0.0", 7444), ("127.0.0.1", 9000)], "192.168.1.5", 7443, udp_port=7444)[0]  # TCP node port + UDP discovery + loopback web
 
 
 def test_N4_the_runtime_check_sees_a_listening_socket_when_a_process_has_one(tmp_path):
@@ -295,3 +334,80 @@ def test_H1_the_knowledge_the_code_needs_is_in_a_skill_the_layer_reads():
     import json
     table = json.loads((ROOT / "skills" / "os-state-paths" / "references" / "state-dirs.json").read_text())
     assert {"darwin", "linux", "windows"} <= set(table)
+
+
+# ---- N4 for the node's discovery socket: ephemeral, one, and gone after the window ---------------------------------------------------------------------------------
+
+def node_udp_verdict(before: list, during: list, after: list, discovery_port: int) -> tuple[bool, str]:
+    """`before`/`during`/`after` are this process's UDP sockets as (ip, port) at the three moments. During the window exactly one new socket, on an ephemeral port that is not the discovery
+    port; afterwards no new socket is left."""
+    new_during = [x for x in during if x not in before]
+    left = [x for x in after if x not in before]
+    problems = []
+    if len(new_during) != 1:
+        problems.append(f"expected exactly one new UDP socket during the window, saw {new_during}")
+    elif new_during[0][1] == discovery_port:
+        problems.append("the node's socket sits on the fixed discovery port")
+    if left:
+        problems.append(f"a UDP socket was left open after the window: {left}")
+    return not problems, "; ".join(problems) or "one ephemeral socket during the window, none after"
+
+
+def _udp_of_this_process():
+    import os
+
+    import psutil
+    return sorted((c.laddr.ip, c.laddr.port) for c in psutil.Process(os.getpid()).net_connections(kind="udp") if c.laddr)
+
+
+def test_N4_a_discovering_node_has_one_ephemeral_udp_socket_during_the_window_and_none_after():
+    import socket
+    import threading
+
+    from envrec_node.discover import DiscoveryFailed, discover
+    before = _udp_of_this_process()
+    seen: dict = {}
+
+    def probe(sock):
+        sock.sendto(b"x", ("127.0.0.1", 9))  # force the operating system to give the socket its ephemeral port
+        seen["during"] = _udp_of_this_process()
+        seen["sock"] = sock
+
+    t = threading.Thread(target=lambda: seen.update(error=_run(discover, probe)))
+    t.start()
+    t.join(10)
+    after = _udp_of_this_process()
+    ok, detail = node_udp_verdict(before, seen["during"], after, discovery_port=7444)
+    assert ok, detail
+    assert seen["sock"].fileno() == -1  # closed
+    assert isinstance(seen["error"], DiscoveryFailed)  # nobody answered on loopback port 9
+
+
+def _run(discover, probe):
+    from envrec_node.discover import DiscoveryFailed
+    try:
+        discover(7444, 0.3, targets=[("127.0.0.1", 9)], on_socket=probe)
+    except DiscoveryFailed as exc:
+        return exc
+
+
+def test_N4_the_node_udp_verdict_fails_on_a_fixed_port_a_second_socket_and_a_socket_left_open():
+    assert not node_udp_verdict([], [("0.0.0.0", 7444)], [], 7444)[0]  # bound to the fixed discovery port
+    assert not node_udp_verdict([], [("0.0.0.0", 50000), ("0.0.0.0", 50001)], [], 7444)[0]  # two sockets
+    assert not node_udp_verdict([], [("0.0.0.0", 50000)], [("0.0.0.0", 50000)], 7444)[0]  # still open after the window
+    assert not node_udp_verdict([], [], [], 7444)[0]  # no socket at all would mean the probe saw nothing
+    assert node_udp_verdict([("0.0.0.0", 5353)], [("0.0.0.0", 5353), ("0.0.0.0", 50000)], [("0.0.0.0", 5353)], 7444)[0]
+
+
+def test_N4_a_fixture_that_leaves_its_discovery_socket_open_is_caught():
+    import socket
+    before = _udp_of_this_process()
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.sendto(b"x", ("127.0.0.1", 9))
+        during = _udp_of_this_process()
+        after = _udp_of_this_process()  # the "node" never closed it
+        ok, detail = node_udp_verdict(before, during, after, 7444)
+        assert not ok and "left open" in detail, detail
+    finally:
+        s.close()

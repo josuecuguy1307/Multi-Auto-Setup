@@ -19,7 +19,7 @@ from envrec.verify.model_check import plausible_tokens, reported_identities
 
 FAKES = Path(__file__).parent / "fakes"
 FILE = "tiny-test.gguf"
-EXPECTED = ExpectedModel("qwen-tiny", FILE)
+EXPECTED = ExpectedModel("model-tiny", FILE)
 
 
 def free_port() -> int:
@@ -89,7 +89,7 @@ def test_a_real_looking_server_passes_and_facts_are_recorded(store, target):
     assert r.ok and r.failed == [] and r.reason == "all conditions held"
     f = store.current_fact(target.id, "host.model_server")
     assert f.status == FactStatus.verified and f.created_by.value == "verifier"
-    assert store.current_fact(target.id, "host.model_identity").value == "qwen-tiny"
+    assert store.current_fact(target.id, "host.model_identity").value == "model-tiny"
     for key, val in (("host.model_tokens_per_s", 50.0), ("host.model_rss_mib", 123.0), ("host.model_startup_s", 1.5)):
         fact = store.current_fact(target.id, key)
         assert fact.status == FactStatus.tested and fact.value == val

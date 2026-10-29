@@ -22,6 +22,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from envrec_coordinator.pairing import PairingBusy
+from envrec_coordinator.waiting import Waiting  # noqa: F401
 
 WEB_HOST = "127.0.0.1"  # the only address the screen can bind to
 STATIC = Path(__file__).parent / "web_static"
@@ -257,6 +258,19 @@ class WebScreen:
                 self._on_loop(self.front.begin_pairing, "web")
             except PairingBusy:
                 return _json(409, {"error": "pairing_in_progress"})
+            return _json(200, self._state(sess))
+        if req.path == "/api/pair/offer-for":
+            wid = body.get("waiting")
+            if not isinstance(wid, str) or not 0 < len(wid) <= 40:
+                return self._refuse(req, 400, "bad_body", "server.bad_request")
+            try:
+                self._on_loop(self.front.offer_for_waiting, wid, "web")
+            except PairingBusy:
+                return _json(409, {"error": "pairing_in_progress"})
+            except Exception as exc:
+                if type(exc).__name__ == "WaitingGone":
+                    return _json(409, {"error": "waiting_gone"})
+                raise
             return _json(200, self._state(sess))
         if req.path == "/api/pair/decision":
             offer, accept = body.get("offer"), body.get("accept")

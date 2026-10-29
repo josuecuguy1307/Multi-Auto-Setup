@@ -68,6 +68,7 @@ class Offer:
     created: float
     expires: float
     consumed: bool = False
+    bound_to: str | None = None  # a waiting machine's id: only that machine's own connection may use this code
 
 
 @dataclass
@@ -93,12 +94,12 @@ class PairingDesk:
 
     # ---- the owner asks for a code -------------------------------------------------------------------------------------------------------------
 
-    def open_offer(self, offer_id: str, code: str) -> Offer:
+    def open_offer(self, offer_id: str, code: str, bound_to: str | None = None) -> Offer:
         """A new offer replaces any earlier one (which is dead from this moment)."""
         now = self.clock()
-        self.offer = Offer(offer_id, code, now, now + CODE_TTL_S)
+        self.offer = Offer(offer_id, code, now, now + CODE_TTL_S, bound_to=bound_to)
         self._guard = ProtocolGuard("protocol-pair", lambda t, p: self.log.add(t, p), clock=self.clock, subject=offer_id)
-        self.log.add("pair_offer_created", {"offer": offer_id, "valid_s": CODE_TTL_S})
+        self.log.add("pair_offer_created", {"offer": offer_id, "valid_s": CODE_TTL_S, **({"for_waiting": bound_to} if bound_to else {})})
         return self.offer
 
     @property
@@ -129,7 +130,8 @@ class PairingDesk:
 
     # ---- a connection without a certificate arrives ----------------------------------------------------------------------------------------------
 
-    async def handle(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, source: str, coordinator_cert_der: bytes) -> Outcome:
+    async def handle(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, source: str, coordinator_cert_der: bytes, *, first_frame: dict | None = None,
+                     bound_wait: str | None = None) -> Outcome:
         async def refuse(reason: str) -> Outcome:
             self.log.add("pair_refused", {"source": source, "reason": reason})
             try:
@@ -143,10 +145,12 @@ class PairingDesk:
         offer = self._live()
         if offer is None:
             return await refuse("no_active_code")
+        if offer.bound_to != bound_wait:  # a code made for one waiting machine is for that machine's own connection only, and an unbound code is not for a waiting one
+            return await refuse("not_for_this_machine")
         if self._busy:
             return await refuse("pairing_in_progress")
         try:
-            hello = await read_frame(reader, timeout=HELLO_TIMEOUT_S)
+            hello = first_frame if first_frame is not None else await read_frame(reader, timeout=HELLO_TIMEOUT_S)
             msg_a = bytes.fromhex(str(hello["msg_a"]))
             if hello.get("type") != "pair_hello" or hello.get("version") != VERSION or not 1 < len(msg_a) < 200:
                 raise ValueError

@@ -12,6 +12,8 @@ import platform
 import re
 import socket
 import sys
+import ipaddress
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
@@ -67,3 +69,58 @@ def default_state_dir(env: dict[str, str] | None = None) -> Path:
 def card() -> dict:
     """The node card basics a machine can report about itself: host name, operating system family and release, CPU architecture. Facts, not hardware detail."""
     return {"hostname": socket.gethostname(), "os": family(), "os_release": platform.release(), "arch": platform.machine().lower()}
+
+
+# ---- network interfaces and what to tell the owner (the knowledge is data in skills; this layer reads it) --------------------------------------------------------
+
+VIRTUAL_FILE = SKILLS_DIR / "net-interface-kinds" / "references" / "virtual-interfaces.json"
+GUIDANCE_FILE = SKILLS_DIR / "discovery-guidance" / "references" / "guidance.json"
+
+
+@dataclass(frozen=True)
+class Iface:
+    name: str
+    address: str
+    netmask: str
+    broadcast: str
+    network: ipaddress.IPv4Network
+
+    def contains(self, ip: str) -> bool:
+        return ipaddress.ip_address(ip) in self.network
+
+
+def is_virtual(name: str, fam: str | None = None) -> bool:
+    """True for a VPN, container, bridge or virtual-machine interface, by the per-family name table in the net-interface-kinds skill."""
+    table = json.loads(VIRTUAL_FILE.read_text())
+    low = name.lower()
+    return any(frag in low for frag in table.get(fam or family(), table.get("common", [])))
+
+
+def interfaces(include_virtual: bool = False, *, raw=None, fam: str | None = None) -> list[Iface]:
+    """The up IPv4 interfaces on a private or link-local network, each with its subnet and directed-broadcast address. Virtual interfaces are left out unless asked for.
+    `raw` lets a test supply `[(name, address, netmask, is_up)]` instead of reading the machine."""
+    if raw is None:
+        import psutil
+        stats = psutil.net_if_stats()
+        raw = [(n, a.address, a.netmask, stats.get(n).isup if stats.get(n) else False) for n, addrs in psutil.net_if_addrs().items() for a in addrs if a.family == socket.AF_INET]
+    out = []
+    for name, address, mask, up in raw:
+        if not up or not address or not mask:
+            continue
+        try:
+            net = ipaddress.IPv4Network(f"{address}/{mask}", strict=False)
+            ip = ipaddress.IPv4Address(address)
+        except ValueError:
+            continue
+        if not (ip.is_private or ip.is_link_local) or ip.is_loopback:
+            continue
+        if not include_virtual and is_virtual(name, fam):
+            continue
+        out.append(Iface(name, address, mask, str(net.broadcast_address), net))
+    return out
+
+
+def discovery_guidance(code: str, role: str = "node", fam: str | None = None) -> list[str]:
+    """Plain guidance for the owner for a typed discovery failure, in this operating system's words (data in the discovery-guidance skill). `role` is accepted for symmetry."""
+    table = json.loads(GUIDANCE_FILE.read_text()).get(code, {})
+    return list(table.get("common", [])) + list(table.get(fam or family(), []))

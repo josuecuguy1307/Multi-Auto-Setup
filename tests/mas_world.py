@@ -21,10 +21,12 @@ class Clock:
 
 
 @contextlib.asynccontextmanager
-async def coordinator(tmp: Path, *, clock=None, answer=True, owner_ttl_s: float = 120.0, idle_timeout_s: float = 30.0, web: bool = False):
+async def coordinator(tmp: Path, *, clock=None, answer=True, owner_ttl_s: float = 120.0, idle_timeout_s: float = 30.0, web: bool = False, discovery: bool = False):
     """A running coordinator whose owner answers `answer` (True, False, or an async function of the summary); `answer=None` leaves the real front ends (terminal files, web) in charge."""
-    c = Coordinator(tmp / "coord", "127.0.0.1", 0, clock=clock or Clock(), idle_timeout_s=idle_timeout_s, owner_ttl_s=owner_ttl_s, web=web)
+    c = Coordinator(tmp / "coord", "127.0.0.1", 0, clock=clock or Clock(), idle_timeout_s=idle_timeout_s, owner_ttl_s=owner_ttl_s, web=web, discovery_port=0 if discovery else None)
     await c.start()
+    if c.responder is not None:
+        c.responder.allow_source = lambda ip: ip.startswith("127.")  # the tests talk over loopback
     asked: list[dict] = []
 
     async def owner(summary: dict) -> bool:

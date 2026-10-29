@@ -55,8 +55,12 @@ class ControlWatcher:
             pass
         if not req or not isinstance(req.get("id"), str) or not str(req.get("code", "")).isdigit() or len(str(req["code"])) != 6:
             return
-        self.on_offer(req["id"], str(req["code"]))
         write_json(self.layer, self.dir / f"offer-{req['id']}.json", {"status": "waiting"})
+        node = req.get("node")
+        if isinstance(node, str) and node:
+            self.on_offer(req["id"], str(req["code"]), node)  # a code for one waiting machine
+        else:
+            self.on_offer(req["id"], str(req["code"]))
 
     async def ask_owner(self, summary: dict) -> bool:
         oid = summary["offer"]

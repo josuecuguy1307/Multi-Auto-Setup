@@ -74,7 +74,7 @@ def mdns_zeroconf(ctx: ToolContext, seconds: float = 6.0) -> ToolResult:
     try:
         import zeroconf
     except ImportError:
-        return ToolResult.fail(Reason.unavailable, "the zeroconf library is not available (pip install 'envrec[discovery]')")
+        return ToolResult.fail(Reason.unavailable, "the optional zeroconf library is not installed (pip install zeroconf; it is not part of the project's dependencies)")
     found: dict[str, dict] = {}
     zc = zeroconf.Zeroconf()
     try:

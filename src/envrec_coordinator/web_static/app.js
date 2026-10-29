@@ -103,6 +103,49 @@ function renderMachines(data) {
   $("pairing-banner").hidden = !(p && ["waiting", "exchange", "confirm", "deciding"].includes(p.status));
 }
 
+function renderWaiting(data) {
+  const list = $("waiting");
+  const rows = data.waiting || [];
+  $("waiting-empty").hidden = rows.length > 0;
+  const busy = !!(data.pairing && ["waiting", "exchange", "confirm", "deciding"].includes(data.pairing.status));
+  const key = JSON.stringify([busy, rows.map((w) => [w.id, w.name, w.os, w.arch, w.fingerprint])]);
+  if (list.dataset.key !== key) {  // rebuild only when something changed: a button must not be replaced under the owner's pointer
+    list.dataset.key = key;
+    list.replaceChildren(...rows.map((w) => {
+      const li = document.createElement("li");
+      li.className = "card";
+      const head = document.createElement("div");
+      head.className = "card-head";
+      const h = document.createElement("h3");
+      h.textContent = w.name;
+      head.append(h);
+      const dl = document.createElement("dl");
+      dl.className = "facts";
+      fact(dl, "machines.field.os", w.os + " / " + w.arch, false);
+      fact(dl, "waiting.since", "", false);
+      dl.lastChild.dataset.since = String(w.since);
+      fact(dl, "waiting.claimed", w.fingerprint, true);
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn primary";
+      btn.textContent = t("waiting.pair");
+      btn.disabled = busy;
+      btn.addEventListener("click", () => offerFor(w.id));
+      li.append(head, dl, btn);
+      return li;
+    }));
+  }
+  list.querySelectorAll("[data-since]").forEach((el) => { el.textContent = ago(data.now - Number(el.dataset.since)); });
+}
+
+async function offerFor(id) {
+  notice("");
+  try {
+    accept(await api("POST", "/api/pair/offer-for", { waiting: id }));
+    location.hash = "#/pair";
+  } catch (err) { fail(err); }
+}
+
 /* ---- pairing ---- */
 
 const PANELS = ["pair-idle", "pair-code", "pair-exchange", "pair-confirm", "pair-result"];
@@ -120,10 +163,13 @@ function tickCountdown() {
 function renderPairing(data) {
   const p = data.pairing;
   const result = $("pair-result");
+  $("pair-for").hidden = true;
   if (!p || (["accepted", "refused", "failed", "expired", "rejected"].includes(p.status) && state.dismissed.has(p.offer))) {
     show("pair-idle");
     return;
   }
+  $("pair-for").hidden = !(p.target && ["waiting", "exchange", "confirm", "deciding"].includes(p.status));
+  if (p.target) $("pair-for-text").textContent = t("pair.for_machine", { name: p.target });
   if (p.status === "waiting") {
     $("code").textContent = p.code || "";
     show("pair-code");
@@ -179,6 +225,7 @@ function accept(data) {
   state.csrf = data.csrf || state.csrf;
   state.skew = data.now - Date.now() / 1000;
   renderMachines(data);
+  renderWaiting(data);
   renderPairing(data);
 }
 

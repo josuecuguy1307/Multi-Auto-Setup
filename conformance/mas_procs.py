@@ -64,12 +64,15 @@ def listening_of(pid: int) -> list[tuple[str, int]]:
     return sorted((c.laddr.ip, c.laddr.port) for c in conns if c.status == psutil.CONN_LISTEN or (c.type == socket.SOCK_DGRAM and not c.raddr))
 
 
-def socket_verdict(listening: list[tuple[str, int]], node_host: str, node_port: int) -> tuple[bool, str]:
+def socket_verdict(listening: list[tuple[str, int]], node_host: str, node_port: int, udp_port: int | None = None) -> tuple[bool, str]:
     """The coordinator's sockets at runtime (docs/NETWORK_CONTRACT.md 1.1 and 1.7): exactly ONE at the address and port the owner configured for nodes, and at most ONE other, which must be
     loopback. Any second socket that is not loopback (a wildcard, a LAN address) fails, and so does a second loopback one."""
     node_side = [x for x in listening if x == (node_host, node_port)]
-    others = [x for x in listening if x != (node_host, node_port)]
+    discovery = [x for x in listening if udp_port is not None and x[1] == udp_port and x != (node_host, node_port)]  # the optional UDP discovery socket (docs/NETWORK_CONTRACT.md 1.8)
+    others = [x for x in listening if x != (node_host, node_port) and x not in discovery]
     problems = []
+    if len(discovery) > 1:
+        problems.append(f"more than one UDP discovery socket: {discovery}")
     if len(node_side) != 1:
         problems.append(f"expected exactly 1 socket at {node_host}:{node_port}, saw {len(node_side)}")
     for host, port in others:
@@ -99,11 +102,11 @@ def free_port() -> int:
     return port
 
 
-def run_local_network(tmp: Path, *, heartbeats: int = 2, host: str = "127.0.0.1", web: bool = False) -> dict:
+def run_local_network(tmp: Path, *, heartbeats: int = 2, host: str = "127.0.0.1", web: bool = False, discovery_port: int | None = None) -> dict:
     """coordinator process, `mas pair` on it, `mas pair HOST:PORT` on the node, the owner's yes, `mas node run`, heartbeats; then the evidence. Always stops what it started."""
     port = free_port()
     cstate, nstate = tmp / "coordinator-state", tmp / "node-state"
-    coord = Proc(["--state-dir", str(cstate), "coordinator", "start", "--bind", host, "--port", str(port), "--idle-timeout", "20", *(["--web"] if web else [])], {})
+    coord = Proc(["--state-dir", str(cstate), "coordinator", "start", "--bind", host, "--port", str(port), "--idle-timeout", "20", *(["--web"] if web else []), *(["--discovery-port", str(discovery_port)] if discovery_port else ["--no-discovery"])], {})
     procs = [coord]
     out: dict = {"port": port}
     try:

@@ -23,8 +23,8 @@ class OwnerDesk:
 
     # ---- the protocol tells the desk what is happening ---------------------------------------------------------------------------------------
 
-    def opened(self, offer_id: str, code: str, expires_at: float, via: str) -> None:
-        self._current = {"offer": offer_id, "status": "waiting", "code": code, "expires_at": expires_at, "reason": "", "candidate": None, "via": via}
+    def opened(self, offer_id: str, code: str, expires_at: float, via: str, target: str | None = None) -> None:
+        self._current = {"offer": offer_id, "status": "waiting", "code": code, "expires_at": expires_at, "reason": "", "candidate": None, "via": via, "target": target}
 
     def exchanging(self, offer_id: str) -> None:
         cur = self._of(offer_id)
@@ -68,7 +68,7 @@ class OwnerDesk:
         cur = self._current
         if cur is None:
             return None
-        out = {k: cur[k] for k in ("offer", "status", "expires_at", "reason", "candidate")}
+        out = {k: cur[k] for k in ("offer", "status", "expires_at", "reason", "candidate", "target")}
         if cur["status"] == "waiting":
             out["code"] = cur["code"]  # only while it can still be used
         return out

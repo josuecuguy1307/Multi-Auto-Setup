@@ -58,5 +58,13 @@
  "server.link_used": "Este enlace ya se usó o no es válido. Reinicia el coordinador con --web para obtener uno nuevo.",
  "server.forbidden": "Petición no permitida.",
  "server.not_found": "No existe.",
- "server.bad_request": "Petición no válida."
+ "server.bad_request": "Petición no válida.",
+ "waiting.title": "Máquinas en espera",
+ "waiting.hint": "Estas máquinas encontraron este coordinador y esperan a que las empareje. Elige una: el código se crea solo para esa máquina.",
+ "waiting.empty": "Ninguna máquina espera ahora. En la otra máquina, con el programa instalado, ejecuta «mas join».",
+ "waiting.pair": "Emparejar esta",
+ "waiting.claimed": "Huella (declarada por la máquina)",
+ "waiting.since": "Esperando desde",
+ "pair.for_machine": "Código para: {name}",
+ "error.waiting_gone": "Esa máquina ya no está esperando. Pídele que ejecute «mas join» de nuevo."
 }

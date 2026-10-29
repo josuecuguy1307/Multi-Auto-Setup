@@ -531,3 +531,66 @@ def test_text_and_background_colours_reach_4_5_to_1():
         assert (hi + 0.05) / (lo + 0.05) >= 4.5, (fg, bg)
     assert ":focus-visible" in css and "max-width: 30rem" in css  # visible focus; a phone-width rule
     assert 'name="viewport"' in (STATIC / "index.html").read_text()
+
+
+# ---- waiting machines (docs/NETWORK_CONTRACT.md 1.8) --------------------------------------------------------------------------------------------
+
+async def _waiting_node(c, tmp_path, name):
+    from envrec_node.join import join
+    box = asyncio.get_running_loop().create_future()
+
+    async def ask():
+        return await box
+    t = asyncio.create_task(join(("127.0.0.1", c.port), tmp_path / name, name=name, ask_code=ask))
+    for _ in range(200):
+        if any(w.name == name for w in c.waiting.list()):
+            break
+        await asyncio.sleep(0.02)
+    return t, box
+
+
+def test_the_web_lists_waiting_machines_and_pressing_pair_for_one_makes_its_code_as_an_owner_event(tmp_path):
+    async def go():
+        async with coordinator(tmp_path / "c", web=True, answer=None) as c:
+            b = Browser(c)
+            await b.open()
+            ta, box_a = await _waiting_node(c, tmp_path, "alpha")
+            tb, box_b = await _waiting_node(c, tmp_path, "beta")
+            d = await b.state()
+            assert sorted(w["name"] for w in d["waiting"]) == ["alpha", "beta"] and all(w["fingerprint"].startswith("sha256:") for w in d["waiting"])
+            beta = next(w for w in d["waiting"] if w["name"] == "beta")
+            status, _ = await b.post("/api/pair/offer-for", {"waiting": beta["id"]})
+            assert status == 200
+            d = await b.state()
+            assert d["pairing"]["target"] == "beta" and d["pairing"]["status"] == "waiting" and len(d["pairing"]["code"]) == 6
+            req = events(c, "owner_requested_pairing")
+            assert len(req) == 1 and req[0].effective_tag == "OWNER" and req[0].payload["via"] == "web" and req[0].payload["machine"] == "beta"
+            box_b.set_result(d["pairing"]["code"])
+            await settle(b, lambda d: d["pairing"]["status"] == "confirm")
+            assert (await b.post("/api/pair/decision", {"offer": d["pairing"]["offer"], "accept": True}))[0] == 200
+            await asyncio.wait_for(tb, 10)
+            d = await settle(b, lambda d: [m["name"] for m in d["machines"]] == ["beta"])
+            assert [w["name"] for w in d["waiting"]] == ["alpha"]  # alpha still waits, untouched
+            ta.cancel()
+    run(go())
+
+
+def test_the_pair_for_a_waiting_machine_request_needs_the_same_guards_and_refuses_a_machine_that_left(tmp_path):
+    async def go():
+        async with coordinator(tmp_path / "c", web=True, answer=None) as c:
+            b = Browser(c)
+            await b.open()
+            await b.state()
+            ta, _ = await _waiting_node(c, tmp_path, "alpha")
+            wid = c.waiting.list()[0].id
+            assert (await b.post("/api/pair/offer-for", {"waiting": wid}, origin=False))[0] == 403
+            assert (await b.post("/api/pair/offer-for", {"waiting": wid}, csrf=False))[0] == 403
+            assert (await b.post("/api/pair/offer-for", {"waiting": 5}))[0] == 400
+            assert c.owner.view() is None  # none of the refused requests made a code
+            status, body = await b.post("/api/pair/offer-for", {"waiting": "w-unknown"})
+            assert status == 409 and body["error"] == "waiting_gone"
+            ta.cancel()
+            await asyncio.sleep(0.3)
+            status, body = await b.post("/api/pair/offer-for", {"waiting": wid})
+            assert status == 409 and body["error"] == "waiting_gone"
+    run(go())

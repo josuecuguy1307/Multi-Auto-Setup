@@ -17,3 +17,6 @@ consent/
 
 # local model profiles (endpoints and ids); not committed
 config/models.local.yaml
+
+# build output
+*.egg-info/

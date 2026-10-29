@@ -1,0 +1,133 @@
+{
+ "provenance": "builtin",
+ "protocol": "discover",
+ "tier": "observe",
+ "ring": 1,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "node",
+   "coordinator"
+  ],
+  "start": "searching",
+  "states": {
+   "searching": {
+    "goal": "Send one discovery query from an ephemeral port on every private LAN interface and listen for answers until the window closes. Nothing is bound to a fixed port.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "listed",
+      "needs": [
+       {
+        "fact": "discover.answers",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "empty",
+      "needs": [
+       {
+        "fact": "discover.answers",
+        "at_least": "tested",
+        "equals": false
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "listed": {
+    "goal": "Show the coordinators that answered (name, address, fingerprint). An answer before pairing is only a hint. The OWNER picks one; nothing joins silently.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "picked",
+      "needs": [
+       {
+        "fact": "discover.owner_pick",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "picked": {
+    "goal": "Dial the picked coordinator without a certificate and register as waiting: name, operating system, architecture and claimed fingerprint, nothing else.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "waiting",
+      "needs": [
+       {
+        "fact": "wait.registered",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "waiting": {
+    "goal": "Wait until the OWNER presses pair for this machine on the coordinator; only then does a code exist, bound to this machine.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "ready",
+      "needs": [
+       {
+        "fact": "wait.pair_ready",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "ready": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "the coordinator made a code for this machine: protocol-pair takes over"
+   },
+   "empty": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "nothing answered: the owner is told what to check, in this system's words, and nothing was changed"
+   }
+  }
+ }
+}
