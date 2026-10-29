@@ -15,7 +15,7 @@ from skillfactory import load_agents
 from envrec.store import Store
 
 FIX = Path(__file__).resolve().parent.parent / "fixtures" / "discovery" / "app_agents"
-SECRET = "sk-ant-TOP-SECRET-TOKEN-123"
+SECRET = "sk-TOP-SECRET-TOKEN-123"
 RAW_CONFIG = json.dumps({"mcpServers": {
     "files": {"command": "/opt/tools/bin/npx", "args": ["-y", "server-files", "--root", "/Users/someone/private", "--token", SECRET],
               "env": {"API_KEY": SECRET, "HOME_DIR": "/Users/someone"}},
