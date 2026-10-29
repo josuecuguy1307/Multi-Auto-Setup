@@ -1,0 +1,32 @@
+{
+  "SPThunderboltDataType" : [
+    {
+      "_name" : "thunderboltusb4_bus_1",
+      "device_name_key" : "MacBook Air",
+      "domain_uuid_key" : "REDACTED-1",
+      "receptacle_1_tag" : {
+        "current_speed_key" : "Up to 40 Gb/s",
+        "link_status_key" : "0x100",
+        "receptacle_id_key" : "2",
+        "receptacle_status_key" : "receptacle_no_devices_connected"
+      },
+      "route_string_key" : "0",
+      "switch_uid_key" : "0x05ACA627786F94E1",
+      "vendor_name_key" : "Apple Inc."
+    },
+    {
+      "_name" : "thunderboltusb4_bus_0",
+      "device_name_key" : "MacBook Air",
+      "domain_uuid_key" : "REDACTED-2",
+      "receptacle_1_tag" : {
+        "current_speed_key" : "Up to 40 Gb/s",
+        "link_status_key" : "0x100",
+        "receptacle_id_key" : "1",
+        "receptacle_status_key" : "receptacle_no_devices_connected"
+      },
+      "route_string_key" : "0",
+      "switch_uid_key" : "0x05ACA627786F94E0",
+      "vendor_name_key" : "Apple Inc."
+    }
+  ]
+}

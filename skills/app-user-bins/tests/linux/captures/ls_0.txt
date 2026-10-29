@@ -1,0 +1,2 @@
+my-custom-tool
+flash.sh

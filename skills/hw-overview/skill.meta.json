@@ -1,0 +1,68 @@
+{
+ "provenance": "builtin",
+ "protocol": "host",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "sp_hardware",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "system_profiler",
+      "SPHardwareDataType",
+      "-json"
+     ],
+     "timeout_s": 30
+    }
+   },
+   {
+    "id": "lscpu",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "lscpu"
+     ],
+     "timeout_s": 10
+    }
+   },
+   {
+    "id": "dt_model",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "cat",
+      "/proc/device-tree/model"
+     ],
+     "timeout_s": 5,
+     "optional": true
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "hw.machine_model",
+  "hw.machine_name",
+  "hw.chip"
+ ],
+ "legacy_id": "hw_overview",
+ "example": false
+}

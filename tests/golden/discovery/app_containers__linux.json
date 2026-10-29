@@ -1,0 +1,44 @@
+{
+ "adapter": "app_containers",
+ "counts": {
+  "entities": 1,
+  "facts": 2,
+  "resolved": 1,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "app.container_count",
+   "status": "tested",
+   "value": 1
+  },
+  {
+   "key": "app.container_runtimes",
+   "status": "tested",
+   "value": [
+    "docker_ps"
+   ]
+  },
+  {
+   "key": "app.entity.container-4f550f20",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "image": "example/web:1",
+     "name": "web",
+     "runtime": "docker",
+     "state": "running"
+    },
+    "kind": "container",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "4 of 5 captures failed: podman_ps=unavailable; prlctl=unavailable; vbox=unavailable; utm=unavailable",
+ "status": "ran",
+ "unknown_reasons": {}
+}

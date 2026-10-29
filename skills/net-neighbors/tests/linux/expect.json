@@ -1,0 +1,26 @@
+{
+ "entities": 2,
+ "entity_attrs": [
+  {
+   "interface": "eth0",
+   "ip": "192.0.2.1",
+   "oui": "00005e",
+   "randomized_mac": false,
+   "vendor": "IANA Documentation"
+  },
+  {
+   "interface": "eth0",
+   "ip": "192.0.2.40",
+   "oui": "00005e",
+   "randomized_mac": false,
+   "vendor": "IANA Documentation"
+  }
+ ],
+ "facts": {
+  "net.neighbors_count": 2,
+  "net.neighbors_incomplete": 1
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

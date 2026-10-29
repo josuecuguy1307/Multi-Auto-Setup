@@ -1,0 +1,26 @@
+# The short fixed list of TCP ports the LAN port check may connect to, and what (if anything) is read from each.
+# banner: none = connect only | passive = read the first bytes the server volunteers | http = send ONE fixed `HEAD /` and keep status + Server only | tls = handshake, keep the certificate subject
+# src: the IANA service-name and port-number registry (https://www.iana.org/assignments/service-names-port-numbers) unless stated.
+ports:
+  - {port: 22,   name: ssh,        banner: passive}
+  - {port: 23,   name: telnet,     banner: none}
+  - {port: 53,   name: domain,     banner: none}
+  - {port: 80,   name: http,       banner: http}
+  - {port: 139,  name: netbios-ssn, banner: none}
+  - {port: 443,  name: https,      banner: tls}
+  - {port: 445,  name: microsoft-ds, banner: none}
+  - {port: 515,  name: printer,    banner: none}
+  - {port: 548,  name: afpovertcp, banner: none}
+  - {port: 554,  name: rtsp,       banner: none}
+  - {port: 631,  name: ipp,        banner: http}
+  - {port: 1883, name: mqtt,       banner: none}
+  - {port: 5000, name: upnp,       banner: http}
+  - {port: 5900, name: vnc,        banner: passive}
+  - {port: 7000, name: afs3-fileserver, banner: none}
+  - {port: 8000, name: http-alt,   banner: http}
+  - {port: 8008, name: http-alt,   banner: http}
+  - {port: 8080, name: http-alt,   banner: http}
+  - {port: 8089, name: http-alt,   banner: http}
+  - {port: 8443, name: https-alt,  banner: tls}
+  - {port: 9100, name: jetdirect,  banner: none}
+  - {port: 31337, name: unregistered, banner: passive}

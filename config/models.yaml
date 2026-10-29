@@ -14,7 +14,6 @@ profiles:
     context_tokens: 8192
     view_budget_facts: 8
     menu_max: 6
-    playbooks: [host, usb]
     ring_policy: fixed_order
     options:
       timeout_s: 180
@@ -31,7 +30,6 @@ profiles:
     context_tokens: 32768
     view_budget_facts: 24
     menu_max: 8
-    playbooks: []
     ring_policy: fixed_order
     options:
       timeout_s: 120

@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from envrec.contracts import Fact, FactStatus, ModelProfile, Target
+from envrec.discovery.sanitize import quoted
 from envrec.loop.menu import MenuEntry, render_menu
 from envrec.loop.prompts import META_ACTIONS
 from envrec.store import Store
@@ -26,6 +26,8 @@ def short_value(value: Any, limit: int = VALUE_CHARS) -> str:
         s = ", ".join(map(str, value)) or "(none)"
     elif isinstance(value, dict):
         s = ", ".join(f"{k}:{'no' if v in (None, False) else 'yes'}" for k, v in value.items())
+    elif isinstance(value, str):
+        return quoted(value, limit)  # a string from the world is shown as quoted data, never as bare text that could read as an instruction
     else:
         s = str(value)
     return s if len(s) <= limit else s[: limit - 3] + "..."
@@ -41,17 +43,9 @@ def fact_line(f: Fact) -> str:
     return f"  {f.key} = {short_value(f.value)} ({f.status.value}, {n} source{'s' if n != 1 else ''})"
 
 
-def playbook_text(profile: ModelProfile, target: Target, playbook_dir: Path) -> str:
-    """One-page card per target kind, shown only to profiles that list it."""
-    if target.kind.value not in profile.playbooks:
-        return ""
-    path = playbook_dir / f"{target.kind.value}.md"
-    return path.read_text(encoding="utf-8").strip() + "\n\n" if path.is_file() else ""
-
-
 def build_view(store: Store, target: Target, profile: ModelProfile, menu: list[MenuEntry],
-               last_result: str, unknown_reasons: dict[str, str], playbook_dir: Path | None = None,
-               extra_actions: str = "", mission_text: str = "") -> str:
+               last_result: str, unknown_reasons: dict[str, str], protocol_text: str = "",
+               extra_actions: str = "", mission_text: str = "", skill_text: str = "") -> str:
     facts = store.current_facts(target.id)
     ranked = rank_facts(facts)
     budget = profile.view_budget_facts
@@ -68,8 +62,10 @@ def build_view(store: Store, target: Target, profile: ModelProfile, menu: list[M
     lines.append(f"LAST RESULT: {last_result}")
     lines += ["MENU", render_menu(menu) if menu else "  (no tools left)", f"OTHER ACTIONS: {META_ACTIONS}{extra_actions}",
               "Reply with one Action as JSON."]
-    card = playbook_text(profile, target, playbook_dir) if playbook_dir else ""
-    return card + "\n".join(lines)
+    head = [protocol_text] if protocol_text else []
+    if skill_text:
+        head.append(skill_text)
+    return ("\n".join(head) + "\n\n" if head else "") + "\n".join(lines)
 
 
 def expand_fact_text(fact: Fact, limit: int = 400) -> str:

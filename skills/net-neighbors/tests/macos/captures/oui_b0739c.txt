@@ -1,0 +1,1 @@
+{"found": true, "name": "Amazon Technologies Inc.", "source": "ieee.oui", "identifier": "b0:73:9c:00:00:03", "entries": ["B0739C  Amazon Technologies Inc."]}

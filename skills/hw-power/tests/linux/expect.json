@@ -1,0 +1,11 @@
+{
+ "entities": 0,
+ "entity_attrs": [],
+ "facts": {
+  "hw.battery_charging": true,
+  "hw.battery_percent": 87
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

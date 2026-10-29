@@ -1,0 +1,1 @@
+{"found": true, "name": "Apple, Inc.", "source": "bluetooth.company_ids", "identifier": "0x4c", "entries": ["0x004C  Apple, Inc."]}

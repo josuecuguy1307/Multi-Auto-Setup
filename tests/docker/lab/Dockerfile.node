@@ -1,0 +1,5 @@
+# Lab node: one small server per container, role chosen at start. Test fixture only.
+FROM python:3.12-slim
+RUN pip install --no-cache-dir zeroconf==0.151.5
+COPY lab_node.py /lab/lab_node.py
+ENTRYPOINT ["python", "/lab/lab_node.py"]

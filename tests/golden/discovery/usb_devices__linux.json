@@ -1,0 +1,57 @@
+{
+ "adapter": "usb_devices",
+ "counts": {
+  "entities": 2,
+  "facts": 1,
+  "resolved": 1,
+  "unknowns": 1
+ },
+ "facts": [
+  {
+   "key": "usb.device_count",
+   "status": "tested",
+   "value": 2
+  },
+  {
+   "key": "usb.entity.usb-5eb9f2b1",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "name": "QinHeng Electronics CH340 serial converter",
+     "pid": "7523",
+     "product": "CH340 serial converter",
+     "speed": null,
+     "vendor": "QinHeng Electronics",
+     "vid": "1a86"
+    },
+    "kind": "usb",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 1
+   }
+  },
+  {
+   "key": "usb.entity.usb-76b1fdd7",
+   "status": "hypothesis",
+   "value": {
+    "attrs": {
+     "name": "Unknown Maker Mystery Gadget",
+     "pid": "0001",
+     "product": null,
+     "speed": null,
+     "vendor": null,
+     "vid": "ffff"
+    },
+    "kind": "usb",
+    "owned": "owned",
+    "resolved": false,
+    "ring": 1
+   }
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

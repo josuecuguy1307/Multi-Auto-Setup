@@ -1,0 +1,32 @@
+{
+ "provenance": "builtin",
+ "protocol": "network_host",
+ "tier": "read",
+ "ring": 2,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "sweep",
+    "tool": "ping_sweep",
+    "platforms": [
+     "macos",
+     "linux"
+    ],
+    "args": {}
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "net.lan_hosts_count"
+ ],
+ "legacy_id": "lan_sweep",
+ "example": false
+}

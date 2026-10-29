@@ -1,0 +1,172 @@
+{
+ "provenance": "builtin",
+ "protocol": "host",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "ps_comm",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "ps",
+      "-axo",
+      "comm="
+     ],
+     "timeout_s": 8
+    }
+   },
+   {
+    "id": "ps_comm",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "ps",
+      "-eo",
+      "comm="
+     ],
+     "timeout_s": 8
+    }
+   },
+   {
+    "id": "lsof_tcp",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "lsof",
+      "-nP",
+      "-iTCP",
+      "-sTCP:LISTEN",
+      "-F",
+      "pcn"
+     ],
+     "timeout_s": 15,
+     "optional": true
+    }
+   },
+   {
+    "id": "lsof_tcp",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "ss",
+      "-tlnpH"
+     ],
+     "timeout_s": 15,
+     "optional": true
+    }
+   },
+   {
+    "id": "which_bins",
+    "tool": "run_command",
+    "platforms": [
+     "any"
+    ],
+    "args": {
+     "argv": [
+      "which",
+      "aider",
+      "amp",
+      "claude",
+      "code",
+      "codex",
+      "crewai",
+      "cursor",
+      "gemini",
+      "goose",
+      "interpreter",
+      "langgraph",
+      "litellm",
+      "llama-cli",
+      "llama-server",
+      "lms",
+      "mcp",
+      "mistralrs",
+      "mistralrs-server",
+      "ollama",
+      "opencode",
+      "zed"
+     ],
+     "timeout_s": 10,
+     "optional": true,
+     "answer_if_output": true
+    }
+   },
+   {
+    "id": "ls_apps",
+    "tool": "run_command",
+    "platforms": [
+     "any"
+    ],
+    "args": {
+     "argv": [
+      "ls",
+      "-1",
+      "/Applications"
+     ],
+     "timeout_s": 10,
+     "optional": true
+    }
+   },
+   {
+    "id": "ls_cfg",
+    "tool": "run_command",
+    "platforms": [
+     "any"
+    ],
+    "args": {
+     "argv": [
+      "ls",
+      "-1",
+      "-d",
+      "~/.claude",
+      "~/Library/Application Support/Claude",
+      "~/.codex",
+      "~/.gemini",
+      "~/.cursor",
+      "~/.codeium",
+      "~/.config/zed",
+      "~/.continue",
+      "~/.cline",
+      "~/.aider",
+      "~/.config/opencode",
+      "~/.config/goose",
+      "~/.ollama",
+      "~/.lmstudio",
+      "~/.cache/lm-studio",
+      "~/jan"
+     ],
+     "timeout_s": 10,
+     "optional": true,
+     "answer_if_output": true
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "app.agent_count"
+ ],
+ "legacy_id": "app_agents",
+ "example": false
+}

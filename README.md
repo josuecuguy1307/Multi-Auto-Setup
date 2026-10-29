@@ -10,10 +10,11 @@ Tests with Meta's models are planned for Thursday, October 29.
 
 ## What it does
 
-- **Recognition.** Read-only probes find out what the machine is. They return typed facts with their evidence. The model sees a short, budgeted view and a closed menu and answers with one validated JSON action per turn.
-- **Unknown devices.** Anything the probes do not recognize goes up a ladder (tested, honestly unknown, or contradicted) on recorded replay devices.
-- **Pairing with owner permission.** A device becomes a target only when you enroll it yourself, in a terminal. Nothing the model says can create a target.
-- **Workspace self-setup.** For an enrolled device, the controller plans and sets up a model server that listens only on that device's localhost, reached through an SSH tunnel it opens. Every write asks for a fresh approval that shows the exact command, and one approved command removes everything again.
+- **Self-discovery.** Read-only probes find out what the machine is, what is attached to it (USB, serial, Bluetooth) and what else is on the local network.
+- **Pairing with owner permission.** A device becomes a target only when you enroll it yourself, in a terminal. Discovered devices are inventory and never targets on their own.
+- **Workspace self-setup.** For an enrolled device, the controller plans and sets up a model server that listens only on that device's localhost, reached through an SSH tunnel it opens. Every write asks for a fresh approval that shows the exact command and its undo, and one approved command removes everything again.
+- **Evidence-based facts.** Probes return typed facts with their evidence. The model sees a short, budgeted view and a closed menu and answers with one validated JSON action per turn. A privacy gate keeps device identifiers out of stored facts.
+- **Skills.** What the harness learns about a kind of device is kept as a skill folder (`skills/`) with its own tests, and is re-verified on each new device.
 
 ## Setup
 
@@ -32,10 +33,14 @@ The test suite uses scripted models and recorded fixtures. Some tests use Docker
 ## Run
 
 ```bash
+.venv/bin/python -m envrec discover
+```
+
+```bash
 .venv/bin/python -m envrec run --profile muse-glimmer
 ```
 
-`inventory`, `enroll`, `fleet`, `deploy` and `undo` handle enrolled devices; see `docs/CONNECTING_DEVICES.md` and `docs/PROVISIONING_SAFETY.md`. `python -m envrec --help` lists everything.
+`enroll`, `fleet`, `deploy` and `undo` handle enrolled devices; see `docs/CONNECTING_DEVICES.md` and `docs/PROVISIONING_SAFETY.md`. `python -m envrec --help` lists everything.
 
 ## Configure the Meta models
 
@@ -63,7 +68,7 @@ profiles:
 - Own or authorized devices only.
 - Read-only by default. Every write needs a fresh approval for that exact action; there is no "approve all".
 - No credentials in the repo. SSH keys are referenced by environment variable name, and key paths are never logged.
-- Pairing cannot be bypassed: enrollment needs a terminal and your typed confirmation.
+- Pairing cannot be bypassed: enrollment needs a terminal and your typed confirmation, and nothing the model says can create a target.
 
 ## Status
 

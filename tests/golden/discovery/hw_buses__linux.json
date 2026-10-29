@@ -1,0 +1,53 @@
+{
+ "adapter": "hw_buses",
+ "counts": {
+  "entities": 2,
+  "facts": 1,
+  "resolved": 2,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "hw.entity.pci-4b6fb3ea",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "class": "VGA compatible controller",
+     "name": "Example Corp GPU 9000",
+     "pid": "9000",
+     "vid": "1234"
+    },
+    "kind": "pci",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 1
+   }
+  },
+  {
+   "key": "hw.entity.pci-5728d684",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "class": "Host bridge",
+     "name": "Example Corp Host Bridge",
+     "pid": "0001",
+     "vid": "1234"
+    },
+    "kind": "pci",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 1
+   }
+  },
+  {
+   "key": "hw.pci_device_count",
+   "status": "tested",
+   "value": 2
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

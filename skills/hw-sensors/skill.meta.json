@@ -1,0 +1,37 @@
+{
+ "provenance": "builtin",
+ "protocol": "sensor",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "sensors",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "sensors",
+      "-u"
+     ],
+     "timeout_s": 8,
+     "optional": true
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "sensor.count"
+ ],
+ "legacy_id": "hw_sensors",
+ "example": false
+}

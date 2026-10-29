@@ -1,0 +1,6 @@
+{
+ "adapter": "usb_devices",
+ "platform": "macos",
+ "synthetic": false,
+ "source": "captured on a real Mac, redacted"
+}

@@ -1,0 +1,1 @@
+[{"id": "a1b2c3d4", "rssi": -48, "company": [76], "services": ["0000180f-0000-1000-8000-00805f9b34fb"], "tx": 8}, {"id": "e5f6a7b8", "rssi": -80, "company": [117], "services": [], "tx": null}, {"id": "c0ffee00", "rssi": -90, "company": [], "services": [], "tx": null}]

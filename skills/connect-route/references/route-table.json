@@ -1,0 +1,105 @@
+{
+ "_comment": "Preference order by what is known about the device. The first rule that matches decides; the human's allowed list then filters it. Owned by the human: edit it yourself.",
+ "rules": [
+  {
+   "when": {
+    "fact": "host.kind",
+    "in": [
+     "container"
+    ]
+   },
+   "prefer": [
+    "docker_exec",
+    "ssh"
+   ],
+   "why": [
+    "host.kind={kind}"
+   ]
+  },
+  {
+   "when": {
+    "any": [
+     {
+      "fact": "host.kind",
+      "in": [
+       "phone"
+      ]
+     },
+     {
+      "fact": "os.name",
+      "in": [
+       "android"
+      ]
+     }
+    ]
+   },
+   "prefer": [
+    "adb_usb",
+    "ssh"
+   ],
+   "why": [
+    "host.kind={kind}",
+    "os.name={os_name}"
+   ]
+  },
+  {
+   "when": {
+    "fact": "host.kind",
+    "in": [
+     "instrument",
+     "sensor"
+    ]
+   },
+   "prefer": [
+    "tcp",
+    "serial"
+   ],
+   "why": [
+    "host.kind={kind}"
+   ]
+  },
+  {
+   "when": {
+    "fact": "host.kind",
+    "in": [
+     "sbc",
+     "microcontroller"
+    ]
+   },
+   "prefer": [
+    "ssh",
+    "serial"
+   ],
+   "why": [
+    "host.kind={kind}"
+   ]
+  },
+  {
+   "when": {
+    "fact": "os.name",
+    "in": [
+     "linux",
+     "macos"
+    ]
+   },
+   "prefer": [
+    "ssh"
+   ],
+   "why": [
+    "os.name={os_name}"
+   ]
+  }
+ ],
+ "default": {
+  "prefer": [
+   "ssh",
+   "docker_exec",
+   "adb_usb",
+   "serial",
+   "tcp"
+  ],
+  "why": [
+   "no rule matched: allowed order"
+  ]
+ }
+}

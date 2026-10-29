@@ -1,0 +1,36 @@
+{
+ "_comment": "Conservative q4 estimates. Rows are checked from the top; the first whose min RAM is met sets the cap.",
+ "ram_table": [
+  [
+   16.0,
+   13.0
+  ],
+  [
+   8.0,
+   7.0
+  ],
+  [
+   4.0,
+   3.0
+  ],
+  [
+   2.0,
+   1.5
+  ],
+  [
+   1.0,
+   0.5
+  ]
+ ],
+ "catalog_params_b": [
+  0.5,
+  1.0,
+  1.5,
+  3.0,
+  7.0,
+  13.0
+ ],
+ "quant": "q4",
+ "gb_per_b_params": 0.6,
+ "runtime_overhead_gb": 0.5
+}

@@ -1,0 +1,128 @@
+{
+ "provenance": "builtin",
+ "protocol": "host",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "sw_vers",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "sw_vers"
+     ],
+     "timeout_s": 5
+    }
+   },
+   {
+    "id": "uname",
+    "tool": "run_command",
+    "platforms": [
+     "any"
+    ],
+    "args": {
+     "argv": [
+      "uname",
+      "-srm"
+     ],
+     "timeout_s": 5
+    }
+   },
+   {
+    "id": "boottime",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "sysctl",
+      "-n",
+      "kern.boottime"
+     ],
+     "timeout_s": 5
+    }
+   },
+   {
+    "id": "now",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "sysctl",
+      "-n",
+      "kern.monotonicclock"
+     ],
+     "timeout_s": 5,
+     "optional": true
+    }
+   },
+   {
+    "id": "locale",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "defaults",
+      "read",
+      "-g",
+      "AppleLocale"
+     ],
+     "timeout_s": 5,
+     "optional": true
+    }
+   },
+   {
+    "id": "os_release",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "cat",
+      "/etc/os-release"
+     ],
+     "timeout_s": 5
+    }
+   },
+   {
+    "id": "proc_uptime",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "cat",
+      "/proc/uptime"
+     ],
+     "timeout_s": 5
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "os.build",
+  "os.uptime_s",
+  "os.locale"
+ ],
+ "legacy_id": "os_info",
+ "example": false
+}

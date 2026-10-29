@@ -1,0 +1,102 @@
+{
+ "entities": 10,
+ "entity_attrs": [
+  {
+   "category": "coding_agent",
+   "name": "Codex CLI",
+   "seen_as": [
+    "binary",
+    "config"
+   ],
+   "source": "https://github.com/openai/codex",
+   "state": "installed"
+  },
+  {
+   "category": "ide_assistant",
+   "name": "Visual Studio Code",
+   "seen_as": [
+    "binary",
+    "app"
+   ],
+   "source": "https://code.visualstudio.com",
+   "state": "installed"
+  },
+  {
+   "category": "assistant_app",
+   "name": "Claude desktop app",
+   "seen_as": [
+    "app",
+    "config"
+   ],
+   "source": "https://claude.ai/download",
+   "state": "installed"
+  },
+  {
+   "category": "agent_framework",
+   "name": "MCP command line tools",
+   "seen_as": [
+    "binary"
+   ],
+   "source": "https://modelcontextprotocol.io",
+   "state": "installed"
+  },
+  {
+   "category": "coding_agent",
+   "name": "opencode",
+   "seen_as": [
+    "config"
+   ],
+   "source": "https://opencode.ai",
+   "state": "installed"
+  },
+  {
+   "category": "assistant_app",
+   "name": "ChatGPT desktop app",
+   "seen_as": [
+    "app"
+   ],
+   "source": "https://openai.com/chatgpt/desktop",
+   "state": "installed"
+  },
+  {
+   "category": "local_model_runner",
+   "name": "Ollama",
+   "seen_as": [
+    "binary",
+    "config"
+   ],
+   "source": "https://ollama.com",
+   "state": "installed"
+  },
+  {
+   "category": "coding_agent",
+   "name": "Gemini CLI",
+   "seen_as": [
+    "config"
+   ],
+   "source": "https://github.com/google-gemini/gemini-cli",
+   "state": "installed"
+  },
+  {
+   "category": "coding_agent",
+   "name": "Claude Code",
+   "seen_as": [
+    "binary",
+    "config"
+   ],
+   "source": "https://www.anthropic.com/claude-code",
+   "state": "installed"
+  },
+  {
+   "client": "claude-desktop",
+   "command": "python3",
+   "name": "REDACTED-NAME"
+  }
+ ],
+ "facts": {
+  "app.agent_count": 9
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

@@ -1,0 +1,47 @@
+{
+ "adapter": "hw_peripherals",
+ "counts": {
+  "entities": 2,
+  "facts": 1,
+  "resolved": 2,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "hw.camera_count",
+   "status": "tested",
+   "value": 2
+  },
+  {
+   "key": "hw.entity.camera-06dc7c3b",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "name": "video1"
+    },
+    "kind": "camera",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "hw.entity.camera-0b499ebb",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "name": "video0"
+    },
+    "kind": "camera",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

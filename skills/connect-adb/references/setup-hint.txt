@@ -1,0 +1,1 @@
+connect the cable, turn on USB debugging in developer options and accept the key prompt on the phone, then re-run

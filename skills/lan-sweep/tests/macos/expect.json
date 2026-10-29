@@ -1,0 +1,30 @@
+{
+ "entities": 2,
+ "entity_attrs": [
+  {
+   "interface": "en0",
+   "ip": "192.0.2.1",
+   "oui": "00005e",
+   "randomized_mac": false,
+   "vendor": "IANA Documentation"
+  },
+  {
+   "interface": "en0",
+   "ip": "192.0.2.40",
+   "oui": "00005e",
+   "randomized_mac": false,
+   "vendor": "IANA Documentation"
+  }
+ ],
+ "facts": {
+  "net.lan_hosts_count": 3,
+  "net.lan_sweep_scope": {
+   "network": "192.0.2.0/24",
+   "rate_per_s": 50,
+   "scanned": 253
+  }
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

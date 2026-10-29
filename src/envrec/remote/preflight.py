@@ -32,6 +32,9 @@ class Preflight:
     gpu: bool
     pkg_manager: str
     python: str | None
+    cpus: int = 1
+    cpu_features: tuple[str, ...] = ()
+    accel: str = "none"
     raw: dict[str, str] = field(default_factory=dict)
 
     @property
@@ -71,6 +74,13 @@ def parse_os_id(text: str) -> str | None:
     return None
 
 
+def parse_cpu_flags(text: str) -> tuple[str, ...]:
+    """'flags : fpu avx2 ...' or 'Features : fp asimd ...' -> a sorted tuple of the flags."""
+    if ":" not in text:
+        return ()
+    return tuple(sorted(set(text.split(":", 1)[1].split())))
+
+
 def run_preflight(runner: RemoteRunner, target_id: str, transport: Transport) -> Preflight:
     def get(template: str, values: dict | None = None, *, required: bool = True) -> str:
         r = runner.run(target_id, transport, template, values)
@@ -83,11 +93,15 @@ def run_preflight(runner: RemoteRunner, target_id: str, transport: Transport) ->
     raw = {t: get(t) for t in ("uname_m", "uname_s", "os_release", "meminfo", "cgroup_mem", "gpu_probe", "pkg_manager")}
     raw["df_free"] = get("df_free", {"path": "/opt"})
     py = get("python_version", required=False) or None
+    raw["nproc"] = get("nproc", required=False) or "1"
+    raw["cpu_flags"] = get("cpu_flags", required=False)
+    raw["accel_probe"] = get("accel_probe", required=False) or "none"
     return Preflight(
         arch=raw["uname_m"], os_name=raw["uname_s"], os_id=parse_os_id(raw["os_release"]),
         ram_reported_gib=parse_meminfo(raw["meminfo"]), ram_limit_gib=parse_cgroup(raw["cgroup_mem"]),
         disk_free_gb=parse_df(raw["df_free"]), gpu=raw["gpu_probe"] == "nvidia", pkg_manager=raw["pkg_manager"],
-        python=py, raw=raw)
+        python=py, cpus=int(raw["nproc"]) if raw["nproc"].isdigit() else 1,
+        cpu_features=parse_cpu_flags(raw["cpu_flags"]), accel=raw["accel_probe"], raw=raw)
 
 
 def preflight_facts(pf: Preflight, target: Target, store: Store, transport: Transport, event_id: str | None = None) -> list[Fact]:
@@ -96,7 +110,8 @@ def preflight_facts(pf: Preflight, target: Target, store: Store, transport: Tran
                   limitations=["read over the transport with fixed read-only templates"])
     pairs = [("os.name", pf.os_name), ("os.arch", pf.arch), ("hw.ram_total_gib", pf.ram_effective_gib),
              ("hw.ram_host_reported_gib", pf.ram_reported_gib), ("hw.disk_free_gib", pf.disk_free_gb),
-             ("host.package_manager", pf.pkg_manager), ("hw.gpu_present", pf.gpu)]
+             ("host.package_manager", pf.pkg_manager), ("hw.gpu_present", pf.gpu),
+             ("hw.accelerator", pf.accel), ("hw.cpu_threads", pf.cpus)]
     if pf.ram_limit_gib is not None:
         pairs.append(("hw.ram_limit_gib", pf.ram_limit_gib))
     facts = [Fact(target_id=target.id, key=k, value=v, status=FactStatus.tested, evidence=[ev], created_by=CreatedBy.adapter)

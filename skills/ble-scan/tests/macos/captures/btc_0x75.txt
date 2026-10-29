@@ -1,0 +1,1 @@
+{"found": true, "name": "Samsung Electronics Co. Ltd.", "source": "bluetooth.company_ids", "identifier": "0x75", "entries": ["0x0075  Samsung Electronics Co. Ltd."]}

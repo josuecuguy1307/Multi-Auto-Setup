@@ -37,15 +37,9 @@ def make_adapter(profile: ModelProfile, options: dict[str, Any] | None = None) -
     raise ValueError(f"profile kind {profile.kind.value!r} needs to be built in code (scripted models)")
 
 
-def with_view_budget(profile: ModelProfile, view_budget_facts: int | None, menu_max: int | None,
-                     cards: list[str] | None = None) -> ModelProfile:
-    """The dials that separate a small profile from a strong one. Nothing else changes.
-
-    `cards` overrides which playbook cards the model is shown (empty list = none), so scaffolding
-    can be separated from model size in an experiment."""
+def with_view_budget(profile: ModelProfile, view_budget_facts: int | None, menu_max: int | None) -> ModelProfile:
+    """The dials that separate a small profile from a strong one. Nothing else changes: the protocols are the same for every model."""
     update: dict = {}
-    if cards is not None:
-        update["playbooks"] = cards
     if view_budget_facts is not None:
         update["view_budget_facts"] = view_budget_facts
     if menu_max is not None:

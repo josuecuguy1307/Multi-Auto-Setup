@@ -1,0 +1,105 @@
+{
+ "provenance": "builtin",
+ "protocol": "host",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "docker_ps",
+    "tool": "run_command",
+    "platforms": [
+     "any"
+    ],
+    "args": {
+     "argv": [
+      "docker",
+      "ps",
+      "--format",
+      "json"
+     ],
+     "timeout_s": 10,
+     "optional": true
+    }
+   },
+   {
+    "id": "podman_ps",
+    "tool": "run_command",
+    "platforms": [
+     "any"
+    ],
+    "args": {
+     "argv": [
+      "podman",
+      "ps",
+      "--format",
+      "json"
+     ],
+     "timeout_s": 10,
+     "optional": true
+    }
+   },
+   {
+    "id": "prlctl",
+    "tool": "run_command",
+    "platforms": [
+     "any"
+    ],
+    "args": {
+     "argv": [
+      "prlctl",
+      "list",
+      "-a",
+      "-j"
+     ],
+     "timeout_s": 10,
+     "optional": true
+    }
+   },
+   {
+    "id": "vbox",
+    "tool": "run_command",
+    "platforms": [
+     "any"
+    ],
+    "args": {
+     "argv": [
+      "VBoxManage",
+      "list",
+      "vms"
+     ],
+     "timeout_s": 10,
+     "optional": true
+    }
+   },
+   {
+    "id": "utm",
+    "tool": "run_command",
+    "platforms": [
+     "any"
+    ],
+    "args": {
+     "argv": [
+      "utmctl",
+      "list"
+     ],
+     "timeout_s": 10,
+     "optional": true
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "app.container_count"
+ ],
+ "legacy_id": "app_containers",
+ "example": false
+}

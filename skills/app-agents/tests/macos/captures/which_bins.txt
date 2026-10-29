@@ -1,0 +1,5 @@
+/Users/user/.local/bin/claude
+/usr/local/bin/code
+/Users/user/.nvm/versions/node/v22.20.0/bin/codex
+/opt/miniconda3/bin/mcp
+/opt/homebrew/bin/ollama

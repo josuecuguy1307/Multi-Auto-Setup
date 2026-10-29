@@ -1,0 +1,1 @@
+{"found": true, "name": "Battery Service", "source": "bluetooth.service_uuids", "identifier": "0000180f-0000-1000-8000-00805f9b34fb", "entries": ["180f  Battery Service"]}

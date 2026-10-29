@@ -1,0 +1,39 @@
+{
+ "entities": 5,
+ "entity_attrs": [
+  {
+   "input": false,
+   "name": "Bocinas de MacBook Air",
+   "output": true,
+   "transport": "builtin"
+  },
+  {
+   "input": true,
+   "name": "Micr\u00f3fono de MacBook Air",
+   "output": false,
+   "transport": "builtin"
+  },
+  {
+   "input": true,
+   "name": "ZoomAudioDevice",
+   "output": true,
+   "transport": "virtual"
+  },
+  {
+   "name": "C\u00e1mara FaceTime HD"
+  },
+  {
+   "name": "EPSON ET-2760 Series",
+   "status": "idle",
+   "uri_scheme": "dnssd"
+  }
+ ],
+ "facts": {
+  "hw.audio_device_count": 3,
+  "hw.camera_count": 1,
+  "hw.printer_count": 1
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

@@ -1,0 +1,65 @@
+{
+ "entities": 18,
+ "entity_attrs": [
+  {
+   "name": "agent"
+  },
+  {
+   "name": "rust-gdbgui"
+  },
+  {
+   "name": "python3.13"
+  },
+  {
+   "name": "rustfmt"
+  },
+  {
+   "name": "rustdoc"
+  },
+  {
+   "name": "cargo-miri"
+  },
+  {
+   "name": "cargo-fmt"
+  },
+  {
+   "name": "mcp_massive"
+  },
+  {
+   "name": "unsloth"
+  },
+  {
+   "name": "cargo-clippy"
+  },
+  {
+   "name": "grok"
+  },
+  {
+   "name": "rust-lldb"
+  },
+  {
+   "name": "rust-analyzer"
+  },
+  {
+   "name": "uvx"
+  },
+  {
+   "name": "rust-gdb"
+  },
+  {
+   "name": "rls"
+  },
+  {
+   "name": "clippy-driver"
+  },
+  {
+   "name": "claude-science"
+  }
+ ],
+ "facts": {
+  "app.unknown_executable_count": 18
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

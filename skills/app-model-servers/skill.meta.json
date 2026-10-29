@@ -1,0 +1,55 @@
+{
+ "provenance": "builtin",
+ "protocol": "host",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "lsof_tcp",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "lsof",
+      "-nP",
+      "-iTCP",
+      "-sTCP:LISTEN",
+      "-F",
+      "pn"
+     ],
+     "timeout_s": 15
+    }
+   },
+   {
+    "id": "ss_tcp",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "ss",
+      "-tlnH"
+     ],
+     "timeout_s": 8
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "app.model_server_count"
+ ],
+ "legacy_id": "app_model_servers",
+ "example": false
+}

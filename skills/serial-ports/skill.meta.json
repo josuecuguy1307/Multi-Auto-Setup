@@ -1,0 +1,54 @@
+{
+ "provenance": "builtin",
+ "protocol": "serial",
+ "tier": "observe",
+ "ring": 1,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "dev_list",
+    "tool": "run_command",
+    "platforms": [
+     "any"
+    ],
+    "args": {
+     "argv": [
+      "ls",
+      "-1",
+      "/dev"
+     ],
+     "timeout_s": 5
+    }
+   },
+   {
+    "id": "by_id",
+    "tool": "run_command",
+    "platforms": [
+     "any"
+    ],
+    "args": {
+     "argv": [
+      "ls",
+      "-1",
+      "/dev/serial/by-id"
+     ],
+     "timeout_s": 5,
+     "optional": true
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "serial.port_count"
+ ],
+ "legacy_id": "serial_ports",
+ "example": false
+}

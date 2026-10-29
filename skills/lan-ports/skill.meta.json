@@ -1,0 +1,32 @@
+{
+ "provenance": "builtin",
+ "protocol": "network_host",
+ "tier": "read",
+ "ring": 2,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "ports",
+    "tool": "tcp_scan",
+    "platforms": [
+     "macos",
+     "linux"
+    ],
+    "args": {}
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "net.open_ports"
+ ],
+ "legacy_id": "lan_ports",
+ "example": false
+}

@@ -1,0 +1,38 @@
+{
+ "adapter": "serial_probe",
+ "counts": {
+  "entities": 1,
+  "facts": 0,
+  "resolved": 1,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "serial.entity.serial-probe-f490e485",
+   "status": "hypothesis",
+   "value": {
+    "attrs": {
+     "banner": "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47",
+     "baud": 9600,
+     "heard_unprompted": true,
+     "links": [
+      "serial-f490e485"
+     ],
+     "port": "cu.usbserial-SYN0001",
+     "protocol_guess": "nmea",
+     "responded": true,
+     "sent": []
+    },
+    "kind": "serial_probe",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 1
+   }
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

@@ -1,0 +1,10 @@
+cpu_thermal-virtual-0
+Adapter: Virtual device
+temp1:
+  temp1_input: 52.300
+  temp1_crit: 90.000
+
+rp1_adc-isa-0000
+Adapter: ISA adapter
+in1:
+  in1_input: 0.812

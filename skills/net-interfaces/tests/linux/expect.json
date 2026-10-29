@@ -1,0 +1,24 @@
+{
+ "entities": 1,
+ "entity_attrs": [
+  {
+   "address": "192.0.2.20/24",
+   "interface": "eth0",
+   "self": true
+  }
+ ],
+ "facts": {
+  "net.addresses": [
+   "eth0 192.0.2.20/24"
+  ],
+  "net.default_gateway": "192.0.2.1",
+  "net.default_interface": "eth0",
+  "net.dns_servers": [
+   "192.0.2.1",
+   "198.51.100.53"
+  ]
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

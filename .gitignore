@@ -8,6 +8,11 @@ __pycache__/
 *.db
 runs/
 build/worker/dist/
+.live-cache/
+.DS_Store
+.config/
+skills/state/
+skills/generated/
 
 # local model profiles (endpoints and ids); not committed
 config/models.local.yaml

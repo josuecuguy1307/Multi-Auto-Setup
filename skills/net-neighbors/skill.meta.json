@@ -1,0 +1,51 @@
+{
+ "provenance": "builtin",
+ "protocol": "network_host",
+ "tier": "observe",
+ "ring": 2,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "arp",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "arp",
+      "-an"
+     ],
+     "timeout_s": 8
+    }
+   },
+   {
+    "id": "ip_neigh",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "ip",
+      "neigh"
+     ],
+     "timeout_s": 8
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "net.neighbors_count"
+ ],
+ "legacy_id": "net_neighbors",
+ "example": false
+}

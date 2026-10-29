@@ -1,0 +1,36 @@
+{
+ "adapter": "app_model_servers",
+ "counts": {
+  "entities": 1,
+  "facts": 1,
+  "resolved": 1,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "app.entity.model-server-9924bdc6",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "kind": "llama.cpp-server",
+     "port": 8089,
+     "version": null
+    },
+    "kind": "model_server",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.model_server_count",
+   "status": "tested",
+   "value": 1
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

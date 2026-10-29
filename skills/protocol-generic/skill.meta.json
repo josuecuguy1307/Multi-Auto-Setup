@@ -1,0 +1,167 @@
+{
+ "provenance": "builtin",
+ "protocol": "generic",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "unknown"
+  ],
+  "start": "known",
+  "states": {
+   "known": {
+    "goal": "Check whether a saved skill already matches this target.",
+    "tags": [
+     "skill"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "probe",
+      "needs": [
+       {
+        "tried": "skill.match"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "probe": {
+    "goal": "Make broad, harmless reads.",
+    "tags": [
+     "generic_read"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "guess",
+      "needs": [
+       {
+        "tool_tag": "generic_read"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "guess": {
+    "goal": "Match what you read against the public lists and signatures; then make one confirming read.",
+    "tags": [
+     "table_lookup",
+     "identify"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "research",
+      "needs": [
+       {
+        "tool_tag": "table_lookup"
+       }
+      ]
+     },
+     {
+      "to": "done",
+      "needs": [
+       {
+        "facts_prefix": "serial.protocol",
+        "at_least_n": 1,
+        "status_min": "tested"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "research": {
+    "goal": "Read the manual or notes for this device, if any.",
+    "tags": [],
+    "tools": [],
+    "actions": [
+     "research"
+    ],
+    "advance": [
+     {
+      "to": "generate",
+      "needs": [
+       {
+        "action": "research"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "generate": {
+    "goal": "Write a parser from what you learned and test it.",
+    "tags": [],
+    "tools": [
+     "skill.authoring"
+    ],
+    "actions": [
+     "propose_skill"
+    ],
+    "advance": [
+     {
+      "to": "ask",
+      "needs": [
+       {
+        "action": "propose_skill"
+       }
+      ]
+     },
+     {
+      "to": "done",
+      "needs": [
+       {
+        "fact": "skill.saved",
+        "at_least": "verified"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "ask": {
+    "goal": "Record what is unknown and ask the human.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "action": "ask_human"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "identified and saved as a skill, or handed to the human with the unknowns written down"
+   }
+  }
+ }
+}

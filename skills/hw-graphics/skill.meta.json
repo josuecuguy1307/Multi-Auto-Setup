@@ -1,0 +1,53 @@
+{
+ "provenance": "builtin",
+ "protocol": "host",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "sp_displays",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "system_profiler",
+      "SPDisplaysDataType",
+      "-json"
+     ],
+     "timeout_s": 30
+    }
+   },
+   {
+    "id": "lspci",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "lspci"
+     ],
+     "timeout_s": 10,
+     "optional": true
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "hw.gpu_count",
+  "hw.display_count"
+ ],
+ "legacy_id": "hw_graphics",
+ "example": false
+}

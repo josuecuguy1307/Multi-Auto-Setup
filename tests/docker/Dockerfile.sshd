@@ -1,6 +1,6 @@
-# Test fixture only: a small Linux box with sshd, a user, and python3. Key arrives via $PUBKEY at start.
+# Test fixture only: a small Linux box with sshd, a user, python3 and libgomp1 (the OpenMP runtime the llama.cpp CPU builds link). Key arrives via $PUBKEY at start.
 FROM python:3.12-slim
-RUN apt-get update && apt-get install -y --no-install-recommends openssh-server procps \
+RUN apt-get update && apt-get install -y --no-install-recommends openssh-server procps libgomp1 \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /run/sshd /opt/envrec \
     && useradd -m -s /bin/bash josue && passwd -l josue \

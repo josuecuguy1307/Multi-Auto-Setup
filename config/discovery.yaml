@@ -1,0 +1,6 @@
+# Discovery settings. Folders listed under rea_roots are the ONLY places REA may inspect (static analysis, read-only).
+rea_roots: []            # e.g. ["/Users/you/projects/my-app"]
+subnet_cap_prefix: 24    # widest network discovery may scan (24 to 22); only your own interfaces' RFC1918 subnets are ever allowed
+scan_rate_per_s: 50      # packets per second for sweeps and port checks
+ble_scan_seconds: 8
+mdns_browse_seconds: 6

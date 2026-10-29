@@ -1,0 +1,1 @@
+{"found": true, "name": "IPP (Internet Printing Protocol)", "source": "iana.service_names", "identifier": "_ipp._tcp", "entries": ["ipp (tcp): IPP (Internet Printing Protocol)"]}

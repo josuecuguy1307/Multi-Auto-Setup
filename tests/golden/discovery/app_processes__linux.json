@@ -1,0 +1,65 @@
+{
+ "adapter": "app_processes",
+ "counts": {
+  "entities": 0,
+  "facts": 3,
+  "resolved": 0,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "app.process_classes",
+   "status": "tested",
+   "value": {
+    "system": 1,
+    "user": 6
+   }
+  },
+  {
+   "key": "app.process_count",
+   "status": "tested",
+   "value": 7
+  },
+  {
+   "key": "app.processes",
+   "status": "tested",
+   "value": [
+    {
+     "class": "user",
+     "count": 2,
+     "name": "bash"
+    },
+    {
+     "class": "user",
+     "count": 1,
+     "name": "systemd"
+    },
+    {
+     "class": "user",
+     "count": 1,
+     "name": "sshd"
+    },
+    {
+     "class": "user",
+     "count": 1,
+     "name": "llama-server"
+    },
+    {
+     "class": "user",
+     "count": 1,
+     "name": "python3"
+    },
+    {
+     "class": "system",
+     "count": 1,
+     "name": "cron"
+    }
+   ]
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

@@ -1,0 +1,10 @@
+{
+ "entities": 0,
+ "entity_attrs": [],
+ "facts": {
+  "usb.device_count": 0
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

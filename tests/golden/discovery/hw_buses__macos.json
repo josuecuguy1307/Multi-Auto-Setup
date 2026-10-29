@@ -1,0 +1,26 @@
+{
+ "adapter": "hw_buses",
+ "counts": {
+  "entities": 0,
+  "facts": 2,
+  "resolved": 0,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "hw.thunderbolt_devices_connected",
+   "status": "tested",
+   "value": 0
+  },
+  {
+   "key": "hw.thunderbolt_ports",
+   "status": "tested",
+   "value": 2
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

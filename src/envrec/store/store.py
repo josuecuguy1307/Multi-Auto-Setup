@@ -217,6 +217,9 @@ class Store:
             )
         return skill
 
+    def all_skills(self) -> list[Skill]:
+        return [Skill.model_validate_json(r[0]) for r in self.db.execute("SELECT json FROM skills ORDER BY id").fetchall()]
+
     def find_skill(self, signature: str) -> Skill | None:
         row = self.db.execute("SELECT json FROM skills WHERE signature = ?", (signature,)).fetchone()
         return Skill.model_validate_json(row["json"]) if row else None

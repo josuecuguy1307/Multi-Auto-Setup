@@ -1,0 +1,107 @@
+{
+ "adapter": "hw_peripherals",
+ "counts": {
+  "entities": 5,
+  "facts": 3,
+  "resolved": 5,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "hw.audio_device_count",
+   "status": "tested",
+   "value": 3
+  },
+  {
+   "key": "hw.camera_count",
+   "status": "tested",
+   "value": 1
+  },
+  {
+   "key": "hw.entity.audio-1b8b7113",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "input": false,
+     "name": "Bocinas de MacBook Air",
+     "output": true,
+     "transport": "builtin"
+    },
+    "kind": "audio",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "hw.entity.audio-90ee6d92",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "input": true,
+     "name": "Micr\u00f3fono de MacBook Air",
+     "output": false,
+     "transport": "builtin"
+    },
+    "kind": "audio",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "hw.entity.audio-fc5171c0",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "input": true,
+     "name": "ZoomAudioDevice",
+     "output": true,
+     "transport": "virtual"
+    },
+    "kind": "audio",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "hw.entity.camera-69e76c10",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "name": "C\u00e1mara FaceTime HD"
+    },
+    "kind": "camera",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "hw.entity.printer-d4bf7857",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "name": "EPSON ET-2760 Series",
+     "status": "idle",
+     "uri_scheme": "dnssd"
+    },
+    "kind": "printer",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "hw.printer_count",
+   "status": "tested",
+   "value": 1
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

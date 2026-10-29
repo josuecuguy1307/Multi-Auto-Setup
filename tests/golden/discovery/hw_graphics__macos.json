@@ -1,0 +1,58 @@
+{
+ "adapter": "hw_graphics",
+ "counts": {
+  "entities": 2,
+  "facts": 2,
+  "resolved": 2,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "hw.display_count",
+   "status": "tested",
+   "value": 1
+  },
+  {
+   "key": "hw.entity.display-23b4fc25",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "connection": "internal",
+     "main": true,
+     "name": "Color LCD",
+     "resolution": "1470 x 956 @ 60.00Hz"
+    },
+    "kind": "display",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "hw.entity.gpu-cd65d2b6",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "bus": "builtin",
+     "cores": "10",
+     "metal": "metal3",
+     "name": "Apple M3"
+    },
+    "kind": "gpu",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "hw.gpu_count",
+   "status": "tested",
+   "value": 1
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

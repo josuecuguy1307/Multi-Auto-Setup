@@ -1,0 +1,116 @@
+{
+ "provenance": "builtin",
+ "protocol": "instrument",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "instrument"
+  ],
+  "start": "reach",
+  "states": {
+   "reach": {
+    "goal": "Find the channel the instrument answers on.",
+    "tags": [
+     "serial",
+     "network",
+     "attached",
+     "skill"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "identify",
+      "needs": [
+       {
+        "any": [
+         {
+          "tool_tag": "serial"
+         },
+         {
+          "tool_tag": "network"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "identify": {
+    "goal": "Ask it who it is with the standard identification query.",
+    "tags": [],
+    "tools": [
+     "serial_identify"
+    ],
+    "actions": [],
+    "advance": [
+     {
+      "to": "match",
+      "needs": [
+       {
+        "tool": "serial_identify"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "match": {
+    "goal": "Match the answer against known identification formats.",
+    "tags": [
+     "identify",
+     "table_lookup"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "ask",
+      "needs": [
+       {
+        "tried": "serial.protocol"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "ask": {
+    "goal": "Ask the human what is still unknown.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "action": "ask_human"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "identified, or handed to the human"
+   }
+  }
+ }
+}

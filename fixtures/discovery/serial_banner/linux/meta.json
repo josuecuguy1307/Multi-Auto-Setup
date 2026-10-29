@@ -1,0 +1,6 @@
+{
+ "adapter": "serial_banner",
+ "platform": "linux",
+ "synthetic": true,
+ "source": "the serial_probe exchange log of the pty fake device, reused"
+}

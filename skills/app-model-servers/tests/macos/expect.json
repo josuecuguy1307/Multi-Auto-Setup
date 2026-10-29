@@ -1,0 +1,16 @@
+{
+ "entities": 1,
+ "entity_attrs": [
+  {
+   "kind": "ollama",
+   "port": 11434,
+   "version": "0.40.10"
+  }
+ ],
+ "facts": {
+  "app.model_server_count": 1
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

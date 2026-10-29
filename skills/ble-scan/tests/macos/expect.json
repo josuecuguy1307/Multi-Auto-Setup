@@ -1,0 +1,33 @@
+{
+ "entities": 3,
+ "entity_attrs": [
+  {
+   "service_classes": [],
+   "signal": "far",
+   "vendor": "Samsung Electronics Co. Ltd."
+  },
+  {
+   "service_classes": [],
+   "signal": "far",
+   "vendor": null
+  },
+  {
+   "service_classes": [
+    "Battery Service"
+   ],
+   "signal": "near",
+   "vendor": "Apple, Inc."
+  }
+ ],
+ "facts": {
+  "ble.nearby_by_class": {
+   "Apple, Inc.": 1,
+   "Samsung Electronics Co. Ltd.": 1,
+   "unclassified": 1
+  },
+  "ble.nearby_count": 3
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

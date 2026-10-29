@@ -1,0 +1,6 @@
+{
+ "adapter": "os_info",
+ "platform": "linux",
+ "synthetic": true,
+ "source": "hand-written in the real output format"
+}

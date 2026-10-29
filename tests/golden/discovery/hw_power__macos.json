@@ -1,0 +1,41 @@
+{
+ "adapter": "hw_power",
+ "counts": {
+  "entities": 0,
+  "facts": 5,
+  "resolved": 0,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "hw.battery_charging",
+   "status": "tested",
+   "value": true
+  },
+  {
+   "key": "hw.battery_cycle_count",
+   "status": "tested",
+   "value": 474
+  },
+  {
+   "key": "hw.battery_health",
+   "status": "tested",
+   "value": "Good"
+  },
+  {
+   "key": "hw.battery_percent",
+   "status": "tested",
+   "value": 49
+  },
+  {
+   "key": "hw.thermal_state",
+   "status": "tested",
+   "value": "nominal"
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

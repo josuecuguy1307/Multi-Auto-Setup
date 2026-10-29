@@ -11,15 +11,10 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from envrec.mission.models import TargetEntry, Transport
+from envrec.skills.data import reference_json, reference_text
 
-HINTS = {
-    Transport.ssh: "enable sshd on the device (on Android: install Termux and run sshd), add your own public key, "
-                   "then re-run",
-    Transport.docker_exec: "start the container and make sure the docker CLI can see it, then re-run",
-    Transport.adb_usb: "connect the cable, turn on USB debugging in developer options and accept the key prompt on "
-                       "the phone, then re-run",
-    Transport.serial: "connect the serial adapter, check the port name and permissions, then re-run",
-}
+_ROUTE_SKILL = {Transport.ssh: "connect-ssh", Transport.docker_exec: "connect-docker-exec", Transport.adb_usb: "connect-adb", Transport.serial: "connect-serial", Transport.tcp: "connect-tcp"}
+HINTS = {t: reference_text(skill, "setup-hint.txt").strip() for t, skill in _ROUTE_SKILL.items()}  # what the human can set up: written in each route's skill
 
 
 @dataclass
@@ -30,18 +25,24 @@ class PlanResult:
     hint: str = ""
 
 
+def _fires(when: dict, facts: dict[str, Any]) -> bool:
+    if "any" in when:
+        return any(_fires(w, facts) for w in when["any"])
+    value = facts.get(when["fact"])
+    if when["fact"] == "os.name":
+        value = str(value or "").lower()
+    return value in when["in"]
+
+
 def preference(facts: dict[str, Any]) -> tuple[list[Transport], list[str]]:
-    """Rule table: preferred transports in order, plus the facts behind the order."""
-    kind, os_name = facts.get("host.kind"), str(facts.get("os.name") or "").lower()
-    if kind == "container":
-        return [Transport.docker_exec, Transport.ssh], ["host.kind=container"]
-    if kind == "phone" or os_name == "android":
-        return [Transport.adb_usb, Transport.ssh], [f"host.kind={kind}", f"os.name={os_name}"]
-    if kind in ("sbc", "microcontroller"):
-        return [Transport.ssh, Transport.serial], [f"host.kind={kind}"]
-    if os_name in ("linux", "macos"):
-        return [Transport.ssh], [f"os.name={os_name}"]
-    return [Transport.ssh, Transport.docker_exec, Transport.adb_usb, Transport.serial], ["no rule matched: allowed order"]
+    """Rule table (the `connect-route` skill's references/route-table.json): preferred transports in order, plus the facts behind the order."""
+    table = reference_json("connect-route", "route-table.json")
+    ctx = {"kind": facts.get("host.kind"), "os_name": str(facts.get("os.name") or "").lower()}
+    for rule in table["rules"]:
+        if _fires(rule["when"], facts):
+            return [Transport(t) for t in rule["prefer"]], [w.format(**ctx) for w in rule["why"]]
+    d = table["default"]
+    return [Transport(t) for t in d["prefer"]], list(d["why"])
 
 
 def plan_transport(entry: TargetEntry, facts: dict[str, Any], reachable: dict[Transport, bool | None]) -> PlanResult:

@@ -1,0 +1,12 @@
+{
+  "SPUSBDataType" : [
+    {
+      "_name" : "USB31Bus",
+      "host_controller" : "AppleT8122USBXHCI"
+    },
+    {
+      "_name" : "USB31Bus",
+      "host_controller" : "AppleT8122USBXHCI"
+    }
+  ]
+}

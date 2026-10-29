@@ -1,0 +1,34 @@
+Browsing for _services._dns-sd._udp.local
+DATE: ---Sun 25 Oct 2026---
+11:05:29.759  ...STARTING...
+Timestamp     A/R    Flags  if Domain               Service Type         Instance Name
+11:05:29.759  Add        3   1 .                    _tcp.local.          _airplay
+11:05:29.759  Add        3   1 .                    _tcp.local.          _raop
+11:05:29.759  Add        3   1 .                    _tcp.local.          _companion-link
+11:05:29.759  Add        3  11 .                    _tcp.local.          _companion-link
+11:05:29.759  Add        3  11 .                    _tcp.local.          _spotify-connect
+11:05:29.759  Add        3  11 .                    _tcp.local.          _raop
+11:05:29.759  Add        3  11 .                    _tcp.local.          _airplay
+11:05:29.759  Add        3  11 .                    _udp.local.          _occam
+11:05:29.759  Add        3  11 .                    _tcp.local.          _smb
+11:05:29.759  Add        3  11 .                    _tcp.local.          _googlecast
+11:05:29.759  Add        3  11 .                    _tcp.local.          _uscan
+11:05:29.759  Add        3  11 .                    _tcp.local.          _ipps
+11:05:29.759  Add        3  11 .                    _tcp.local.          _uscans
+11:05:29.759  Add        3  11 .                    _tcp.local.          _ipp
+11:05:29.759  Add        3  11 .                    _udp.local.          _asquic
+11:05:29.759  Add        3  11 .                    _tcp.local.          _spotify-ln-check
+11:05:29.760  Add        3  11 .                    _udp.local.          _lyra-mdns
+11:05:29.760  Add        3  11 .                    _tcp.local.          _http
+11:05:29.760  Add        3  11 .                    _tcp.local.          _pdl-datastream
+11:05:29.760  Add        3  11 .                    _tcp.local.          _scanner
+11:05:29.760  Add        3  11 .                    _tcp.local.          _adb
+11:05:29.760  Add        3  11 .                    _tcp.local.          _printer
+11:05:29.760  Add        3  11 .                    _tcp.local.          _privet
+11:05:29.760  Add        3  11 .                    _tcp.local.          _hap
+11:05:29.760  Add        3  11 .                    _tcp.local.          _androidtvremote2
+11:05:29.760  Add        3  11 .                    _udp.local.          _matterd
+11:05:29.760  Add        3  11 .                    _sub.local.          _V65521
+11:05:29.760  Add        3  11 .                    _sub.local.          _T35
+11:05:29.760  Add        3  11 .                    _tcp.local.          _matter
+11:05:29.760  Add        2  11 .                    _sub.local.          _I2944326D0FB1313F

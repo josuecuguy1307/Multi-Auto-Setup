@@ -1,0 +1,1 @@
+11:05:39.817  SpotifyConnect\032#2._spotify-connect._tcp.local. can be reached at linux.local.:4070 (interface 11)

@@ -1,0 +1,36 @@
+{
+ "adapter": "os_info",
+ "counts": {
+  "entities": 0,
+  "facts": 4,
+  "resolved": 0,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "os.build",
+   "status": "tested",
+   "value": "12"
+  },
+  {
+   "key": "os.distro",
+   "status": "tested",
+   "value": "debian"
+  },
+  {
+   "key": "os.uname",
+   "status": "tested",
+   "value": "Linux 6.6.31 aarch64"
+  },
+  {
+   "key": "os.uptime_s",
+   "status": "tested",
+   "value": 86400
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

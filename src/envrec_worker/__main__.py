@@ -1,19 +1,16 @@
-"""Worker entry point: probe, serve, uninstall."""
+"""Worker entry point: probe, runtime (start/stop/status of the external inference server), uninstall."""
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import platform
 import shutil
 import sys
-from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 from envrec_worker import __version__
 
-LOCALHOST = "127.0.0.1"
 
 
 def _arg(argv: list[str], name: str, default: str | None = None) -> str | None:
@@ -41,53 +38,6 @@ def probe() -> dict:
             "ram_reported_gib": ram, "ram_limit_gib": limit, "disk_free_gb": round(shutil.disk_usage("/").free / 1e9, 2)}
 
 
-def make_handler(model: str, model_sha: str | None):
-    class Handler(BaseHTTPRequestHandler):
-        def log_message(self, *a):  # keep stdout/stderr quiet; the controller reads the log file on demand
-            pass
-
-        def _send(self, code: int, body: dict) -> None:
-            data = json.dumps(body).encode()
-            self.send_response(code)
-            self.send_header("content-type", "application/json")
-            self.send_header("content-length", str(len(data)))
-            self.end_headers()
-            self.wfile.write(data)
-
-        def do_GET(self):
-            if self.path == "/health":
-                self._send(200, {"status": "ok", "worker_version": __version__, "model": model, "model_sha256": model_sha})
-            else:
-                self._send(404, {"error": "not found"})
-
-        def do_POST(self):
-            if self.path != "/v1/chat/completions":
-                return self._send(404, {"error": "not found"})
-            try:
-                n = int(self.headers.get("content-length", "0"))
-                msgs = json.loads(self.rfile.read(n))["messages"]
-                last = next(m["content"] for m in reversed(msgs) if m.get("role") == "user")
-            except (ValueError, KeyError, StopIteration, TypeError):
-                return self._send(400, {"error": "expected {'messages': [... a user message ...]}"})
-            # TEST RUNTIME: echoes the request. It is not a language model.
-            self._send(200, {"model": model, "choices": [{"message": {"role": "assistant",
-                                                                       "content": f"[stub-runtime:{model}] {last}"}}]})
-    return Handler
-
-
-def serve(argv: list[str]) -> int:
-    host = _arg(argv, "--host", LOCALHOST)
-    if host != LOCALHOST:
-        print(f"refusing to bind {host!r}: this worker listens on {LOCALHOST} only", file=sys.stderr)
-        return 2
-    port, model = int(_arg(argv, "--port", "0")), _arg(argv, "--model", "")
-    root = Path(sys.argv[0]).resolve().parent
-    mf = root / "models" / (model or "")
-    sha = hashlib.sha256(mf.read_bytes()).hexdigest() if model and mf.is_file() else None
-    HTTPServer((LOCALHOST, port), make_handler(model or "", sha)).serve_forever()
-    return 0
-
-
 def uninstall(argv: list[str]) -> int:
     root = Path(_arg(argv, "--root", "")).resolve()
     if not str(root).startswith("/opt/envrec") or str(root) in ("/", "/opt"):
@@ -110,11 +60,17 @@ def main(argv: list[str] | None = None) -> int:
     if cmd == "probe":
         print(json.dumps(probe()))
         return 0
-    if cmd == "serve":
-        return serve(argv)
+    if cmd == "runtime":
+        from envrec_worker.runtime import cli
+        sub = argv[1] if len(argv) > 1 else ""
+        fn = {"start": cli.start, "stop": cli.stop, "status": cli.status}.get(sub)
+        if fn is None:
+            print("usage: runtime start|stop|status --root DIR ...", file=sys.stderr)
+            return 2
+        return fn(argv[2:])
     if cmd == "uninstall":
         return uninstall(argv)
-    print("usage: probe | serve --host 127.0.0.1 --port N --model NAME | uninstall --root DIR", file=sys.stderr)
+    print("usage: probe | runtime start|stop|status --root DIR ... | uninstall --root DIR", file=sys.stderr)
     return 2
 
 

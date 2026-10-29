@@ -1,0 +1,397 @@
+{
+ "SPApplicationsDataType": [
+  {
+   "_name": "App Store",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/App Store.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "3.0"
+  },
+  {
+   "_name": "Automator",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Automator.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "2.10"
+  },
+  {
+   "_name": "Libros",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Books.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "7.6"
+  },
+  {
+   "_name": "Calculadora",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Calculator.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "11.0"
+  },
+  {
+   "_name": "Calendario",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Calendar.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "15.0"
+  },
+  {
+   "_name": "Notas",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Notes.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "4.12.7"
+  },
+  {
+   "_name": "Contraseñas",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Passwords.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "1.6"
+  },
+  {
+   "_name": "Photo Booth",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Photo Booth.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "13.1"
+  },
+  {
+   "_name": "Fotos",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Photos.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "10.0"
+  },
+  {
+   "_name": "Podcasts",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Podcasts.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "1.1.0"
+  },
+  {
+   "_name": "Vista Previa",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Preview.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "11.0"
+  },
+  {
+   "_name": "QuickTime Player",
+   "arch_kind": "arch_arm_i64",
+   "info": "10.5, Copyright © 2009-2024 Apple Inc. All Rights Reserved.",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/QuickTime Player.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "10.5"
+  },
+  {
+   "_name": "Recordatorios",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Reminders.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "7.0"
+  },
+  {
+   "_name": "Atajos",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Shortcuts.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "7.0"
+  },
+  {
+   "_name": "Siri",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Siri.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "1.0"
+  },
+  {
+   "_name": "Notas Adhesivas",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Stickies.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "10.3"
+  },
+  {
+   "_name": "Bolsa",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Stocks.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "7.4"
+  },
+  {
+   "_name": "Ajustes del Sistema",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/System Settings.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "15.0"
+  },
+  {
+   "_name": "TV",
+   "arch_kind": "arch_arm_i64",
+   "info": "TV 192.0.2.11, © 2019–2025 Apple Inc. All rights reserved.",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/TV.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "1.5.6"
+  },
+  {
+   "_name": "TextEdit",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/TextEdit.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "1.20"
+  },
+  {
+   "_name": "Time Machine",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Time Machine.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "1.3"
+  },
+  {
+   "_name": "Consejos",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Tips.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "15.7"
+  },
+  {
+   "_name": "Monitor de Actividad",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Utilities/Activity Monitor.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "10.14"
+  },
+  {
+   "_name": "Utilidad AirPort",
+   "arch_kind": "arch_arm_i64",
+   "info": "6.3.9, Copyright 2001 -2024 Apple Inc.",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Applications/Utilities/AirPort Utility.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "6.3.9"
+  },
+  {
+   "_name": "TextInputMenuAgent",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Library/CoreServices/TextInputMenuAgent.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "1.0"
+  },
+  {
+   "_name": "TextInputSwitcher",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Library/CoreServices/TextInputSwitcher.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "1.1"
+  },
+  {
+   "_name": "ThermalTrap",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Library/CoreServices/ThermalTrap.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "1.0"
+  },
+  {
+   "_name": "TMHelperAgent",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Library/CoreServices/TimeMachine/TMHelperAgent.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "13"
+  },
+  {
+   "_name": "Consejos",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Library/CoreServices/TipsSpotlightHandler.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "1.0"
+  },
+  {
+   "_name": "UIKitSystem",
+   "arch_kind": "arch_arm_i64",
+   "lastModified": "2025-09-24T07:50:01Z",
+   "obtained_from": "apple",
+   "path": "/System/Library/CoreServices/UIKitSystem.app",
+   "signed_by": [
+    "Software Signing",
+    "Apple Code Signing Certification Authority",
+    "Apple Root CA"
+   ],
+   "version": "1.0"
+  }
+ ]
+}

@@ -1,0 +1,54 @@
+{
+ "provenance": "builtin",
+ "protocol": "host",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "ps_comm",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "ps",
+      "-axo",
+      "comm="
+     ],
+     "timeout_s": 8
+    }
+   },
+   {
+    "id": "ps_comm",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "ps",
+      "-eo",
+      "comm="
+     ],
+     "timeout_s": 8
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "app.process_count",
+  "app.processes"
+ ],
+ "legacy_id": "app_processes",
+ "example": false
+}

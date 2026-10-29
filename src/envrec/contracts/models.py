@@ -105,12 +105,13 @@ class Fact(Strict):
 
 
 class ToolSpec(Strict):
-    name: str = Field(pattern=r"^[a-z][a-z0-9_]*$", max_length=48)
+    name: str = Field(pattern=r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)?$", max_length=60)  # a tool, or `skill.<id>`
     ring: int = Field(ge=0, le=3)
     tier: Tier
     target_kinds: list[TargetKind] = Field(min_length=1)
     input_model: dict[str, JsonValue] = Field(default_factory=dict)  # JSON schema of the args
     one_line: str
+    description: str = Field(default="", max_length=1024)  # a skill's full "Use when" description: what the menu shows for it
     cost: Literal["cheap", "medium", "expensive"] = "cheap"
     origin: Origin = Origin.builtin
     rung: int | None = Field(default=None, ge=1, le=6)
@@ -176,8 +177,8 @@ class Action(Strict):
     fact_id: str | None = None
     key: str | None = None
     question: str | None = Field(default=None, max_length=300)
-    code: str | None = Field(default=None, max_length=20000)
-    test_plan: str | None = Field(default=None, max_length=2000)
+    skill_draft: dict[str, JsonValue] | None = None  # propose_skill: the draft of a skill (see the authoring skill)
+    to: str | None = Field(default=None, max_length=40)  # advance: the protocol step to move to
     why: str = ""
 
     @field_validator("why")
@@ -203,10 +204,12 @@ class Action(Strict):
             missing.append("ring")
         elif a == ActionType.expand_fact and not (self.fact_id or self.key):
             missing.append("fact_id or key")
+        elif a == ActionType.advance and not self.to:
+            missing.append("to")
         elif a in (ActionType.research, ActionType.ask_human) and not self.question:
             missing.append("question")
-        elif a == ActionType.propose_probe:
-            missing += [n for n, v in (("code", self.code), ("test_plan", self.test_plan)) if not v]
+        elif a == ActionType.propose_skill and not self.skill_draft:
+            missing.append("skill_draft")
         if missing:
             raise ValueError(f"action {a.value!r} requires: {', '.join(missing)}")
         return self
@@ -289,4 +292,3 @@ class ModelProfile(Strict):
     view_budget_facts: int = Field(ge=1, le=200)
     menu_max: int = Field(ge=2, le=12)
     ring_policy: RingPolicy = RingPolicy.fixed_order
-    playbooks: list[str] = Field(default_factory=list)

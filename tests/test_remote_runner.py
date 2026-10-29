@@ -91,15 +91,19 @@ def test_template_substitution_rejects_shell_metacharacters_and_escapes():
     assert t.render({"dir": f"{INSTALL_ROOT}/worker-1.0"}) == ["rm", "-rf", f"{INSTALL_ROOT}/worker-1.0"]
 
 
-def test_ports_names_and_hashes_are_validated():
-    s = get_template("start_server")
-    good = dict(runtime=f"{INSTALL_ROOT}/rt.pyz", port=8089, model="tiny-0.5b", log=f"{INSTALL_ROOT}/s.log", pidfile=f"{INSTALL_ROOT}/s.pid")
-    assert s.render(good)[-5:] == [f"{INSTALL_ROOT}/rt.pyz", "8089", "tiny-0.5b", f"{INSTALL_ROOT}/s.log", f"{INSTALL_ROOT}/s.pid"]
-    for key, bad in (("port", 80), ("port", "8089; ls"), ("port", 70000), ("model", "a;b"), ("model", "../x"), ("model", "x" * 80)):
+def test_ports_names_caps_and_hashes_are_validated():
+    t = get_template("runtime_start")
+    good = dict(worker=f"{INSTALL_ROOT}/w.pyz", root=f"{INSTALL_ROOT}/worker", kind="llama.cpp", binary=f"{INSTALL_ROOT}/rt/llama-server",
+                model=f"{INSTALL_ROOT}/models/m.gguf", port=8089, threads=2, context=2048, max_rss_mib=900, min_free_disk_mb=300)
+    assert t.render(good)[-8:] == ["llama.cpp", f"{INSTALL_ROOT}/rt/llama-server", f"{INSTALL_ROOT}/models/m.gguf", "8089", "2", "2048", "900", "300"]
+    for key, bad in (("port", 80), ("port", "8089; ls"), ("port", 70000), ("kind", "a;b"), ("kind", "../x"), ("threads", 0), ("threads", 9999),
+                     ("context", 10), ("context", "2048; id"), ("max_rss_mib", -5), ("binary", "/usr/bin/evil"), ("model", "../../etc/passwd")):
         with pytest.raises(TemplateError):
-            s.render({**good, key: bad})
+            t.render({**good, key: bad})
     with pytest.raises(TemplateError):
         get_template("sha256_file").render({"path": "x"})
+    with pytest.raises(TemplateError):
+        get_template("http_get").render({"port": 8089, "urlpath": "/admin"})  # only the three fixed read paths exist
 
 
 def test_unknown_missing_and_unlisted_placeholders_are_errors():
@@ -112,18 +116,20 @@ def test_unknown_missing_and_unlisted_placeholders_are_errors():
 
 
 def test_values_reach_scripts_only_as_positional_parameters_never_in_script_text():
+    import re
     for tpl in TEMPLATES.values():
         if tpl.argv[0] == "sh" and tpl.argv[1] == "-c":
-            script, params = tpl.argv[2], tpl.argv[3:]
-            assert "{" not in script.replace("{ echo", "").replace("; }", ""), f"{tpl.name}: placeholder inside script text"
-            assert all("{" in p or p == "sh" for p in params if p != "sh"), tpl.name
-        else:
-            assert tpl.argv[0] != "sh"
+            script = tpl.argv[2]
+            used = set(re.findall(r"\{(\w+)\}", script)) & set(tpl.placeholders)
+            assert not used, f"{tpl.name}: declared placeholders {used} appear inside script text"
+        elif tpl.argv[0] == "python3" and "-c" in tpl.argv:
+            code = tpl.argv[tpl.argv.index("-c") + 1]
+            assert not (set(re.findall(r"\{(\w+)\}", code)) & set(tpl.placeholders)), f"{tpl.name}: placeholder inside python text"
 
 
 def test_every_template_that_changes_things_needs_approval_and_stdin_is_only_for_transfers():
     writers = {n for n, t in TEMPLATES.items() if t.tier != Tier.observe}
-    assert writers == {"mkdir_install", "receive_file", "chmod_exec", "start_server", "stop_server", "remove_tree"}
+    assert writers == {"mkdir_install", "receive_file", "chmod_exec", "stop_server", "remove_tree", "runtime_start", "runtime_stop", "extract_tar"}
     assert all(TEMPLATES[n].tier == Tier.write_approval for n in writers)
     assert {n for n, t in TEMPLATES.items() if t.sends_stdin} == {"receive_file", "chat_request"}
 

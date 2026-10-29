@@ -1,0 +1,26 @@
+{
+ "adapter": "serial_ports",
+ "counts": {
+  "entities": 0,
+  "facts": 2,
+  "resolved": 0,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "serial.excluded_count",
+   "status": "tested",
+   "value": 5
+  },
+  {
+   "key": "serial.port_count",
+   "status": "tested",
+   "value": 0
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "1 of 2 captures failed: by_id=unavailable",
+ "status": "ran",
+ "unknown_reasons": {}
+}

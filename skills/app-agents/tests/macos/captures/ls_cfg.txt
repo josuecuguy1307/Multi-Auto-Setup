@@ -1,0 +1,6 @@
+/Users/user/.claude
+/Users/user/.codex
+/Users/user/.config/opencode
+/Users/user/.gemini
+/Users/user/.ollama
+/Users/user/Library/Application Support/Claude

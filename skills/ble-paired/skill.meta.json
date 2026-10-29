@@ -1,0 +1,86 @@
+{
+ "provenance": "builtin",
+ "protocol": "ble",
+ "tier": "observe",
+ "ring": 1,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "sp_bluetooth",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "system_profiler",
+      "SPBluetoothDataType",
+      "-json"
+     ],
+     "timeout_s": 20
+    }
+   },
+   {
+    "id": "bt_paired",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "bluetoothctl",
+      "devices",
+      "Paired"
+     ],
+     "timeout_s": 8,
+     "optional": true
+    }
+   },
+   {
+    "id": "bt_connected",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "bluetoothctl",
+      "devices",
+      "Connected"
+     ],
+     "timeout_s": 8,
+     "optional": true
+    }
+   },
+   {
+    "id": "bt_show",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "bluetoothctl",
+      "show"
+     ],
+     "timeout_s": 8,
+     "optional": true
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "ble.controller_state",
+  "ble.paired_count"
+ ],
+ "legacy_id": "ble_paired",
+ "example": false
+}

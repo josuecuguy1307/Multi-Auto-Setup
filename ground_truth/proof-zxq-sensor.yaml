@@ -1,0 +1,9 @@
+# Ground truth for the proof device (fixtures/replay/zxq-sensor.json served on a pty by envrec.fakedev, steady: the first frame repeats; documented in fixtures/docs/zxq-sensor.md).
+# Known by construction. `unknown: true` means the honest answer is "unknown": a harness that claims a value there is wrong.
+machine: proof-zxq-sensor
+confirmed: true
+facts:
+  sensor.temperature_c: {value: 7, confirmed: true, source: "the frame ~~ZXQ 7/9 ~~, per the manual"}
+  sensor.humidity: {value: 9, confirmed: true, source: "the frame ~~ZXQ 7/9 ~~, per the manual"}
+  serial.protocol: {unknown: true, confirmed: true, source: "no known signature: it is a proprietary frame"}
+  skill.match: {value: false, confirmed: true, source: "no skill exists for it before the first run"}

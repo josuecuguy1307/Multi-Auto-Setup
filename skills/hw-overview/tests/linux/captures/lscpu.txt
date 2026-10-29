@@ -1,0 +1,3 @@
+Architecture:                    aarch64
+Model name:                      Cortex-A76
+CPU(s):                          4

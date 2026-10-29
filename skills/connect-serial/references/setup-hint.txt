@@ -1,0 +1,1 @@
+connect the serial adapter, check the port name and permissions, then re-run

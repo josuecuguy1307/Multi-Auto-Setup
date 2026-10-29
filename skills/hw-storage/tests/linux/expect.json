@@ -1,0 +1,38 @@
+{
+ "entities": 3,
+ "entity_attrs": [
+  {
+   "fs": "ext4",
+   "internal": true,
+   "model": null,
+   "mount": "/",
+   "name": "mmcblk0p2",
+   "size_gib": 58.7,
+   "type": "part"
+  },
+  {
+   "fs": null,
+   "internal": true,
+   "model": null,
+   "mount": null,
+   "name": "mmcblk0",
+   "size_gib": 59.5,
+   "type": "disk"
+  },
+  {
+   "fs": null,
+   "internal": false,
+   "model": "Example USB Disk",
+   "mount": null,
+   "name": "sda",
+   "size_gib": 465.8,
+   "type": "disk"
+  }
+ ],
+ "facts": {
+  "hw.volume_count": 3
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

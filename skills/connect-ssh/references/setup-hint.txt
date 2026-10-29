@@ -1,0 +1,1 @@
+enable sshd on the device (on Android: install Termux and run sshd), add your own public key, then re-run

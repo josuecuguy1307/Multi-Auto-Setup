@@ -1,0 +1,77 @@
+{
+ "adapter": "ble_scan",
+ "counts": {
+  "entities": 3,
+  "facts": 2,
+  "resolved": 2,
+  "unknowns": 1
+ },
+ "facts": [
+  {
+   "key": "ble.entity.ble-003ccb79",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "service_classes": [],
+     "signal": "far",
+     "vendor": "Samsung Electronics Co. Ltd."
+    },
+    "kind": "ble",
+    "owned": "ambient",
+    "resolved": true,
+    "ring": 1
+   }
+  },
+  {
+   "key": "ble.entity.ble-94ef3bb0",
+   "status": "hypothesis",
+   "value": {
+    "attrs": {
+     "service_classes": [],
+     "signal": "far",
+     "vendor": null
+    },
+    "kind": "ble",
+    "owned": "ambient",
+    "resolved": false,
+    "ring": 1
+   }
+  },
+  {
+   "key": "ble.entity.ble-d5962a64",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "service_classes": [
+      "Battery Service"
+     ],
+     "signal": "near",
+     "vendor": "Apple, Inc."
+    },
+    "kind": "ble",
+    "owned": "ambient",
+    "resolved": true,
+    "ring": 1
+   }
+  },
+  {
+   "key": "ble.nearby_by_class",
+   "status": "tested",
+   "value": {
+    "Apple, Inc.": 1,
+    "Samsung Electronics Co. Ltd.": 1,
+    "unclassified": 1
+   }
+  },
+  {
+   "key": "ble.nearby_count",
+   "status": "tested",
+   "value": 3
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

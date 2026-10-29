@@ -1,0 +1,18 @@
+{
+ "entities": 0,
+ "entity_attrs": [],
+ "facts": {
+  "net.wifi.channel": "6",
+  "net.wifi.connected": true,
+  "net.wifi.nearby_by_channel": {
+   "1": 1,
+   "11": 1,
+   "6": 1
+  },
+  "net.wifi.nearby_count": 3,
+  "net.wifi.rssi": 72
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

@@ -1,0 +1,3 @@
+rustup 1.29.0 (28d1352db 2026-03-05)
+info: This is the version for the rustup toolchain manager, not the rustc compiler.
+info: the currently active `rustc` version is `rustc 1.97.1 (8bab26f4f 2026-07-14)`

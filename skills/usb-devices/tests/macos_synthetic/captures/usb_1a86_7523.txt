@@ -1,0 +1,1 @@
+{"found": true, "name": "QinHeng Electronics", "source": "usb.ids", "identifier": "1a86:7523", "entries": ["1a86  QinHeng Electronics", "1a86:7523  QinHeng Electronics / CH340 serial converter"], "vendor": "QinHeng Electronics", "product": "CH340 serial converter"}

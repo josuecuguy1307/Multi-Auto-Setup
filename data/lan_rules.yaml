@@ -1,0 +1,69 @@
+# Rules that turn observations into a device-class HYPOTHESIS. Classes: router, printer, camera, nas, tv, speaker, phone, sbc, computer, appliance.
+# A class is never a fact: it is written as a hypothesis with the signals that caused it. Rules are checked against: the OUI vendor name (substring,
+# case-insensitive), mDNS service types, SSDP device types, open ports, and being the default gateway.
+# src: public protocol documentation (IANA registries, UPnP Forum device types, Apple Bonjour service type list, Google Cast, Matter) and common vendor names.
+mdns_types:                         # type -> {hint, class: [candidate classes]}
+  _ipp._tcp: {hint: "IPP printer", class: [printer]}
+  _ipps._tcp: {hint: "IPP over TLS printer", class: [printer]}
+  _printer._tcp: {hint: "LPD printer", class: [printer]}
+  _pdl-datastream._tcp: {hint: "raw printing (JetDirect)", class: [printer]}
+  _uscan._tcp: {hint: "network scanner", class: [printer]}
+  _scanner._tcp: {hint: "network scanner", class: [printer]}
+  _airplay._tcp: {hint: "Apple AirPlay receiver", class: [tv, speaker, computer]}
+  _raop._tcp: {hint: "AirPlay audio receiver", class: [speaker, tv, computer]}
+  _googlecast._tcp: {hint: "Google Cast receiver", class: [tv, speaker]}
+  _spotify-connect._tcp: {hint: "Spotify Connect player", class: [speaker, tv]}
+  _hap._tcp: {hint: "HomeKit accessory", class: [appliance]}
+  _matter._tcp: {hint: "Matter device", class: [appliance]}
+  _smb._tcp: {hint: "SMB file sharing", class: [nas, computer]}
+  _afpovertcp._tcp: {hint: "AFP file sharing", class: [nas, computer]}
+  _ssh._tcp: {hint: "SSH server", class: [computer, sbc, nas]}
+  _sftp-ssh._tcp: {hint: "SFTP server", class: [computer, sbc, nas]}
+  _rtsp._tcp: {hint: "RTSP stream", class: [camera]}
+  _adb._tcp: {hint: "Android debug bridge", class: [phone]}
+  _companion-link._tcp: {hint: "Apple device", class: [phone, computer, tv]}
+  _workstation._tcp: {hint: "Linux workstation", class: [computer, sbc]}
+  _http._tcp: {hint: "web server", class: []}
+ssdp_types:                         # substring of the device type or search target
+  InternetGatewayDevice: {hint: "UPnP gateway", class: [router]}
+  MediaRenderer: {hint: "UPnP media renderer", class: [tv, speaker]}
+  MediaServer: {hint: "UPnP media server", class: [nas, computer]}
+  Printer: {hint: "UPnP printer", class: [printer]}
+  Basic: {hint: "UPnP basic device", class: []}
+ports:                              # open port -> candidate classes
+  9100: [printer]
+  515: [printer]
+  631: [printer]
+  554: [camera]
+  548: [nas]
+  445: [nas, computer]
+  22: [computer, sbc, nas]
+  1883: [appliance]
+vendors:                            # OUI vendor substring -> candidate classes
+  raspberry pi: [sbc]
+  espressif: [appliance]
+  tp-link: [router, appliance]
+  zyxel: [router]
+  huawei: [router, phone]
+  mikrotik: [router]
+  ubiquiti: [router]
+  netgear: [router]
+  cisco: [router]
+  hewlett: [printer, computer]
+  canon: [printer, camera]
+  epson: [printer]
+  brother: [printer]
+  hikvision: [camera]
+  dahua: [camera]
+  synology: [nas]
+  qnap: [nas]
+  amazon: [speaker, tv]
+  roku: [tv]
+  lg electronics: [tv, phone]
+  samsung: [tv, phone]
+  sonos: [speaker]
+  xiaomi: [phone, appliance]
+  apple: [phone, computer, tv]
+  google: [speaker, tv, phone]
+  intel: [computer]
+  dell: [computer]

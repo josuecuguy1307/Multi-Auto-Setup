@@ -1,0 +1,55 @@
+{
+ "provenance": "builtin",
+ "protocol": "host",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "sp_storage",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "system_profiler",
+      "SPStorageDataType",
+      "-json"
+     ],
+     "timeout_s": 30
+    }
+   },
+   {
+    "id": "lsblk",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "lsblk",
+      "-b",
+      "-J",
+      "-o",
+      "NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,RM,MODEL"
+     ],
+     "timeout_s": 10
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "hw.volume_count"
+ ],
+ "legacy_id": "hw_storage",
+ "example": false
+}

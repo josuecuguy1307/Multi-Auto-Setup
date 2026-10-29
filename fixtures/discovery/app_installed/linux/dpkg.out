@@ -1,0 +1,6 @@
+Desired=Unknown/Install/Remove/Purge/Hold
+||/ Name Version Architecture Description
++++-==============-============-============-=====
+ii  bash 5.2.15-2 arm64 GNU Bourne Again SHell
+ii  python3 3.11.2-1 arm64 interactive high-level language
+ii  openssh-server 9.2p1-2 arm64 secure shell server

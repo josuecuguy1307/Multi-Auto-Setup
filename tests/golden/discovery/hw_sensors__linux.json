@@ -1,0 +1,55 @@
+{
+ "adapter": "hw_sensors",
+ "counts": {
+  "entities": 2,
+  "facts": 1,
+  "resolved": 2,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "sensor.count",
+   "status": "tested",
+   "value": 2
+  },
+  {
+   "key": "sensor.entity.sensor-41abcb36",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "channels": 1,
+     "chip": "rp1_adc-isa-0000",
+     "kinds": [
+      "in"
+     ]
+    },
+    "kind": "sensor",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "sensor.entity.sensor-4c61b013",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "channels": 1,
+     "chip": "cpu_thermal-virtual-0",
+     "kinds": [
+      "temp"
+     ]
+    },
+    "kind": "sensor",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

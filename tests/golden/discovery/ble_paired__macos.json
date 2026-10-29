@@ -1,0 +1,138 @@
+{
+ "adapter": "ble_paired",
+ "counts": {
+  "entities": 6,
+  "facts": 4,
+  "resolved": 5,
+  "unknowns": 1
+ },
+ "facts": [
+  {
+   "key": "ble.connected_count",
+   "status": "tested",
+   "value": 0
+  },
+  {
+   "key": "ble.controller_chipset",
+   "status": "tested",
+   "value": "BCM_4388"
+  },
+  {
+   "key": "ble.controller_state",
+   "status": "tested",
+   "value": "on"
+  },
+  {
+   "key": "ble.entity.bluetooth-1ab977fa",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "battery": null,
+     "name": "JBL TUNE510BT",
+     "state": "paired",
+     "type": "Headphones",
+     "vendor": "Harman International"
+    },
+    "kind": "bluetooth",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 1
+   }
+  },
+  {
+   "key": "ble.entity.bluetooth-285fb9cc",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "battery": null,
+     "name": "JBL TUNE510BT",
+     "state": "paired",
+     "type": "Headphones",
+     "vendor": "Harman International"
+    },
+    "kind": "bluetooth",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 1
+   }
+  },
+  {
+   "key": "ble.entity.bluetooth-5381c2a9",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "battery": null,
+     "name": "Echo Show 5 (3rd generation)-B6N",
+     "state": "paired",
+     "type": "Speaker",
+     "vendor": null
+    },
+    "kind": "bluetooth",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 1
+   }
+  },
+  {
+   "key": "ble.entity.bluetooth-5d978c38",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "battery": null,
+     "name": "JLab GO Pop+",
+     "state": "paired",
+     "type": "Headset",
+     "vendor": null
+    },
+    "kind": "bluetooth",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 1
+   }
+  },
+  {
+   "key": "ble.entity.bluetooth-8d6df0d9",
+   "status": "hypothesis",
+   "value": {
+    "attrs": {
+     "battery": null,
+     "name": "iPhone",
+     "state": "paired",
+     "type": null,
+     "vendor": null
+    },
+    "kind": "bluetooth",
+    "owned": "owned",
+    "resolved": false,
+    "ring": 1
+   }
+  },
+  {
+   "key": "ble.entity.bluetooth-c37d8714",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "battery": null,
+     "name": "Redmi Note 12",
+     "state": "paired",
+     "type": "Mobile Phone",
+     "vendor": null
+    },
+    "kind": "bluetooth",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 1
+   }
+  },
+  {
+   "key": "ble.paired_count",
+   "status": "tested",
+   "value": 6
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

@@ -21,7 +21,8 @@ def docker_ready(*images: str) -> bool:
     try:
         if _sh("docker", "info", timeout=20).returncode != 0:
             return False
-        return all(_sh("docker", "image", "inspect", i).returncode == 0 for i in images)
+        # `docker image inspect` is unreliable on the containerd image store; `docker images -q` is not
+        return all(_sh("docker", "images", "-q", i).stdout.strip() != "" for i in images)
     except (OSError, subprocess.SubprocessError):
         return False
 

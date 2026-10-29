@@ -1,0 +1,57 @@
+{
+ "adapter": "net_interfaces",
+ "counts": {
+  "entities": 1,
+  "facts": 4,
+  "resolved": 1,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "net.addresses",
+   "status": "tested",
+   "value": [
+    "en0 192.0.2.30/26"
+   ]
+  },
+  {
+   "key": "net.default_gateway",
+   "status": "tested",
+   "value": "192.0.2.1"
+  },
+  {
+   "key": "net.default_interface",
+   "status": "tested",
+   "value": "en0"
+  },
+  {
+   "key": "net.dns_servers",
+   "status": "tested",
+   "value": [
+    "fe80::1%en0",
+    "198.51.100.105",
+    "203.0.113.4"
+   ]
+  },
+  {
+   "key": "net.entity.host-7635b825",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "address": "192.0.2.30/26",
+     "interface": "en0",
+     "self": true
+    },
+    "kind": "host",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

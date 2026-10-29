@@ -1,0 +1,28 @@
+{
+ "adapter": "app_containers",
+ "counts": {
+  "entities": 0,
+  "facts": 2,
+  "resolved": 0,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "app.container_count",
+   "status": "tested",
+   "value": 0
+  },
+  {
+   "key": "app.container_runtimes",
+   "status": "tested",
+   "value": [
+    "docker_ps"
+   ]
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "4 of 5 captures failed: podman_ps=unavailable; prlctl=unavailable; vbox=unavailable; utm=unavailable",
+ "status": "ran",
+ "unknown_reasons": {}
+}

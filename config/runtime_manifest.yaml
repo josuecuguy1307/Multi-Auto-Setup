@@ -1,0 +1,110 @@
+# runtime_manifest.yaml: approves SOURCES, not individual files. Human-edited.
+#
+# What approval means: the catalog generator (R3b) may read the official release metadata of the sources marked
+# `approve` below, and only those, and compute `catalog.lock.yaml` from it. At run time only the lockfile is used.
+# Nothing outside these sources is ever fetched. Anything the generator cannot verify (missing checksum, license
+# outside the allowlist, unconfirmed license) is excluded and listed in catalog.excluded.md with the reason.
+# A source marked `propose-off` is evaluated and described but stays disabled until you change its status yourself.
+#
+# Every fact below was read from the source's own page or API on the day this was written. Nothing has been
+# downloaded. The fetcher and the generator refuse to run while `approved` is false.
+approved: true
+disk_reserve_gib: 4            # a download or install may never leave less than this free on the controller
+max_artifact_gb: 3.0           # per-file cap, so huge GPU builds cannot enter the catalog by accident
+max_model_params_b: 8          # these runtimes are for small models on small devices
+
+license_allowlist: [apache-2.0, mit, bsd-2-clause, bsd-3-clause, isc, unlicense]
+# Licenses outside the allowlist (restricted-use, non-commercial, "other") and any repo with no license field are
+# excluded automatically and listed with the reason.
+
+# ----------------------------------------------------------------------------------------------------------------
+runtime_sources:
+  - id: llama.cpp
+    status: approve
+    repo: https://github.com/ggml-org/llama.cpp
+    license: MIT
+    license_source: https://raw.githubusercontent.com/ggml-org/llama.cpp/master/LICENSE   # "MIT License, Copyright (c) 2023-2026 The ggml authors"
+    channel:
+      kind: github_releases
+      include_prerelease: true     # every binary build is published as a prerelease (tags b<NUMBER>); the repo's "latest" tag ships none
+      tag_pattern: '^b\d+$'
+      pin_policy: "newest tag with all wanted assets, then pinned by commit and per-asset sha256 in the lockfile"
+    formats: [gguf]
+    server_binary: llama-server    # expected inside the archives; NOT yet verified, nothing downloaded
+    assets:                        # regexes checked against the real asset names of build b11856 (see docs/RUNTIME_CHOICE.md)
+      - {os: linux, arch: arm64, backend: cpu,    pattern: '^llama-b\d+-bin-ubuntu-arm64\.tar\.gz$'}
+      - {os: linux, arch: amd64, backend: cpu,    pattern: '^llama-b\d+-bin-ubuntu-x64\.tar\.gz$'}
+      - {os: linux, arch: arm64, backend: vulkan, pattern: '^llama-b\d+-bin-ubuntu-vulkan-arm64\.tar\.gz$'}
+      - {os: linux, arch: amd64, backend: vulkan, pattern: '^llama-b\d+-bin-ubuntu-vulkan-x64\.tar\.gz$'}
+      - {os: macos, arch: arm64, backend: cpu,    pattern: '^llama-b\d+-bin-macos-arm64\.tar\.gz$'}
+      - {os: macos, arch: amd64, backend: cpu,    pattern: '^llama-b\d+-bin-macos-x64\.tar\.gz$'}
+      - {os: linux, arch: amd64, backend: cuda,   pattern: '^llama-b\d+-bin-ubuntu-cuda-12\.8-x64\.tar\.gz$'}
+      - {os: linux, arch: arm64, backend: cuda,   pattern: '^llama-b\d+-bin-ubuntu-cuda-13\.4-arm64\.tar\.gz$'}
+    unavailable: ["linux-musl/arm64: not found", "linux-musl/amd64: not found (no Alpine build is published)"]
+
+  - id: mistral.rs
+    status: approve
+    repo: https://github.com/EricLBuehler/mistral.rs
+    license: MIT
+    license_source: https://raw.githubusercontent.com/EricLBuehler/mistral.rs/master/LICENSE   # "MIT License, Copyright (c) 2024 Eric Buehler"
+    channel:
+      kind: github_releases
+      include_prerelease: false
+      tag_pattern: '^v\d+\.\d+\.\d+$'
+      pin_policy: "newest stable tag, pinned by commit and per-asset sha256 in the lockfile"
+    formats: [gguf, safetensors]
+    server_binary: mistralrs        # expected; NOT yet verified
+    assets:
+      - {os: linux, arch: arm64, backend: cpu,   pattern: '^mistralrs-cpu-aarch64-unknown-linux-gnu\.tar\.gz$'}
+      - {os: linux, arch: amd64, backend: cpu,   pattern: '^mistralrs-cpu-x86_64-unknown-linux-gnu\.tar\.gz$'}
+      - {os: macos, arch: arm64, backend: metal, pattern: '^mistralrs-metal-aarch64-apple-darwin\.tar\.gz$'}
+    # CUDA builds exist per GPU compute capability (sm80, sm86, ...) but are 0.8 to 1.2 GB each; excluded by max_artifact_gb.
+
+  - id: llamafile
+    status: propose-off             # evaluated, disabled until you turn it on
+    repo: https://github.com/Mozilla-Ocho/llamafile
+    license: Apache-2.0
+    license_source: https://raw.githubusercontent.com/Mozilla-Ocho/llamafile/main/LICENSE   # the file says "The Apache 2.0 License"; GitHub's API reports NOASSERTION, the file is what counts
+    channel: {kind: github_releases, include_prerelease: false, tag_pattern: '^\d+\.\d+\.\d+$'}
+    formats: [gguf]
+    assets:
+      - {os: any, arch: any, backend: cpu, pattern: '^llamafile-\d+\.\d+\.\d+-thin$', note: "43.9 MB thin build; the 368 MB build is excluded by size"}
+    reason_off: "needs the APE loader on the target and is a different execution model; worth enabling only if you want a third runtime in the comparison"
+
+  - id: ollama
+    status: propose-off
+    repo: https://github.com/ollama/ollama
+    license: MIT
+    license_source: https://raw.githubusercontent.com/ollama/ollama/main/LICENSE
+    channel: {kind: github_releases, include_prerelease: false, tag_pattern: '^v\d+\.\d+\.\d+$'}
+    formats: [gguf]
+    assets:
+      - {os: linux, arch: arm64, backend: cpu, pattern: '^ollama-linux-arm64\.tar\.zst$', note: "1.56 GB, needs zstd"}
+      - {os: linux, arch: amd64, backend: cpu, pattern: '^ollama-linux-amd64\.tar\.zst$', note: "1.51 GB, needs zstd"}
+    reason_off: "archives are 1.5 GB each (over max_artifact_gb), it is a daemon with its own model registry (a source outside this manifest), and needs zstd"
+
+  - {id: LocalAI, status: exclude, license: MIT, reason: "downloads its inference backends at run time from its own gallery: would fetch things outside the manifest"}
+  - {id: cortex.cpp, status: exclude, license: Apache-2.0, reason: "repository is archived"}
+  - {id: mlc-llm, status: exclude, license: Apache-2.0, reason: "no prebuilt standalone binary in its releases (0 assets)"}
+  - {id: mlx-lm, status: exclude, license: MIT, reason: "Python package for Apple silicon only, no release binaries; would add a Python dependency on the device"}
+  - {id: BitNet, status: exclude, license: MIT, reason: "no releases or binaries; build-from-source only"}
+  - {id: ik_llama.cpp, status: exclude, license: MIT, reason: "no binary release assets (a fork; llama.cpp is already approved)"}
+  - {id: fastllm, status: exclude, license: Apache-2.0, reason: "no release binaries"}
+
+# ----------------------------------------------------------------------------------------------------------------
+model_sources:
+  # Example only: replace `author` with the publisher of the models you approve. The generator reads each repo's own
+  # license field from the model page and keeps a repo only if it is in license_allowlist.
+  - {id: acme,          status: approve, hub: huggingface, author: Acme,          formats: [gguf], seen: "placeholder, not a real publisher"}
+  # Conversion hubs host other people's models under mixed licenses. Off by default; per-repo license filtering would still apply.
+  - {id: ggml-org,      status: propose-off, hub: huggingface, author: ggml-org,   formats: [gguf], seen: "mixed licenses; off by default"}
+quantizations: [Q4_K_M, Q4_0, Q8_0]    # files outside these are ignored
+
+# ----------------------------------------------------------------------------------------------------------------
+# The initial smoke set. These exact artifacts were cross-checked against the source APIs (hash, size, URL, revision).
+# They lie inside the approved sources above and are what the first live run uses (R1 to R6) before the generator exists.
+smoke_set:
+  runtime: {source: llama.cpp, tag: b11856, commit: 3642238cc12050c8ab70afdf4b3121ea365c7579}
+  runtime_assets:
+    linux/arm64: {file: llama-b11856-bin-ubuntu-arm64.tar.gz, url: "https://github.com/ggml-org/llama.cpp/releases/download/b11856/llama-b11856-bin-ubuntu-arm64.tar.gz", sha256: 540871d9a0aac2b9b92ff42dd6f14449e418a7638302e7c11ccaa9f8b9dc6c98, bytes: 18100000}
+    linux/amd64: {file: llama-b11856-bin-ubuntu-x64.tar.gz,   url: "https://github.com/ggml-org/llama.cpp/releases/download/b11856/llama-b11856-bin-ubuntu-x64.tar.gz",   sha256: 71b660dd4a90c13db899acdef59862226f7ec8d27907b7c107febc99904c00be, bytes: 22400000}

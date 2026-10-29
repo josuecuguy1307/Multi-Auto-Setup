@@ -1,0 +1,53 @@
+{
+ "provenance": "builtin",
+ "protocol": "host",
+ "tier": "observe",
+ "ring": 1,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "sp_thunderbolt",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "system_profiler",
+      "SPThunderboltDataType",
+      "-json"
+     ],
+     "timeout_s": 20
+    }
+   },
+   {
+    "id": "lspci_nn",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "lspci",
+      "-nn"
+     ],
+     "timeout_s": 10,
+     "optional": true
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "hw.thunderbolt_ports"
+ ],
+ "legacy_id": "hw_buses",
+ "example": false
+}

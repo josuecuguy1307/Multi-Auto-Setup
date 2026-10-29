@@ -1,0 +1,85 @@
+{
+ "provenance": "builtin",
+ "protocol": "host",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "sp_camera",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "system_profiler",
+      "SPCameraDataType",
+      "-json"
+     ],
+     "timeout_s": 20
+    }
+   },
+   {
+    "id": "sp_audio",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "system_profiler",
+      "SPAudioDataType",
+      "-json"
+     ],
+     "timeout_s": 30
+    }
+   },
+   {
+    "id": "sp_printers",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "system_profiler",
+      "SPPrintersDataType",
+      "-json"
+     ],
+     "timeout_s": 30
+    }
+   },
+   {
+    "id": "dev_video",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "ls",
+      "-1",
+      "/dev"
+     ],
+     "timeout_s": 5
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "hw.camera_count",
+  "hw.audio_device_count",
+  "hw.printer_count"
+ ],
+ "legacy_id": "hw_peripherals",
+ "example": false
+}

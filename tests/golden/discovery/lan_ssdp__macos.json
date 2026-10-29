@@ -1,0 +1,59 @@
+{
+ "adapter": "lan_ssdp",
+ "counts": {
+  "entities": 2,
+  "facts": 1,
+  "resolved": 1,
+  "unknowns": 1
+ },
+ "facts": [
+  {
+   "key": "net.entity.service-5e50975b",
+   "status": "hypothesis",
+   "value": {
+    "attrs": {
+     "device_type": null,
+     "ip": "192.0.2.40",
+     "manufacturer": null,
+     "meaning": null,
+     "model": null,
+     "name": null,
+     "server": null
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": false,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.service-9f1f63a5",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "device_type": "urn:schemas-upnp-org:device:InternetGatewayDevice:1",
+     "ip": "192.0.2.1",
+     "manufacturer": "Example Corp",
+     "meaning": "UPnP gateway",
+     "model": "GW-1",
+     "name": "Example Gateway",
+     "server": "Linux/4.9 UPnP/1.0 ExampleGW/1.0"
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.ssdp_devices",
+   "status": "tested",
+   "value": 2
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

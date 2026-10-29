@@ -1,0 +1,440 @@
+{
+ "entities": 58,
+ "entity_attrs": [
+  {
+   "category": "package_manager",
+   "kind": "tool",
+   "name": "gem",
+   "source": "https://rubygems.org",
+   "version": "3.7.2"
+  },
+  {
+   "category": "terminal",
+   "kind": "tool",
+   "name": "screen",
+   "source": "https://www.gnu.org/software/screen",
+   "version": null
+  },
+  {
+   "category": "package_manager",
+   "kind": "tool",
+   "name": "pipx",
+   "source": "https://pipx.pypa.io",
+   "version": "1.8.0"
+  },
+  {
+   "category": "language",
+   "kind": "tool",
+   "name": "bun",
+   "source": "https://bun.sh",
+   "version": "1.3.14"
+  },
+  {
+   "category": "package_manager",
+   "kind": "tool",
+   "name": "bundle",
+   "source": "https://bundler.io",
+   "version": "2.7.2"
+  },
+  {
+   "category": "network",
+   "kind": "tool",
+   "name": "tcpdump",
+   "source": "https://www.tcpdump.org",
+   "version": "4.99.1"
+  },
+  {
+   "category": "editor",
+   "kind": "tool",
+   "name": "code",
+   "source": "https://code.visualstudio.com",
+   "version": "1.140.0"
+  },
+  {
+   "category": "model_runner",
+   "kind": "tool",
+   "name": "ollama",
+   "source": "https://ollama.com",
+   "version": "0.40.10"
+  },
+  {
+   "category": "container",
+   "kind": "tool",
+   "name": "kubectl",
+   "source": "https://kubernetes.io",
+   "version": "1.34.1"
+  },
+  {
+   "category": "database",
+   "kind": "tool",
+   "name": "redis-cli",
+   "source": "https://redis.io",
+   "version": "8.8.0"
+  },
+  {
+   "category": "media",
+   "kind": "tool",
+   "name": "pandoc",
+   "source": "https://pandoc.org",
+   "version": "3.8"
+  },
+  {
+   "category": "linting",
+   "kind": "tool",
+   "name": "shellcheck",
+   "source": "https://www.shellcheck.net",
+   "version": "0.11.0"
+  },
+  {
+   "category": "agent",
+   "kind": "tool",
+   "name": "claude",
+   "source": "https://www.anthropic.com/claude-code",
+   "version": "2.1.285"
+  },
+  {
+   "category": "agent",
+   "kind": "tool",
+   "name": "codex",
+   "source": "https://github.com/openai/codex",
+   "version": "0.159.0"
+  },
+  {
+   "category": "compiler",
+   "kind": "tool",
+   "name": "cc",
+   "source": "https://gcc.gnu.org",
+   "version": "17.0.0"
+  },
+  {
+   "category": "compiler",
+   "kind": "tool",
+   "name": "gcc",
+   "source": "https://gcc.gnu.org",
+   "version": "17.0.0"
+  },
+  {
+   "category": "compiler",
+   "kind": "tool",
+   "name": "javac",
+   "source": "https://openjdk.org",
+   "version": "21.0.8"
+  },
+  {
+   "category": "compiler",
+   "kind": "tool",
+   "name": "clang",
+   "source": "https://clang.llvm.org",
+   "version": "17.0.0"
+  },
+  {
+   "category": "package_manager",
+   "kind": "tool",
+   "name": "port",
+   "source": "https://www.macports.org",
+   "version": null
+  },
+  {
+   "category": "version_manager",
+   "kind": "tool",
+   "name": "rustup",
+   "source": "https://rustup.rs",
+   "version": "1.29.0"
+  },
+  {
+   "category": "network",
+   "kind": "tool",
+   "name": "rsync",
+   "source": "https://rsync.samba.org",
+   "version": "2.6.9"
+  },
+  {
+   "category": "package_manager",
+   "kind": "tool",
+   "name": "pip3",
+   "source": "https://pip.pypa.io",
+   "version": "25.3"
+  },
+  {
+   "category": "database",
+   "kind": "tool",
+   "name": "sqlite3",
+   "source": "https://www.sqlite.org",
+   "version": "3.51.0"
+  },
+  {
+   "category": "compiler",
+   "kind": "tool",
+   "name": "ld",
+   "source": "https://sourceware.org/binutils",
+   "version": "1167.4.1"
+  },
+  {
+   "category": "package_manager",
+   "kind": "tool",
+   "name": "npm",
+   "source": "https://www.npmjs.com",
+   "version": "11.12.1"
+  },
+  {
+   "category": "cloud",
+   "kind": "tool",
+   "name": "aws",
+   "source": "https://aws.amazon.com/cli",
+   "version": "2.37.0"
+  },
+  {
+   "category": "build",
+   "kind": "tool",
+   "name": "make",
+   "source": "https://www.gnu.org/software/make",
+   "version": "3.81"
+  },
+  {
+   "category": "crypto",
+   "kind": "tool",
+   "name": "openssl",
+   "source": "https://www.openssl.org",
+   "version": null
+  },
+  {
+   "category": "editor",
+   "kind": "tool",
+   "name": "vim",
+   "source": "https://www.vim.org",
+   "version": "9.1"
+  },
+  {
+   "category": "build",
+   "kind": "tool",
+   "name": "xcodebuild",
+   "source": "https://developer.apple.com/xcode",
+   "version": null
+  },
+  {
+   "category": "framework",
+   "kind": "tool",
+   "name": "flutter",
+   "source": "https://flutter.dev",
+   "version": "3.50.0-0.2.pre"
+  },
+  {
+   "category": "package_manager",
+   "kind": "tool",
+   "name": "brew",
+   "source": "https://brew.sh",
+   "version": "7.0.10"
+  },
+  {
+   "category": "media",
+   "kind": "tool",
+   "name": "ffmpeg",
+   "source": "https://ffmpeg.org",
+   "version": null
+  },
+  {
+   "category": "language",
+   "kind": "tool",
+   "name": "ruby",
+   "source": "https://www.ruby-lang.org",
+   "version": "3.4.7"
+  },
+  {
+   "category": "language",
+   "kind": "tool",
+   "name": "python3",
+   "source": "https://www.python.org",
+   "version": "3.13.11"
+  },
+  {
+   "category": "language",
+   "kind": "tool",
+   "name": "python",
+   "source": "https://www.python.org",
+   "version": "3.13.11"
+  },
+  {
+   "category": "language",
+   "kind": "tool",
+   "name": "java",
+   "source": "https://openjdk.org",
+   "version": "21.0.8"
+  },
+  {
+   "category": "package_manager",
+   "kind": "tool",
+   "name": "cargo",
+   "source": "https://doc.rust-lang.org/cargo",
+   "version": "1.97.1"
+  },
+  {
+   "category": "language",
+   "kind": "tool",
+   "name": "dart",
+   "source": "https://dart.dev",
+   "version": "3.11.0-88.0.dev"
+  },
+  {
+   "category": "network",
+   "kind": "tool",
+   "name": "curl",
+   "source": "https://curl.se",
+   "version": "8.13.0"
+  },
+  {
+   "category": "package_manager",
+   "kind": "tool",
+   "name": "pnpm",
+   "source": "https://pnpm.io",
+   "version": "12.5.1"
+  },
+  {
+   "category": "package_manager",
+   "kind": "tool",
+   "name": "npx",
+   "source": "https://www.npmjs.com",
+   "version": "11.12.1"
+  },
+  {
+   "category": "language",
+   "kind": "tool",
+   "name": "perl",
+   "source": "https://www.perl.org",
+   "version": "5.34.3"
+  },
+  {
+   "category": "language",
+   "kind": "tool",
+   "name": "swift",
+   "source": "https://www.swift.org",
+   "version": "1.120.5"
+  },
+  {
+   "category": "testing",
+   "kind": "tool",
+   "name": "pytest",
+   "source": "https://pytest.org",
+   "version": "9.0.2"
+  },
+  {
+   "category": "crypto",
+   "kind": "tool",
+   "name": "gpg",
+   "source": "https://gnupg.org",
+   "version": "2.4.8"
+  },
+  {
+   "category": "vcs",
+   "kind": "tool",
+   "name": "git",
+   "source": "https://git-scm.com",
+   "version": "2.39.5"
+  },
+  {
+   "category": "package_manager",
+   "kind": "tool",
+   "name": "uv",
+   "source": "https://docs.astral.sh/uv",
+   "version": "0.11.19"
+  },
+  {
+   "category": "language",
+   "kind": "tool",
+   "name": "node",
+   "source": "https://nodejs.org",
+   "version": "22.20.0"
+  },
+  {
+   "category": "package_manager",
+   "kind": "tool",
+   "name": "conda",
+   "source": "https://docs.conda.io",
+   "version": "25.11.1"
+  },
+  {
+   "category": "database",
+   "kind": "tool",
+   "name": "psql",
+   "source": "https://www.postgresql.org",
+   "version": "17.7"
+  },
+  {
+   "category": "container",
+   "kind": "tool",
+   "name": "docker",
+   "source": "https://www.docker.com",
+   "version": "28.4.0"
+  },
+  {
+   "category": "build",
+   "kind": "tool",
+   "name": "cmake",
+   "source": "https://cmake.org",
+   "version": "3.31.7"
+  },
+  {
+   "category": "network",
+   "kind": "tool",
+   "name": "ssh",
+   "source": "https://www.openssh.com",
+   "version": "9.9p2"
+  },
+  {
+   "category": "language",
+   "kind": "tool",
+   "name": "rustc",
+   "source": "https://www.rust-lang.org",
+   "version": "1.97.1"
+  },
+  {
+   "category": "compiler",
+   "kind": "tool",
+   "name": "swiftc",
+   "source": "https://www.swift.org",
+   "version": "1.120.5"
+  },
+  {
+   "category": "vcs",
+   "kind": "tool",
+   "name": "gh",
+   "source": "https://cli.github.com",
+   "version": "2.87.3"
+  },
+  {
+   "category": "data",
+   "kind": "tool",
+   "name": "jq",
+   "source": "https://jqlang.github.io/jq",
+   "version": "1.7.1-apple"
+  }
+ ],
+ "facts": {
+  "app.tools_by_category": {
+   "agent": 2,
+   "build": 3,
+   "cloud": 1,
+   "compiler": 6,
+   "container": 2,
+   "crypto": 2,
+   "data": 1,
+   "database": 3,
+   "editor": 2,
+   "framework": 1,
+   "language": 10,
+   "linting": 1,
+   "media": 2,
+   "model_runner": 1,
+   "network": 4,
+   "package_manager": 12,
+   "terminal": 1,
+   "testing": 1,
+   "vcs": 2,
+   "version_manager": 1
+  },
+  "app.tools_checked": 132,
+  "app.tools_found": 58
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

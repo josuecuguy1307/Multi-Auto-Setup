@@ -67,6 +67,27 @@ def dir_probe_schema(v: object) -> str:
 Schema = Callable[[object], str]
 
 
+def int_schema(lo: int, hi: int, what: str = "number") -> Schema:
+    def check(v: object) -> str:
+        try:
+            n = int(v)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            raise TemplateError(f"{what} {v!r} is not a number") from None
+        if not lo <= n <= hi or str(n) != str(v).strip():
+            raise TemplateError(f"{what} {v!r} must be {lo} to {hi}")
+        return str(n)
+    return check
+
+
+HTTP_PATHS = ("/health", "/v1/models", "/props")
+
+
+def http_path_schema(v: object) -> str:
+    if v not in HTTP_PATHS:
+        raise TemplateError(f"path {v!r} is not one of {HTTP_PATHS}")
+    return str(v)
+
+
 @dataclass(frozen=True)
 class Template:
     name: str
@@ -87,9 +108,9 @@ class Template:
         clean = {k: self.placeholders[k](v) for k, v in values.items()}
         out = []
         for part in self.argv:
-            names = re.findall(r"\{(\w+)\}", part)
-            for n in names:
-                part = part.replace("{" + n + "}", clean[n])
+            for n in re.findall(r"\{(\w+)\}", part):
+                if n in clean:  # only declared placeholders; braces in fixed script text (e.g. ${10}) are left alone
+                    part = part.replace("{" + n + "}", clean[n])
             out.append(part)
         return out
 
@@ -112,6 +133,8 @@ TEMPLATES: dict[str, Template] = {t.name: t for t in (
     _t("cgroup_mem", [_SH, "-c", "cat /sys/fs/cgroup/memory.max 2>/dev/null || cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null || echo max"],
        Tier.observe, desc="RAM limit this process is actually held to"),
     _t("nproc", ["nproc"], Tier.observe),
+    _t("cpu_flags", [_SH, "-c", "grep -m1 -E '^(flags|Features)' /proc/cpuinfo 2>/dev/null || echo none"], Tier.observe, desc="CPU feature flags"),
+    _t("accel_probe", [_SH, "-c", "if command -v nvidia-smi >/dev/null 2>&1; then echo nvidia; elif [ -e /dev/kfd ]; then echo rocm; elif [ -d /dev/dri ]; then echo dri; else echo none; fi"], Tier.observe, desc="GPU or accelerator present"),
     _t("df_free", ["df", "-Pk", "{path}"], Tier.observe, {"path": dir_probe_schema}, "free disk"),
     _t("gpu_probe", [_SH, "-c", "command -v nvidia-smi >/dev/null 2>&1 && echo nvidia || echo none"], Tier.observe),
     _t("pkg_manager", [_SH, "-c", "for p in apt-get apk dnf yum brew; do command -v $p >/dev/null 2>&1 && { echo $p; exit 0; }; done; echo none"],
@@ -128,10 +151,31 @@ TEMPLATES: dict[str, Template] = {t.name: t for t in (
     _t("mkdir_install", ["mkdir", "-p", "{dir}"], Tier.write_approval, {"dir": install_path_schema}),
     _t("receive_file", ["dd", "of={dest}", "status=none"], Tier.write_approval, {"dest": install_path_schema}, "bytes arrive on stdin", True),
     _t("chmod_exec", ["chmod", "755", "{path}"], Tier.write_approval, {"path": install_path_schema}),
-    _t("start_server", [_SH, "-c", 'nohup python3 "$1" serve --host 127.0.0.1 --port "$2" --model "$3" >"$4" 2>&1 & echo $! >"$5"; sleep 1; cat "$5"',
-                        _SH, "{runtime}", "{port}", "{model}", "{log}", "{pidfile}"], Tier.write_approval,
-       {"runtime": install_path_schema, "port": port_schema, "model": name_schema, "log": install_path_schema, "pidfile": install_path_schema},
-       "start the model server bound to 127.0.0.1"),
+    _t("runtime_start", [_SH, "-c", 'nohup python3 "$1" runtime start --root "$2" --kind "$3" --binary "$4" --model "$5" --port "$6" --threads "$7" --context "$8" --max-rss-mib "$9" --min-free-disk-mb "${10}" >/dev/null 2>&1 & sleep 1; cat "$2/server.pid"',
+                         _SH, "{worker}", "{root}", "{kind}", "{binary}", "{model}", "{port}", "{threads}", "{context}", "{max_rss_mib}", "{min_free_disk_mb}"],
+       Tier.write_approval,
+       {"worker": install_path_schema, "root": install_path_schema, "kind": name_schema, "binary": install_path_schema,
+        "model": install_path_schema, "port": port_schema, "threads": int_schema(1, 256, "threads"),
+        "context": int_schema(128, 131072, "context"), "max_rss_mib": int_schema(64, 1_000_000, "memory cap"),
+        "min_free_disk_mb": int_schema(1, 1_000_000, "disk floor")},
+       "start the external inference server through the worker, bound to 127.0.0.1, with caps"),
+    _t("runtime_stop", ["python3", "{worker}", "runtime", "stop", "--root", "{root}"], Tier.write_approval,
+       {"worker": install_path_schema, "root": install_path_schema}, "stop the server through the worker"),
+    _t("runtime_status", ["python3", "{worker}", "runtime", "status", "--root", "{root}"], Tier.observe,
+       {"worker": install_path_schema, "root": install_path_schema}),
+    _t("extract_tar", ["tar", "-xzf", "{archive}", "-C", "{dest}"], Tier.write_approval,
+       {"archive": install_path_schema, "dest": install_path_schema}, "unpack the pinned runtime archive"),
+    _t("find_file", ["find", "{dir}", "-type", "f", "-name", "{name}"], Tier.observe,
+       {"dir": install_path_schema, "name": name_schema}),
+    _t("tail_file", ["tail", "-n", "20", "{path}"], Tier.observe, {"path": install_path_schema}),
+    _t("port_check", ["python3", "-c", "import socket,sys\ns=socket.socket();s.settimeout(1)\nprint('open' if s.connect_ex(('127.0.0.1',int(sys.argv[1])))==0 else 'closed')", "{port}"],
+       Tier.observe, {"port": port_schema}, "is anything listening on this localhost port"),
+    _t("http_get", ["python3", "-c", "import sys,urllib.request;print(urllib.request.urlopen('http://127.0.0.1:%s%s'%(sys.argv[1],sys.argv[2]),timeout=5).read().decode())", "{port}", "{urlpath}"],
+       Tier.observe, {"port": port_schema, "urlpath": http_path_schema}, "GET one fixed path from the local server"),
+    _t("listeners", ["python3", "-c", "import sys\nfor name in ('tcp','tcp6'):\n    for ln in open('/proc/net/'+name).read().splitlines()[1:]:\n        f=ln.split()\n        if f[3]=='0A' and int(f[1].split(':')[1],16)==int(sys.argv[1]): print(f[1])", "{port}"],
+       Tier.observe, {"port": port_schema}, "which local addresses are listening on this port"),
+    _t("server_rss", ["python3", "-c", "import os,sys\nb=sys.argv[1]\nfor d in os.listdir('/proc'):\n    if d.isdigit():\n        try:\n            c=open('/proc/%s/cmdline'%d).read().split(chr(0))\n            if b in c[:2]:\n                print([l.split()[1] for l in open('/proc/%s/status'%d) if l.startswith('VmRSS')][0])\n        except OSError: pass", "{binary}"],
+       Tier.observe, {"binary": install_path_schema}, "resident memory of the server process in kB"),
     _t("stop_server", [_SH, "-c", 'if [ -f "$1" ]; then kill "$(cat "$1")" 2>/dev/null; rm -f "$1"; fi; echo stopped', _SH, "{pidfile}"],
        Tier.write_approval, {"pidfile": install_path_schema}),
     _t("remove_tree", ["rm", "-rf", "{dir}"], Tier.write_approval, {"dir": install_path_schema}, "undo: remove installed files"),

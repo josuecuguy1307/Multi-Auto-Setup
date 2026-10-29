@@ -1,0 +1,212 @@
+{
+ "adapter": "app_agents",
+ "counts": {
+  "entities": 10,
+  "facts": 1,
+  "resolved": 10,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "app.agent_count",
+   "status": "tested",
+   "value": 9
+  },
+  {
+   "key": "app.entity.agent-194535dd",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "category": "coding_agent",
+     "name": "Codex CLI",
+     "seen_as": [
+      "binary",
+      "config"
+     ],
+     "source": "https://github.com/openai/codex",
+     "state": "installed"
+    },
+    "kind": "agent",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.agent-2baba3a1",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "category": "ide_assistant",
+     "name": "Visual Studio Code",
+     "seen_as": [
+      "binary",
+      "app"
+     ],
+     "source": "https://code.visualstudio.com",
+     "state": "installed"
+    },
+    "kind": "agent",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.agent-44639364",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "category": "assistant_app",
+     "name": "Claude desktop app",
+     "seen_as": [
+      "app",
+      "config"
+     ],
+     "source": "https://claude.ai/download",
+     "state": "installed"
+    },
+    "kind": "agent",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.agent-51f7c49d",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "category": "agent_framework",
+     "name": "MCP command line tools",
+     "seen_as": [
+      "binary"
+     ],
+     "source": "https://modelcontextprotocol.io",
+     "state": "installed"
+    },
+    "kind": "agent",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.agent-67e39d86",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "category": "coding_agent",
+     "name": "opencode",
+     "seen_as": [
+      "config"
+     ],
+     "source": "https://opencode.ai",
+     "state": "installed"
+    },
+    "kind": "agent",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.agent-9463b569",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "category": "assistant_app",
+     "name": "ChatGPT desktop app",
+     "seen_as": [
+      "app"
+     ],
+     "source": "https://openai.com/chatgpt/desktop",
+     "state": "installed"
+    },
+    "kind": "agent",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.agent-9571286c",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "category": "local_model_runner",
+     "name": "Ollama",
+     "seen_as": [
+      "binary",
+      "config"
+     ],
+     "source": "https://ollama.com",
+     "state": "installed"
+    },
+    "kind": "agent",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.agent-ae4ee14f",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "category": "coding_agent",
+     "name": "Gemini CLI",
+     "seen_as": [
+      "config"
+     ],
+     "source": "https://github.com/google-gemini/gemini-cli",
+     "state": "installed"
+    },
+    "kind": "agent",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.agent-e45c65f0",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "category": "coding_agent",
+     "name": "Claude Code",
+     "seen_as": [
+      "binary",
+      "config"
+     ],
+     "source": "https://www.anthropic.com/claude-code",
+     "state": "installed"
+    },
+    "kind": "agent",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.mcp-server-a0eaec69",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "client": "claude-desktop",
+     "command": "python3",
+     "name": "REDACTED-NAME"
+    },
+    "kind": "mcp_server",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

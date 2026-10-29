@@ -1,0 +1,31 @@
+{
+ "listen_s": 1.5,
+ "reply_wait_s": 1.0,
+ "bauds": [
+  9600,
+  115200,
+  4800
+ ],
+ "probes": [
+  {
+   "name": "newline",
+   "send": "\r\n",
+   "src": "terminal convention: prompts and banners answer a bare line end"
+  },
+  {
+   "name": "at",
+   "send": "AT\r\n",
+   "src": "https://en.wikipedia.org/wiki/Hayes_AT_command_set"
+  },
+  {
+   "name": "scpi_idn",
+   "send": "*IDN?\r\n",
+   "src": "https://www.ivifoundation.org/specifications/default.aspx (SCPI, IEEE 488.2)"
+  },
+  {
+   "name": "grbl_info",
+   "send": "$I\r\n",
+   "src": "https://github.com/gnea/grbl/wiki/Grbl-v1.1-Commands"
+  }
+ ]
+}

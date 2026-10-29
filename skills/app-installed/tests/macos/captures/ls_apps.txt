@@ -1,0 +1,51 @@
+REDACTED-NAME.app
+REDACTED-NAME.brain-status-pre-global-e701d63fb3c3.js
+REDACTED-NAME.cascara-pre-idiomas-global-20260911
+REDACTED-NAME.cascara-pre-idiomas-global-bf5aa0a59d2b
+REDACTED-NAME.finance-backend-pre-global-d9ec331930a6
+REDACTED-NAME.i18n-pre-global-3dad00f3b838.js
+REDACTED-NAME.i18n-pre-global-6985c06d40fa.js
+REDACTED-NAME.sala-name-pre-20260912-05chcE
+REDACTED-NAME.science-dist-pre-embedded-final-20260912
+REDACTED-NAME.science-dist-pre-global-locale-20260912
+REDACTED-NAME.settings-labels-pre-20260912-8EvpSx
+REDACTED-NAME.settings-pre-global-decimal-20260912.html
+REDACTED-NAME.sidecar-pre-global-fallback-057c9813
+REDACTED-NAME.vocabulario-pre-20260912-4QzIKx
+REDACTED-NAME.vocabulario-pre-20260912-6HUA4B
+REDACTED-NAME.vocabulario-pre-20260912-AuA6i8
+REDACTED-NAME.vocabulario-pre-20260912-BUot5o
+REDACTED-NAME.vocabulario-pre-20260912-RKk4Dl
+REDACTED-NAME.vocabulario-pre-20260912-RayMNC
+REDACTED-NAME.vocabulario-pre-20260912-nZh6lc
+REDACTED-NAME.vocabulario-pre-20260912-pGTb7U
+REDACTED-NAME.vocabulario-pre-20260912-sRapaI
+BlueStacks.app
+BlueStacksMIM.app
+CAMI.dmg
+ChatGPT.app
+Claude Science.app
+Claude.app
+Developer.app
+Discord.app
+Docker.app
+FirmaEC.app
+Flujo.app
+Google Chrome.app
+Install ChatGPT.app
+Keynote.app
+KiCad
+MacPorts
+Microsoft Word.app
+Muse Hub.app
+Numbers.app
+Pages.app
+Python 3.13
+Safari.app
+Spotify.app
+The Unarchiver.app
+UTM.app
+Utilities
+Visual Studio Code.app
+WhatsApp.app
+X-VPN.app

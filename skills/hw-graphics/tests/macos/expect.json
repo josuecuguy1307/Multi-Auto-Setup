@@ -1,0 +1,24 @@
+{
+ "entities": 2,
+ "entity_attrs": [
+  {
+   "connection": "internal",
+   "main": true,
+   "name": "Color LCD",
+   "resolution": "1470 x 956 @ 60.00Hz"
+  },
+  {
+   "bus": "builtin",
+   "cores": "10",
+   "metal": "metal3",
+   "name": "Apple M3"
+  }
+ ],
+ "facts": {
+  "hw.display_count": 1,
+  "hw.gpu_count": 1
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

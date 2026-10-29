@@ -1,0 +1,1 @@
+power the instrument, check its address and port on your own network, then re-run

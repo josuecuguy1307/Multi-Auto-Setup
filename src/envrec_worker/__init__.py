@@ -5,4 +5,4 @@ planner, the remote runner, and any network scanning or discovery code. A worker
 because the code to do so is not in it.
 """
 
-__version__ = "1.0.0"
+__version__ = "2.0.0"

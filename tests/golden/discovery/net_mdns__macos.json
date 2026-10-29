@@ -1,0 +1,209 @@
+{
+ "adapter": "net_mdns",
+ "counts": {
+  "entities": 10,
+  "facts": 2,
+  "resolved": 8,
+  "unknowns": 2
+ },
+ "facts": [
+  {
+   "key": "net.entity.service-3c47b95e",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "host": "echoshow.local",
+     "instance": "SpotifyConnect",
+     "ip": "192.0.2.19",
+     "meaning": "Spotify Connect player",
+     "port": 4070,
+     "service_type": "_spotify-connect._tcp"
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.service-5e4d5f3a",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "host": "<id>.local",
+     "instance": "<id>-<id>",
+     "ip": "192.0.2.21",
+     "meaning": "Matter Operational Discovery and Communi",
+     "port": 5541,
+     "service_type": "_matter._tcp"
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.service-90ccd140",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "host": "REDACTED-NAMEs-MacBook-Air.local",
+     "instance": "<id>@REDACTED-NAME\u2019s MacBook Air",
+     "ip": "192.0.2.30",
+     "meaning": "AirPlay audio receiver",
+     "port": 7000,
+     "service_type": "_raop._tcp",
+     "txt_am": "Mac15,12",
+     "txt_md": "0,1,2"
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.service-abbd5e8d",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "host": "linux.local",
+     "instance": "SpotifyConnect #2",
+     "ip": "192.0.2.21",
+     "meaning": "Spotify Connect player",
+     "port": 4070,
+     "service_type": "_spotify-connect._tcp"
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.service-ad59102c",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "host": "REDACTED-NAMEs-MacBook-Air.local",
+     "instance": "REDACTED-NAME\u2019s MacBook Air",
+     "ip": "192.0.2.30",
+     "meaning": "Apple AirPlay receiver",
+     "port": 7000,
+     "service_type": "_airplay._tcp",
+     "txt_model": "Mac15,12"
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.service-ae0094b9",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "host": "<id>.local",
+     "instance": "<id>-<id>",
+     "ip": "192.0.2.19",
+     "meaning": "Matter Operational Discovery and Communi",
+     "port": 5541,
+     "service_type": "_matter._tcp"
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.service-c2abd577",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "host": "REDACTED-NAMEs-MacBook-Air.local",
+     "instance": "REDACTED-NAME\u2019s MacBook Air",
+     "ip": "192.0.2.30",
+     "meaning": "Apple device",
+     "port": 61775,
+     "service_type": "_companion-link._tcp"
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.service-ddf1dd0c",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "host": "<id>.local",
+     "instance": "<id>",
+     "ip": "192.0.2.53",
+     "meaning": "Matter Commissioner Discovery",
+     "port": 5550,
+     "service_type": "_matterd._udp"
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.service-fb58c132",
+   "status": "hypothesis",
+   "value": {
+    "attrs": {
+     "host": "echoshow.local",
+     "instance": "<id>",
+     "ip": "192.0.2.19",
+     "meaning": null,
+     "port": 0,
+     "service_type": "_occam._udp"
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": false,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.service-fdf44488",
+   "status": "hypothesis",
+   "value": {
+    "attrs": {
+     "host": "linux.local",
+     "instance": "<id>",
+     "ip": "192.0.2.21",
+     "meaning": null,
+     "port": 0,
+     "service_type": "_occam._udp"
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": false,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.mdns_service_types",
+   "status": "tested",
+   "value": 24
+  },
+  {
+   "key": "net.mdns_services",
+   "status": "tested",
+   "value": 10
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

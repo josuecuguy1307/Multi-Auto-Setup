@@ -1,0 +1,60 @@
+{
+ "adapter": "net_neighbors",
+ "counts": {
+  "entities": 2,
+  "facts": 2,
+  "resolved": 2,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "net.entity.host-a0cd79a4",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "interface": "eth0",
+     "ip": "192.0.2.1",
+     "oui": "00005e",
+     "randomized_mac": false,
+     "vendor": "IANA Documentation"
+    },
+    "kind": "host",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.host-e16470f4",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "interface": "eth0",
+     "ip": "192.0.2.40",
+     "oui": "00005e",
+     "randomized_mac": false,
+     "vendor": "IANA Documentation"
+    },
+    "kind": "host",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.neighbors_count",
+   "status": "tested",
+   "value": 2
+  },
+  {
+   "key": "net.neighbors_incomplete",
+   "status": "tested",
+   "value": 1
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

@@ -1,0 +1,61 @@
+{
+ "entities": 7,
+ "entity_attrs": [
+  {
+   "interface": "en0",
+   "ip": "192.0.2.19",
+   "oui": "2824c9",
+   "randomized_mac": false,
+   "vendor": "Amazon Technologies Inc."
+  },
+  {
+   "interface": "en0",
+   "ip": "192.0.2.63",
+   "oui": "ffffff",
+   "randomized_mac": true,
+   "vendor": null
+  },
+  {
+   "interface": "en0",
+   "ip": "192.0.2.22",
+   "oui": "c45bac",
+   "randomized_mac": false,
+   "vendor": "Apple, Inc."
+  },
+  {
+   "interface": "en0",
+   "ip": "192.0.2.53",
+   "oui": "ac416a",
+   "randomized_mac": false,
+   "vendor": "Amazon Technologies Inc."
+  },
+  {
+   "interface": "en0",
+   "ip": "192.0.2.21",
+   "oui": "b0739c",
+   "randomized_mac": false,
+   "vendor": "Amazon Technologies Inc."
+  },
+  {
+   "interface": "en0",
+   "ip": "192.0.2.1",
+   "oui": "30f947",
+   "randomized_mac": false,
+   "vendor": "Router Maker Ltd"
+  },
+  {
+   "interface": "en0",
+   "ip": "192.0.2.60",
+   "oui": "ccb11a",
+   "randomized_mac": false,
+   "vendor": "Samsung Electronics Co.,Ltd"
+  }
+ ],
+ "facts": {
+  "net.neighbors_count": 7,
+  "net.neighbors_incomplete": 5
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

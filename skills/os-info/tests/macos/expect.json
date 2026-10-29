@@ -1,0 +1,13 @@
+{
+ "entities": 0,
+ "entity_attrs": [],
+ "facts": {
+  "os.boot_epoch": 1792671214,
+  "os.build": "24G231",
+  "os.locale": "es_EC",
+  "os.uname": "Darwin 24.6.0 arm64"
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

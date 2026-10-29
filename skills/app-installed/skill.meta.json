@@ -1,0 +1,147 @@
+{
+ "provenance": "builtin",
+ "protocol": "host",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "sp_apps",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "system_profiler",
+      "SPApplicationsDataType",
+      "-json"
+     ],
+     "timeout_s": 90
+    }
+   },
+   {
+    "id": "ls_apps",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "ls",
+      "-1",
+      "/Applications"
+     ],
+     "timeout_s": 10
+    }
+   },
+   {
+    "id": "brew",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "brew",
+      "list",
+      "--versions"
+     ],
+     "timeout_s": 20,
+     "optional": true
+    }
+   },
+   {
+    "id": "dpkg",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "dpkg",
+      "-l"
+     ],
+     "timeout_s": 20,
+     "optional": true
+    }
+   },
+   {
+    "id": "rpm",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "rpm",
+      "-qa",
+      "--qf",
+      "%{NAME} %{VERSION}\\n"
+     ],
+     "timeout_s": 20,
+     "optional": true
+    }
+   },
+   {
+    "id": "pacman",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "pacman",
+      "-Q"
+     ],
+     "timeout_s": 20,
+     "optional": true
+    }
+   },
+   {
+    "id": "flatpak",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "flatpak",
+      "list",
+      "--columns=application,version"
+     ],
+     "timeout_s": 20,
+     "optional": true
+    }
+   },
+   {
+    "id": "snap",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "snap",
+      "list"
+     ],
+     "timeout_s": 20,
+     "optional": true
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "app.installed_count"
+ ],
+ "legacy_id": "app_installed",
+ "example": false
+}

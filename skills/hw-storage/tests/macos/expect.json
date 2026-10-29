@@ -1,0 +1,39 @@
+{
+ "entities": 3,
+ "entity_attrs": [
+  {
+   "free_gib": 49.2,
+   "fs": "APFS",
+   "internal": true,
+   "medium": "ssd",
+   "mount": "/",
+   "name": "Macintosh HD",
+   "size_gib": 460.4
+  },
+  {
+   "free_gib": 49.2,
+   "fs": "APFS",
+   "internal": true,
+   "medium": "ssd",
+   "mount": "/System/Volumes/Data",
+   "name": "Data",
+   "size_gib": 460.4
+  },
+  {
+   "free_gib": 49.2,
+   "fs": "APFS",
+   "internal": true,
+   "medium": "ssd",
+   "mount": null,
+   "name": "Macintosh HD",
+   "size_gib": 460.4
+  }
+ ],
+ "facts": {
+  "hw.external_volume_count": 0,
+  "hw.volume_count": 3
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

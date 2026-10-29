@@ -1,0 +1,34 @@
+{
+ "adapter": "hw_graphics",
+ "counts": {
+  "entities": 1,
+  "facts": 1,
+  "resolved": 1,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "hw.entity.gpu-09eeb802",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "name": "Example Corp GPU 9000"
+    },
+    "kind": "gpu",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "hw.gpu_count",
+   "status": "tested",
+   "value": 1
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

@@ -1,0 +1,11 @@
+{
+ "platform": "linux",
+ "match": true,
+ "facts": {
+  "serial.responded": false,
+  "serial.baud": 9600
+ },
+ "unknown": [
+  "serial.banner"
+ ]
+}

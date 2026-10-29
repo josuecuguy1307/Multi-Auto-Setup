@@ -1,0 +1,32 @@
+{
+ "provenance": "builtin",
+ "protocol": "ble",
+ "tier": "observe",
+ "ring": 1,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "scan",
+    "tool": "ble_scan_passive",
+    "platforms": [
+     "macos",
+     "linux"
+    ],
+    "args": {}
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "ble.nearby_count"
+ ],
+ "legacy_id": "ble_scan",
+ "example": false
+}

@@ -1,0 +1,10 @@
+# Approved reference-table sources for `envrec data fetch`. Each is one GET of one file; nothing else is ever downloaded by it.
+# License text is quoted from each project's own page. The sha256 of what was fetched is recorded in data/downloads/MANIFEST.json.
+sources:
+  - {id: usb.ids, url: "http://www.linux-usb.org/usb.ids", file: usb.ids, license: "BSD-3-Clause or GPL-2.0-or-later (stated in the file header)", info: "http://www.linux-usb.org/usb-ids.html"}
+  - {id: pci.ids, url: "https://pci-ids.ucw.cz/v2.2/pci.ids", file: pci.ids, license: "BSD-3-Clause or GPL-2.0-or-later (stated in the file header)", info: "https://pci-ids.ucw.cz"}
+  - {id: ieee-oui, url: "https://standards-oui.ieee.org/oui/oui.csv", file: oui.csv, license: "IEEE Registration Authority public listing", info: "https://standards.ieee.org/products-programs/regauth/"}
+  - {id: bluetooth-company-ids, url: "https://raw.githubusercontent.com/NordicSemiconductor/bluetooth-numbers-database/master/v1/company_ids.json", file: bt_company_ids.json, license: "BSD-3-Clause (Nordic Semiconductor)", info: "https://github.com/NordicSemiconductor/bluetooth-numbers-database"}
+  - {id: bluetooth-service-uuids, url: "https://raw.githubusercontent.com/NordicSemiconductor/bluetooth-numbers-database/master/v1/service_uuids.json", file: bt_service_uuids.json, license: "BSD-3-Clause (Nordic Semiconductor)", info: "https://github.com/NordicSemiconductor/bluetooth-numbers-database"}
+  - {id: bluetooth-numbers-license, url: "https://raw.githubusercontent.com/NordicSemiconductor/bluetooth-numbers-database/master/LICENSE", file: bt_numbers_LICENSE.txt, license: "the license text itself", info: "https://github.com/NordicSemiconductor/bluetooth-numbers-database"}
+  - {id: iana-service-names, url: "https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.csv", file: iana_services.csv, license: "IANA registry data", info: "https://www.iana.org/help/licensing-terms"}

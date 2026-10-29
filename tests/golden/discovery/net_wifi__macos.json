@@ -1,0 +1,78 @@
+{
+ "adapter": "net_wifi",
+ "counts": {
+  "entities": 0,
+  "facts": 10,
+  "resolved": 0,
+  "unknowns": 1
+ },
+ "facts": [
+  {
+   "key": "net.wifi.band_ghz",
+   "status": "tested",
+   "value": 2
+  },
+  {
+   "key": "net.wifi.channel",
+   "status": "tested",
+   "value": 9
+  },
+  {
+   "key": "net.wifi.connected",
+   "status": "tested",
+   "value": true
+  },
+  {
+   "key": "net.wifi.nearby_by_channel",
+   "status": "tested",
+   "value": {
+    "1": 1,
+    "11": 1,
+    "36": 1,
+    "9": 1
+   }
+  },
+  {
+   "key": "net.wifi.nearby_count",
+   "status": "tested",
+   "value": 4
+  },
+  {
+   "key": "net.wifi.noise",
+   "status": "tested",
+   "value": -98
+  },
+  {
+   "key": "net.wifi.phy",
+   "status": "tested",
+   "value": "802.11ax"
+  },
+  {
+   "key": "net.wifi.rssi",
+   "status": "tested",
+   "value": -60
+  },
+  {
+   "key": "net.wifi.security",
+   "status": "tested",
+   "value": "pairport_security_mode_wpa3_transition"
+  },
+  {
+   "key": "net.wifi.ssid",
+   "status": "unknown",
+   "value": null
+  },
+  {
+   "key": "net.wifi.tx_rate",
+   "status": "tested",
+   "value": 146
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {
+  "net.wifi.ssid": "permission: System Settings > Privacy & Security > Location Services: turn it on, and enable it for the program\u2026"
+ }
+}

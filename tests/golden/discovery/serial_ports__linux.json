@@ -1,0 +1,56 @@
+{
+ "adapter": "serial_ports",
+ "counts": {
+  "entities": 2,
+  "facts": 2,
+  "resolved": 2,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "serial.entity.serial-894670f1",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "by_id": null,
+     "kind": "usb-serial",
+     "name": "ttyUSB0"
+    },
+    "kind": "serial",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 1
+   }
+  },
+  {
+   "key": "serial.entity.serial-b419a48f",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "by_id": null,
+     "kind": "usb-serial",
+     "name": "ttyACM0"
+    },
+    "kind": "serial",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 1
+   }
+  },
+  {
+   "key": "serial.excluded_count",
+   "status": "tested",
+   "value": 0
+  },
+  {
+   "key": "serial.port_count",
+   "status": "tested",
+   "value": 2
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

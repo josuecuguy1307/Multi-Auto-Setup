@@ -1,0 +1,9 @@
+{
+  "SPCameraDataType" : [
+    {
+      "_name" : "Cámara FaceTime HD",
+      "spcamera_model-id" : "Cámara FaceTime HD",
+      "spcamera_unique-id" : "REDACTED-5"
+    }
+  ]
+}

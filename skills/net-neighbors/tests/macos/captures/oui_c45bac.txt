@@ -1,0 +1,1 @@
+{"found": true, "name": "Apple, Inc.", "source": "ieee.oui", "identifier": "c4:5b:ac:00:00:04", "entries": ["C45BAC  Apple, Inc."]}

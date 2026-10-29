@@ -1,0 +1,6 @@
+{
+ "adapter": "serial_ports",
+ "platform": "macos",
+ "synthetic": false,
+ "source": "captured on a real Mac, redacted"
+}

@@ -1,0 +1,1 @@
+{"port": "/dev/ttyUSB0", "passive": "", "sent": ["newline", "at", "scpi_idn", "grbl_info"], "reply": "", "baud": 9600}

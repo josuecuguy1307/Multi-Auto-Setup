@@ -20,6 +20,7 @@ class Transport(StrEnum):
     docker_exec = "docker_exec"
     adb_usb = "adb_usb"
     serial = "serial"
+    tcp = "tcp"  # an instrument or sensor endpoint on your own network (read-only identify, and a passive stream sample)
 
 
 class Limits(Strict):
@@ -109,12 +110,26 @@ class AdbBlock(Strict):
 class SerialBlock(Strict):
     path: str
     baud: int = Field(default=115200, ge=300, le=4_000_000)
+    allow_send: bool = False  # False: discovery only LISTENS on this port. True: it may also send the fixed identify queries of data/serial_probes.yaml
 
     @field_validator("path")
     @classmethod
     def _p(cls, v: str) -> str:
         if not _SERIAL_PATH.match(v):
             raise ValueError("serial path must look like /dev/ttyUSB0 or COM3")
+        return v
+
+
+class TcpBlock(Strict):
+    host: str
+    port: int = Field(ge=1, le=65535)
+    allow_send: bool = False  # False: discovery only reads what the endpoint volunteers. True: it may send the fixed `*IDN?` identify query
+
+    @field_validator("host")
+    @classmethod
+    def _h(cls, v: str) -> str:
+        if not _HOST.match(v):
+            raise ValueError("tcp host must be a hostname or IP address, nothing else")
         return v
 
 
@@ -146,6 +161,7 @@ class TargetEntry(Strict):
     docker_exec: DockerExecBlock | None = None
     adb_usb: AdbBlock | None = None
     serial: SerialBlock | None = None
+    tcp: TcpBlock | None = None
     limits: EntryLimits
     owner_confirmed: bool = False  # set only by the enrollment flow or by hand
     # Set only by enrollment's one read-only check. The planner never writes to this file.

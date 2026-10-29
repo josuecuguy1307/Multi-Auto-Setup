@@ -1,0 +1,23 @@
+{
+ "entities": 2,
+ "entity_attrs": [
+  {
+   "class": "VGA compatible controller",
+   "name": "Example Corp GPU 9000",
+   "pid": "9000",
+   "vid": "1234"
+  },
+  {
+   "class": "Host bridge",
+   "name": "Example Corp Host Bridge",
+   "pid": "0001",
+   "vid": "1234"
+  }
+ ],
+ "facts": {
+  "hw.pci_device_count": 2
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

@@ -1,0 +1,1 @@
+{"found": true, "name": "Harman International", "source": "bluetooth.company_ids", "identifier": "0x005D", "entries": ["0x005D  Harman International"]}

@@ -1,0 +1,4 @@
+11:05:39.824  REDACTED-NAME’s\032MacBook\032Air._airplay._tcp.local. can be reached at REDACTED-NAMEs-MacBook-Air.local.:7000 (interface 11) Flags: 1
+ model=Mac15,12
+11:05:39.824  REDACTED-NAME’s\032MacBook\032Air._airplay._tcp.local. can be reached at REDACTED-NAMEs-MacBook-Air.local.:7000 (interface 1)
+ model=Mac15,12

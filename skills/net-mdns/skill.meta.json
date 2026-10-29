@@ -1,0 +1,49 @@
+{
+ "provenance": "builtin",
+ "protocol": "network_host",
+ "tier": "observe",
+ "ring": 2,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "types",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "dns-sd",
+      "-B",
+      "_services._dns-sd._udp",
+      "local"
+     ],
+     "timeout_s": 20,
+     "optional": true,
+     "window_s": 6.0
+    }
+   },
+   {
+    "id": "zc",
+    "tool": "mdns_zeroconf",
+    "platforms": [
+     "linux"
+    ],
+    "args": {}
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "net.mdns_service_types"
+ ],
+ "legacy_id": "net_mdns",
+ "example": true
+}

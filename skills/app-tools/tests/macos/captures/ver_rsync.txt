@@ -1,0 +1,2 @@
+openrsync: protocol version 29
+rsync version 2.6.9 compatible

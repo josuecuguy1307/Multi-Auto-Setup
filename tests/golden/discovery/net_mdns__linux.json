@@ -1,0 +1,63 @@
+{
+ "adapter": "net_mdns",
+ "counts": {
+  "entities": 2,
+  "facts": 2,
+  "resolved": 1,
+  "unknowns": 1
+ },
+ "facts": [
+  {
+   "key": "net.entity.service-552e5cf2",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "host": "labprinter.local",
+     "instance": "Lab Printer",
+     "ip": "192.0.2.40",
+     "meaning": "IPP (Internet Printing Protocol)",
+     "port": 631,
+     "service_type": "_ipp._tcp",
+     "txt_ty": "Example LaserJet"
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.service-7e8673e8",
+   "status": "hypothesis",
+   "value": {
+    "attrs": {
+     "host": "strange.local",
+     "instance": "Strange Thing",
+     "ip": "192.0.2.41",
+     "meaning": null,
+     "port": 31337,
+     "service_type": "_zxq-special._tcp"
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": false,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.mdns_service_types",
+   "status": "tested",
+   "value": 3
+  },
+  {
+   "key": "net.mdns_services",
+   "status": "tested",
+   "value": 2
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "1 of 2 captures failed: types=unavailable",
+ "status": "ran",
+ "unknown_reasons": {}
+}

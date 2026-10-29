@@ -1,0 +1,1 @@
+Invalid command '--version'; type "help" for a list.

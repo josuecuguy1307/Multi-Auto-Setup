@@ -1,0 +1,2 @@
+LISTEN 0 128 0.0.0.0:22 0.0.0.0:* users:(("sshd",pid=701,fd=3))
+LISTEN 0 4096 127.0.0.1:8089 0.0.0.0:* users:(("llama-server",pid=912,fd=5))

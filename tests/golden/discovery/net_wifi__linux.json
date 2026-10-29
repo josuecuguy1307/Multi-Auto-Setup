@@ -1,0 +1,45 @@
+{
+ "adapter": "net_wifi",
+ "counts": {
+  "entities": 0,
+  "facts": 5,
+  "resolved": 0,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "net.wifi.channel",
+   "status": "tested",
+   "value": "6"
+  },
+  {
+   "key": "net.wifi.connected",
+   "status": "tested",
+   "value": true
+  },
+  {
+   "key": "net.wifi.nearby_by_channel",
+   "status": "tested",
+   "value": {
+    "1": 1,
+    "11": 1,
+    "6": 1
+   }
+  },
+  {
+   "key": "net.wifi.nearby_count",
+   "status": "tested",
+   "value": 3
+  },
+  {
+   "key": "net.wifi.rssi",
+   "status": "tested",
+   "value": 72
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

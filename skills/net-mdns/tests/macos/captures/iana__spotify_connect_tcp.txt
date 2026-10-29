@@ -1,0 +1,1 @@
+{"found": true, "name": "Spotify Connect player", "source": "iana.service_names", "identifier": "_spotify-connect._tcp", "entries": ["spotify-connect (tcp): Spotify Connect player"]}

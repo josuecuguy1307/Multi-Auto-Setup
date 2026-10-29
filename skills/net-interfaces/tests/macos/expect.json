@@ -1,0 +1,25 @@
+{
+ "entities": 1,
+ "entity_attrs": [
+  {
+   "address": "192.0.2.30/26",
+   "interface": "en0",
+   "self": true
+  }
+ ],
+ "facts": {
+  "net.addresses": [
+   "en0 192.0.2.30/26"
+  ],
+  "net.default_gateway": "192.0.2.1",
+  "net.default_interface": "en0",
+  "net.dns_servers": [
+   "fe80::1%en0",
+   "198.51.100.105",
+   "203.0.113.4"
+  ]
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

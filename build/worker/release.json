@@ -1,38 +1,6 @@
 {
-  "version": "1.0.0",
-  "filename": "envrec-worker-1.0.0.pyz",
-  "sha256": "ec53d0cb93c472e44e9a291d8ec7bd45fccde3ace1ab4e43a5fff64b3099dac8",
-  "bytes": 5482,
-  "models": {
-    "stub-0.5b": {
-      "sha256": "0674898bc41aa93bae879b21712077f93e5dc13bb44e2c15a780f93b8cb2b5b7",
-      "bytes": 4096,
-      "params_b": 0.5
-    },
-    "stub-1b": {
-      "sha256": "b5781306e619a6fde143e189a104abe516fc5d24127baf35bb38c3ccf7d17f5d",
-      "bytes": 8192,
-      "params_b": 1.0
-    },
-    "stub-1.5b": {
-      "sha256": "cc1507f28be036cbe8a92688ea6dc2f8ea5678839b3f39bbf2f6e78258e17ec5",
-      "bytes": 12288,
-      "params_b": 1.5
-    },
-    "stub-3b": {
-      "sha256": "04f830c6bd21306ec489bd18759f916b6158473b673869d1080ac422357887cb",
-      "bytes": 24576,
-      "params_b": 3.0
-    },
-    "stub-7b": {
-      "sha256": "41f0d36093b8c5409f47368e90cd072789e7b1a93c1515412427ddee68df7786",
-      "bytes": 57344,
-      "params_b": 7.0
-    },
-    "stub-13b": {
-      "sha256": "b9a1fcf342252f795f877dd207610cf98a3067cc2917a2f4d0fcbb6ae2b12e8b",
-      "bytes": 106496,
-      "params_b": 13.0
-    }
-  }
+  "version": "2.0.0",
+  "filename": "envrec-worker-2.0.0.pyz",
+  "sha256": "38703c69e784162b04a0fd0493031c9ca7a93b02272841a2512d4d41d42d526b",
+  "bytes": 17743
 }

@@ -1,0 +1,21 @@
+{
+ "include": [
+  "usbserial",
+  "usbmodem",
+  "SLAB_USBtoUART",
+  "wchusbserial",
+  "usb",
+  "ttyUSB",
+  "ttyACM",
+  "ttyAMA",
+  "ttyGS",
+  "rfcomm"
+ ],
+ "deny": [
+  "Bluetooth-Incoming-Port",
+  "debug-console",
+  "wlan-debug",
+  "BLTH",
+  "ttyS"
+ ]
+}

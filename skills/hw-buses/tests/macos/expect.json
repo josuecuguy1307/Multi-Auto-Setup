@@ -1,0 +1,11 @@
+{
+ "entities": 0,
+ "entity_attrs": [],
+ "facts": {
+  "hw.thunderbolt_devices_connected": 0,
+  "hw.thunderbolt_ports": 2
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

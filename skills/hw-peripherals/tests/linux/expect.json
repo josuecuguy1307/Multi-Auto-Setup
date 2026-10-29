@@ -1,0 +1,17 @@
+{
+ "entities": 2,
+ "entity_attrs": [
+  {
+   "name": "video1"
+  },
+  {
+   "name": "video0"
+  }
+ ],
+ "facts": {
+  "hw.camera_count": 2
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

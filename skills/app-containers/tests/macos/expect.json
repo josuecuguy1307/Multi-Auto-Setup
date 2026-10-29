@@ -1,0 +1,13 @@
+{
+ "entities": 0,
+ "entity_attrs": [],
+ "facts": {
+  "app.container_count": 0,
+  "app.container_runtimes": [
+   "docker_ps"
+  ]
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

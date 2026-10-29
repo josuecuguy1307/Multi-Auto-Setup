@@ -1,0 +1,86 @@
+{
+ "adapter": "app_tools",
+ "counts": {
+  "entities": 3,
+  "facts": 3,
+  "resolved": 3,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "app.entity.app-7bcd07c5",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "category": "language",
+     "kind": "tool",
+     "name": "python3",
+     "source": "https://www.python.org",
+     "version": "3.11.2"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-c4ac9292",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "category": "vcs",
+     "kind": "tool",
+     "name": "git",
+     "source": "https://git-scm.com",
+     "version": "2.39.5"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-ee5e2538",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "category": "network",
+     "kind": "tool",
+     "name": "ssh",
+     "source": "https://www.openssh.com",
+     "version": "9.2p1"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.tools_by_category",
+   "status": "tested",
+   "value": {
+    "language": 1,
+    "network": 1,
+    "vcs": 1
+   }
+  },
+  {
+   "key": "app.tools_checked",
+   "status": "tested",
+   "value": 132
+  },
+  {
+   "key": "app.tools_found",
+   "status": "tested",
+   "value": 3
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

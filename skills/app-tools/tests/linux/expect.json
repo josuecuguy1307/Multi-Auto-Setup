@@ -1,0 +1,38 @@
+{
+ "entities": 3,
+ "entity_attrs": [
+  {
+   "category": "language",
+   "kind": "tool",
+   "name": "python3",
+   "source": "https://www.python.org",
+   "version": "3.11.2"
+  },
+  {
+   "category": "vcs",
+   "kind": "tool",
+   "name": "git",
+   "source": "https://git-scm.com",
+   "version": "2.39.5"
+  },
+  {
+   "category": "network",
+   "kind": "tool",
+   "name": "ssh",
+   "source": "https://www.openssh.com",
+   "version": "9.2p1"
+  }
+ ],
+ "facts": {
+  "app.tools_by_category": {
+   "language": 1,
+   "network": 1,
+   "vcs": 1
+  },
+  "app.tools_checked": 132,
+  "app.tools_found": 3
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

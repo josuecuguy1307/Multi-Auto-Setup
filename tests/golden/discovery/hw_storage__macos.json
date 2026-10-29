@@ -1,0 +1,83 @@
+{
+ "adapter": "hw_storage",
+ "counts": {
+  "entities": 3,
+  "facts": 2,
+  "resolved": 3,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "hw.entity.volume-0c14eab3",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "free_gib": 49.2,
+     "fs": "APFS",
+     "internal": true,
+     "medium": "ssd",
+     "mount": "/",
+     "name": "Macintosh HD",
+     "size_gib": 460.4
+    },
+    "kind": "volume",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "hw.entity.volume-ddf665f6",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "free_gib": 49.2,
+     "fs": "APFS",
+     "internal": true,
+     "medium": "ssd",
+     "mount": "/System/Volumes/Data",
+     "name": "Data",
+     "size_gib": 460.4
+    },
+    "kind": "volume",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "hw.entity.volume-ec517762",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "free_gib": 49.2,
+     "fs": "APFS",
+     "internal": true,
+     "medium": "ssd",
+     "mount": null,
+     "name": "Macintosh HD",
+     "size_gib": 460.4
+    },
+    "kind": "volume",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "hw.external_volume_count",
+   "status": "tested",
+   "value": 0
+  },
+  {
+   "key": "hw.volume_count",
+   "status": "tested",
+   "value": 3
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

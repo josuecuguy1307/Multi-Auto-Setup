@@ -1,0 +1,36 @@
+{
+ "adapter": "hw_overview",
+ "counts": {
+  "entities": 0,
+  "facts": 4,
+  "resolved": 0,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "hw.chip",
+   "status": "tested",
+   "value": "Apple M3"
+  },
+  {
+   "key": "hw.core_layout",
+   "status": "tested",
+   "value": "proc 8:4:4"
+  },
+  {
+   "key": "hw.machine_model",
+   "status": "tested",
+   "value": "Mac15,12"
+  },
+  {
+   "key": "hw.machine_name",
+   "status": "tested",
+   "value": "MacBook Air"
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

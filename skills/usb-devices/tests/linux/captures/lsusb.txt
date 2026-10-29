@@ -1,0 +1,3 @@
+Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+Bus 001 Device 004: ID 1a86:7523 QinHeng Electronics CH340 serial converter
+Bus 001 Device 005: ID ffff:0001 Unknown Maker Mystery Gadget

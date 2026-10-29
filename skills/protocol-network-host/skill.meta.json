@@ -1,0 +1,119 @@
+{
+ "provenance": "builtin",
+ "protocol": "network_host",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "net_host"
+  ],
+  "start": "listen",
+  "states": {
+   "listen": {
+    "goal": "See what it already announces: neighbors table and mDNS.",
+    "tags": [
+     "passive",
+     "neighbors",
+     "skill"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "identify",
+      "needs": [
+       {
+        "tool_tag": "passive"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "identify": {
+    "goal": "Resolve the hardware vendor and service meanings from public lists.",
+    "tags": [
+     "table_lookup",
+     "identify"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "probe",
+      "needs": [
+       {
+        "tool_tag": "table_lookup"
+       }
+      ]
+     },
+     {
+      "to": "done",
+      "needs": [
+       {
+        "facts_prefix": "net.",
+        "at_least_n": 3,
+        "status_min": "tested"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "probe": {
+    "goal": "With approval, ask the network: UPnP search and a short list of ports, banners only.",
+    "tags": [
+     "lan",
+     "active"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "ask",
+      "needs": [
+       {
+        "tool_tag": "active"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "ask": {
+    "goal": "Ask the human what is still unknown.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "action": "ask_human"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "classified, or handed to the human"
+   }
+  }
+ }
+}

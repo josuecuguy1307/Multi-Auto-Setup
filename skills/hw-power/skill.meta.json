@@ -1,0 +1,84 @@
+{
+ "provenance": "builtin",
+ "protocol": "host",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "sp_power",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "system_profiler",
+      "SPPowerDataType",
+      "-json"
+     ],
+     "timeout_s": 30
+    }
+   },
+   {
+    "id": "pmset_therm",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "pmset",
+      "-g",
+      "therm"
+     ],
+     "timeout_s": 5
+    }
+   },
+   {
+    "id": "bat_capacity",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "cat",
+      "/sys/class/power_supply/BAT0/capacity"
+     ],
+     "timeout_s": 3,
+     "optional": true
+    }
+   },
+   {
+    "id": "bat_status",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "cat",
+      "/sys/class/power_supply/BAT0/status"
+     ],
+     "timeout_s": 3,
+     "optional": true
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "hw.battery_percent",
+  "hw.thermal_state"
+ ],
+ "legacy_id": "hw_power",
+ "example": false
+}

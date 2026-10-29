@@ -1,0 +1,1 @@
+{"found": true, "name": "SMB file sharing", "source": "iana.service_names", "identifier": "_smb._tcp", "entries": ["smb (tcp): SMB file sharing"]}

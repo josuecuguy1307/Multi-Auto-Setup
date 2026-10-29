@@ -1,0 +1,13 @@
+{
+ "platform": "macos",
+ "match": true,
+ "facts": {
+  "serial.responded": true,
+  "serial.baud": 9600
+ },
+ "fact_keys": [
+  "serial.banner",
+  "serial.baud",
+  "serial.responded"
+ ]
+}

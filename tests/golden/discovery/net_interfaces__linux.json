@@ -1,0 +1,56 @@
+{
+ "adapter": "net_interfaces",
+ "counts": {
+  "entities": 1,
+  "facts": 4,
+  "resolved": 1,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "net.addresses",
+   "status": "tested",
+   "value": [
+    "eth0 192.0.2.20/24"
+   ]
+  },
+  {
+   "key": "net.default_gateway",
+   "status": "tested",
+   "value": "192.0.2.1"
+  },
+  {
+   "key": "net.default_interface",
+   "status": "tested",
+   "value": "eth0"
+  },
+  {
+   "key": "net.dns_servers",
+   "status": "tested",
+   "value": [
+    "192.0.2.1",
+    "198.51.100.53"
+   ]
+  },
+  {
+   "key": "net.entity.host-a9144451",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "address": "192.0.2.20/24",
+     "interface": "eth0",
+     "self": true
+    },
+    "kind": "host",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

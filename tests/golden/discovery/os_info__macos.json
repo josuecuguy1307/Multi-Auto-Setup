@@ -1,0 +1,36 @@
+{
+ "adapter": "os_info",
+ "counts": {
+  "entities": 0,
+  "facts": 4,
+  "resolved": 0,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "os.boot_epoch",
+   "status": "tested",
+   "value": 1792671214
+  },
+  {
+   "key": "os.build",
+   "status": "tested",
+   "value": "24G231"
+  },
+  {
+   "key": "os.locale",
+   "status": "tested",
+   "value": "es_EC"
+  },
+  {
+   "key": "os.uname",
+   "status": "tested",
+   "value": "Darwin 24.6.0 arm64"
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

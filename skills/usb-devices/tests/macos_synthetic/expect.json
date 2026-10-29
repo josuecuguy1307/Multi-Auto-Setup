@@ -1,0 +1,43 @@
+{
+ "entities": 4,
+ "entity_attrs": [
+  {
+   "name": "Mystery Gadget",
+   "pid": "0001",
+   "product": null,
+   "speed": null,
+   "vendor": null,
+   "vid": "ffff"
+  },
+  {
+   "name": "Hub",
+   "pid": "1234",
+   "product": null,
+   "speed": null,
+   "vendor": null,
+   "vid": "05ac"
+  },
+  {
+   "name": "USB Serial",
+   "pid": "7523",
+   "product": "CH340 serial converter",
+   "speed": "full_speed",
+   "vendor": "QinHeng Electronics",
+   "vid": "1a86"
+  },
+  {
+   "name": "Keyboard",
+   "pid": "0267",
+   "product": null,
+   "speed": null,
+   "vendor": null,
+   "vid": "05ac"
+  }
+ ],
+ "facts": {
+  "usb.device_count": 4
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

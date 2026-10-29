@@ -1,0 +1,87 @@
+{
+ "provenance": "builtin",
+ "protocol": "host",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "ls_0",
+    "tool": "run_command",
+    "platforms": [
+     "any"
+    ],
+    "args": {
+     "argv": [
+      "ls",
+      "-1",
+      "~/.local/bin"
+     ],
+     "timeout_s": 5,
+     "optional": true
+    }
+   },
+   {
+    "id": "ls_1",
+    "tool": "run_command",
+    "platforms": [
+     "any"
+    ],
+    "args": {
+     "argv": [
+      "ls",
+      "-1",
+      "~/bin"
+     ],
+     "timeout_s": 5,
+     "optional": true
+    }
+   },
+   {
+    "id": "ls_2",
+    "tool": "run_command",
+    "platforms": [
+     "any"
+    ],
+    "args": {
+     "argv": [
+      "ls",
+      "-1",
+      "~/.cargo/bin"
+     ],
+     "timeout_s": 5,
+     "optional": true
+    }
+   },
+   {
+    "id": "ls_3",
+    "tool": "run_command",
+    "platforms": [
+     "any"
+    ],
+    "args": {
+     "argv": [
+      "ls",
+      "-1",
+      "~/go/bin"
+     ],
+     "timeout_s": 5,
+     "optional": true
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "app.unknown_executable_count"
+ ],
+ "legacy_id": "app_user_bins",
+ "example": false
+}

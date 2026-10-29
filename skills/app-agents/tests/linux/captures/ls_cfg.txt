@@ -1,0 +1,2 @@
+/home/user/.claude
+/home/user/.ollama

@@ -1,0 +1,26 @@
+{
+ "adapter": "app_installed",
+ "counts": {
+  "entities": 0,
+  "facts": 2,
+  "resolved": 0,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "app.installed_count",
+   "status": "tested",
+   "value": 3
+  },
+  {
+   "key": "app.packages.dpkg",
+   "status": "tested",
+   "value": 3
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "4 of 5 captures failed: rpm=unavailable; pacman=unavailable; flatpak=unavailable; snap=unavailable",
+ "status": "ran",
+ "unknown_reasons": {}
+}

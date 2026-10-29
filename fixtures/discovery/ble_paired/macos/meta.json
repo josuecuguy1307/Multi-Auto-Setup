@@ -1,0 +1,6 @@
+{
+ "adapter": "ble_paired",
+ "platform": "macos",
+ "synthetic": false,
+ "source": "captured on a real Mac, redacted"
+}

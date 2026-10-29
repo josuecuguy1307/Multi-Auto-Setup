@@ -177,7 +177,7 @@ def test_a_tool_that_exists_but_is_not_offered_yet_is_also_rejected(store, host)
 
 def test_unsupported_actions_are_rejected_not_executed(store, host):
     research = json.dumps({"action": "research", "question": "what is this?"})
-    probe = json.dumps({"action": "propose_probe", "code": "print(1)", "test_plan": "x"})
+    probe = json.dumps({"action": "propose_skill", "skill_draft": {"name": "x"}})
     s, _, _ = run(store, host, [research, probe, DONE])
     assert s.rejected_actions == 2
 
@@ -254,15 +254,6 @@ def test_view_budget_changes_the_view_size_and_nothing_else(store, host):
     assert strip(v_small) == strip(v_big)  # headers, menu, actions, last result: identical
     assert "(+2 more facts" in v_small and "more facts" not in v_big
     assert SYSTEM_PROMPT  # the system prompt is a constant: it cannot differ by profile
-
-
-def test_playbook_cards_go_only_to_profiles_that_list_them(store, host):
-    plain = scripted_profile()
-    carded = ModelProfile(**{**plain.model_dump(), "playbooks": ["host"]})
-    menu = build_menu([four_tools()], host, store, 6)
-    pb = ROOT / "playbooks"
-    assert "Playbook: host" in build_view(store, host, carded, menu, "x", {}, pb)
-    assert "Playbook" not in build_view(store, host, plain, menu, "x", {}, pb)
 
 
 # ---- the human ------------------------------------------------------------------------------------------------------

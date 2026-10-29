@@ -1,0 +1,416 @@
+{
+ "entities": 0,
+ "entity_attrs": [],
+ "facts": {
+  "app.process_classes": {
+   "system": 114,
+   "user": 6
+  },
+  "app.process_count": 120,
+  "app.processes": [
+   {
+    "class": "system",
+    "count": 10,
+    "name": "distnoted"
+   },
+   {
+    "class": "system",
+    "count": 2,
+    "name": "UserEventAgent"
+   },
+   {
+    "class": "system",
+    "count": 2,
+    "name": "cfprefsd"
+   },
+   {
+    "class": "system",
+    "count": 2,
+    "name": "lsd"
+   },
+   {
+    "class": "system",
+    "count": 2,
+    "name": "nsurlsessiond"
+   },
+   {
+    "class": "system",
+    "count": 2,
+    "name": "coreauthd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "launchd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "logd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "fseventsd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "mediaremoted"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "systemstats"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "configd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "powerd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "IOMFB_bics_daemon"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "corespeechd_system"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "watchdogd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "mds"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "kernelmanagerd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "diskarbitrationd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "syslogd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "thermalmonitord"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "opendirectoryd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "apsd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "launchservicesd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "timed"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "usbmuxd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "securityd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "locationd"
+   },
+   {
+    "class": "user",
+    "count": 1,
+    "name": "autofsd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "dasd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "logind"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "revisiond"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "KernelEventAgent"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "notifyd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "corebrightnessd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "AirPlayXPCHelper"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "com.apple.cmio.registerassistantservice"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "tccd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "WindowServer"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "loginwindow"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "runningboardd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "contextstored"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "coreservicesd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "airportd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "systemstatusd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "coreaudiod"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "eligibilityd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "apfsd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "analyticsd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "biometrickitd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "socketfilterfw"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "authd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "symptomsd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "mds_stores"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "backupd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "mDNSResponder"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "appleh13camerad"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "cameracaptured"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "UVCAssistant"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "suhelperd"
+   },
+   {
+    "class": "user",
+    "count": 1,
+    "name": "com.docker.vmnetd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "appleeventsd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "syspolicyd"
+   },
+   {
+    "class": "user",
+    "count": 1,
+    "name": "Core Audio Driver (ZoomAudioDevice.driver)"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "WirelessRadioManagerd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "audioclocksyncd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "modelmanagerd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "mDNSResponderHelper"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "com.apple.DriverKit-AppleBCMWLAN"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "com.apple.DriverKit-IOUserDockChannelSerial"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "com.apple.AppleUserHIDDrivers"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "ContinuityCaptureAgent"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "universalaccessd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "pboard"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "WindowManager"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "containermanagerd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "secd"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "com.apple.hiservices-xpcservice"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "BiomeAgent"
+   },
+   {
+    "class": "system",
+    "count": 1,
+    "name": "accountsd"
+   }
+  ]
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

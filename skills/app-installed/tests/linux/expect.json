@@ -1,0 +1,11 @@
+{
+ "entities": 0,
+ "entity_attrs": [],
+ "facts": {
+  "app.installed_count": 3,
+  "app.packages.dpkg": 3
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

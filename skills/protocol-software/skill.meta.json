@@ -1,0 +1,99 @@
+{
+ "provenance": "builtin",
+ "protocol": "software",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "app",
+   "repo"
+  ],
+  "start": "identify",
+  "states": {
+   "identify": {
+    "goal": "Find out what kind of thing the path is.",
+    "tags": [
+     "capture",
+     "file",
+     "skill"
+    ],
+    "tools": [
+     "inspect_artifact"
+    ],
+    "actions": [],
+    "advance": [
+     {
+      "to": "analyze",
+      "needs": [
+       {
+        "tried": "app.sha256"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "analyze": {
+    "goal": "Analyze it statically with the tool that fits its kind.",
+    "tags": [],
+    "tools": [
+     "analyze_js_app",
+     "inspect_binary",
+     "inspect_artifact"
+    ],
+    "actions": [],
+    "advance": [
+     {
+      "to": "summarize",
+      "needs": [
+       {
+        "any": [
+         {
+          "tool": "analyze_js_app"
+         },
+         {
+          "tool": "inspect_binary"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "summarize": {
+    "goal": "Write down what is known and what REA did not check.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "tried": "app.format"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "analyzed statically; the unchecked parts are recorded as unknown"
+   }
+  }
+ }
+}

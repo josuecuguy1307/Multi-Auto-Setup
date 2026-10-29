@@ -1,0 +1,41 @@
+{
+ "adapter": "serial_probe",
+ "counts": {
+  "entities": 1,
+  "facts": 0,
+  "resolved": 1,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "serial.entity.serial-probe-894670f1",
+   "status": "hypothesis",
+   "value": {
+    "attrs": {
+     "banner": "OK",
+     "baud": 115200,
+     "heard_unprompted": false,
+     "links": [
+      "serial-894670f1"
+     ],
+     "port": "ttyUSB0",
+     "protocol_guess": "at",
+     "responded": true,
+     "sent": [
+      "newline",
+      "at"
+     ]
+    },
+    "kind": "serial_probe",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 1
+   }
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

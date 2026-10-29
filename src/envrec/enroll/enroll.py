@@ -27,6 +27,7 @@ from envrec.mission.models import (
     EntryLimits,
     SerialBlock,
     SshBlock,
+    TcpBlock,
     TargetConfig,
     TargetEntry,
     Transport,
@@ -75,8 +76,12 @@ def _ask_connection(t: Transport, slug: str, ask: Callable[[str], str]) -> dict:
         return {"docker_exec": DockerExecBlock(container=ask("Container name: ").strip())}
     if t == Transport.adb_usb:
         return {"adb_usb": AdbBlock(serial=ask("adb serial (from `adb devices`): ").strip())}
+    if t == Transport.tcp:
+        return {"tcp": TcpBlock(host=ask("Instrument address on your own network: ").strip(), port=int(ask("Port: ").strip()),
+                                allow_send=ask("May discovery send the fixed `*IDN?` identify query? [no]: ").strip().lower() in ("y", "yes"))}
     return {"serial": SerialBlock(path=ask("Serial port path (e.g. /dev/ttyUSB0): ").strip(),
-                                  baud=int(ask("Baud [115200]: ").strip() or "115200"))}
+                                  baud=int(ask("Baud [115200]: ").strip() or "115200"),
+                                  allow_send=ask("May discovery send the fixed identify queries on this port (otherwise it only listens)? [no]: ").strip().lower() in ("y", "yes"))}
 
 
 def _limits_for(c: Candidate) -> tuple[float, float, str]:

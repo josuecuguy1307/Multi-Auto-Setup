@@ -1,0 +1,37 @@
+# Signatures for AI agents and assistants. A match needs one of: a running process name, a binary on PATH, an installed app, or a config directory.
+# `src` is each project's own site. Process names are executable basenames (never command lines).
+generic_patterns: [agent, mcp, copilot, assistant, claude, codex, gemini, gpt, llm, openai, anthropic, langchain, langgraph, crew, autogen]
+mcp_configs:    # JSON files that list MCP servers. Only server names and command basenames are ever kept.
+  - {client: claude-desktop, path: "~/Library/Application Support/Claude/claude_desktop_config.json", key: mcpServers}
+  - {client: claude-code, path: "~/.claude.json", key: mcpServers}
+  - {client: cursor, path: "~/.cursor/mcp.json", key: mcpServers}
+  - {client: windsurf, path: "~/.codeium/windsurf/mcp_config.json", key: mcpServers}
+  - {client: gemini-cli, path: "~/.gemini/settings.json", key: mcpServers}
+  - {client: continue, path: "~/.continue/config.json", key: mcpServers}
+agents:
+  - {id: claude-code, name: Claude Code, category: coding_agent, bins: [claude], processes: [claude], config_dirs: ["~/.claude"], src: "https://www.anthropic.com/claude-code"}
+  - {id: claude-desktop, name: Claude desktop app, category: assistant_app, apps: [Claude.app], processes: [Claude], config_dirs: ["~/Library/Application Support/Claude"], src: "https://claude.ai/download"}
+  - {id: chatgpt-desktop, name: ChatGPT desktop app, category: assistant_app, apps: [ChatGPT.app], processes: [ChatGPT], src: "https://openai.com/chatgpt/desktop"}
+  - {id: codex-cli, name: Codex CLI, category: coding_agent, bins: [codex], processes: [codex], config_dirs: ["~/.codex"], src: "https://github.com/openai/codex"}
+  - {id: gemini-cli, name: Gemini CLI, category: coding_agent, bins: [gemini], processes: [gemini], config_dirs: ["~/.gemini"], src: "https://github.com/google-gemini/gemini-cli"}
+  - {id: cursor, name: Cursor, category: ide_assistant, apps: [Cursor.app], bins: [cursor], processes: [Cursor], config_dirs: ["~/.cursor"], src: "https://www.cursor.com"}
+  - {id: windsurf, name: Windsurf, category: ide_assistant, apps: [Windsurf.app], processes: [Windsurf], config_dirs: ["~/.codeium"], src: "https://windsurf.com"}
+  - {id: vscode, name: Visual Studio Code, category: ide_assistant, apps: ["Visual Studio Code.app"], bins: [code], processes: [Electron, Code], src: "https://code.visualstudio.com"}
+  - {id: zed, name: Zed, category: ide_assistant, apps: [Zed.app], bins: [zed], processes: [zed], config_dirs: ["~/.config/zed"], src: "https://zed.dev"}
+  - {id: continue, name: Continue, category: ide_assistant, config_dirs: ["~/.continue"], src: "https://www.continue.dev"}
+  - {id: cline, name: Cline, category: coding_agent, config_dirs: ["~/.cline"], src: "https://cline.bot"}
+  - {id: aider, name: Aider, category: coding_agent, bins: [aider], processes: [aider], config_dirs: ["~/.aider"], src: "https://aider.chat"}
+  - {id: opencode, name: opencode, category: coding_agent, bins: [opencode], processes: [opencode], config_dirs: ["~/.config/opencode"], src: "https://opencode.ai"}
+  - {id: goose, name: Goose, category: coding_agent, bins: [goose], processes: [goose], config_dirs: ["~/.config/goose"], src: "https://block.github.io/goose"}
+  - {id: amp, name: Amp, category: coding_agent, bins: [amp], processes: [amp], src: "https://ampcode.com"}
+  - {id: open-interpreter, name: Open Interpreter, category: coding_agent, bins: [interpreter], processes: [interpreter], src: "https://www.openinterpreter.com"}
+  - {id: ollama, name: Ollama, category: local_model_runner, apps: [Ollama.app], bins: [ollama], processes: [ollama, Ollama], config_dirs: ["~/.ollama"], src: "https://ollama.com"}
+  - {id: lm-studio, name: LM Studio, category: local_model_runner, apps: ["LM Studio.app"], bins: [lms], processes: ["LM Studio"], config_dirs: ["~/.lmstudio", "~/.cache/lm-studio"], src: "https://lmstudio.ai"}
+  - {id: llama-cpp, name: llama.cpp server, category: local_model_runner, bins: [llama-server, llama-cli], processes: [llama-server, llama-cli], src: "https://github.com/ggml-org/llama.cpp"}
+  - {id: jan, name: Jan, category: local_model_runner, apps: [Jan.app], processes: [Jan], config_dirs: ["~/jan"], src: "https://jan.ai"}
+  - {id: gpt4all, name: GPT4All, category: local_model_runner, apps: [gpt4all.app, GPT4All.app], processes: [gpt4all, GPT4All], src: "https://www.nomic.ai/gpt4all"}
+  - {id: mistralrs, name: mistral.rs, category: local_model_runner, bins: [mistralrs, mistralrs-server], processes: [mistralrs-server], src: "https://github.com/EricLBuehler/mistral.rs"}
+  - {id: litellm, name: LiteLLM proxy, category: agent_framework, bins: [litellm], processes: [litellm], src: "https://github.com/BerriAI/litellm"}
+  - {id: langgraph, name: LangGraph CLI, category: agent_framework, bins: [langgraph], processes: [langgraph], src: "https://langchain-ai.github.io/langgraph"}
+  - {id: crewai, name: CrewAI CLI, category: agent_framework, bins: [crewai], processes: [crewai], src: "https://www.crewai.com"}
+  - {id: mcp-cli, name: MCP command line tools, category: agent_framework, bins: [mcp], processes: [mcp], src: "https://modelcontextprotocol.io"}

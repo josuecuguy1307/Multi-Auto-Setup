@@ -1,0 +1,36 @@
+{
+ "adapter": "app_model_servers",
+ "counts": {
+  "entities": 1,
+  "facts": 1,
+  "resolved": 1,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "app.entity.model-server-ea36126c",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "kind": "ollama",
+     "port": 11434,
+     "version": "0.40.10"
+    },
+    "kind": "model_server",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.model_server_count",
+   "status": "tested",
+   "value": 1
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

@@ -55,9 +55,10 @@ class ActionType(StrEnum):
     extend_to = "extend_to"
     expand_fact = "expand_fact"
     research = "research"
-    propose_probe = "propose_probe"
+    propose_skill = "propose_skill"
     record_unknown = "record_unknown"
     ask_human = "ask_human"
+    advance = "advance"
     done = "done"
 
 

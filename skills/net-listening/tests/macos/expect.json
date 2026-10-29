@@ -1,0 +1,76 @@
+{
+ "entities": 0,
+ "entity_attrs": [],
+ "facts": {
+  "net.listening.tcp": [
+   {
+    "name": "ControlCenter",
+    "port": 5000,
+    "scope": "all"
+   },
+   {
+    "name": "postgres",
+    "port": 5432,
+    "scope": "loopback"
+   },
+   {
+    "name": "BlueStacks",
+    "port": 5555,
+    "scope": "all"
+   },
+   {
+    "name": "redis-server",
+    "port": 6379,
+    "scope": "loopback"
+   },
+   {
+    "name": "ControlCenter",
+    "port": 7000,
+    "scope": "all"
+   },
+   {
+    "name": "Spotify",
+    "port": 7768,
+    "scope": "loopback"
+   },
+   {
+    "name": "ollama",
+    "port": 11434,
+    "scope": "loopback"
+   },
+   {
+    "name": "X-VPN",
+    "port": 50001,
+    "scope": "loopback"
+   },
+   {
+    "name": "Code Helper (Plugin)",
+    "port": 55007,
+    "scope": "loopback"
+   },
+   {
+    "name": "Code Helper",
+    "port": 56228,
+    "scope": "loopback"
+   },
+   {
+    "name": "Spotify",
+    "port": 57621,
+    "scope": "all"
+   },
+   {
+    "name": "rapportd",
+    "port": 61775,
+    "scope": "all"
+   },
+   {
+    "name": "Code Helper (Plugin)",
+    "port": 62409,
+    "scope": "loopback"
+   }
+  ]
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

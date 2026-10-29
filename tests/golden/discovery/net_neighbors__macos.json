@@ -1,0 +1,145 @@
+{
+ "adapter": "net_neighbors",
+ "counts": {
+  "entities": 7,
+  "facts": 2,
+  "resolved": 6,
+  "unknowns": 1
+ },
+ "facts": [
+  {
+   "key": "net.entity.host-036329b9",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "interface": "en0",
+     "ip": "192.0.2.19",
+     "oui": "2824c9",
+     "randomized_mac": false,
+     "vendor": "Amazon Technologies Inc."
+    },
+    "kind": "host",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.host-1bf12161",
+   "status": "hypothesis",
+   "value": {
+    "attrs": {
+     "interface": "en0",
+     "ip": "192.0.2.63",
+     "oui": "ffffff",
+     "randomized_mac": true,
+     "vendor": null
+    },
+    "kind": "host",
+    "owned": "unknown",
+    "resolved": false,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.host-2dcf376e",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "interface": "en0",
+     "ip": "192.0.2.22",
+     "oui": "c45bac",
+     "randomized_mac": false,
+     "vendor": "Apple, Inc."
+    },
+    "kind": "host",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.host-472b90dc",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "interface": "en0",
+     "ip": "192.0.2.53",
+     "oui": "ac416a",
+     "randomized_mac": false,
+     "vendor": "Amazon Technologies Inc."
+    },
+    "kind": "host",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.host-617f0d54",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "interface": "en0",
+     "ip": "192.0.2.21",
+     "oui": "b0739c",
+     "randomized_mac": false,
+     "vendor": "Amazon Technologies Inc."
+    },
+    "kind": "host",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.host-63bd2a52",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "interface": "en0",
+     "ip": "192.0.2.1",
+     "oui": "30f947",
+     "randomized_mac": false,
+     "vendor": "Router Maker Ltd"
+    },
+    "kind": "host",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.host-d92bae5e",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "interface": "en0",
+     "ip": "192.0.2.60",
+     "oui": "ccb11a",
+     "randomized_mac": false,
+     "vendor": "Samsung Electronics Co.,Ltd"
+    },
+    "kind": "host",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.neighbors_count",
+   "status": "tested",
+   "value": 7
+  },
+  {
+   "key": "net.neighbors_incomplete",
+   "status": "tested",
+   "value": 5
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

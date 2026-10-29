@@ -1,0 +1,14 @@
+{
+ "entities": 0,
+ "entity_attrs": [],
+ "facts": {
+  "hw.battery_charging": true,
+  "hw.battery_cycle_count": 474,
+  "hw.battery_health": "Good",
+  "hw.battery_percent": 49,
+  "hw.thermal_state": "nominal"
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

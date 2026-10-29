@@ -1,0 +1,97 @@
+{
+ "adapter": "lan_ports",
+ "counts": {
+  "entities": 4,
+  "facts": 1,
+  "resolved": 3,
+  "unknowns": 1
+ },
+ "facts": [
+  {
+   "key": "net.entity.service-605fd45c",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "banner": null,
+     "http_server": "ExampleHTTPd/2.0",
+     "http_status": 200,
+     "ip": "192.0.2.1",
+     "port": 80,
+     "service": "http",
+     "tls_subject": null
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.service-85920ed0",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "banner": "SSH-2.0-OpenSSH_9.2p1 Debian-2",
+     "http_server": null,
+     "http_status": null,
+     "ip": "192.0.2.40",
+     "port": 22,
+     "service": "ssh",
+     "tls_subject": null
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.service-8d798f06",
+   "status": "hypothesis",
+   "value": {
+    "attrs": {
+     "banner": "ZXQ-PROTO v9 ready",
+     "http_server": null,
+     "http_status": null,
+     "ip": "192.0.2.40",
+     "port": 31337,
+     "service": "unregistered",
+     "tls_subject": null
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": false,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.entity.service-aa4c6596",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "banner": null,
+     "http_server": null,
+     "http_status": null,
+     "ip": "192.0.2.40",
+     "port": 9100,
+     "service": "jetdirect",
+     "tls_subject": null
+    },
+    "kind": "service",
+    "owned": "unknown",
+    "resolved": true,
+    "ring": 2
+   }
+  },
+  {
+   "key": "net.open_ports",
+   "status": "tested",
+   "value": 4
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

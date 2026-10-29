@@ -1,0 +1,118 @@
+{
+ "provenance": "builtin",
+ "protocol": "usb",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "usb"
+  ],
+  "start": "read",
+  "states": {
+   "read": {
+    "goal": "Read what the device says about itself: vendor id, product id, name.",
+    "tags": [
+     "usb",
+     "skill"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "guess",
+      "needs": [
+       {
+        "tool_tag": "usb"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "guess": {
+    "goal": "Turn the ids into guesses with the public lists.",
+    "tags": [
+     "table_lookup",
+     "identify"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "confirm",
+      "needs": [
+       {
+        "tool_tag": "table_lookup"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "confirm": {
+    "goal": "Make ONE harmless read that can confirm or contradict the guess.",
+    "tags": [
+     "serial",
+     "generic_read"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "ask",
+      "needs": [
+       {
+        "tool_tag": "generic_read"
+       }
+      ]
+     },
+     {
+      "to": "done",
+      "needs": [
+       {
+        "facts_prefix": "usb.",
+        "at_least_n": 2,
+        "status_min": "tested"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "ask": {
+    "goal": "Do not guess. Record what is still unknown and ask the human.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "action": "ask_human"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "identified, or handed to the human with the unknowns written down"
+   }
+  }
+ }
+}

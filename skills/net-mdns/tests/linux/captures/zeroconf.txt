@@ -1,0 +1,1 @@
+{"types": ["_ipp._tcp", "_http._tcp", "_zxq-special._tcp"], "services": [{"type": "_ipp._tcp", "instance": "Lab Printer", "host": "labprinter.local", "port": 631, "ips": ["192.0.2.40"], "txt": {"ty": "Example LaserJet"}}, {"type": "_zxq-special._tcp", "instance": "Strange Thing", "host": "strange.local", "port": 31337, "ips": ["192.0.2.41"], "txt": {}}]}

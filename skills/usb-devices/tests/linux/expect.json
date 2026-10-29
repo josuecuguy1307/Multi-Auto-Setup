@@ -1,0 +1,27 @@
+{
+ "entities": 2,
+ "entity_attrs": [
+  {
+   "name": "QinHeng Electronics CH340 serial converter",
+   "pid": "7523",
+   "product": "CH340 serial converter",
+   "speed": null,
+   "vendor": "QinHeng Electronics",
+   "vid": "1a86"
+  },
+  {
+   "name": "Unknown Maker Mystery Gadget",
+   "pid": "0001",
+   "product": null,
+   "speed": null,
+   "vendor": null,
+   "vid": "ffff"
+  }
+ ],
+ "facts": {
+  "usb.device_count": 2
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

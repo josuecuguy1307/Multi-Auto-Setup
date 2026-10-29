@@ -1,0 +1,5 @@
+DATE: ---Sun 25 Oct 2026---
+11:05:41.839  ...STARTING...
+Timestamp     A/R  Flags         IF  Hostname                               Address                                      TTL
+11:05:41.840  Add  40000003      11  REDACTED-NAMEs-MacBook-Air.local.             192.0.2.30                               4500
+11:05:41.840  Add  40000002       1  REDACTED-NAMEs-MacBook-Air.local.             127.0.0.1                                    4500

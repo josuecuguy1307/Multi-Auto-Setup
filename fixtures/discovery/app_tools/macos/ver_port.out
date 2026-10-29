@@ -1,0 +1,6 @@
+Error: global does not accept --version
+Usage: port
+        [-bcdfknNopqRstuvy] [-D portdir|portname] [-F cmdfile] action [actionflags]
+        [[portname|pseudo-portname|port-url] [@version] [+-variant]... [option=value]...]...
+    
+"port help" or "man 1 port" for more information.

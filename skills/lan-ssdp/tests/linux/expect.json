@@ -1,0 +1,29 @@
+{
+ "entities": 2,
+ "entity_attrs": [
+  {
+   "device_type": null,
+   "ip": "192.0.2.40",
+   "manufacturer": null,
+   "meaning": null,
+   "model": null,
+   "name": null,
+   "server": null
+  },
+  {
+   "device_type": "urn:schemas-upnp-org:device:InternetGatewayDevice:1",
+   "ip": "192.0.2.1",
+   "manufacturer": "Example Corp",
+   "meaning": "UPnP gateway",
+   "model": "GW-1",
+   "name": "Example Gateway",
+   "server": "Linux/4.9 UPnP/1.0 ExampleGW/1.0"
+  }
+ ],
+ "facts": {
+  "net.ssdp_devices": 2
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

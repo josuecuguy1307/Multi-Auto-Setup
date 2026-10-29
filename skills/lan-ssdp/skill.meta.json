@@ -1,0 +1,32 @@
+{
+ "provenance": "builtin",
+ "protocol": "network_host",
+ "tier": "read",
+ "ring": 2,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "ssdp",
+    "tool": "ssdp_search",
+    "platforms": [
+     "macos",
+     "linux"
+    ],
+    "args": {}
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "net.ssdp_devices"
+ ],
+ "legacy_id": "lan_ssdp",
+ "example": false
+}

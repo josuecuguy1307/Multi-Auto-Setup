@@ -1,0 +1,22 @@
+{
+ "entities": 2,
+ "entity_attrs": [
+  {
+   "by_id": null,
+   "kind": "usb-serial",
+   "name": "ttyUSB0"
+  },
+  {
+   "by_id": null,
+   "kind": "usb-serial",
+   "name": "ttyACM0"
+  }
+ ],
+ "facts": {
+  "serial.excluded_count": 0,
+  "serial.port_count": 2
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

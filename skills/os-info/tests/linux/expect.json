@@ -1,0 +1,13 @@
+{
+ "entities": 0,
+ "entity_attrs": [],
+ "facts": {
+  "os.build": "12",
+  "os.distro": "debian",
+  "os.uname": "Linux 6.6.31 aarch64",
+  "os.uptime_s": 86400
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

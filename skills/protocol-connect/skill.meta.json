@@ -1,0 +1,122 @@
+{
+ "provenance": "builtin",
+ "protocol": "connect",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "connect"
+  ],
+  "start": "route",
+  "states": {
+   "route": {
+    "goal": "Choose the route the human allowed for this device.",
+    "tags": [
+     "connect",
+     "skill"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "plan",
+      "needs": [
+       {
+        "tried": "connect.route"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "plan": {
+    "goal": "Write the exact plan: every command, every write, and how to undo it.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "approve",
+      "needs": [
+       {
+        "tried": "connect.plan"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "approve": {
+    "goal": "Show the plan to the human and wait.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "run",
+      "needs": [
+       {
+        "action": "ask_human"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "run": {
+    "goal": "Run the approved plan, one step at a time, recording each result.",
+    "tags": [
+     "connect"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "verify",
+      "needs": [
+       {
+        "tried": "connect.result"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "verify": {
+    "goal": "Check from outside that it worked, or undo it.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "tried": "connect.verified"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "connected and verified, or undone and recorded"
+   }
+  }
+ }
+}

@@ -1,0 +1,7 @@
+systemd
+sshd
+llama-server
+python3
+bash
+bash
+/usr/sbin/cron

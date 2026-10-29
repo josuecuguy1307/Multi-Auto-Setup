@@ -1,0 +1,21 @@
+{
+ "entities": 0,
+ "entity_attrs": [],
+ "facts": {
+  "net.listening.tcp": [
+   {
+    "name": "sshd",
+    "port": 22,
+    "scope": "all"
+   },
+   {
+    "name": "llama-server",
+    "port": 8089,
+    "scope": "loopback"
+   }
+  ]
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

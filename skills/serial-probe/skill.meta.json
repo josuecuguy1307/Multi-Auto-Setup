@@ -1,0 +1,32 @@
+{
+ "provenance": "builtin",
+ "protocol": "serial",
+ "tier": "read",
+ "ring": 1,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "serial"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "probe",
+    "tool": "serial_identify",
+    "platforms": [
+     "macos",
+     "linux"
+    ],
+    "args": {
+     "port": "{param.port}"
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [],
+ "legacy_id": "serial_probe",
+ "example": true
+}

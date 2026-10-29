@@ -1,0 +1,128 @@
+{
+ "provenance": "builtin",
+ "protocol": "signal",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "signal"
+  ],
+  "start": "capture",
+  "states": {
+   "capture": {
+    "goal": "Work from a recorded capture, never by transmitting.",
+    "tags": [
+     "capture",
+     "file",
+     "skill"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "describe",
+      "needs": [
+       {
+        "tool_tag": "capture"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "describe": {
+    "goal": "Describe its shape: length, rhythm, repeated frames, character set.",
+    "tags": [
+     "extract"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "match",
+      "needs": [
+       {
+        "tool_tag": "extract"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "match": {
+    "goal": "Match the shape against known protocol signatures.",
+    "tags": [
+     "identify",
+     "table_lookup"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "research",
+      "needs": [
+       {
+        "tried": "signal.encoding"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "research": {
+    "goal": "Read the local documentation, if any.",
+    "tags": [],
+    "tools": [],
+    "actions": [
+     "research"
+    ],
+    "advance": [
+     {
+      "to": "ask",
+      "needs": [
+       {
+        "action": "research"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "ask": {
+    "goal": "Ask the human what is still unknown.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "action": "ask_human"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "the encoding is known, or the human has been asked"
+   }
+  }
+ }
+}

@@ -8,18 +8,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-# (min RAM in GiB, max params in billions). Rows are checked from the top; first match wins.
-RAM_TABLE: list[tuple[float, float]] = [
-    (16.0, 13.0),
-    (8.0, 7.0),
-    (4.0, 3.0),
-    (2.0, 1.5),
-    (1.0, 0.5),
-]
-CATALOG_PARAMS_B = [0.5, 1.0, 1.5, 3.0, 7.0, 13.0]  # model sizes we know how to fetch
-QUANT = "q4"
-GB_PER_B_PARAMS = 0.6  # q4 weights
-RUNTIME_OVERHEAD_GB = 0.5
+from envrec.skills.data import reference_json
+
+_TABLE = reference_json("workspace-sizing", "size-table.json")  # the human-owned table lives in the workspace-sizing skill
+RAM_TABLE: list[tuple[float, float]] = [(float(a), float(b)) for a, b in _TABLE["ram_table"]]  # (min RAM in GiB, max params in billions); first match from the top wins
+CATALOG_PARAMS_B = [float(x) for x in _TABLE["catalog_params_b"]]  # model sizes we know how to fetch
+QUANT = _TABLE["quant"]
+GB_PER_B_PARAMS = float(_TABLE["gb_per_b_params"])  # q4 weights
+RUNTIME_OVERHEAD_GB = float(_TABLE["runtime_overhead_gb"])
 
 
 @dataclass(frozen=True)

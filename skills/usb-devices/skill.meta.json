@@ -1,0 +1,85 @@
+{
+ "provenance": "builtin",
+ "protocol": "usb",
+ "tier": "observe",
+ "ring": 1,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "sp_usb",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "system_profiler",
+      "SPUSBDataType",
+      "-json"
+     ],
+     "timeout_s": 20
+    }
+   },
+   {
+    "id": "ioreg_usb",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "ioreg",
+      "-p",
+      "IOUSB",
+      "-l",
+      "-w0"
+     ],
+     "timeout_s": 20,
+     "optional": true
+    }
+   },
+   {
+    "id": "lsusb",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "lsusb"
+     ],
+     "timeout_s": 10
+    }
+   },
+   {
+    "id": "usb_dev",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "ls",
+      "-1",
+      "/sys/bus/usb/devices"
+     ],
+     "timeout_s": 5,
+     "optional": true
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "usb.device_count"
+ ],
+ "legacy_id": "usb_devices",
+ "example": true
+}

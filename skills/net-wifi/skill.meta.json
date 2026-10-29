@@ -1,0 +1,58 @@
+{
+ "provenance": "builtin",
+ "protocol": "host",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "sp_airport",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "system_profiler",
+      "SPAirPortDataType",
+      "-json"
+     ],
+     "timeout_s": 30
+    }
+   },
+   {
+    "id": "nmcli_active",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "nmcli",
+      "-t",
+      "-f",
+      "ACTIVE,SSID,CHAN,SIGNAL,SECURITY",
+      "dev",
+      "wifi"
+     ],
+     "timeout_s": 10,
+     "optional": true
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "net.wifi.connected",
+  "net.wifi.ssid"
+ ],
+ "legacy_id": "net_wifi",
+ "example": false
+}

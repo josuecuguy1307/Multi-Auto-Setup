@@ -1,0 +1,1 @@
+start the container and make sure the docker CLI can see it, then re-run

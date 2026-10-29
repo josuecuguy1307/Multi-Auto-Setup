@@ -1,0 +1,32 @@
+{
+ "adapter": "net_listening",
+ "counts": {
+  "entities": 0,
+  "facts": 1,
+  "resolved": 0,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "net.listening.tcp",
+   "status": "tested",
+   "value": [
+    {
+     "name": "sshd",
+     "port": 22,
+     "scope": "all"
+    },
+    {
+     "name": "llama-server",
+     "port": 8089,
+     "scope": "loopback"
+    }
+   ]
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

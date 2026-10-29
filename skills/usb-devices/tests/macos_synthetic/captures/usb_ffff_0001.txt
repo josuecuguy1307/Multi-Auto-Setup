@@ -1,0 +1,1 @@
+{"found": false, "name": null, "source": "usb.ids", "identifier": "ffff:0001", "entries": [], "vendor": null, "product": null}

@@ -1,0 +1,26 @@
+{
+ "entities": 0,
+ "entity_attrs": [],
+ "facts": {
+  "net.wifi.band_ghz": 2,
+  "net.wifi.channel": 9,
+  "net.wifi.connected": true,
+  "net.wifi.nearby_by_channel": {
+   "1": 1,
+   "11": 1,
+   "36": 1,
+   "9": 1
+  },
+  "net.wifi.nearby_count": 4,
+  "net.wifi.noise": -98,
+  "net.wifi.phy": "802.11ax",
+  "net.wifi.rssi": -60,
+  "net.wifi.security": "pairport_security_mode_wpa3_transition",
+  "net.wifi.tx_rate": 146
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": [
+  "net.wifi.ssid"
+ ]
+}

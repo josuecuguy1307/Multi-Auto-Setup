@@ -1,0 +1,6 @@
+{
+ "adapter": "hw_power",
+ "platform": "macos",
+ "synthetic": false,
+ "source": "captured on a real Mac, redacted"
+}

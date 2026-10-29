@@ -1,0 +1,10 @@
+# The ONLY bytes serial_probe may ever send, in this order. Everything else is silence. Each is a read-only identify query.
+# src: the SCPI standard (IEEE 488.2 *IDN?), the Hayes AT convention, and GRBL's documented `$I` build-info command.
+listen_s: 1.5            # passive listening at each baud before sending anything
+reply_wait_s: 1.0        # how long to wait for a reply to each query
+bauds: [9600, 115200, 4800]
+probes:
+  - {name: newline, send: "\r\n", src: "terminal convention: prompts and banners answer a bare line end"}
+  - {name: at, send: "AT\r\n", src: "https://en.wikipedia.org/wiki/Hayes_AT_command_set"}
+  - {name: scpi_idn, send: "*IDN?\r\n", src: "https://www.ivifoundation.org/specifications/default.aspx (SCPI, IEEE 488.2)"}
+  - {name: grbl_info, send: "$I\r\n", src: "https://github.com/gnea/grbl/wiki/Grbl-v1.1-Commands"}

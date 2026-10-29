@@ -1,0 +1,56 @@
+{
+ "entities": 6,
+ "entity_attrs": [
+  {
+   "battery": null,
+   "name": "JBL TUNE510BT",
+   "state": "paired",
+   "type": "Headphones",
+   "vendor": "Harman International"
+  },
+  {
+   "battery": null,
+   "name": "JBL TUNE510BT",
+   "state": "paired",
+   "type": "Headphones",
+   "vendor": "Harman International"
+  },
+  {
+   "battery": null,
+   "name": "Echo Show 5 (3rd generation)-B6N",
+   "state": "paired",
+   "type": "Speaker",
+   "vendor": null
+  },
+  {
+   "battery": null,
+   "name": "JLab GO Pop+",
+   "state": "paired",
+   "type": "Headset",
+   "vendor": null
+  },
+  {
+   "battery": null,
+   "name": "iPhone",
+   "state": "paired",
+   "type": null,
+   "vendor": null
+  },
+  {
+   "battery": null,
+   "name": "Redmi Note 12",
+   "state": "paired",
+   "type": "Mobile Phone",
+   "vendor": null
+  }
+ ],
+ "facts": {
+  "ble.connected_count": 0,
+  "ble.controller_chipset": "BCM_4388",
+  "ble.controller_state": "on",
+  "ble.paired_count": 6
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

@@ -96,7 +96,7 @@ def test_invalid_action_gives_a_readable_error():
         ({"action": "extend_to", "ring": 9}, "ring"),
         ({"action": "ask_human"}, "question"),
         ({"action": "research"}, "question"),
-        ({"action": "propose_probe", "code": "x"}, "test_plan"),
+        ({"action": "propose_skill"}, "skill_draft"),
         ({"action": "expand_fact"}, "fact_id or key"),
         ({"action": "record_unknown", "key": "bogus.thing"}, "unknown prefix"),
     ],
@@ -120,7 +120,7 @@ def test_valid_actions_of_every_type():
     Action(action=ActionType.extend_to, ring=1)
     Action(action=ActionType.expand_fact, key="host.kind")
     Action(action=ActionType.research, question="what is this chip")
-    Action(action=ActionType.propose_probe, code="print(1)", test_plan="expect 1")
+    Action(action=ActionType.propose_skill, skill_draft={"name": "x"})
     Action(action=ActionType.record_unknown)
     Action(action=ActionType.ask_human, question="what is this device?")
     Action(action=ActionType.done)

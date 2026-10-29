@@ -36,6 +36,17 @@ class TunnelClient:
         r.raise_for_status()
         return r.json()["choices"][0]["message"]["content"]
 
+    def get_json(self, path: str):
+        r = httpx.get(self.url.rsplit("/v1/", 1)[0] + path, timeout=self.timeout)
+        r.raise_for_status()
+        return r.json()
+
+    def chat_raw(self, content: str, max_tokens: int) -> dict:
+        r = httpx.post(self.url, json={"messages": [{"role": "user", "content": content}], "max_tokens": max_tokens, "temperature": 0},
+                       timeout=self.timeout)
+        r.raise_for_status()
+        return r.json()
+
 
 class ExecClient:
     """Sends the request from inside the device (docker exec), for transports that have no tunnel."""
@@ -49,6 +60,19 @@ class ExecClient:
         if not r.ok:
             raise ConnectionError(r.stderr.strip()[:160] or "request failed")
         return json.loads(r.stdout)["choices"][0]["message"]["content"]
+
+    def get_json(self, path: str):
+        r = self.runner.run(self.target_id, self.transport, "http_get", {"port": self.port, "urlpath": path})
+        if not r.ok:
+            raise ConnectionError(r.stderr.strip()[:160] or "request failed")
+        return json.loads(r.stdout)
+
+    def chat_raw(self, content: str, max_tokens: int) -> dict:
+        body = json.dumps({"messages": [{"role": "user", "content": content}], "max_tokens": max_tokens, "temperature": 0}).encode()
+        r = self.runner.run(self.target_id, self.transport, "chat_request", {"port": self.port}, stdin=body)
+        if not r.ok:
+            raise ConnectionError(r.stderr.strip()[:160] or "request failed")
+        return json.loads(r.stdout)
 
 
 @dataclass
@@ -78,5 +102,5 @@ def verify_server(client: ServerClient, store: Store, target: Target, *, rounds:
     store.write_fact(Fact(
         target_id=target.id, key="host.model_server", value="running", status=FactStatus.verified, created_by=CreatedBy.verifier,
         evidence=[Evidence(provider="verifier", probe="nonce_echo", raw_ref=raw, confidence=0.95,
-                           limitations=["proves the server echoes fresh input; the test runtime is a stub, not a language model"])]))
+                           limitations=["proves the server echoes fresh input and nothing about WHAT is answering; verify_model checks identity and real generation"])]))
     return VerifyResult(True, "fresh nonces were echoed", rounds, replies)

@@ -1,0 +1,3 @@
+# Which entries of /dev are serial DEVICES worth listing. Everything else is counted and left alone (it is never opened).
+include: ["usbserial", "usbmodem", "SLAB_USBtoUART", "wchusbserial", "usb", "ttyUSB", "ttyACM", "ttyAMA", "ttyGS", "rfcomm"]
+deny: ["Bluetooth-Incoming-Port", "debug-console", "wlan-debug", "BLTH", "ttyS"]

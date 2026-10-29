@@ -1,0 +1,17 @@
+{
+ "entities": 2,
+ "entity_attrs": [
+  {
+   "name": "flash.sh"
+  },
+  {
+   "name": "my-custom-tool"
+  }
+ ],
+ "facts": {
+  "app.unknown_executable_count": 2
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

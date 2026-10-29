@@ -1,0 +1,59 @@
+{
+ "adapter": "ble_paired",
+ "counts": {
+  "entities": 2,
+  "facts": 3,
+  "resolved": 2,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "ble.connected_count",
+   "status": "tested",
+   "value": 1
+  },
+  {
+   "key": "ble.controller_state",
+   "status": "tested",
+   "value": "on"
+  },
+  {
+   "key": "ble.entity.bluetooth-5c40eb3e",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "name": "Example Mouse",
+     "state": "connected"
+    },
+    "kind": "bluetooth",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 1
+   }
+  },
+  {
+   "key": "ble.entity.bluetooth-75337e55",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "name": "Example Headset",
+     "state": "paired"
+    },
+    "kind": "bluetooth",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 1
+   }
+  },
+  {
+   "key": "ble.paired_count",
+   "status": "tested",
+   "value": 2
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

@@ -9,17 +9,16 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import sys
 import time
 from pathlib import Path
 
 from envrec.adapters import BuiltinRing0Adapter
 from envrec.contracts import Target, TargetKind
-from envrec.fingerprint import UsbIds
-from envrec.ladder import LadderAdapter, load_devices
 from envrec.loop import Loop, RunConfig, RunSummary
 from envrec.model import load_profile, make_adapter, with_view_budget
-from envrec.scoring import fingerprint_stats, highest_rung, load_ground_truth, render_stats, score_target
+from envrec.scoring import load_ground_truth, score_target
 from envrec.store import Store
 
 DEFAULT_MODELS = Path("config/models.yaml")
@@ -37,23 +36,24 @@ def _print_summary(s: RunSummary, profile_name: str, model_id: str) -> None:
     print(f"  ring decisions: {s.ring_decisions}")
 
 
-def _cards(spec: str | None) -> list[str] | None:
-    """--cards none | host,usb ; None keeps the profile's own list."""
-    if spec is None:
+def _protocols(args: argparse.Namespace):
+    """The protocols of the skill library, enforced by the loop; --no-protocols runs the loop without them (the baseline for measuring them)."""
+    if getattr(args, "no_protocols", False):
         return None
-    return [] if spec.strip().lower() in ("", "none") else [c.strip() for c in spec.split(",")]
+    from envrec.protocols import ProtocolSet
+    return ProtocolSet.from_library()
 
 
 def cmd_run(args: argparse.Namespace) -> int:
     profile, options = load_profile(args.models, args.profile)
-    profile = with_view_budget(profile, args.view_budget, args.menu_max, _cards(args.cards))
+    profile = with_view_budget(profile, args.view_budget, args.menu_max)
     model = make_adapter(profile, options)
     out = Path(args.runs_dir) / f"{args.profile}-{int(time.time())}"
     with Store(out) as store:
         host = store.put_target(Target(kind=TargetKind.host, ring=0, handle="this-machine"))
         loop = Loop(store, [BuiltinRing0Adapter()], model,
                     config=RunConfig(max_steps=args.max_steps, max_seconds=args.max_seconds,
-                                     playbook_dir=Path(args.playbooks)))
+                                     protocols=_protocols(args)))
         summary = asyncio.run(loop.run(host))
         _print_summary(summary, profile.name, profile.model_id)
         print(f"  store: {out}")
@@ -69,52 +69,6 @@ def cmd_run(args: argparse.Namespace) -> int:
     return 0
 
 
-FIXTURES = ("ch340-gps", "mystery-box", "liar-device")
-
-
-def cmd_ladder(args: argparse.Namespace) -> int:
-    """Run the unknown-ladder fixtures (replay devices) with a live model and score each."""
-    profile, options = load_profile(args.models, args.profile)
-    profile = with_view_budget(profile, args.view_budget, args.menu_max, _cards(args.cards))
-    model = make_adapter(profile, options)
-    root = Path(args.fixtures)
-    usb_ids = UsbIds.from_file(args.usb_ids)
-    out = Path(args.runs_dir) / f"ladder-{args.profile}-{int(time.time())}"
-    rows = []
-    with Store(out) as store:
-        for name in args.fixture or FIXTURES:
-            registry = load_devices(root / "replay")
-            device = registry.get(f"replay:{name}")
-            target = store.put_target(Target(kind=TargetKind.usb, ring=1, handle=device.handle))
-            loop = Loop(store, [LadderAdapter(registry, usb_ids)], model,
-                        config=RunConfig(max_steps=args.max_steps, max_seconds=args.max_seconds,
-                                         playbook_dir=Path(args.playbooks), repair=not args.no_repair))
-            s = asyncio.run(loop.run(target))
-            report = score_target(store, target.id, load_ground_truth(Path(args.truth_dir) / f"replay-{name}.yaml"))
-            facts = {f.key: f for f in store.current_facts(target.id)}
-            proto = facts.get("serial.protocol")
-            verified = sum(1 for f in facts.values() if f.status.value == "verified")
-            rows.append({"fixture": name, "steps": s.steps, "stop": s.stop_reason, "invalid": s.invalid_replies, "repaired": s.repaired,
-                         "fallbacks": s.fallbacks, "rejected": s.rejected_actions, "rung": highest_rung(store, target.id),
-                         "tools": s.tools_run, "protocol": f"{proto.value if proto else None} ({proto.status.value if proto else '-'})",
-                         "correct": report.count("correct"), "scored": len(report.rows),
-                         "wrong": report.count("wrong"), "contradicted": report.count("contradicted"),
-                         "verified": verified, "tokens": s.prompt_tokens + s.completion_tokens,
-                         "seconds": round(s.elapsed_s, 1)})
-        stats = fingerprint_stats(store)
-    print(f"profile {profile.name} ({profile.model_id})  view_budget={profile.view_budget_facts} menu_max={profile.menu_max}")
-    for r in rows:
-        print(f"  {r['fixture']:12} steps {r['steps']:2}  invalid {r['invalid']}  repaired {r['repaired']}  fallback {r['fallbacks']}  "
-              f"rejected {r['rejected']}  highest rung {r['rung']}  score {r['correct']}/{r['scored']}"
-              f" (wrong {r['wrong']}, contradicted {r['contradicted']})  verified {r['verified']}  "
-              f"protocol {r['protocol']}  {r['seconds']}s")
-        print(f"               tools: {', '.join(r['tools']) or '-'}")
-    print("  list-based hypotheses:\n    " + render_stats(stats).replace("\n", "\n    "))
-    print(f"  store: {out}")
-    (out / "ladder_summary.json").write_text(json.dumps(rows, indent=2), encoding="utf-8")
-    return 0
-
-
 def cmd_score(args: argparse.Namespace) -> int:
     with Store(args.store) as store:
         host = next((t for t in store.list_targets() if t.kind == TargetKind.host and t.ring == 0), None)
@@ -127,6 +81,23 @@ def cmd_score(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_catalog(args) -> int:
+    from envrec.catalog import generate, write
+    from envrec.catalog.live import LiveMetadata
+    from envrec.runtime.manifest import Manifest, NotApproved
+
+    manifest = Manifest.load(args.manifest)
+    try:
+        manifest.require_approved()
+    except NotApproved as exc:
+        print(f"Refused: {exc}", file=sys.stderr)
+        return 2
+    gen = generate(manifest, LiveMetadata(github_token=os.environ.get("GITHUB_TOKEN")))
+    write(gen, args.lock, args.excluded)
+    print(f"catalog: {gen.lock.counts}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m envrec", description="Environment recognition harness.")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -135,38 +106,34 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--profile", required=True, help="a profile name from the models file")
     run.add_argument("--models", default=str(DEFAULT_MODELS))
     run.add_argument("--truth", default=str(DEFAULT_TRUTH))
-    run.add_argument("--playbooks", default="playbooks")
+    run.add_argument("--no-protocols", action="store_true", help="run without the protocol state machine (the baseline)")
     run.add_argument("--runs-dir", default="runs")
     run.add_argument("--view-budget", type=int, default=None, help="override view_budget_facts (the one dial)")
     run.add_argument("--menu-max", type=int, default=None)
     run.add_argument("--no-repair", action="store_true", help="do not read menu-tool-name actions as call_tool")
-    run.add_argument("--cards", default=None, help="playbook cards to show: 'none' or e.g. 'host,usb'")
     run.add_argument("--max-steps", type=int, default=25)
     run.add_argument("--max-seconds", type=float, default=300.0)
     run.set_defaults(func=cmd_run)
-
-    lad = sub.add_parser("ladder", help="run the unknown-device ladder fixtures (replay devices) with a live model")
-    lad.add_argument("--profile", required=True)
-    lad.add_argument("--models", default=str(DEFAULT_MODELS))
-    lad.add_argument("--fixture", action="append", choices=FIXTURES, help="repeatable; default: all three")
-    lad.add_argument("--fixtures", default="fixtures")
-    lad.add_argument("--truth-dir", default="ground_truth")
-    lad.add_argument("--usb-ids", default="fixtures/samples/usb_ids_sample.txt")
-    lad.add_argument("--playbooks", default="playbooks")
-    lad.add_argument("--runs-dir", default="runs")
-    lad.add_argument("--view-budget", type=int, default=None)
-    lad.add_argument("--menu-max", type=int, default=None)
-    lad.add_argument("--no-repair", action="store_true", help="do not read menu-tool-name actions as call_tool")
-    lad.add_argument("--cards", default=None, help="playbook cards to show: 'none' or e.g. 'host,usb'")
-    lad.add_argument("--max-steps", type=int, default=20)
-    lad.add_argument("--max-seconds", type=float, default=300.0)
-    lad.set_defaults(func=cmd_ladder)
 
     score = sub.add_parser("score", help="score a finished store against a ground truth")
     score.add_argument("--store", required=True)
     score.add_argument("--truth", default=str(DEFAULT_TRUTH))
     score.set_defaults(func=cmd_score)
 
+    cat = sub.add_parser("catalog", help="generate catalog.lock.yaml + catalog.excluded.md from the approved sources")
+    cat.add_argument("--manifest", default="config/runtime_manifest.yaml")
+    cat.add_argument("--lock", default="catalog.lock.yaml")
+    cat.add_argument("--excluded", default="catalog.excluded.md")
+    cat.set_defaults(func=cmd_catalog)
+
+    from envrec.cli_discover import add_discover_commands
+    add_discover_commands(sub)
+    from envrec.data_fetch import add_data_commands
+    add_data_commands(sub)
+    from envrec.lab import add_lab_commands
+    add_lab_commands(sub)
+    from envrec.cli_tools import add_tools_commands
+    add_tools_commands(sub)
     from envrec.cli_fleet import add_fleet_commands
     add_fleet_commands(sub)
     args = parser.parse_args(argv)

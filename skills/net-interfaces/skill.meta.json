@@ -1,0 +1,112 @@
+{
+ "provenance": "builtin",
+ "protocol": "host",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "macos",
+  "linux"
+ ],
+ "signature": {
+  "kind": "host"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "ifconfig",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "ifconfig",
+      "-a"
+     ],
+     "timeout_s": 8
+    }
+   },
+   {
+    "id": "routes",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "netstat",
+      "-rn",
+      "-f",
+      "inet"
+     ],
+     "timeout_s": 8
+    }
+   },
+   {
+    "id": "dns",
+    "tool": "run_command",
+    "platforms": [
+     "macos"
+    ],
+    "args": {
+     "argv": [
+      "scutil",
+      "--dns"
+     ],
+     "timeout_s": 8
+    }
+   },
+   {
+    "id": "ip_addr",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "ip",
+      "-o",
+      "addr"
+     ],
+     "timeout_s": 8
+    }
+   },
+   {
+    "id": "ip_route",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "ip",
+      "route"
+     ],
+     "timeout_s": 8
+    }
+   },
+   {
+    "id": "resolv",
+    "tool": "run_command",
+    "platforms": [
+     "linux"
+    ],
+    "args": {
+     "argv": [
+      "cat",
+      "/etc/resolv.conf"
+     ],
+     "timeout_s": 5
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "net.addresses",
+  "net.default_gateway",
+  "net.dns_servers"
+ ],
+ "legacy_id": "net_interfaces",
+ "example": false
+}

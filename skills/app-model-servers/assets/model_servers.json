@@ -1,0 +1,44 @@
+{
+ "servers": [
+  {
+   "name": "ollama",
+   "ports": [
+    11434
+   ],
+   "path": "/api/version",
+   "match": "\"version\"",
+   "src": "https://github.com/ollama/ollama/blob/main/docs/api.md"
+  },
+  {
+   "name": "llama.cpp-server",
+   "ports": [
+    8080,
+    8081,
+    8089
+   ],
+   "path": "/props",
+   "match": "\"(model_path|default_generation_settings)\"",
+   "src": "https://github.com/ggml-org/llama.cpp/tree/master/tools/server"
+  },
+  {
+   "name": "lm-studio",
+   "ports": [
+    1234
+   ],
+   "path": "/v1/models",
+   "match": "\"data\"",
+   "src": "https://lmstudio.ai/docs/developer"
+  },
+  {
+   "name": "openai-compatible",
+   "ports": [
+    8000,
+    5000,
+    4891
+   ],
+   "path": "/v1/models",
+   "match": "\"data\"",
+   "src": "https://platform.openai.com/docs/api-reference/models"
+  }
+ ]
+}

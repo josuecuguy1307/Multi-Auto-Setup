@@ -1,0 +1,93 @@
+{
+ "adapter": "usb_devices",
+ "counts": {
+  "entities": 4,
+  "facts": 1,
+  "resolved": 1,
+  "unknowns": 3
+ },
+ "facts": [
+  {
+   "key": "usb.device_count",
+   "status": "tested",
+   "value": 4
+  },
+  {
+   "key": "usb.entity.usb-7794dd16",
+   "status": "hypothesis",
+   "value": {
+    "attrs": {
+     "name": "Mystery Gadget",
+     "pid": "0001",
+     "product": null,
+     "speed": null,
+     "vendor": null,
+     "vid": "ffff"
+    },
+    "kind": "usb",
+    "owned": "owned",
+    "resolved": false,
+    "ring": 1
+   }
+  },
+  {
+   "key": "usb.entity.usb-a9a4742c",
+   "status": "hypothesis",
+   "value": {
+    "attrs": {
+     "name": "Hub",
+     "pid": "1234",
+     "product": null,
+     "speed": null,
+     "vendor": null,
+     "vid": "05ac"
+    },
+    "kind": "usb",
+    "owned": "owned",
+    "resolved": false,
+    "ring": 1
+   }
+  },
+  {
+   "key": "usb.entity.usb-c3b09ea2",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "name": "USB Serial",
+     "pid": "7523",
+     "product": "CH340 serial converter",
+     "speed": "full_speed",
+     "vendor": "QinHeng Electronics",
+     "vid": "1a86"
+    },
+    "kind": "usb",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 1
+   }
+  },
+  {
+   "key": "usb.entity.usb-cef96e43",
+   "status": "hypothesis",
+   "value": {
+    "attrs": {
+     "name": "Keyboard",
+     "pid": "0267",
+     "product": null,
+     "speed": null,
+     "vendor": null,
+     "vid": "05ac"
+    },
+    "kind": "usb",
+    "owned": "owned",
+    "resolved": false,
+    "ring": 1
+   }
+  }
+ ],
+ "fixture": "macos_synthetic",
+ "platform": "macos",
+ "reason": "1 of 2 captures failed: ioreg_usb=unavailable",
+ "status": "ran",
+ "unknown_reasons": {}
+}

@@ -1,0 +1,14 @@
+{
+ "entities": 1,
+ "entity_attrs": [
+  {
+   "name": "Example Corp GPU 9000"
+  }
+ ],
+ "facts": {
+  "hw.gpu_count": 1
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

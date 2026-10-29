@@ -1,0 +1,21 @@
+{
+ "adapter": "usb_devices",
+ "counts": {
+  "entities": 0,
+  "facts": 1,
+  "resolved": 0,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "usb.device_count",
+   "status": "tested",
+   "value": 0
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

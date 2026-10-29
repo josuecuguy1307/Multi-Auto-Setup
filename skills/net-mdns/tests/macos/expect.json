@@ -1,0 +1,95 @@
+{
+ "entities": 10,
+ "entity_attrs": [
+  {
+   "host": "echoshow.local",
+   "instance": "SpotifyConnect",
+   "ip": "192.0.2.19",
+   "meaning": "Spotify Connect player",
+   "port": 4070,
+   "service_type": "_spotify-connect._tcp"
+  },
+  {
+   "host": "<id>.local",
+   "instance": "<id>-<id>",
+   "ip": "192.0.2.21",
+   "meaning": "Matter Operational Discovery and Communi",
+   "port": 5541,
+   "service_type": "_matter._tcp"
+  },
+  {
+   "host": "REDACTED-NAMEs-MacBook-Air.local",
+   "instance": "<id>@REDACTED-NAME\u2019s MacBook Air",
+   "ip": "192.0.2.30",
+   "meaning": "AirPlay audio receiver",
+   "port": 7000,
+   "service_type": "_raop._tcp",
+   "txt_am": "Mac15,12",
+   "txt_md": "0,1,2"
+  },
+  {
+   "host": "linux.local",
+   "instance": "SpotifyConnect #2",
+   "ip": "192.0.2.21",
+   "meaning": "Spotify Connect player",
+   "port": 4070,
+   "service_type": "_spotify-connect._tcp"
+  },
+  {
+   "host": "REDACTED-NAMEs-MacBook-Air.local",
+   "instance": "REDACTED-NAME\u2019s MacBook Air",
+   "ip": "192.0.2.30",
+   "meaning": "Apple AirPlay receiver",
+   "port": 7000,
+   "service_type": "_airplay._tcp",
+   "txt_model": "Mac15,12"
+  },
+  {
+   "host": "<id>.local",
+   "instance": "<id>-<id>",
+   "ip": "192.0.2.19",
+   "meaning": "Matter Operational Discovery and Communi",
+   "port": 5541,
+   "service_type": "_matter._tcp"
+  },
+  {
+   "host": "REDACTED-NAMEs-MacBook-Air.local",
+   "instance": "REDACTED-NAME\u2019s MacBook Air",
+   "ip": "192.0.2.30",
+   "meaning": "Apple device",
+   "port": 61775,
+   "service_type": "_companion-link._tcp"
+  },
+  {
+   "host": "<id>.local",
+   "instance": "<id>",
+   "ip": "192.0.2.53",
+   "meaning": "Matter Commissioner Discovery",
+   "port": 5550,
+   "service_type": "_matterd._udp"
+  },
+  {
+   "host": "echoshow.local",
+   "instance": "<id>",
+   "ip": "192.0.2.19",
+   "meaning": null,
+   "port": 0,
+   "service_type": "_occam._udp"
+  },
+  {
+   "host": "linux.local",
+   "instance": "<id>",
+   "ip": "192.0.2.21",
+   "meaning": null,
+   "port": 0,
+   "service_type": "_occam._udp"
+  }
+ ],
+ "facts": {
+  "net.mdns_service_types": 24,
+  "net.mdns_services": 10
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

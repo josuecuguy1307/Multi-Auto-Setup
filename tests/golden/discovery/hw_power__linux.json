@@ -1,0 +1,26 @@
+{
+ "adapter": "hw_power",
+ "counts": {
+  "entities": 0,
+  "facts": 2,
+  "resolved": 0,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "hw.battery_charging",
+   "status": "tested",
+   "value": true
+  },
+  {
+   "key": "hw.battery_percent",
+   "status": "tested",
+   "value": 87
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

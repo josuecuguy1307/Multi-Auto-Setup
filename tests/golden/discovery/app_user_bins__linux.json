@@ -1,0 +1,47 @@
+{
+ "adapter": "app_user_bins",
+ "counts": {
+  "entities": 2,
+  "facts": 1,
+  "resolved": 0,
+  "unknowns": 2
+ },
+ "facts": [
+  {
+   "key": "app.entity.unknown-exe-1d28618a",
+   "status": "hypothesis",
+   "value": {
+    "attrs": {
+     "name": "flash.sh"
+    },
+    "kind": "unknown_exe",
+    "owned": "owned",
+    "resolved": false,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.unknown-exe-2e7f1c4b",
+   "status": "hypothesis",
+   "value": {
+    "attrs": {
+     "name": "my-custom-tool"
+    },
+    "kind": "unknown_exe",
+    "owned": "owned",
+    "resolved": false,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.unknown_executable_count",
+   "status": "tested",
+   "value": 2
+  }
+ ],
+ "fixture": "linux",
+ "platform": "linux",
+ "reason": "3 of 4 captures failed: ls_1=unavailable; ls_2=unavailable; ls_3=unavailable",
+ "status": "ran",
+ "unknown_reasons": {}
+}

@@ -1,0 +1,2 @@
+LISTEN 0 4096 127.0.0.1:11434 0.0.0.0:* users:(("ollama",pid=5,fd=3))
+LISTEN 0 4096 127.0.0.1:9911 0.0.0.0:* users:(("my-agent-gateway",pid=6,fd=3))

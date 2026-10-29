@@ -1,0 +1,6 @@
+{
+ "adapter": "serial_probe",
+ "platform": "macos",
+ "synthetic": true,
+ "source": "hand-written in the real output format"
+}

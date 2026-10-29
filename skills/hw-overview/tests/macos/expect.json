@@ -1,0 +1,13 @@
+{
+ "entities": 0,
+ "entity_attrs": [],
+ "facts": {
+  "hw.chip": "Apple M3",
+  "hw.core_layout": "proc 8:4:4",
+  "hw.machine_model": "Mac15,12",
+  "hw.machine_name": "MacBook Air"
+ },
+ "match": true,
+ "platform": "macos",
+ "unknown": []
+}

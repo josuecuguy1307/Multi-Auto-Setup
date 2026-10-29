@@ -1,0 +1,1 @@
+{"matches": [{"protocol": "at", "confidence": 0.9, "detail": "reply to AT: OK"}]}

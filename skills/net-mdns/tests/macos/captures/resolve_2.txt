@@ -1,0 +1,2 @@
+11:05:39.817  REDACTED-NAME’s\032MacBook\032Air._companion-link._tcp.local. can be reached at REDACTED-NAMEs-MacBook-Air.local.:61775 (interface 1) Flags: 1
+11:05:39.817  REDACTED-NAME’s\032MacBook\032Air._companion-link._tcp.local. can be reached at REDACTED-NAMEs-MacBook-Air.local.:61775 (interface 11)

@@ -1,0 +1,180 @@
+{
+ "provenance": "builtin",
+ "protocol": "serial",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "serial"
+  ],
+  "start": "list",
+  "states": {
+   "list": {
+    "goal": "Find the port and what is behind it.",
+    "tags": [
+     "serial",
+     "attached",
+     "skill"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "listen",
+      "needs": [
+       {
+        "tool_tag": "serial"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "listen": {
+    "goal": "Listen first, then send only the fixed identification queries.",
+    "tags": [],
+    "tools": [
+     "serial_identify",
+     "skill.serial_probe",
+     "skill.serial_banner"
+    ],
+    "actions": [],
+    "advance": [
+     {
+      "to": "match",
+      "needs": [
+       {
+        "any": [
+         {
+          "tool": "serial_identify"
+         },
+         {
+          "tool": "skill.serial_probe"
+         },
+         {
+          "tool": "skill.serial_banner"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "match": {
+    "goal": "Match what it said against the known protocol signatures.",
+    "tags": [
+     "identify",
+     "table_lookup"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "research",
+      "needs": [
+       {
+        "tried": "serial.protocol"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "research": {
+    "goal": "Read the local documentation for this device, if any.",
+    "tags": [],
+    "tools": [],
+    "actions": [
+     "research"
+    ],
+    "advance": [
+     {
+      "to": "generate",
+      "needs": [
+       {
+        "action": "research"
+       }
+      ]
+     },
+     {
+      "to": "done",
+      "needs": [
+       {
+        "fact": "serial.protocol",
+        "at_least": "tested"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "generate": {
+    "goal": "Write a parser from what you learned and test it against the recorded capture.",
+    "tags": [],
+    "tools": [
+     "skill.authoring"
+    ],
+    "actions": [
+     "propose_skill"
+    ],
+    "advance": [
+     {
+      "to": "ask",
+      "needs": [
+       {
+        "action": "propose_skill"
+       }
+      ]
+     },
+     {
+      "to": "done",
+      "needs": [
+       {
+        "fact": "skill.saved",
+        "at_least": "verified"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "ask": {
+    "goal": "Record what is unknown and ask the human.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "action": "ask_human"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "the protocol is known and a skill exists, or the human has been asked"
+   }
+  }
+ }
+}

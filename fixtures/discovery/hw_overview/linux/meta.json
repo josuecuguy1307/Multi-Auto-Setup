@@ -1,0 +1,6 @@
+{
+ "adapter": "hw_overview",
+ "platform": "linux",
+ "synthetic": true,
+ "source": "hand-written in the real output format"
+}

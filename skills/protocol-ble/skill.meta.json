@@ -1,0 +1,116 @@
+{
+ "provenance": "builtin",
+ "protocol": "ble",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "ble"
+  ],
+  "start": "paired",
+  "states": {
+   "paired": {
+    "goal": "See what this machine already knows about its Bluetooth devices.",
+    "tags": [
+     "bluetooth",
+     "attached",
+     "skill"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "listen",
+      "needs": [
+       {
+        "tool_tag": "bluetooth"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "listen": {
+    "goal": "Listen passively for advertisements; never connect or pair.",
+    "tags": [],
+    "tools": [
+     "ble_scan_passive",
+     "skill.ble_scan"
+    ],
+    "actions": [],
+    "advance": [
+     {
+      "to": "classify",
+      "needs": [
+       {
+        "any": [
+         {
+          "tool": "ble_scan_passive"
+         },
+         {
+          "tool": "skill.ble_scan"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "classify": {
+    "goal": "Name the vendor and service class from the public Bluetooth numbers.",
+    "tags": [
+     "table_lookup",
+     "identify"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "ask",
+      "needs": [
+       {
+        "tool_tag": "table_lookup"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "ask": {
+    "goal": "Ask the human what is still unknown.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "action": "ask_human"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "classified from public numbers, or handed to the human"
+   }
+  }
+ }
+}

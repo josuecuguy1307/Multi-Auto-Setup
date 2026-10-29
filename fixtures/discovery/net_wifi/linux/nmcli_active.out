@@ -1,0 +1,4 @@
+yes:HomeNet:6:72:WPA2
+no:Neighbour1:1:40:WPA2
+no:Neighbour2:6:35:WPA2
+no:Neighbour3:11:60:WPA3

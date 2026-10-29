@@ -1,0 +1,40 @@
+{
+  "SPPrintersDataType" : [
+    {
+      "_name" : "EPSON ET-2760 Series",
+      "airprintversion" : "1.7",
+      "creationDate" : "martes, 27 de mayo de 2025, 8:34:08 a. m. hora de Ecuador",
+      "cups filters" : [
+        {
+          "image/urf" : "processed in printer"
+        },
+        {
+          "image/jpeg" : "processed in printer"
+        }
+      ],
+      "cupsversion" : "CUPS/2.3.4 (macOS 15.7.1; arm64) IPP/2.0",
+      "default" : "yes",
+      "driverversion" : "4.0",
+      "Fax Support" : "no",
+      "ppd" : "EPSON ET-2760 Series-AirPrint",
+      "ppdfileversion" : "4.0",
+      "printercommands" : "none ",
+      "printerfirmwareversion" : "Firmware:07.57.LW26L2",
+      "printerpdes" : [
+
+      ],
+      "printersharing" : "no",
+      "printserver" : "local",
+      "psversion" : "(3010.000) 0",
+      "scanner" : "yes",
+      "scannerappbundlepath" : "-",
+      "scannerapppath" : "/System/Library/Image Capture/Devices/AirScanScanner.app",
+      "scannerappversion" : "18",
+      "scannerUUID" : "REDACTED-6",
+      "shared" : "no",
+      "status" : "idle",
+      "urfversion" : "1.4",
+      "uri" : "dnssd://EPSON%20ET-2760%20Series._ipps._tcp.local./?uuid=00000000-0000-0000-0000-000000000001"
+    }
+  ]
+}

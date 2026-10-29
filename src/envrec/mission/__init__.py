@@ -7,10 +7,11 @@ from envrec.mission.models import (
     MissionCard,
     SerialBlock,
     SshBlock,
+    TcpBlock,
     TargetConfig,
     TargetEntry,
     Transport,
 )
 
 __all__ = ["AdbBlock", "DockerExecBlock", "EntryLimits", "Limits", "MissionCard", "SerialBlock", "SshBlock",
-           "TargetConfig", "TargetEntry", "Transport", "load_mission", "load_targets"]
+           "TcpBlock", "TargetConfig", "TargetEntry", "Transport", "load_mission", "load_targets"]

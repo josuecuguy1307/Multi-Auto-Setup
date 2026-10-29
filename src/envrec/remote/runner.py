@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 import subprocess
 from collections.abc import Callable
+from pathlib import Path
 from dataclasses import dataclass, field
 
 from envrec.mission.models import TargetConfig, TargetEntry, Transport
@@ -39,14 +40,18 @@ class RemoteResult:
         return self.exit_code == 0
 
 
-Exec = Callable[[list[str], bytes | None, float], tuple[int, bytes, bytes]]
+Exec = Callable[[list[str], "bytes | Path | None", float], tuple[int, bytes, bytes]]
 
 
 def _real_exec(argv: list[str], stdin: bytes | None, timeout: float) -> tuple[int, bytes, bytes]:
     try:
         # A child must never read the human's terminal (approval answers are typed there): /dev/null unless data is passed.
-        kw = {"input": stdin} if stdin is not None else {"stdin": subprocess.DEVNULL}
-        done = subprocess.run(argv, capture_output=True, timeout=timeout, check=False, **kw)
+        if isinstance(stdin, Path):  # stream a (possibly large) file instead of holding it in memory
+            with stdin.open("rb") as fh:
+                done = subprocess.run(argv, stdin=fh, capture_output=True, timeout=timeout, check=False)
+        else:
+            kw = {"input": stdin} if stdin is not None else {"stdin": subprocess.DEVNULL}
+            done = subprocess.run(argv, capture_output=True, timeout=timeout, check=False, **kw)
         return done.returncode, done.stdout, done.stderr
     except subprocess.TimeoutExpired:
         return 124, b"", b"timed out"
@@ -70,7 +75,7 @@ class RemoteRunner:
         return entry
 
     def run(self, target_id: str, transport: Transport, template: str | Template, values: dict[str, object] | None = None,
-            *, stdin: bytes | None = None, timeout: float = 60.0) -> RemoteResult:
+            *, stdin: bytes | Path | None = None, timeout: float = 60.0) -> RemoteResult:
         entry = self.entry_for(target_id, transport)  # raises before anything else happens
         tpl = get_template(template) if isinstance(template, str) else template
         if stdin is not None and not tpl.sends_stdin:
@@ -79,6 +84,10 @@ class RemoteRunner:
             argv, shown = self._ssh_argv(entry, tpl, values)
         elif transport == Transport.docker_exec:
             argv = ["docker", "exec", "-i", entry.docker_exec.container, *tpl.render(values)]
+            shown = list(argv)
+        elif transport == Transport.adb_usb:
+            # adb gives the device shell ONE string: the same quoted command a template renders for ssh. Only a fixed template can reach it.
+            argv = ["adb", "-s", entry.adb_usb.serial, "shell", tpl.remote_command(values)]
             shown = list(argv)
         else:
             raise TargetNotAllowed(f"no runner is built for transport {transport.value!r} in this phase")

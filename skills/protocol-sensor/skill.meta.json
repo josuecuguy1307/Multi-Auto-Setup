@@ -1,0 +1,107 @@
+{
+ "provenance": "builtin",
+ "protocol": "sensor",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "sensor"
+  ],
+  "start": "find",
+  "states": {
+   "find": {
+    "goal": "Find how the sensor reaches this machine.",
+    "tags": [
+     "attached",
+     "skill"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "read",
+      "needs": [
+       {
+        "tool_tag": "attached"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "read": {
+    "goal": "Take a few readings and note their range and rhythm.",
+    "tags": [
+     "generic_read",
+     "serial"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "compare",
+      "needs": [
+       {
+        "tool_tag": "generic_read"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "compare": {
+    "goal": "If a second source measures the same thing, compare the two.",
+    "tags": [
+     "generic_read"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "ask",
+      "needs": [
+       {
+        "tried": "sensor.quantity"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "ask": {
+    "goal": "Ask the human what the sensor measures and in what unit.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "action": "ask_human"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "what it measures is known, or the human has been asked"
+   }
+  }
+ }
+}

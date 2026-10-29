@@ -1,0 +1,621 @@
+{
+ "adapter": "app_installed",
+ "counts": {
+  "entities": 30,
+  "facts": 3,
+  "resolved": 30,
+  "unknowns": 0
+ },
+ "facts": [
+  {
+   "key": "app.brew_formulae",
+   "status": "tested",
+   "value": {
+    "count": 120,
+    "names": [
+     "abseil",
+     "actionlint",
+     "ada-url",
+     "aom",
+     "apache-arrow",
+     "aws-c-auth",
+     "aws-c-cal",
+     "aws-c-common",
+     "aws-c-compression",
+     "aws-c-event-stream",
+     "aws-c-http",
+     "aws-c-io",
+     "aws-c-mqtt",
+     "aws-c-s3",
+     "aws-c-sdkutils",
+     "aws-checksums",
+     "aws-crt-cpp",
+     "aws-sdk-cpp",
+     "awscli",
+     "boost",
+     "brotli",
+     "c-ares",
+     "c-blosc",
+     "ca-certificates",
+     "cairo",
+     "cfitsio",
+     "cgal",
+     "cliclick",
+     "cocoapods",
+     "eigen",
+     "epsilon",
+     "fftw",
+     "fmt",
+     "fontconfig",
+     "freetype",
+     "freexl",
+     "gcc",
+     "gdal",
+     "geos",
+     "gettext",
+     "gh",
+     "giflib",
+     "gitleaks",
+     "glib",
+     "gmp",
+     "gnupg",
+     "gnutls",
+     "gpgme",
+     "gpgmepp",
+     "graphite2",
+     "grpc",
+     "harfbuzz",
+     "hdf5",
+     "hdrhistogram_c",
+     "highway",
+     "icu4c@77",
+     "icu4c@78",
+     "imath",
+     "isl",
+     "jpeg-turbo",
+     "jpeg-xl",
+     "json-c",
+     "krb5",
+     "libaec",
+     "libarchive",
+     "libassuan",
+     "libb2",
+     "libde265",
+     "libdeflate",
+     "libevent",
+     "libffi",
+     "libgcrypt",
+     "libgeotiff",
+     "libgpg-error",
+     "libheif",
+     "libice",
+     "libidn2",
+     "libkml",
+     "libksba",
+     "liblerc",
+     "libmpc",
+     "libnghttp2",
+     "libnghttp3",
+     "libngspice",
+     "libngtcp2",
+     "libomp",
+     "libpng",
+     "libpq",
+     "librttopo",
+     "libsm",
+     "libspatialite",
+     "libtasn1",
+     "libtiff",
+     "libtool",
+     "libunistring",
+     "libusb",
+     "libuv",
+     "libvmaf",
+     "libx11",
+     "libxau",
+     "libxaw",
+     "libxcb",
+     "libxdmcp",
+     "libxext",
+     "libxml2",
+     "libxmu",
+     "libxpm",
+     "libxrender",
+     "libxt",
+     "libyaml",
+     "little-cms2",
+     "llhttp",
+     "llvm",
+     "lz4",
+     "lzo",
+     "m4",
+     "merve",
+     "minizip",
+     "mlx",
+     "mlx-c"
+    ]
+   }
+  },
+  {
+   "key": "app.entity.app-08326016",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Automator",
+     "version": "2.10"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-18475cca",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Photo Booth",
+     "version": "13.1"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-222e28e5",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "TMHelperAgent",
+     "version": "13"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-2908c04a",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "UIKitSystem",
+     "version": "1.0"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-35471a7a",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Libros",
+     "version": "7.6"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-36077652",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Time Machine",
+     "version": "1.3"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-370c1a15",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Calendario",
+     "version": "15.0"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-3ac42c59",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Contrasen\u0303as",
+     "version": "1.6"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-4130b239",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "TextInputSwitcher",
+     "version": "1.1"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-4920624d",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Atajos",
+     "version": "7.0"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-4b7fda0c",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "ThermalTrap",
+     "version": "1.0"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-5351c3a9",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Fotos",
+     "version": "10.0"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-560c1458",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "App Store",
+     "version": "3.0"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-5a603da1",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Monitor de Actividad",
+     "version": "10.14"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-5b82d229",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Vista Previa",
+     "version": "11.0"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-6c3ff1e8",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "TextEdit",
+     "version": "1.20"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-79307ed8",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Notas",
+     "version": "4.12.7"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-7ab3d455",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "TextInputMenuAgent",
+     "version": "1.0"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-8442ff58",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "TV",
+     "version": "1.5.6"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-849c552e",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Notas Adhesivas",
+     "version": "10.3"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-968fb637",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Siri",
+     "version": "1.0"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-9f01b783",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Podcasts",
+     "version": "1.1.0"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-c90f174c",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Recordatorios",
+     "version": "7.0"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-cf9972e3",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Calculadora",
+     "version": "11.0"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-dd18b469",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "QuickTime Player",
+     "version": "10.5"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-dda2a3fd",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Bolsa",
+     "version": "7.4"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-e8040c13",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Utilidad AirPort",
+     "version": "6.3.9"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-e82416cf",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Consejos",
+     "version": "1.0"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.entity.app-e9d74e18",
+   "status": "tested",
+   "value": {
+    "attrs": {
+     "arch": "arm_i64",
+     "from": "apple",
+     "name": "Ajustes del Sistema",
+     "version": "15.0"
+    },
+    "kind": "app",
+    "owned": "owned",
+    "resolved": true,
+    "ring": 0
+   }
+  },
+  {
+   "key": "app.installed_by_source",
+   "status": "tested",
+   "value": {
+    "apple": 30
+   }
+  },
+  {
+   "key": "app.installed_count",
+   "status": "tested",
+   "value": 30
+  }
+ ],
+ "fixture": "macos",
+ "platform": "macos",
+ "reason": "",
+ "status": "ran",
+ "unknown_reasons": {}
+}

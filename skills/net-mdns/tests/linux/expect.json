@@ -1,0 +1,29 @@
+{
+ "entities": 2,
+ "entity_attrs": [
+  {
+   "host": "labprinter.local",
+   "instance": "Lab Printer",
+   "ip": "192.0.2.40",
+   "meaning": "IPP (Internet Printing Protocol)",
+   "port": 631,
+   "service_type": "_ipp._tcp",
+   "txt_ty": "Example LaserJet"
+  },
+  {
+   "host": "strange.local",
+   "instance": "Strange Thing",
+   "ip": "192.0.2.41",
+   "meaning": null,
+   "port": 31337,
+   "service_type": "_zxq-special._tcp"
+  }
+ ],
+ "facts": {
+  "net.mdns_service_types": 3,
+  "net.mdns_services": 2
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

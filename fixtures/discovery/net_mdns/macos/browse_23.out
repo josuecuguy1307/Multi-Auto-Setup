@@ -1,0 +1,6 @@
+Browsing for _matter._tcp.local
+DATE: ---Sun 25 Oct 2026---
+11:05:37.802  ...STARTING...
+Timestamp     A/R    Flags  if Domain               Service Type         Instance Name
+11:05:37.803  Add        3  11 local.               _matter._tcp.        2944326D0FB1313F-05731465C67F6CF1
+11:05:37.803  Add        2  11 local.               _matter._tcp.        2944326D0FB1313F-03F9CB94C5CDE8F1

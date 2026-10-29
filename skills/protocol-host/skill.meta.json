@@ -1,0 +1,130 @@
+{
+ "provenance": "builtin",
+ "protocol": "host",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "host"
+  ],
+  "start": "basics",
+  "states": {
+   "basics": {
+    "goal": "Read the operating system, memory and disks.",
+    "tags": [],
+    "tools": [
+     "read_os",
+     "read_cpu_ram",
+     "read_disks",
+     "read_os_native",
+     "read_hw_native"
+    ],
+    "actions": [],
+    "advance": [
+     {
+      "to": "context",
+      "needs": [
+       {
+        "tried": "os.name"
+       },
+       {
+        "tried": "hw.ram_total_gib"
+       },
+       {
+        "tried": "hw.disk_total_gib"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "context": {
+    "goal": "Find out what surrounds the machine: battery, display, virtualization, tools, interfaces.",
+    "tags": [],
+    "tools": [
+     "read_battery",
+     "read_display",
+     "read_virtualization",
+     "read_tool_versions",
+     "read_net_interfaces"
+    ],
+    "actions": [],
+    "advance": [
+     {
+      "to": "judge",
+      "needs": [
+       {
+        "tried": "hw.battery_present"
+       },
+       {
+        "tried": "hw.display_present"
+       },
+       {
+        "tried": "host.virtualization"
+       },
+       {
+        "tried": "net.interfaces"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "judge": {
+    "goal": "Decide what kind of machine this is, from facts that are already in.",
+    "tags": [],
+    "tools": [
+     "classify_host"
+    ],
+    "actions": [],
+    "advance": [
+     {
+      "to": "survey",
+      "needs": [
+       {
+        "tried": "host.kind"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "survey": {
+    "goal": "Look around: attached hardware, software and the local network, with the discovery skills.",
+    "tags": [
+     "skill"
+    ],
+    "tools": [],
+    "actions": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "tried": "host.kind"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "this machine has been identified and surveyed"
+   }
+  }
+ }
+}

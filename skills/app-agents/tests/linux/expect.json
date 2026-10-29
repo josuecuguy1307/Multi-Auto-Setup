@@ -1,0 +1,47 @@
+{
+ "entities": 5,
+ "entity_attrs": [
+  {
+   "category": "local_model_runner",
+   "name": "Ollama",
+   "seen_as": [
+    "process",
+    "binary",
+    "config"
+   ],
+   "source": "https://ollama.com",
+   "state": "running"
+  },
+  {
+   "category": "coding_agent",
+   "name": "Claude Code",
+   "seen_as": [
+    "process",
+    "binary",
+    "config"
+   ],
+   "source": "https://www.anthropic.com/claude-code",
+   "state": "running"
+  },
+  {
+   "client": "claude-desktop",
+   "command": "uvx",
+   "name": "search"
+  },
+  {
+   "client": "claude-desktop",
+   "command": "npx",
+   "name": "files"
+  },
+  {
+   "name": "my-agent-gateway",
+   "why": "a user program listening on a local port, name matches a generic agent pattern"
+  }
+ ],
+ "facts": {
+  "app.agent_count": 2
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

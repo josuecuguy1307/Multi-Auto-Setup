@@ -1,0 +1,16 @@
+{
+ "entities": 1,
+ "entity_attrs": [
+  {
+   "kind": "llama.cpp-server",
+   "port": 8089,
+   "version": null
+  }
+ ],
+ "facts": {
+  "app.model_server_count": 1
+ },
+ "match": true,
+ "platform": "linux",
+ "unknown": []
+}

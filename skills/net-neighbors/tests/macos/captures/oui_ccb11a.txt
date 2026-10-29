@@ -1,0 +1,1 @@
+{"found": true, "name": "Samsung Electronics Co.,Ltd", "source": "ieee.oui", "identifier": "cc:b1:1a:00:00:06", "entries": ["CCB11A  Samsung Electronics Co.,Ltd"]}
