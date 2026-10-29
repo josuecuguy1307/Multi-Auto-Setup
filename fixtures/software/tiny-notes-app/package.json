@@ -1,0 +1,8 @@
+{
+  "name": "tiny-notes-app",
+  "version": "1.0.0",
+  "description": "A fixture app written for the envrec tests. It is analyzed statically and never executed.",
+  "main": "main.js",
+  "license": "MIT",
+  "dependencies": {}
+}

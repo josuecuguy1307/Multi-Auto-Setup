@@ -1,0 +1,34 @@
+# Ground truth for a software fixture. Known by construction: the fixture source is in
+# fixtures/software/ and was written (or compiled from source written) for these tests.
+# Checked independently of REA where noted in each `source`.
+machine: software-hello
+confirmed: true
+facts:
+  app.format:
+    value: mach-o
+    source: "`file fixtures/software/hello` -> Mach-O 64-bit executable"
+    confirmed: true
+  app.arch:
+    value: arm64
+    source: "`file` -> arm64"
+    confirmed: true
+  app.sha256:
+    value: a33d50a0cb8ec8c6c960ab955c37483ad22bafff33373f15d2f689f761177f14
+    source: "`shasum -a 256 fixtures/software/hello`"
+    confirmed: true
+  app.dependencies:
+    value: ["/usr/lib/libSystem.B.dylib"]
+    source: "`otool -L`"
+    confirmed: true
+  app.imports_seen:
+    value: ["_printf"]
+    source: "`nm -u`; hello.c calls printf and nothing else from the C library"
+    confirmed: true
+  app.exports_seen:
+    value: ["__mh_execute_header", "_main"]
+    source: "`nm -gU`"
+    confirmed: true
+  app.functions:
+    unknown: true
+    source: "nothing in this phase analyzes the program's functions (no decompiler is installed); unknown is the honest answer"
+    confirmed: true

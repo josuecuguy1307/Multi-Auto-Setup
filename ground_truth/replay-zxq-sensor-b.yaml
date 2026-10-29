@@ -1,0 +1,6 @@
+# Known by construction (fixtures/replay/zxq-sensor-b.json): same protocol as zxq-sensor, other readings.
+machine: replay-zxq-sensor-b
+confirmed: true
+facts:
+  sensor.temperature_c: {value: 21, confirmed: true, source: first frame of the stream}
+  sensor.humidity: {value: 55, confirmed: true, source: first frame of the stream}

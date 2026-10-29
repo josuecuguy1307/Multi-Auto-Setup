@@ -1,0 +1,18 @@
+{
+  "name": "zxq-v2",
+  "handle": "replay:zxq-v2",
+  "kind": "usb",
+  "descriptor": {
+    "vendor_id": "ffff",
+    "product_id": "0002",
+    "manufacturer": null
+  },
+  "stream": [
+    "~~ZXQ2 t=7;h=9 ~~\r\n",
+    "~~ZXQ2 t=8;h=9 ~~\r\n",
+    "~~ZXQ2 t=7;h=10 ~~\r\n"
+  ],
+  "responses": {},
+  "synthetic": true,
+  "note": "hand-written transcript for tests; not a capture from real hardware"
+}

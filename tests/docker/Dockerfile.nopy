@@ -1,0 +1,4 @@
+# Test fixture only: a Linux box with NO python3 and (when run offline) no way to get it.
+FROM debian:bookworm-slim
+RUN mkdir -p /opt/envrec
+CMD ["sleep", "infinity"]

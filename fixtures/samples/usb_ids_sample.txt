@@ -1,0 +1,6 @@
+# Small labeled sample of usb.ids entries (copied from the real list; the full file is not committed).
+# Version: sample-1
+1a86  QinHeng Electronics
+	7523  CH340 serial converter
+0403  Future Technology Devices International, Ltd
+	6001  FT232 Serial (UART) IC

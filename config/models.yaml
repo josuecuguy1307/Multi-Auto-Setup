@@ -1,0 +1,40 @@
+# Model profiles. The model id and endpoint live here and nowhere in code.
+# view_budget_facts and menu_max are the only dials that differ between a small and a strong profile. They are
+# harness settings, not specifications of any model.
+#
+# The values below are placeholders: set the real endpoint and model id for your deployment, preferably in
+# config/models.local.yaml (same shape; it overrides these profiles and is not meant to be committed).
+profiles:
+  muse-glimmer:
+    name: muse-glimmer
+    kind: openai_compat
+    model_id: REPLACE_WITH_MUSE_GLIMMER_MODEL_ID
+    endpoint: http://REPLACE-ME.invalid/v1
+    supports_tool_calling: false
+    context_tokens: 8192
+    view_budget_facts: 8
+    menu_max: 6
+    playbooks: [host, usb]
+    ring_policy: fixed_order
+    options:
+      timeout_s: 180
+      max_tokens: 400
+      temperature: 0
+      json_mode: false
+
+  muse-spark:
+    name: muse-spark
+    kind: openai_compat
+    model_id: REPLACE_WITH_MUSE_SPARK_MODEL_ID
+    endpoint: http://REPLACE-ME.invalid/v1
+    supports_tool_calling: false    # tools are disabled on purpose; the menu is in the prompt
+    context_tokens: 32768
+    view_budget_facts: 24
+    menu_max: 8
+    playbooks: []
+    ring_policy: fixed_order
+    options:
+      timeout_s: 120
+      max_tokens: 400
+      temperature: 0
+      json_mode: false

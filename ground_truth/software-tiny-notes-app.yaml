@@ -1,0 +1,30 @@
+# Ground truth for a software fixture. Known by construction: the fixture source is in
+# fixtures/software/ and was written (or compiled from source written) for these tests.
+# Checked independently of REA where noted in each `source`.
+machine: software-tiny-notes-app
+confirmed: true
+facts:
+  app.name:
+    value: tiny-notes-app
+    source: "fixtures/software/tiny-notes-app/package.json"
+    confirmed: true
+  app.version:
+    value: "1.0.0"
+    source: "package.json"
+    confirmed: true
+  app.entrypoint:
+    value: main.js
+    source: "package.json main"
+    confirmed: true
+  app.source_files:
+    value: [lib/format.js, lib/routes.js, lib/store.js, main.js]
+    source: "`find fixtures/software/tiny-notes-app -name '*.js'`"
+    confirmed: true
+  app.external_modules:
+    value: ["node:http"]
+    source: "the only require() outside the app's own files is node:http"
+    confirmed: true
+  app.endpoint_candidates:
+    value: []
+    source: "by reading the code: the app makes no outbound network call and contains no URL; the string 'welcome' is a key into an in-memory Map. Whether REA's notion of endpoint should count the served routes is the user's call"
+    confirmed: false

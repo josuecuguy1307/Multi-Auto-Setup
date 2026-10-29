@@ -1,0 +1,13 @@
+scout/
+data/raw/
+data/downloads/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.db
+runs/
+build/worker/dist/
+
+# local model profiles (endpoints and ids); not committed
+config/models.local.yaml

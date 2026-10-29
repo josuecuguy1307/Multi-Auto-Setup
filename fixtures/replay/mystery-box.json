@@ -1,0 +1,17 @@
+{
+  "name": "mystery-box",
+  "handle": "replay:mystery-box",
+  "kind": "usb",
+  "descriptor": {
+    "vendor_id": "ffff",
+    "product_id": "0001",
+    "manufacturer": null
+  },
+  "stream": [
+    "~~ZXQ 7/9 ~~\r\n",
+    "~~ZXQ 7/9 ~~\r\n"
+  ],
+  "responses": {},
+  "synthetic": true,
+  "note": "hand-written transcript for tests; not a capture from real hardware"
+}

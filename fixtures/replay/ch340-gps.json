@@ -1,0 +1,18 @@
+{
+  "name": "ch340-gps",
+  "handle": "replay:ch340-gps",
+  "kind": "usb",
+  "descriptor": {
+    "vendor_id": "1a86",
+    "product_id": "7523",
+    "manufacturer": "QinHeng Electronics"
+  },
+  "stream": [
+    "$GPGLL,4916.45,N,12311.12,W,225444,A*31\r\n",
+    "$GPGLL,4916.46,N,12311.13,W,225445,A*32\r\n",
+    "$GPGLL,4916.47,N,12311.14,W,225446,A*37\r\n"
+  ],
+  "responses": {},
+  "synthetic": true,
+  "note": "hand-written transcript for tests; not a capture from real hardware"
+}

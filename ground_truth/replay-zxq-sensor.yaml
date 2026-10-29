@@ -1,0 +1,8 @@
+# Known by construction (fixtures/replay/zxq-sensor.json and fixtures/docs/zxq-sensor.md).
+machine: replay-zxq-sensor
+confirmed: true
+facts:
+  usb.vendor_id: {value: "ffff", confirmed: true, source: fixture construction}
+  usb.product_id: {value: "0002", confirmed: true, source: fixture construction}
+  sensor.temperature_c: {value: 7, confirmed: true, source: "first frame of the stream, per the manual"}
+  sensor.humidity: {value: 9, confirmed: true, source: "first frame of the stream, per the manual"}

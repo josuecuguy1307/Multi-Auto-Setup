@@ -1,0 +1,34 @@
+# Ground truth for a replay fixture. Known by construction: the fixture was written to have exactly this
+# truth (fixtures/replay/mystery-box.json), so every field is confirmed. `unknown: true` means the honest
+# answer is "unknown": a harness that claims a value there is wrong.
+machine: replay-mystery-box
+confirmed: true
+facts:
+  usb.vendor_id:
+    value: "ffff"
+    confirmed: true
+    source: fixture construction
+  usb.product_id:
+    value: "0001"
+    confirmed: true
+    source: fixture construction
+  usb.manufacturer:
+    unknown: true
+    confirmed: true
+    source: fixture construction
+  usb.vendor_name:
+    unknown: true
+    confirmed: true
+    source: fixture construction
+  usb.product_name:
+    unknown: true
+    confirmed: true
+    source: fixture construction
+  serial.protocol:
+    unknown: true
+    confirmed: true
+    source: fixture construction
+  skill.match:
+    value: false
+    confirmed: true
+    source: fixture construction

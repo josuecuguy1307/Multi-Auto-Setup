@@ -1,0 +1,10 @@
+# Hand-written ground truth for the Docker fleet in tests/test_fleet_scenarios.py.
+# Every expected value comes from how the container is STARTED (image, --platform, -m), not from any probe,
+# so the check is not circular. `python: false` marks a box that cannot be deployed to (no interpreter).
+# `model` is what the size table must give for that RAM with generous disk/limits.
+devices:
+  lap-a:      {image: envrec-fixture-sshd, platform: linux/arm64, memory: 4g, model: stub-3b,   facts: {os.name: Linux, os.arch: aarch64, hw.ram_total_gib: 4.0, host.package_manager: apt-get, hw.gpu_present: false}}
+  lap-b:      {image: envrec-fixture-sshd, platform: linux/arm64, memory: 4g, model: stub-3b,   facts: {os.name: Linux, os.arch: aarch64, hw.ram_total_gib: 4.0, host.package_manager: apt-get, hw.gpu_present: false}}
+  alpine-1:   {image: "python:3.12-alpine", platform: linux/arm64, memory: 2g, model: stub-1.5b, facts: {os.name: Linux, os.arch: aarch64, hw.ram_total_gib: 2.0, host.package_manager: apk,     hw.gpu_present: false}}
+  small-1:    {image: envrec-fixture-sshd, platform: linux/arm64, memory: 1g, model: stub-0.5b, facts: {os.name: Linux, os.arch: aarch64, hw.ram_total_gib: 1.0, host.package_manager: apt-get, hw.gpu_present: false}}
+  x86-bare:   {image: "debian:bookworm-slim", platform: linux/amd64, memory: 2g, model: stub-1.5b, python: false, facts: {os.name: Linux, os.arch: x86_64,  hw.ram_total_gib: 2.0, host.package_manager: apt-get, hw.gpu_present: false}}

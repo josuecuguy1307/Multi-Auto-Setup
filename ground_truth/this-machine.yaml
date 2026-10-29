@@ -1,0 +1,80 @@
+# DRAFT ground truth for the machine this was built on. Every field is UNCONFIRMED:
+# the user must check it and flip `confirmed` to true, field by field and for the file.
+# Until then every score computed from it is labelled PROVISIONAL.
+#
+# Drafted from sources that differ from the probes where possible:
+#   system_profiler SPHardwareDataType / SPSoftwareDataType (probes use psutil, platform, sysctl, sw_vers, uname)
+#   `arch`, `pmset -g batt`, `diskutil info`, `ioreg -c AppleCLCD2`, `ifconfig`, `command -v`
+# Not independent of the probes: `ioreg`/`system_profiler` for the display, `command -v` for tools.
+machine: this-machine
+confirmed: false
+facts:
+  os.name:
+    value: macOS
+    source: "system_profiler SPSoftwareDataType: System Version"
+    confirmed: false
+  os.version:
+    value: "15.7.1"
+    source: "system_profiler SPSoftwareDataType: System Version"
+    confirmed: false
+  os.arch:
+    value: arm64
+    source: "`arch` command"
+    confirmed: false
+  os.kernel:
+    value: "24.6.0"
+    source: "system_profiler SPSoftwareDataType: Kernel Version (Darwin 24.6.0)"
+    confirmed: false
+  hw.cpu_model:
+    value: Apple M3
+    source: "system_profiler SPHardwareDataType: Chip"
+    confirmed: false
+  hw.cpu_cores_physical:
+    value: 8
+    source: "system_profiler SPHardwareDataType: Total Number of Cores (4 performance + 4 efficiency)"
+    confirmed: false
+  hw.cpu_cores_logical:
+    value: 8
+    source: "same report; Apple M-series cores have no hyper-threading, so logical = physical (an inference)"
+    confirmed: false
+  hw.ram_total_gib:
+    value: 16.0
+    source: "system_profiler SPHardwareDataType: Memory 16 GB"
+    confirmed: false
+  hw.disk_total_gib:
+    value: 460.43
+    source: "diskutil info /System/Volumes/Data: Container Total Space 494384795648 bytes / 2^30"
+    confirmed: false
+  hw.disk_free_gib:
+    value: 53.86
+    source: "diskutil info: Container Free Space 57832894464 bytes / 2^30; volatile, hence the wide tolerance"
+    confirmed: false
+    rel_tolerance: 0.25
+  hw.battery_present:
+    value: true
+    source: "pmset -g batt: InternalBattery-0 present"
+    confirmed: false
+  hw.display_present:
+    value: true
+    source: "ioreg -r -c AppleCLCD2 found display controller entries; this is a MacBook Air"
+    confirmed: false
+  host.virtualization:
+    value: none
+    source: "Model Identifier Mac15,12 is physical Apple hardware (a VM reports VirtualMac)"
+    confirmed: false
+  host.tools:
+    value: {python3: true, git: true, node: true, docker: true, ollama: true, uv: true, ssh: true}
+    source: "`command -v` for each name; true = installed"
+    confirmed: false
+  net.interfaces:
+    value: [en0]
+    source: "ifconfig: only en0 holds a non-loopback, non-link-local address right now (changes with VPNs)"
+    confirmed: false
+  host.kind:
+    value: laptop
+    source: "system_profiler SPHardwareDataType: Model Name MacBook Air"
+    confirmed: false
+  host.capabilities:
+    value: [battery, display, network, docker_cli, ollama, python, git, node, ssh]
+    source: "derived by hand from the fields above"
+    confirmed: false

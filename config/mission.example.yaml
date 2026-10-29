@@ -1,0 +1,14 @@
+# mission.yaml: read by the harness at startup, never written by the model.
+# goal and scope are free text shown to the model as CONTEXT. They authorize nothing.
+goal: "Recognize each device in my fleet, then set up a model server on the ones I approve, and prove it works with a test request."
+scope: "Devices listed in targets.yaml only."
+
+# Non-negotiable limits: fixed by the shipped policy. A file that changes any of them is refused.
+limits:
+  targets_source: config_only
+  max_workers: 3
+  deploy_requires_approval: true
+  worker_can_deploy_further: false
+  model_server_bind: localhost_only
+  autostart: false
+  credentials_in_repo: false
