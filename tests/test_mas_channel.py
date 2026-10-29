@@ -131,40 +131,6 @@ async def paired_client(c, tmp, node="node1"):
     return me, pin, r, w
 
 
-def test_a_heartbeat_is_acknowledged_with_a_message_signed_by_the_coordinator_and_recorded(tmp_path):
-    async def go():
-        async with coordinator(tmp_path) as c:
-            me, pin, r, w = await paired_client(c, tmp_path)
-            await write_frame(w, seal(me, "heartbeat", {"hostname": "box", "os": "linux", "arch": "x86_64", "seq": 1}, clock=c.clock))
-            ack = Verifier({pin.coordinator_id: pin.public_raw}.get, clock=c.clock).open(await read_frame(r, timeout=3))
-            assert ack.type == "ack" and ack.sender == c.identity.node_id
-            assert c.registry.get(me.node_id).last_heartbeat == c.clock()  # stamped with the coordinator's clock at the moment it arrived
-            card = events(c, "node_card")
-            assert card and card[0].payload["hostname"] == "box" and card[0].effective_tag == "GUARD"
-            w.close()
-    run(go())
-
-
-@pytest.mark.parametrize("name", ["replayed", "unsigned", "unpaired_key", "bad_signature", "unknown_type", "stale"])
-def test_the_coordinator_logs_the_reason_and_closes_the_connection_on_a_bad_message(tmp_path, name):
-    async def go():
-        async with coordinator(tmp_path) as c:
-            me, pin, r, w = await paired_client(c, tmp_path)
-            good = seal(me, "heartbeat", {"seq": 1}, clock=c.clock)
-            bad = {"replayed": good, "unsigned": {k: v for k, v in good.items() if k != "signature"}, "unpaired_key": seal(create(), "heartbeat", {}, clock=c.clock),
-                   "bad_signature": {**good, "payload": {"seq": 99}}, "unknown_type": seal(me, "run_this", {"cmd": "id"}, clock=c.clock), "stale": seal(me, "heartbeat", {}, clock=lambda: c.clock() - 600)}[name]
-            await write_frame(w, good)
-            await read_frame(r, timeout=3)  # the first one is fine
-            await write_frame(w, bad)
-            with pytest.raises(FrameError):
-                await read_frame(r, timeout=3)  # fail closed: no answer, the connection is closed
-            rejected = await wait_event(c, "message_rejected")
-            expected = {"replayed": "replayed_nonce", "unsigned": "unsigned", "unpaired_key": "unknown_sender", "bad_signature": "bad_signature", "unknown_type": "unknown_type", "stale": "stale_timestamp"}[name]
-            assert rejected and rejected[0].payload["reason"] == expected
-            assert rejected[0].effective_tag == "GUARD"
-    run(go())
-
-
 # ---- the node agent ----------------------------------------------------------------------------------------------------------------------------
 
 async def run_agent_until(agent, predicate, timeout=8.0):
@@ -354,36 +320,3 @@ def test_the_owners_offer_file_is_picked_up_and_deleted_and_the_decision_file_an
         assert await asyncio.wait_for(ask, 3) is True
         assert not (w.dir / "confirm-abc.json").exists() and not (w.dir / "decision-abc.json").exists()
     run(go())
-
-
-def test_heartbeats_do_not_grow_the_log_one_card_event_and_a_summary_per_period_and_one_at_disconnect(tmp_path):
-    clock = Clock()
-
-    async def go():
-        async with coordinator(tmp_path, clock=clock) as c:
-            c.summary_every_s = 60.0
-            me, pin, r, w = await paired_client(c, tmp_path)
-            for seq in range(1, 31):
-                await write_frame(w, seal(me, "heartbeat", {"hostname": "box", "os": "linux", "arch": "x86_64", "seq": seq}, clock=c.clock))
-                await read_frame(r, timeout=3)
-                clock.advance(10)  # 30 heartbeats over 300 s
-            w.close()
-            await wait_event(c, "node_disconnected")
-            kinds = [e.type for e in events(c)]
-            assert kinds.count("node_card") == 1 and "heartbeat" not in kinds
-            summaries = events(c, "heartbeat_summary")
-            assert 4 <= len(summaries) <= 6 and sum(e.payload["beats"] for e in summaries) == 30  # every beat is counted, none is its own event
-            assert len(events(c)) < 25
-            await write_frame_changed_card(c, tmp_path)
-    run(go())
-
-
-async def write_frame_changed_card(c, tmp):
-    """A changed card is logged again; an unchanged one is not."""
-    me, pin, r, w = await paired_client(c, tmp, node="node2")
-    for os_name in ("linux", "linux", "darwin"):
-        await write_frame(w, seal(me, "heartbeat", {"hostname": "b", "os": os_name, "arch": "x", "seq": 1}, clock=c.clock))
-        await read_frame(r, timeout=3)
-    w.close()
-    cards = [e for e in events(c, "node_card") if e.payload["node"] == me.node_id]
-    assert [e.payload["os"] for e in cards] == ["linux", "darwin"]

@@ -18,11 +18,13 @@ from envrec_coordinator.discovery import DiscoveryResponder, open_responder
 from envrec_coordinator.owner import OwnerDesk
 from envrec_coordinator.pairing import HELLO_TIMEOUT_S, Decision, PairingBusy, PairingDesk
 from envrec_coordinator.registry import Registry
+from envrec_coordinator.tasks import ALERT_SKEW_S, TaskDesk, evaluate_report
 from envrec_coordinator.waiting import WaitingDesk
 from envrec_coordinator.web import WEB_HOST, WebScreen
 from envrec_net import identity as ident
 from envrec_net import pake, tls
-from envrec_net.envelope import EnvelopeRejected, Verifier, seal
+from envrec_net.envelope import EnvelopeRejected
+from envrec_net.session import PLAIN, PROTOCOL, Sealer, SessionVerifier, new_challenge
 from envrec_net.log import EventLog
 from envrec_net.wire import FrameError, read_frame, write_frame
 
@@ -57,14 +59,16 @@ def _clip(v, cap: int) -> str:
 
 class Coordinator:
     def __init__(self, state_dir: Path, host: str, port: int, *, clock=time.time, idle_timeout_s: float = IDLE_TIMEOUT_S, owner_ttl_s: float = 120.0, summary_every_s: float = SUMMARY_EVERY_S,
-                 web: bool = False, web_port: int = 0, discovery_port: int | None = None, name: str | None = None, include_virtual: bool = False) -> None:
+                 web: bool = False, web_port: int = 0, discovery_port: int | None = None, name: str | None = None, include_virtual: bool = False,
+                 skew_alert_s: float = ALERT_SKEW_S, report_every_s: float = 300.0) -> None:
         self.state, self.host, self.port, self.clock, self.idle_timeout_s = Path(state_dir) / "coordinator", check_bind(host), port, clock, idle_timeout_s
         self.layer = envrec_os.current()
         self.owner_ttl_s = owner_ttl_s
         self._server: asyncio.AbstractServer | None = None
         self._tasks: list[asyncio.Task] = []
         self._conns: set[asyncio.StreamWriter] = set()
-        self.summary_every_s = summary_every_s
+        self.summary_every_s, self.skew_alert_s, self.report_every_s = summary_every_s, skew_alert_s, report_every_s
+        self._sessions: dict[str, NodeSession] = {}
         self._discovery_port, self.include_virtual = discovery_port, include_virtual
         self.display_name = (name or envrec_os.card()['hostname'])[:60]
         self.responder: DiscoveryResponder | None = None
@@ -81,8 +85,10 @@ class Coordinator:
         self.registry = Registry(self.state, self.layer)
         self.log = EventLog(self.state / "log")  # opened on this thread: the store belongs to it
         self.ctx = tls.server_context(self.state / "identity", self.registry.trusted_certs())
-        self.verifier = Verifier(self.registry.public_key, clock=self.clock)
-        self.watcher = ControlWatcher(self.state, self.layer, self._on_cli_offer)
+        self.watcher = ControlWatcher(self.state, self.layer, self._on_cli_offer, self._on_cli_task)
+        self.tasks = TaskDesk(clock=self.clock, log=lambda t, p, owner=False: self.log.add(t, p, owner=owner), sessions=lambda nid: self._sessions.get(nid))
+        self.tasks.on_result = self._on_task_result
+        self.tasks.on_change = self._publish_tasks
         self.waiting = WaitingDesk(clock=self.clock, log=lambda t, p: self.log.add(t, p), on_change=self._publish_waiting)
         self.owner = OwnerDesk(self.clock)
         self.desk = PairingDesk(identity=self.identity, registry=self.registry, log=self.log, ask_owner=self._ask_owner, on_paired=lambda der: tls.add_trusted(self.ctx, der),
@@ -188,8 +194,52 @@ class Coordinator:
         """What the owner's screen shows: the paired machines and the pairing in progress."""
         self.desk.expire_due()
         machines = [{"id": n.node_id, "name": n.name, "os": n.os, "arch": n.arch, "status": "online" if self._online.get(n.node_id) else "offline",
-                     "last_heartbeat": n.last_heartbeat, "fingerprint": n.fingerprint, "paired_at": n.paired_at} for n in self.registry.all()]
-        return {"now": self.clock(), "machines": machines, "pairing": self.owner.view(), "waiting": [w.view() for w in self.waiting.list()]}
+                     "last_heartbeat": n.last_heartbeat, "fingerprint": n.fingerprint, "paired_at": n.paired_at, "skew_s": n.skew_s, "report": n.report, "report_at": n.report_at,
+                     "alerts": self._alerts_of(n), "analysis_at": n.analysis_at} for n in self.registry.all()]
+        return {"now": self.clock(), "machines": machines, "pairing": self.owner.view(), "waiting": [w.view() for w in self.waiting.list()], "tasks": [t.view() for t in self.tasks.list()[-30:]]}
+
+    def _alerts_of(self, n) -> list:
+        """The stored alerts of the last report, plus a clock warning measured at the last connect (never a refusal)."""
+        out = list(n.alerts or [])
+        if n.skew_s is not None and abs(n.skew_s) > self.skew_alert_s and not any(a.get("kind") == "clock_skew" for a in out):
+            out.append({"kind": "clock_skew", "skew_s": round(n.skew_s), "text": f"The clock of this node differs by {round(abs(n.skew_s) / 60)} min (the connection still works)."})
+        return out
+
+    def _on_task_result(self, rec) -> None:
+        """A task ended. The self-report is stored with its alerts (GUARD); an analysis is stored whole."""
+        if rec.status != "done":
+            return
+        node = self.registry.get(rec.node_id)
+        if rec.task_type == "node_report":
+            alerts = evaluate_report(rec.result, node.skew_s if node else None, alert_skew_s=self.skew_alert_s)
+            self.registry.set_report(rec.node_id, rec.result, alerts, self.clock())
+            for a in alerts:
+                self.log.add("node_alert", {"node": rec.node_id, **{k: v for k, v in a.items() if k != "text"}})
+        elif rec.task_type == "machine_analysis":
+            self.registry.save_analysis(rec.node_id, rec.result, self.clock())
+
+    def _on_cli_task(self, req_id: str, node_id: str, task_type: str) -> None:
+        rec = self.tasks.start(node_id, task_type, None, by="OWNER")
+
+        async def finish() -> None:
+            await rec.done.wait()
+            write_json(self.layer, self.watcher.dir / f"task-res-{req_id}.json", {**rec.view(), "result": rec.result})
+
+        asyncio.ensure_future(finish())
+
+    def _publish_tasks(self) -> None:
+        try:
+            write_json(self.layer, self.watcher.dir / "tasks.json", {"tasks": [t.view() for t in self.tasks.list()[-50:]], "at": self.clock()})
+        except OSError:
+            pass
+
+    def analysis_of(self, node_id: str) -> dict | None:
+        return self.registry.load_analysis(node_id) if self.registry.get(node_id) else None
+
+    def run_task(self, node_id: str, task_type: str, via: str = "web", params: dict | None = None) -> dict:
+        """The owner asks for a task on one node (the web screen and the CLI call this). Returns the task's view; it ends on its own."""
+        rec = self.tasks.start(node_id, task_type, params, by="OWNER")
+        return rec.view()
 
     def web_event(self, type: str, payload: dict) -> None:
         self.log.add(type, payload)
@@ -233,13 +283,59 @@ class Coordinator:
             self._conns.discard(writer)
             writer.close()
 
+    async def _reject(self, sess: "NodeSession | None", node_id: str, reason: str, source: str, writer=None) -> str:
+        """Tell the node WHY (a typed reason, signed on the pinned channel) before the connection is closed, and log it."""
+        self.log.add("message_rejected", {"node": node_id, "reason": reason, "source": source})
+        try:
+            if sess is not None:
+                await sess.send("reject", {"reason": reason, "message": PLAIN.get(reason, reason)})
+            elif writer is not None:
+                await write_frame(writer, {"type": "reject", "reason": reason, "message": PLAIN.get(reason, reason)})
+        except Exception:
+            pass
+        return f"message rejected: {reason}"
+
     async def _node_session(self, reader, writer, cert_der: bytes, source: str) -> None:
         rec = self.registry.by_cert(cert_der)
         if rec is None:  # the handshake should have refused it; if it did not, so does this
             self.log.add("connection_refused", {"source": source, "reason": "unpaired_certificate"})
+            await self._reject(None, "?", "unknown_node", source, writer)
             return
-        self.log.add("node_connected", {"node": rec.node_id, "source": source})
+        sid = new_challenge()
+        sess = NodeSession(self, rec.node_id, writer, sid, rec.public_raw)
+        await sess.send("challenge", {"nonce": sid, "server_time": self.clock(), "proto": PROTOCOL})  # freshness without anybody's clock: the node must answer THIS nonce
+        try:
+            first = await read_frame(reader, timeout=HELLO_TIMEOUT_S)
+        except FrameError:
+            self.log.add("connection_refused", {"node": rec.node_id, "source": source, "reason": "no_hello"})
+            return
+        if "sid" not in first:  # an older node that sends a heartbeat first
+            await self._reject(sess, rec.node_id, "protocol_version", source)
+            return
+        try:
+            hello = sess.verifier.open(first)
+        except EnvelopeRejected as exc:
+            await self._reject(sess, rec.node_id, exc.reason, source)
+            return
+        if hello.type != "hello" or hello.payload.get("nonce") != sid:
+            await self._reject(sess, rec.node_id, "challenge_failed", source)
+            return
+        if hello.payload.get("proto") != PROTOCOL:
+            await self._reject(sess, rec.node_id, "protocol_version", source)
+            return
+        local = hello.payload.get("local_time")
+        skew = float(local) - self.clock() if isinstance(local, (int, float)) and not isinstance(local, bool) else None
+        sess.skew_s = skew
+        self.log.add("node_connected", {"node": rec.node_id, "source": source, **({"skew_s": round(skew, 1)} if skew is not None else {})})
+        if skew is not None:
+            self.registry.set_skew(rec.node_id, skew)
+            if abs(skew) > self.skew_alert_s:  # only a warning: nothing is ever refused for the wall clock
+                self.log.add("clock_skew", {"node": rec.node_id, "skew_s": round(skew), "alert_after_s": self.skew_alert_s})
         self._online[rec.node_id] = self._online.get(rec.node_id, 0) + 1
+        self._sessions[rec.node_id] = sess
+        await sess.send("welcome", {"interval_s": HEARTBEAT_INTERVAL_S, "skew_s": skew})
+        self.tasks.start(rec.node_id, "node_report", by="GUARD")  # the node describes itself every time it connects
+        reporter = asyncio.ensure_future(self._periodic_report(rec.node_id))
         reason = "closed by the node"
         beats, last_summary, last_card = 0, self.clock(), None
         try:
@@ -250,29 +346,58 @@ class Coordinator:
                     reason = str(exc)[:60]
                     break
                 try:
-                    env = self.verifier.open(raw, expect_sender=rec.node_id)
+                    env = sess.verifier.open(raw)
                 except EnvelopeRejected as exc:
-                    self.log.add("message_rejected", {"node": rec.node_id, "reason": exc.reason, "source": source})
-                    reason = f"message rejected: {exc.reason}"
+                    reason = await self._reject(sess, rec.node_id, exc.reason, source)
                     break
-                if env.type != "heartbeat":
+                if env.type == "heartbeat":
+                    card = {k: _clip(env.payload.get(k, ""), cap) for k, cap in CAPS.items()}
+                    self.registry.heartbeat(rec.node_id, self.clock())
+                    beats += 1
+                    if card != last_card:
+                        last_card = card
+                        self.log.add("node_card", {"node": rec.node_id, **card})
+                    if self.clock() - last_summary >= self.summary_every_s:
+                        self.log.add("heartbeat_summary", {"node": rec.node_id, "beats": beats, "seconds": round(self.clock() - last_summary)})
+                        beats, last_summary = 0, self.clock()
+                    await sess.send("ack", {"nonce": env.nonce, "interval_s": HEARTBEAT_INTERVAL_S})
+                elif env.type == "task_update":
+                    self.tasks.on_update(rec.node_id, env.payload)
+                elif env.type == "result":
+                    self.tasks.on_node_result(rec.node_id, env.payload)
+                else:
                     self.log.add("message_rejected", {"node": rec.node_id, "reason": "unknown_type", "type": _clip(env.type, 30), "source": source})
+                    await self._reject(sess, rec.node_id, "unknown_type", source)
                     reason = "message rejected: unknown_type"
                     break
-                card = {k: _clip(env.payload.get(k, ""), cap) for k, cap in CAPS.items()}
-                self.registry.heartbeat(rec.node_id, self.clock())
-                beats += 1
-                if card != last_card:
-                    last_card = card
-                    self.log.add("node_card", {"node": rec.node_id, **card})
-                if self.clock() - last_summary >= self.summary_every_s:
-                    self.log.add("heartbeat_summary", {"node": rec.node_id, "beats": beats, "seconds": round(self.clock() - last_summary)})
-                    beats, last_summary = 0, self.clock()
-                await write_frame(writer, seal(self.identity, "ack", {"nonce": env.nonce, "interval_s": HEARTBEAT_INTERVAL_S}, clock=self.clock))
         finally:
+            reporter.cancel()
+            if self._sessions.get(rec.node_id) is sess:
+                del self._sessions[rec.node_id]
+            self.tasks.node_gone(rec.node_id)
             if beats:
                 self.log.add("heartbeat_summary", {"node": rec.node_id, "beats": beats, "seconds": round(self.clock() - last_summary)})
             self._online[rec.node_id] -= 1
             if not self._online[rec.node_id]:
                 del self._online[rec.node_id]
             self.log.add("node_disconnected", {"node": rec.node_id, "reason": reason})
+
+    async def _periodic_report(self, node_id: str) -> None:
+        while True:
+            await asyncio.sleep(self.report_every_s)
+            self.tasks.start(node_id, "node_report", by="GUARD")
+
+
+class NodeSession:
+    """One connected node: its session id, the counters of both directions, and a lock so two tasks never interleave their frames."""
+
+    def __init__(self, coord, node_id: str, writer, sid: str, node_public: bytes) -> None:
+        self.identity, self.node_id, self.writer, self.sid = coord.identity, node_id, writer, sid
+        self.sealer = Sealer(coord.identity, sid)
+        self.verifier = SessionVerifier(node_id, node_public, sid)
+        self.skew_s: float | None = None
+        self._lock = asyncio.Lock()
+
+    async def send(self, type: str, payload: dict) -> None:
+        async with self._lock:
+            await write_frame(self.writer, self.sealer.seal(type, payload))

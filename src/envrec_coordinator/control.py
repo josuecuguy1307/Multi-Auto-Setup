@@ -36,8 +36,8 @@ def read_json(path: Path) -> dict | None:
 class ControlWatcher:
     """Runs inside the coordinator: picks up pairing offers, asks the owner through files, and reports each outcome back through a file."""
 
-    def __init__(self, state: Path, layer, on_offer: Callable[[str, str], None]) -> None:
-        self.dir, self.layer, self.on_offer = control_dir(state), layer, on_offer
+    def __init__(self, state: Path, layer, on_offer: Callable[[str, str], None], on_task: Callable[[str, str, str], None] | None = None) -> None:
+        self.dir, self.layer, self.on_offer, self.on_task = control_dir(state), layer, on_offer, on_task
 
     async def run(self) -> None:
         while True:
@@ -45,6 +45,15 @@ class ControlWatcher:
             await asyncio.sleep(POLL_S)
 
     def poll(self) -> None:
+        if self.on_task is not None:
+            for tf in sorted(self.dir.glob("task-req-*.json")):  # the owner asked for a task at the terminal (`mas task run`)
+                req = read_json(tf)
+                try:
+                    tf.unlink()
+                except OSError:
+                    pass
+                if req and isinstance(req.get("id"), str) and isinstance(req.get("node"), str) and isinstance(req.get("type"), str):
+                    self.on_task(req["id"][:24], req["node"][:80], req["type"][:40])
         f = self.dir / "pair-offer.json"
         if not f.is_file():
             return

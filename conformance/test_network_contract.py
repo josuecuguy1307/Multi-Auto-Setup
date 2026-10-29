@@ -411,3 +411,57 @@ def test_N4_a_fixture_that_leaves_its_discovery_socket_open_is_caught():
         assert not ok and "left open" in detail, detail
     finally:
         s.close()
+
+
+# ---- T1: a remote task cannot run a non-allowlisted tool or a shell command ---------------------------------------------------------------------------------------------
+
+def test_T1_the_nodes_task_dispatcher_has_no_shell_no_dynamic_lookup_and_one_allowlist_literal():
+    assert netrules.task_dispatch_violations(SRC / "envrec_node" / "tasks.py") == []
+
+
+def test_T1_the_allowlist_is_read_only_by_name():
+    import ast
+    tree = ast.parse((SRC / "envrec_node" / "tasks.py").read_text())
+    allowed = next(n for n in tree.body if isinstance(n, ast.AnnAssign) and getattr(n.target, "id", "") == "ALLOWED")
+    assert [k.value for k in allowed.value.keys] == ["node_report", "machine_analysis"]
+
+
+def test_T1_fails_on_a_dispatcher_that_runs_a_shell_command_from_a_task_or_dispatches_by_name():
+    hits = " ".join(netrules.task_dispatch_violations(FIX / "t1_bad" / "tasks.py"))
+    assert "import subprocess" in hits and "getattr(" in hits and "__import__(" in hits and ".run(" in hits, hits
+
+
+def test_T1_passes_a_dispatcher_with_only_a_dict_literal_allowlist():
+    assert netrules.task_dispatch_violations(FIX / "t1_ok" / "tasks.py") == []
+
+
+def test_T1_fails_when_the_allowlist_is_not_one_dict_literal(tmp_path):
+    f = tmp_path / "tasks.py"
+    f.write_text("ALLOWED = dict(a=print)\n")
+    assert any("allowlist must be one dict literal" in h for h in netrules.task_dispatch_violations(f))
+    f.write_text("ALLOWED = {'a': print}\nALLOWED = {'b': print}\n")
+    assert any("allowlist must be one dict literal" in h for h in netrules.task_dispatch_violations(f))
+
+
+# ---- clock: nothing inside a session is rejected solely on wall-clock time ----------------------------------------------------------------------------------------------
+
+SESSION_FILES = [SRC / "envrec_net" / "session.py", SRC / "envrec_coordinator" / "server.py", SRC / "envrec_node" / "agent.py", SRC / "envrec_coordinator" / "tasks.py", SRC / "envrec_node" / "tasks.py",
+                 SRC / "envrec_net" / "task.py", SRC / "envrec_net" / "discovery.py"]
+
+
+def test_clock_no_session_or_discovery_validation_path_rejects_on_wall_clock_time():
+    hits = netrules.session_clock_sites(SESSION_FILES)
+    assert hits == [], "\n" + "\n".join(hits)
+
+
+def test_clock_the_check_reads_real_files_so_it_is_not_vacuous():
+    assert all(p.exists() for p in SESSION_FILES) and len(SESSION_FILES) >= 7
+
+
+def test_clock_fails_on_a_session_that_compares_a_timestamp_with_the_clock_and_uses_the_time_window_verifier():
+    hits = " ".join(netrules.session_clock_sites([FIX / "clock_bad" / "session.py"]))
+    assert "Verifier" in hits and "stale_timestamp" in hits and "abs(" in hits, hits
+
+
+def test_clock_passes_a_session_that_relies_on_the_session_id_and_the_sequence_number():
+    assert netrules.session_clock_sites([FIX / "clock_ok" / "session.py"]) == []

@@ -124,3 +124,28 @@ def discovery_guidance(code: str, role: str = "node", fam: str | None = None) ->
     """Plain guidance for the owner for a typed discovery failure, in this operating system's words (data in the discovery-guidance skill). `role` is accepted for symmetry."""
     table = json.loads(GUIDANCE_FILE.read_text()).get(code, {})
     return list(table.get("common", [])) + list(table.get(fam or family(), []))
+
+
+# ---- what a node reports about itself (read-only; the knowledge of how each OS says it is data or lives in the layers) ---------------------------------------------------------
+
+def os_info() -> dict:
+    """Operating system family, release, version string and CPU architecture."""
+    return {"family": family(), "release": platform.release(), "version": platform.version()[:120], "arch": platform.machine().lower()}
+
+
+def own_listening_sockets() -> list[dict]:
+    """The listening TCP sockets and the bound, unconnected UDP sockets of THIS process only (a node is expected to have none while it is not discovering)."""
+    import psutil
+    out = []
+    for c in psutil.Process().net_connections(kind="inet"):
+        if c.laddr and (c.status == psutil.CONN_LISTEN or (c.type == socket.SOCK_DGRAM and not c.raddr)):
+            out.append({"proto": "udp" if c.type == socket.SOCK_DGRAM else "tcp", "ip": c.laddr.ip, "port": c.laddr.port})
+    return sorted(out, key=lambda s: (s["proto"], s["port"]))
+
+
+def key_file_status(path: Path) -> dict:
+    """Where the identity key file is and whether only the owner user can read it, by the layer for this OS (permission bits on POSIX, an access control list on Windows)."""
+    path = Path(path)
+    if not path.exists():
+        return {"path": str(path), "exists": False, "owner_only": None}
+    return {"path": str(path), "exists": True, "owner_only": bool(current().is_private(path))}

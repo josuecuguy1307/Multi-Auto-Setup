@@ -104,3 +104,12 @@ code { font-family: var(--mono); background: #f1ede0; padding: .05rem .35rem; bo
 
 .sub-h { margin: 2rem 0 .25rem; font-size: 1.25rem; }
 .card .btn { margin-top: .9rem; }
+
+.report { margin-top: .75rem; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: .2rem; }
+.check.ok { color: var(--online-ink); }
+.check.bad { color: var(--bad-ink); font-weight: 600; }
+.check.warn { color: #6b4e00; font-weight: 600; }
+.analysis { margin-top: .75rem; border-top: 1px solid var(--line); padding-top: .5rem; }
+.ana-group h4 { margin: .6rem 0 .15rem; font-size: 1rem; }
+.ana-list { margin: 0; padding-left: 1.1rem; overflow-wrap: anywhere; }

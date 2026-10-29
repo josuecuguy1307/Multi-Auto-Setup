@@ -14,7 +14,6 @@ from collections.abc import Callable
 
 import envrec_os
 from envrec_net import discovery
-from envrec_net.envelope import Verifier
 
 WINDOW_S = 2.0
 LIMITED_BROADCAST = "255.255.255.255"
@@ -50,7 +49,6 @@ def discover(port: int = discovery.DEFAULT_PORT, window_s: float = WINDOW_S, *, 
     if not dests:
         raise DiscoveryFailed("no_interface", "No private network interface is up on this computer.", envrec_os.discovery_guidance("no_interface"))
     data, nonce = discovery.new_query()
-    verifier = Verifier(lambda sid: pinned[1] if pinned and sid == pinned[0] else None, clock=clock) if pinned else None
     found: dict[tuple[str, int], discovery.Answer] = {}
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -80,7 +78,7 @@ def discover(port: int = discovery.DEFAULT_PORT, window_s: float = WINDOW_S, *, 
             except OSError:
                 continue
             try:
-                ans = discovery.parse_answer(raw, nonce, verifier=verifier, pinned_id=pinned[0] if pinned else None)
+                ans = discovery.parse_answer(raw, nonce, pinned=pinned)
             except discovery.BadAnswer:
                 continue
             found[(ans.address, ans.port)] = ans

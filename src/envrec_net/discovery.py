@@ -13,8 +13,10 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from envrec_net.envelope import EnvelopeRejected, Verifier, seal
-from envrec_net.identity import Identity
+import base64
+
+from envrec_net.envelope import canonical, seal
+from envrec_net.identity import Identity, node_id_of, verify_signature
 
 PROTOCOL = 1
 DEFAULT_PORT = 7444
@@ -70,9 +72,9 @@ class BadAnswer(Exception):
     pass
 
 
-def parse_answer(data: bytes, nonce: str, *, verifier: Verifier | None = None, pinned_id: str | None = None) -> Answer:
-    """Read one answer to OUR query. Without a verifier it is a hint (`signed=False`). With one (a paired node), the signature must verify against the pinned key and the sender must be
-    the pinned coordinator, or the answer is refused."""
+def parse_answer(data: bytes, nonce: str, *, pinned: tuple[str, bytes] | None = None) -> Answer:
+    """Read one answer to OUR query. Without `pinned` it is a hint (`signed=False`). With `pinned` = (coordinator id, public key) from pairing, the signature must verify against that
+    key and the sender must be that coordinator, or the answer is refused. Freshness comes from the query's nonce, which the answer must echo: no clock is read here."""
     if len(data) > MAX_ANSWER:
         raise BadAnswer("too large")
     try:
@@ -81,16 +83,21 @@ def parse_answer(data: bytes, nonce: str, *, verifier: Verifier | None = None, p
         raise BadAnswer("not JSON") from None
     if not isinstance(raw, dict):
         raise BadAnswer("not an object")
-    if verifier is not None:
+    payload, sender = raw.get("payload"), raw.get("sender")
+    if raw.get("type") != "here" or not isinstance(payload, dict) or not isinstance(sender, str):
+        raise BadAnswer("not an answer")
+    signed = False
+    if pinned is not None:
+        pid, pub = pinned
         try:
-            env = verifier.open(raw, expect_sender=pinned_id)
-        except EnvelopeRejected as exc:
-            raise BadAnswer(f"rejected: {exc.reason}") from None
-        payload, sender, signed = env.payload, env.sender, True
-    else:
-        payload, sender, signed = raw.get("payload"), raw.get("sender"), False
-        if raw.get("type") != "here" or not isinstance(payload, dict) or not isinstance(sender, str):
-            raise BadAnswer("not an answer")
+            sig = base64.b64decode(str(raw.get("signature", "")), validate=True)
+        except ValueError:
+            raise BadAnswer("rejected: unsigned") from None
+        if sender != pid or node_id_of(pub) != pid:
+            raise BadAnswer("rejected: not the pinned coordinator")
+        if not verify_signature(pub, sig, canonical(raw)):
+            raise BadAnswer("rejected: bad signature")
+        signed = True
     if payload.get("nonce") != nonce or payload.get("version") != PROTOCOL:
         raise BadAnswer("not an answer to this query")
     try:

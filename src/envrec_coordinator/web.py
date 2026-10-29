@@ -242,6 +242,10 @@ class WebScreen:
             return _json(200, self.strings)
         if req.path == "/api/state":
             return _json(200, self._state(sess))
+        if req.path == "/api/node/analysis":
+            nid = (req.query.get("id") or [""])[0][:80]
+            data = self._on_loop(self.front.analysis_of, nid)
+            return _json(200, data) if data is not None else _json(404, {"error": "not_found"})
         if req.path == "/favicon.ico":
             return Response(204, b"", "image/x-icon")
         return _json(404, {"error": "not_found", "message": self.strings.get("server.not_found", "")})
@@ -271,6 +275,12 @@ class WebScreen:
                 if type(exc).__name__ == "WaitingGone":
                     return _json(409, {"error": "waiting_gone"})
                 raise
+            return _json(200, self._state(sess))
+        if req.path == "/api/task/run":
+            node, ttype = body.get("node"), body.get("type")
+            if not isinstance(node, str) or not 0 < len(node) <= 80 or ttype not in ("node_report", "machine_analysis"):
+                return self._refuse(req, 400, "bad_body", "server.bad_request")
+            self._on_loop(self.front.run_task, node, ttype, "web")
             return _json(200, self._state(sess))
         if req.path == "/api/pair/decision":
             offer, accept = body.get("offer"), body.get("accept")

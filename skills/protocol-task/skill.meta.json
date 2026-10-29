@@ -1,0 +1,273 @@
+{
+ "provenance": "builtin",
+ "protocol": "task",
+ "tier": "observe",
+ "ring": 1,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "node",
+   "pairing"
+  ],
+  "start": "created",
+  "states": {
+   "created": {
+    "goal": "A read-only task was made by the owner or by code, for one connected node.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "sent",
+      "needs": [
+       {
+        "fact": "task.sent",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "rejected",
+      "needs": [
+       {
+        "fact": "task.rejected",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "failed",
+      "needs": [
+       {
+        "fact": "task.result",
+        "at_least": "tested",
+        "equals": "failed"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "sent": {
+    "goal": "The task and its single-use capability token were sent inside the node's session.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "accepted",
+      "needs": [
+       {
+        "fact": "task.accepted",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "rejected",
+      "needs": [
+       {
+        "fact": "task.accepted",
+        "at_least": "tested",
+        "equals": false
+       }
+      ]
+     },
+     {
+      "to": "timed_out",
+      "needs": [
+       {
+        "fact": "task.timeout",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "cancelled",
+      "needs": [
+       {
+        "fact": "task.cancelled",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "failed",
+      "needs": [
+       {
+        "fact": "task.result",
+        "at_least": "tested",
+        "equals": "failed"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "accepted": {
+    "goal": "The node validated the token, the parameters and its allowlist.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "running",
+      "needs": [
+       {
+        "fact": "task.running",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "timed_out",
+      "needs": [
+       {
+        "fact": "task.timeout",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "cancelled",
+      "needs": [
+       {
+        "fact": "task.cancelled",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "failed",
+      "needs": [
+       {
+        "fact": "task.result",
+        "at_least": "tested",
+        "equals": "failed"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "running": {
+    "goal": "The node is running the read-only tool.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "fact": "task.result",
+        "at_least": "tested",
+        "equals": "done"
+       }
+      ]
+     },
+     {
+      "to": "failed",
+      "needs": [
+       {
+        "fact": "task.result",
+        "at_least": "tested",
+        "equals": "failed"
+       }
+      ]
+     },
+     {
+      "to": "timed_out",
+      "needs": [
+       {
+        "fact": "task.timeout",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "cancelled",
+      "needs": [
+       {
+        "fact": "task.cancelled",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "the node returned a signed typed result"
+   },
+   "failed": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "the task could not be completed (node offline, an error, or an invalid result)"
+   },
+   "rejected": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "the node or the coordinator refused the task with a typed reason"
+   },
+   "timed_out": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "no result in time; the node was told to cancel"
+   },
+   "cancelled": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "cancelled by the owner"
+   }
+  }
+ }
+}

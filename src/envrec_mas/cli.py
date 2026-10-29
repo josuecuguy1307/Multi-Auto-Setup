@@ -7,6 +7,8 @@ from __future__ import annotations
 import argparse
 import asyncio
 import getpass
+import json
+import os
 import signal
 import sys
 import time
@@ -113,17 +115,91 @@ def cmd_pair_coordinator(a) -> int:
         time.sleep(0.2)
 
 
+def _node_id(reg, text: str) -> str | None:
+    """A paired node by id, id prefix or name."""
+    hits = [n for n in reg.all() if n.node_id == text or n.name == text or n.node_id.startswith(text)]
+    return hits[0].node_id if len(hits) == 1 else None
+
+
+def _detail(n, reg) -> None:
+    print(f"\n{n.name}  ({n.node_id})")
+    r = n.report
+    if not r:
+        print("  report: none yet (it is sent when the node connects)")
+    else:
+        os_ = r.get("os", {})
+        print(f"  system: {os_.get('family')} {os_.get('release')} {os_.get('arch')}")
+        socks = r.get("sockets", [])
+        print("  listening ports: " + ("0 (OK)" if not socks else "ALERT " + ", ".join(f"{x['proto']}:{x['port']}" for x in socks)))
+        k = r.get("key", {})
+        print("  identity key: " + ("owner-only (OK)" if k.get("owner_only") else "ALERT readable by others" if k.get("exists") else "not found") + f"  {k.get('path', '')}")
+    if n.skew_s is not None:
+        print(f"  clock skew at last connect: {n.skew_s:+.0f} s (a warning above 300 s, never a refusal)")
+    for al in n.alerts or []:
+        print(f"  ALERT {al.get('kind')}: {al.get('text')}")
+    a = reg.load_analysis(n.node_id)
+    if a:
+        print("  analysis: " + "; ".join(f"{k}: {len(v) if hasattr(v, '__len__') else v}" for k, v in a.items() if k in ("system", "hardware", "programs", "ai")) + "  (mas task run <node> machine_analysis to refresh)")
+
+
 def cmd_nodes(a) -> int:
     from envrec_coordinator.registry import Registry
     reg = Registry(_state(a) / "coordinator", envrec_os.current())
     nodes = reg.all()
     if not nodes:
-        print("No paired nodes. Run `mas pair` here, then `mas pair HOST:PORT` on the other computer.")
+        print("No paired nodes. Run `mas pair` here, then `mas join` on the other computer.")
         return 0
     now = time.time()
     print(f"{'NAME':<24} {'SYSTEM':<18} {'LAST HEARTBEAT':<16} FINGERPRINT")
     for n in nodes:
         print(f"{n.name:<24} {n.os + '/' + n.arch:<18} {_age(n.last_heartbeat, now):<16} {n.fingerprint}")
+    if a.detail:
+        for n in nodes:
+            _detail(n, reg)
+    return 0
+
+
+def cmd_task_run(a) -> int:
+    """Ask the running coordinator for one read-only task on one node and wait for its end (the request travels as a file in the coordinator's private control folder)."""
+    from envrec_coordinator.control import control_dir, read_json, write_json
+    from envrec_coordinator.registry import Registry
+    from envrec_net import task as T
+    if a.type not in T.PARAMS:
+        print(f"Unknown task type. Choose one of: {', '.join(sorted(T.PARAMS))}", file=sys.stderr)
+        return EXIT_USAGE
+    reg = Registry(_state(a) / "coordinator", envrec_os.current())
+    nid = _node_id(reg, a.node)
+    if nid is None:
+        print(f"No single paired node matches {a.node!r}. See `mas nodes`.", file=sys.stderr)
+        return EXIT_USAGE
+    ctl = control_dir(_state(a) / "coordinator")
+    rid = uuid.uuid4().hex[:10]
+    write_json(envrec_os.current(), ctl / f"task-req-{rid}.json", {"id": rid, "node": nid, "type": a.type})
+    res_file = ctl / f"task-res-{rid}.json"
+    end = time.monotonic() + T.TIMEOUTS_S[a.type] + 15
+    while time.monotonic() < end:
+        res = read_json(res_file)
+        if res is not None:
+            res_file.unlink(missing_ok=True)
+            print(f"{a.type} on {a.node}: {res['status']}" + (f" ({T.REJECTIONS.get(res['reason'], res['reason'])})" if res.get("reason") else ""))
+            if res["status"] == "done":
+                print(json.dumps(res.get("result", {}), indent=1, ensure_ascii=False)[:6000])
+            return 0 if res["status"] == "done" else 1
+        time.sleep(0.3)
+    print("The coordinator did not answer. Is `mas coordinator start` running here?", file=sys.stderr)
+    return 1
+
+
+def cmd_task_list(a) -> int:
+    from envrec_coordinator.control import control_dir, read_json
+    d = read_json(control_dir(_state(a) / "coordinator") / "tasks.json")
+    if d is None:
+        print("The coordinator is not running here, or no task was made yet.", file=sys.stderr)
+        return 1
+    now = time.time()
+    print(f"{'ID':<14} {'TYPE':<18} {'NODE':<36} {'BY':<6} {'STATUS':<10} REASON")
+    for t in d.get("tasks", []):
+        print(f"{t['id']:<14} {t['type']:<18} {t['node']:<36} {t['by']:<6} {t['status']:<10} {t.get('reason', '')}")
     return 0
 
 
@@ -219,9 +295,12 @@ def cmd_pair_node(a) -> int:
 
 def cmd_node_run(a) -> int:
     from envrec_node.agent import NodeAgent
+    if a.clock_offset_s and os.environ.get("MAS_TESTING") != "1":  # a test-only flag: it refuses to work unless the environment says this is a test run
+        print("--clock-offset-s is for tests only (it makes this computer's clock read wrong on purpose). It is refused unless MAS_TESTING=1 is set.", file=sys.stderr)
+        return EXIT_USAGE
 
     async def run() -> None:
-        agent = NodeAgent(_state(a), interval_s=a.interval, rediscover=not a.no_discovery, discovery_port=a.discovery_port)
+        agent = NodeAgent(_state(a), interval_s=a.interval, clock=(lambda: time.time() + a.clock_offset_s) if a.clock_offset_s else time.time, rediscover=not a.no_discovery, discovery_port=a.discovery_port, on_message=lambda m: print(m, flush=True))
         loop = asyncio.get_running_loop()
         for sig in (signal.SIGINT, signal.SIGTERM):
             try:
@@ -271,9 +350,18 @@ def main(argv: list[str] | None = None) -> int:
     j.add_argument("--name", default=None, help="the name this computer shows the owner (default: its host name)")
     j.add_argument("--code", default=None, help="the code (prefer typing it when asked)")
     j.set_defaults(fn=cmd_join)
-    sub.add_parser("nodes", help="the paired nodes and their last heartbeat").set_defaults(fn=cmd_nodes)
+    nd = sub.add_parser("nodes", help="the paired nodes and their last heartbeat")
+    nd.add_argument("--detail", action="store_true", help="also show each node's latest self-report, alerts and clock skew")
+    nd.set_defaults(fn=cmd_nodes)
+    tk = sub.add_parser("task", help="read-only tasks on a paired node").add_subparsers(dest="sub", required=True)
+    tr = tk.add_parser("run", help="run node_report or machine_analysis on a node (by name or id)")
+    tr.add_argument("node")
+    tr.add_argument("type", help="node_report or machine_analysis")
+    tr.set_defaults(fn=cmd_task_run)
+    tk.add_parser("list", help="the coordinator's recent tasks").set_defaults(fn=cmd_task_list)
     n = sub.add_parser("node", help="the node agent").add_subparsers(dest="sub", required=True).add_parser("run", help="dial out and send heartbeats")
     n.add_argument("--interval", type=float, default=10.0)
+    n.add_argument("--clock-offset-s", type=float, default=0.0, help=argparse.SUPPRESS)  # testing only: makes this node's clock read wrong on purpose, to show that nothing depends on it
     n.add_argument("--no-discovery", action="store_true", help="never look for the coordinator again after its address changes")
     n.add_argument("--discovery-port", type=int, default=7444)
     n.set_defaults(fn=cmd_node_run)

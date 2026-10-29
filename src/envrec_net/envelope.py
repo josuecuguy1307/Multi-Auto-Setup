@@ -48,8 +48,11 @@ def canonical(d: dict[str, Any]) -> bytes:
     return json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
 
-def seal(identity: Identity, type: str, payload: dict, *, clock: Callable[[], float] = time.time) -> dict:
+def seal(identity: Identity, type: str, payload: dict, *, clock: Callable[[], float] = time.time, sid: str | None = None, seq: int | None = None) -> dict:
+    """`sid` and `seq` bind an envelope to one session and to its place in it (see `envrec_net.session`); both are covered by the signature."""
     d = {"version": VERSION, "sender": identity.node_id, "type": type, "payload": payload, "ts": clock(), "nonce": secrets.token_hex(16)}
+    if sid is not None:
+        d["sid"], d["seq"] = sid, int(seq or 0)
     d["signature"] = base64.b64encode(identity.sign(canonical(d))).decode()
     return d
 

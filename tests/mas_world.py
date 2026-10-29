@@ -66,3 +66,50 @@ async def wait_event(c: Coordinator, type: str, timeout: float = 5.0):
             return found
         await asyncio.sleep(0.02)
     return []
+
+
+class RawSession:
+    """A paired node's connection driven by hand, speaking the session protocol: the coordinator's challenge, our signed hello, then enveloped messages with sid and seq."""
+
+    def __init__(self, me, pin, r, w) -> None:
+        from envrec_net.session import Sealer, SessionVerifier
+        self.me, self.pin, self.r, self.w = me, pin, r, w
+        self.verifier = SessionVerifier(pin.coordinator_id, pin.public_raw)
+        self.sealer: Sealer | None = None
+        self.sid = ""
+
+    async def challenge(self):
+        from envrec_net.wire import read_frame
+        env = self.verifier.open(await read_frame(self.r, timeout=5), first=True)
+        self.sid = env.payload["nonce"]
+        from envrec_net.session import Sealer
+        self.sealer = Sealer(self.me, self.sid)
+        return env
+
+    async def hello(self, *, local_time: float | None = None, **card):
+        from envrec_net.session import PROTOCOL
+        from envrec_net.wire import write_frame
+        await write_frame(self.w, self.sealer.seal("hello", {"nonce": self.sid, "proto": PROTOCOL, "local_time": local_time if local_time is not None else __import__("time").time(), **card}))
+        return await self.recv()
+
+    async def send(self, type: str, payload: dict | None = None):
+        from envrec_net.wire import write_frame
+        await write_frame(self.w, self.sealer.seal(type, payload or {}))
+
+    async def recv(self, timeout: float = 5):
+        from envrec_net.wire import read_frame
+        return self.verifier.open(await read_frame(self.r, timeout=timeout))
+
+    async def start(self, **kw):
+        await self.challenge()
+        return await self.hello(**kw)
+
+
+async def raw_session(c, tmp, node="node1", offer_id=None):
+    from envrec_net import tls
+    from envrec_node.state import NodeState
+    c.desk.open_offer(offer_id or f"o-{node}", "482915")
+    pin = await pair_node(c, tmp, "482915", node=node)
+    st = NodeState(tmp / node)
+    r, w = await asyncio.open_connection("127.0.0.1", c.port, ssl=tls.client_context(st.identity_dir, pin.cert_der))
+    return RawSession(st.identity(), pin, r, w)

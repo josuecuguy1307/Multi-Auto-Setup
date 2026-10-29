@@ -93,8 +93,8 @@ def test_after_pairing_an_unsigned_or_wrongly_signed_or_foreign_answer_is_reject
     mine, stranger = create(), create()
     data, nonce = discovery.new_query()
     good = discovery.make_answer(mine, nonce, name="c", address="192.168.1.5", port=7443)
-    v = Verifier({mine.node_id: mine.public_raw}.get)
-    ans = discovery.parse_answer(good, nonce, verifier=v, pinned_id=mine.node_id)
+    pin = (mine.node_id, mine.public_raw)
+    ans = discovery.parse_answer(good, nonce, pinned=pin)
     assert ans.signed and ans.coordinator_id == mine.node_id
     raw = json.loads(good)
     unsigned = json.dumps({k: x for k, x in raw.items() if k != "signature"}).encode()
@@ -103,7 +103,7 @@ def test_after_pairing_an_unsigned_or_wrongly_signed_or_foreign_answer_is_reject
     other_nonce = discovery.make_answer(mine, "ffffffffffffffff", name="c", address="192.168.1.5", port=7443)
     for bad in (unsigned, tampered, foreign, other_nonce):
         with pytest.raises(discovery.BadAnswer):
-            discovery.parse_answer(bad, nonce, verifier=Verifier({mine.node_id: mine.public_raw}.get), pinned_id=mine.node_id)
+            discovery.parse_answer(bad, nonce, pinned=pin)
 
 
 def test_an_answer_naming_a_public_address_or_a_bad_port_is_never_taken():

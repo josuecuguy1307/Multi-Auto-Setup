@@ -316,3 +316,55 @@ def knowledge_sites(root: Path) -> list[str]:
             if isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in docstrings and KNOWLEDGE.search(node.value):
                 out.append(f"{p.name}:{node.lineno}: {node.value[:60]!r}")
     return out
+
+
+# ---- T1: a remote task can only run what the node's read-only allowlist names; no shell, no lookup by name ----------------------------------------------------------------
+FORBIDDEN_TASK_MODULES = {"subprocess", "os", "runpy", "importlib", "shlex", "pty", "ctypes", "socket", "multiprocessing"}
+FORBIDDEN_TASK_CALLS = {"eval", "exec", "compile", "getattr", "__import__", "globals", "locals", "vars", "open", "setattr"}
+
+
+def task_dispatch_violations(path: Path) -> list[str]:
+    """The node's task dispatcher must (1) import no module that can start a program or load code, (2) call none of the dynamic-lookup builtins, and (3) hold its allowlist as ONE dict literal
+    `ALLOWED = {"name": function, ...}` whose values are plain names, which is the only thing a task type is looked up in."""
+    path = Path(path)
+    tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"), filename=str(path))
+    out = []
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Import):
+            out += [f"{path.name}:{n.lineno}: import {a.name}" for a in n.names if a.name.split(".")[0] in FORBIDDEN_TASK_MODULES]
+        elif isinstance(n, ast.ImportFrom) and (n.module or "").split(".")[0] in FORBIDDEN_TASK_MODULES:
+            out.append(f"{path.name}:{n.lineno}: from {n.module} import ...")
+        elif isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id in FORBIDDEN_TASK_CALLS:
+            out.append(f"{path.name}:{n.lineno}: {n.func.id}(...)")
+        elif isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr in ("system", "popen", "run", "Popen", "check_output", "import_module", "spawn"):
+            out.append(f"{path.name}:{n.lineno}: .{n.func.attr}(...)")
+    allowed = [n for n in tree.body if isinstance(n, (ast.Assign, ast.AnnAssign)) and any(isinstance(t, ast.Name) and t.id == "ALLOWED" for t in (n.targets if isinstance(n, ast.Assign) else [n.target]))]
+    if len(allowed) != 1 or not isinstance(allowed[0].value, ast.Dict) or not all(isinstance(k, ast.Constant) and isinstance(v, ast.Name) for k, v in zip(allowed[0].value.keys, allowed[0].value.values)):
+        out.append(f"{path.name}: the allowlist must be one dict literal ALLOWED = {{\"task\": function}}")
+    return out
+
+
+# ---- clock: no validation path inside a session may reject solely on wall-clock time --------------------------------------------------------------------------------------
+CLOCK_NAMES = {"stale_timestamp", "WINDOW_S", "window_s", "Verifier"}  # `Verifier` is the time-window class; sessions use `SessionVerifier`
+
+
+def session_clock_sites(paths: list[Path]) -> list[str]:
+    """Names and strings in session code that mean 'compare a message's timestamp with the wall clock'."""
+    out = []
+    for p in paths:
+        p = Path(p)
+        tree = ast.parse(p.read_text(encoding="utf-8", errors="replace"), filename=str(p))
+        docs = {id(n.body[0].value) for n in ast.walk(tree) if isinstance(n, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)) and n.body
+                and isinstance(n.body[0], ast.Expr) and isinstance(n.body[0].value, ast.Constant)}
+        for n in ast.walk(tree):
+            if isinstance(n, ast.Name) and n.id in CLOCK_NAMES:
+                out.append(f"{p.name}:{n.lineno}: {n.id}")
+            elif isinstance(n, ast.Attribute) and n.attr in CLOCK_NAMES:
+                out.append(f"{p.name}:{n.lineno}: .{n.attr}")
+            elif isinstance(n, ast.alias) and n.name in CLOCK_NAMES:
+                out.append(f"{p.name}:{getattr(n, 'lineno', 0)}: import {n.name}")
+            elif isinstance(n, ast.Constant) and isinstance(n.value, str) and id(n) not in docs and "stale_timestamp" in n.value:
+                out.append(f"{p.name}:{n.lineno}: 'stale_timestamp'")
+            elif isinstance(n, ast.Compare) and any(isinstance(x, ast.Call) and isinstance(x.func, ast.Name) and x.func.id == "abs" and "ts" in ast.unparse(x) for x in [n.left, *n.comparators]):
+                out.append(f"{p.name}:{n.lineno}: abs(... ts ...) compared")
+    return out

@@ -25,6 +25,11 @@ class NodeRecord:
     fingerprint: str
     paired_at: float
     last_heartbeat: float | None = None
+    skew_s: float | None = None  # the node's wall clock minus ours at its last connect (measured, never enforced)
+    report: dict | None = None  # the latest node_report result
+    report_at: float | None = None
+    alerts: list | None = None
+    analysis_at: float | None = None  # the full analysis lives in its own file: it is large
 
     @property
     def cert_der(self) -> bytes:
@@ -93,3 +98,33 @@ class Registry:
         if gone:
             self._save()
         return gone
+
+    def set_skew(self, node_id: str, skew_s: float) -> None:
+        n = self._nodes.get(node_id)
+        if n is not None:
+            n.skew_s = round(skew_s, 1)
+            self._save()
+
+    def set_report(self, node_id: str, report: dict, alerts: list, at: float) -> None:
+        n = self._nodes.get(node_id)
+        if n is not None:
+            n.report, n.alerts, n.report_at = report, alerts, at
+            self._save()
+
+    def save_analysis(self, node_id: str, analysis: dict, at: float) -> None:
+        n = self._nodes.get(node_id)
+        if n is None:
+            return
+        import json
+        fd, tmp = tempfile.mkstemp(dir=self.dir, prefix=".analysis-")
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump(analysis, fh)
+        self.layer.protect_private(Path(tmp))
+        os.replace(tmp, self.dir / f"analysis-{node_id}.json")
+        n.analysis_at = at
+        self._save()
+
+    def load_analysis(self, node_id: str) -> dict | None:
+        import json
+        f = self.dir / f"analysis-{node_id}.json"
+        return json.loads(f.read_text()) if f.is_file() else None
