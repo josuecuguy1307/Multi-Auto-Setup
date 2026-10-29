@@ -22,6 +22,7 @@
     ],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "listen",
@@ -44,6 +45,7 @@
      "skill.serial_banner"
     ],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "match",
@@ -75,6 +77,7 @@
     ],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "research",
@@ -95,21 +98,57 @@
     "actions": [
      "research"
     ],
+    "skills": [],
     "advance": [
-     {
-      "to": "generate",
-      "needs": [
-       {
-        "action": "research"
-       }
-      ]
-     },
      {
       "to": "done",
       "needs": [
        {
         "fact": "serial.protocol",
         "at_least": "tested"
+       }
+      ]
+     },
+     {
+      "to": "generate",
+      "needs": [
+       {
+        "any": [
+         {
+          "fact": "serial.protocol_doc",
+          "at_least": "hypothesis"
+         },
+         {
+          "human_answer": true
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "to": "ask",
+      "needs": [
+       {
+        "action": "research"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "ask": {
+    "goal": "Ask the owner for the manual or for the format of what the device says.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "generate",
+      "needs": [
+       {
+        "human_answer": true
        }
       ]
      }
@@ -126,15 +165,10 @@
     "actions": [
      "propose_skill"
     ],
+    "skills": [
+     "authoring"
+    ],
     "advance": [
-     {
-      "to": "ask",
-      "needs": [
-       {
-        "action": "propose_skill"
-       }
-      ]
-     },
      {
       "to": "done",
       "needs": [
@@ -143,22 +177,13 @@
         "at_least": "verified"
        }
       ]
-     }
-    ],
-    "terminal": false,
-    "reason": ""
-   },
-   "ask": {
-    "goal": "Record what is unknown and ask the human.",
-    "tags": [],
-    "tools": [],
-    "actions": [],
-    "advance": [
+     },
      {
-      "to": "done",
+      "to": "unresolved",
       "needs": [
        {
-        "action": "ask_human"
+        "action": "propose_skill",
+        "times": 3
        }
       ]
      }
@@ -166,11 +191,22 @@
     "terminal": false,
     "reason": ""
    },
+   "unresolved": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "no skill passed its checks after three tries; what was learned is recorded and the owner can look"
+   },
    "done": {
     "goal": "",
     "tags": [],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [],
     "terminal": true,
     "reason": "the protocol is known and a skill exists, or the human has been asked"

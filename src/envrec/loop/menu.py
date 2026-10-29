@@ -28,8 +28,8 @@ def eligible_tools(adapters: list[Adapter], target: Target, store: Store,
         for spec in adapter.tool_specs():
             if target.kind not in spec.target_kinds or spec.ring > target.ring:
                 continue
-            if (spec.produces or spec.source == "skills") and spec.name in ran:
-                continue  # already ran here; asking again would not change the answer (a skill's body is in the view for the turn it was chosen)
+            if not spec.repeatable and (spec.produces or spec.source == "skills" or not spec.input_model.get("required")) and spec.name in ran:
+                continue  # already ran here; asking again would not change the answer (a tool that takes no required argument cannot be asked a different question)
             if any(k not in have for k in spec.requires):
                 continue  # prerequisites not in yet
             if not adapter.available(spec.name, target, store):
@@ -49,5 +49,27 @@ def build_menu(adapters: list[Adapter], target: Target, store: Store, menu_max: 
     return entries[:menu_max]
 
 
+def _arg_lines(spec: ToolSpec) -> list[str]:
+    """One line per argument the tool takes: what to put there and where the value comes from. The model is told its arguments; it cannot fill what it cannot see."""
+    props = spec.input_model.get("properties") or {}
+    required = set(spec.input_model.get("required") or [])
+    lines = []
+    for name, p in props.items():
+        where = {"capture": "a capture id from CAPTURES", "fact": "a fact key from FACTS"}.get(p.get("x-ref", ""), p.get("type", "value"))
+        lines.append(f"      {name} ({'required' if name in required else 'optional'}, {where}): {str(p.get('description', ''))[:110]}")
+    return lines
+
+
+def takes_capture(entries: list[MenuEntry]) -> bool:
+    """Does any tool on the menu take a capture id? Then the view lists the captures that exist."""
+    return any(p.get("x-ref") == "capture" for e in entries for p in (e.spec.input_model.get("properties") or {}).values())
+
+
 def render_menu(entries: list[MenuEntry]) -> str:
-    return "\n".join(f"  {i} {e.name}  {(e.spec.description or e.one_line)[:200]}" for i, e in enumerate(entries, 1))
+    out = []
+    for i, e in enumerate(entries, 1):
+        props = e.spec.input_model.get("properties") or {}
+        sig = f"({', '.join(props)})" if props else ""  # names exactly as the model must write them in "args": no decoration it could copy
+        out.append(f"  {i} {e.name}{sig}  {(e.spec.description or e.one_line)[:200]}")
+        out += _arg_lines(e.spec)
+    return "\n".join(out)

@@ -23,6 +23,46 @@ Read the recorded capture the harness gives you before writing anything. Find th
 | `produces` | the fact keys the script can write |
 | `tests` | at least one recorded real capture with the facts it must produce (`match: true`), and one capture that must NOT match (`match: false`) |
 
+A complete draft, small enough to copy and change (field names are exact; nothing else is accepted):
+
+```json
+{"name": "example-device",
+ "description": "Use when a serial device prints lines that start with EXA and carry a reading.",
+ "body": "# Example device\n\nOne line per reading: `EXA <value>`. Listening is enough.\n",
+ "script": "import json, re\nfrom envrec_sbx import Caps, Out\ndef parse(inp):\n    caps = Caps(inp); out = Out(caps); c = caps.get('heard')\n    if c is None or not c.ok:\n        return out.lost(c, 'sensor.reading').result()\n    text = c.text\n    m = re.search(r'EXA (\\d+)', text)\n    if m:\n        out.fact('sensor.reading', int(m.group(1)), src='heard', quote='EXA ' + m.group(1))\n    return out.result()\n",
+ "steps": [{"id": "probe", "tool": "serial_identify", "args": {"port": "{param.port}"}}],   // serial_identify collects two captures: `probe` (the log of the exchange) and `heard` (only what the device said, plain text)
+ "produces": ["sensor.reading"], "tier": "read", "protocol": "serial", "ring": 1,
+ "signature": {"facts": [{"key": "serial.banner", "regex": "^EXA"}]},
+ "tests": [{"name": "recorded", "captures": {"heard": "@capture:heard"}, "match": true, "facts": {"sensor.reading": 7}},
+           {"name": "other-device", "captures": {"heard": "$GPGGA,1*47"}, "match": false}]}
+```
+
+A device whose line is `key=value` fields (the common case) needs one pattern per field and a check that the line is really from this device. Study this script body; it is the whole pattern:
+
+```python
+import re
+from envrec_sbx import Caps, Out
+
+def parse(inp):
+    caps = Caps(inp); out = Out(caps); c = caps.get("heard")   # only what the device said, plain text
+    text = c.text if c is not None and c.ok else ""
+    if not text:
+        return out.lost(c, "sensor.battery_pct", "sensor.temperature_tenths_c").result()
+    if "ABC9" not in text:            # not this device: say nothing at all
+        return out.result()
+    b = re.search(r"b=(\d+)", text)
+    t = re.search(r"t=(\d+)", text)
+    if b:
+        out.fact("sensor.battery_pct", int(b.group(1)), src="heard", quote="b=" + b.group(1))
+    if t:
+        out.fact("sensor.temperature_tenths_c", int(t.group(1)), src="heard", quote="t=" + t.group(1))
+    return out.result()
+```
+
+Three habits are in it. (1) Check the device's own prefix first and return nothing otherwise: that is what the "must not match" test checks. (2) One field, one pattern, one fact; the value is the number AS PRINTED (`int("342")`, not 34.2) and the quote is the text it came from, because a value that is not in its quote is rejected. The unit goes in the key (`..._tenths_c`), not in a calculation. (3) Name each key for what the MANUAL says the field is, never for what the letter looks like: `b` is the battery only because the manual says so.
+
+`@capture:heard` means "the real capture the harness recorded under that name". A test needs `name`, `captures`, `match` and, for a positive one, `facts`.
+
 ## 3. The script
 
 It runs alone in a sandbox: no network, no files but its own folder, a few seconds. It receives the captures and returns facts, entities and unknowns; when it needs a table lookup or another read it ASKS (`out.want(...)`) and is called again with the answer. It cannot write anything or call anything. Everything it returns goes through the privacy gate.

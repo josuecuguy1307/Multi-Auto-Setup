@@ -1,0 +1,1 @@
+"""The coordinator: one per network, with exactly one LAN-facing listening socket (docs/NETWORK_CONTRACT.md section 1.1), created in `server.py` and nowhere else. It may also serve the owner's local web screen on one loopback-only socket (`web.py`, section 1.7); off by default."""

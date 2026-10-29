@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Multi Auto Setup</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="app.skip"></a>
+<header class="top">
+  <div class="top-inner">
+    <div>
+      <h1 data-i18n="app.title"></h1>
+      <p class="sub"><span data-i18n="app.subtitle"></span> · <span data-i18n="app.local_only"></span></p>
+    </div>
+    <nav aria-labelledby="nav-label">
+      <span id="nav-label" class="sr" data-i18n="nav.label"></span>
+      <ul class="tabs">
+        <li><a id="tab-machines" href="#/machines" data-i18n="nav.machines"></a></li>
+        <li><a id="tab-pair" href="#/pair" data-i18n="nav.pair"></a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+  <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
+
+  <section id="view-machines" aria-labelledby="machines-title">
+    <div class="bar">
+      <div>
+        <h2 id="machines-title" data-i18n="machines.title"></h2>
+        <p id="machines-count" class="muted"></p>
+      </div>
+      <button id="start-from-machines" type="button" class="btn primary" data-i18n="machines.pair_button"></button>
+    </div>
+    <p id="pairing-banner" class="banner" hidden><span data-i18n="machines.pairing_banner"></span> <a href="#/pair" data-i18n="machines.pairing_banner_link"></a></p>
+    <div id="machines-empty" class="empty" hidden>
+      <p data-i18n="machines.empty"></p>
+      <p class="muted" data-i18n="machines.empty_hint"></p>
+    </div>
+    <ul id="machines" class="cards"></ul>
+  </section>
+
+  <section id="view-pair" aria-labelledby="pair-title" hidden>
+    <h2 id="pair-title" data-i18n="pair.title"></h2>
+    <p class="muted" data-i18n="pair.intro"></p>
+
+    <div id="pair-idle" class="panel">
+      <button id="start-pair" type="button" class="btn primary" data-i18n="pair.start"></button>
+    </div>
+
+    <div id="pair-code" class="panel" hidden>
+      <p id="code-label" class="label" data-i18n="pair.code_label"></p>
+      <p id="code" class="code" aria-labelledby="code-label"></p>
+      <p id="countdown" class="countdown" role="timer" aria-live="off"></p>
+      <p class="muted" data-i18n="pair.one_attempt"></p>
+      <p class="muted"><span data-i18n="pair.how_to"></span> <code>mas pair HOST:PORT</code></p>
+    </div>
+
+    <div id="pair-exchange" class="panel" hidden>
+      <p id="exchange-text" data-i18n="pair.exchange"></p>
+    </div>
+
+    <div id="pair-confirm" class="panel confirm" hidden role="group" aria-labelledby="confirm-title">
+      <h3 id="confirm-title" data-i18n="pair.confirm_title"></h3>
+      <p class="muted" data-i18n="pair.confirm_hint"></p>
+      <dl class="facts">
+        <dt data-i18n="pair.field.name"></dt><dd id="c-name"></dd>
+        <dt data-i18n="pair.field.os"></dt><dd id="c-os"></dd>
+        <dt data-i18n="pair.field.arch"></dt><dd id="c-arch"></dd>
+        <dt data-i18n="pair.field.fingerprint"></dt><dd id="c-fp" class="mono"></dd>
+      </dl>
+      <div class="actions">
+        <button id="approve" type="button" class="btn primary" data-i18n="pair.approve"></button>
+        <button id="reject" type="button" class="btn" data-i18n="pair.reject"></button>
+      </div>
+    </div>
+
+    <div id="pair-result" class="panel" hidden role="status" aria-live="polite">
+      <p id="result-text"></p>
+      <div class="actions">
+        <button id="dismiss" type="button" class="btn" data-i18n="pair.dismiss"></button>
+        <button id="again" type="button" class="btn primary" data-i18n="pair.start_again"></button>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="/app.js" defer></script>
+</body>
+</html>

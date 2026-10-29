@@ -121,9 +121,13 @@ class Library:
 
     def spec(self, s: Skill) -> ToolSpec:
         kind = s.meta.signature.kind
+        valid = {k.value for k in TargetKind}
+        # offered to the kind it matches AND to the kind of its own protocol (a Bluetooth skill is needed by the Bluetooth protocol, whatever its signature says)
+        named_by = [k for pr in self.protocols() for st in pr.meta.states.states.values() if f"skill.{s.key}" in st.tools for k in pr.meta.states.kinds]  # a protocol that names a skill needs it for ITS kinds
+        kinds = list(dict.fromkeys([TargetKind(x) for x in (kind, s.meta.protocol, *named_by) if x in valid])) or list(TargetKind)
         words = s.description.split()
         return ToolSpec(name=f"skill.{s.key}", ring=s.meta.ring, tier=Tier.observe if s.meta.tier == "observe" else Tier.read,
-                        target_kinds=[TargetKind(kind)] if kind in {k.value for k in TargetKind} else list(TargetKind), one_line=" ".join(words[:12]), description=s.description[:1024],
+                        target_kinds=kinds, one_line=" ".join(words[:12]), description=s.description[:1024],
                         origin=Origin.builtin if s.meta.provenance == "builtin" else Origin.generated, source="skills",
                         verified=s.meta.provenance == "builtin" or self.state(s.name).get("verified_runs", s.meta.verified_runs) > 0,
                         tags=["skill", s.meta.protocol] + (["generated"] if s.meta.provenance == "generated" else []), produces=list(s.meta.produces), rung=1)

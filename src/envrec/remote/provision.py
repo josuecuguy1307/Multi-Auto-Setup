@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 
-from envrec.contracts import Origin, Target, TargetKind, Tier
+from envrec.contracts import CreatedBy, Evidence, Fact, FactStatus, Origin, Target, TargetKind, Tier
 from envrec.mission.models import EntryLimits, SshBlock, TargetConfig, TargetEntry, Transport
 from envrec.policy.config_gate import decide_for_fleet
 from envrec.remote.approval import ApprovalGate, PendingAction, UndoLog
@@ -122,7 +122,11 @@ def sync_targets(store: Store, config: TargetConfig) -> dict[str, Target]:
     out = {}
     for e in config.targets:
         existing = next((t for t in store.list_targets() if t.handle == e.id), None)
-        t = existing or Target(kind=TargetKind.net_host, ring=2, handle=e.id, authorized=True)
+        if Transport.local in e.allowed_transports:  # this computer: its own media session, or the door to a computer that is not enrolled yet
+            kind = TargetKind.door if e.local.scope == "door" else TargetKind.media
+        else:
+            kind = TargetKind.remote  # a computer reached over a transport
+        t = existing or Target(kind=kind, ring=1 if kind in (TargetKind.media, TargetKind.door) else 2, handle=e.id, authorized=True)
         out[e.id] = store.put_target(t.model_copy(update={"authorized": True}), from_config=True)
     return out
 
@@ -317,6 +321,9 @@ class Provisioner:
             return self._fail(res, "health_check", why)
         res.steps += [Step("start_server", "ok", f"127.0.0.1:{plan.port} on the device"), Step("health_check", "ok", "server answered /health")]
         res.ok, res.needs_undo = True, True
+        # the deploy CLAIMS the server is running (a hypothesis made by the loop, from the health answer); a verifier then checks it. A verifier never creates the claim it verifies.
+        self.store.write_fact(Fact(target_id=self.targets[tid].id, key="host.model_server", value="running", status=FactStatus.hypothesis, created_by=CreatedBy.loop,
+                                   evidence=[Evidence(provider="deploy", probe="start_server+health", confidence=0.6, channel="ssh", limitations=["the device answered /health once; not yet verified"])]))
         return res
 
     def verify(self, tid: str, transport: Transport, res: DeployResult, expected, client=None):

@@ -6,7 +6,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import pytest
 
-from envrec.contracts import FactStatus, Target, TargetKind
+from envrec.contracts import CreatedBy, Evidence, Fact, FactStatus, Target, TargetKind
 from envrec.store import Store
 from envrec.verify import TunnelClient, verify_server
 
@@ -41,7 +41,11 @@ def store(tmp_path):
 
 @pytest.fixture
 def target(store):
-    return store.put_target(Target(kind=TargetKind.net_host, ring=2, handle="box", authorized=True), from_config=True)
+    t = store.put_target(Target(kind=TargetKind.net_host, ring=2, handle="box", authorized=True), from_config=True)
+    # the deploy has recorded its claim that the server runs; the verifier only judges it (a verifier never creates the claim it verifies)
+    store.write_fact(Fact(target_id=t.id, key="host.model_server", value="running", status=FactStatus.hypothesis, created_by=CreatedBy.loop,
+                          evidence=[Evidence(provider="deploy", probe="start_server+health", confidence=0.6)]))
+    return t
 
 
 def test_an_echoing_server_passes_and_the_fact_becomes_verified(store, target):
@@ -53,7 +57,8 @@ def test_an_echoing_server_passes_and_the_fact_becomes_verified(store, target):
     assert r.ok and r.rounds == 2
     f = store.current_fact(target.id, "host.model_server")
     assert f.status == FactStatus.verified and f.created_by.value == "verifier" and f.value == "running"
-    assert store.read_raw(f.evidence[0].raw_ref)  # the nonces and replies are kept by hash
+    verifier_ev = next(e for e in f.evidence if e.provider == "verifier")
+    assert json.loads(store.read_raw(verifier_ev.raw_ref))["replies"] == r.replies  # the nonces and replies are kept by hash
 
 
 def test_a_server_with_one_canned_reply_fails_and_nothing_is_verified(store, target):
@@ -63,7 +68,7 @@ def test_a_server_with_one_canned_reply_fails_and_nothing_is_verified(store, tar
     finally:
         srv.shutdown()
     assert not r.ok and "nonce" in r.reason
-    assert store.current_fact(target.id, "host.model_server") is None
+    assert store.current_fact(target.id, "host.model_server").status == FactStatus.hypothesis  # the claim stays a hypothesis
 
 
 def test_a_server_that_precomputes_one_answer_cannot_pass_because_nonces_are_fresh(store, target):
@@ -91,7 +96,7 @@ def test_an_unreachable_server_fails_cleanly(store, target):
     import socket
     s = socket.socket(); s.bind(("127.0.0.1", 0)); port = s.getsockname()[1]; s.close()
     r = verify_server(TunnelClient(port, timeout=1), store, target)
-    assert not r.ok and "no usable answer" in r.reason and store.current_fact(target.id, "host.model_server") is None
+    assert not r.ok and "no usable answer" in r.reason and store.current_fact(target.id, "host.model_server").status == FactStatus.hypothesis  # the claim stays a hypothesis
 
 
 def test_a_server_that_only_echoes_the_first_request_fails_the_second_round(store, target):
@@ -102,3 +107,19 @@ def test_a_server_that_only_echoes_the_first_request_fails_the_second_round(stor
     finally:
         srv.shutdown()
     assert not r.ok and r.rounds == 2
+
+
+def test_a_server_nobody_claimed_is_not_verified_because_a_verifier_never_creates_the_claim_it_verifies(store):
+    t = store.put_target(Target(kind=TargetKind.net_host, ring=2, handle="unclaimed", authorized=True), from_config=True)
+    srv = serve(chat_handler(lambda c: f"[echo] {c}"))
+    try:
+        r = verify_server(TunnelClient(srv.server_port), store, t)
+    finally:
+        srv.shutdown()
+    assert r.ok is False and "nothing claims" in r.reason and store.current_fact(t.id, "host.model_server") is None
+
+
+def test_a_model_path_in_either_separator_style_reduces_to_the_file_name():
+    from envrec.verify.model_check import reported_identities
+    assert reported_identities({"data": [{"id": "m.gguf"}]}, {"model_path": "C:\\Users\\x\\models\\m.gguf"}) == {"m.gguf"}
+    assert reported_identities(None, {"model_path": "/opt/envrec/models/m.gguf"}) == {"m.gguf"}

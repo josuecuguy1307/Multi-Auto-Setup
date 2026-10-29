@@ -8,7 +8,7 @@ from envrec.remote.templates import INSTALL_ROOT, TEMPLATES, TemplateError, get_
 
 def entry(**kw):
     base = dict(id="lab-b", name="Lab B", host="192.168.1.42", allowed_transports=[Transport.ssh, Transport.docker_exec],
-                ssh=SshBlock(user="josue", port=2222, key_env="LAB_B_KEY_PATH"), docker_exec=DockerExecBlock(container="lab-b"),
+                ssh=SshBlock(user="owner", port=2222, key_env="LAB_B_KEY_PATH"), docker_exec=DockerExecBlock(container="lab-b"),
                 limits=EntryLimits(max_disk_gb=20, max_model_params="9B"), owner_confirmed=True)
     return TargetEntry(**{**base, **kw})
 
@@ -61,7 +61,7 @@ def test_ssh_command_shape_and_the_key_path_never_leaks_into_the_result(runner):
     res = r.run("lab-b", Transport.ssh, "df_free", {"path": "/opt"})
     argv, _ = rec.calls[0]
     assert argv[0] == "ssh" and "/keys/secret_test_key" in argv and argv[-1] == "df -Pk /opt"
-    assert "josue@192.168.1.42" in argv and argv[argv.index("-p") + 1] == "2222"
+    assert "owner@192.168.1.42" in argv and argv[argv.index("-p") + 1] == "2222"
     assert "BatchMode=yes" in argv and "StrictHostKeyChecking=yes" in argv
     assert "/keys/secret_test_key" not in " ".join(res.argv_shown) and "$LAB_B_KEY_PATH" in " ".join(res.argv_shown)
     assert "secret_test_key" not in repr(res)

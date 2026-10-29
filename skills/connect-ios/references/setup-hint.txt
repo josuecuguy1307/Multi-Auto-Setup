@@ -1,0 +1,1 @@
+connect the cable, unlock the phone and tap Trust when it asks, then re-run (libimobiledevice must be installed: brew install libimobiledevice)

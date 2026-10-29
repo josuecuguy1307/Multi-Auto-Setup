@@ -9,13 +9,14 @@ import yaml
 
 from envrec.contracts import ModelKind, ModelProfile
 from envrec.model.base import ModelAdapter
+from envrec.model.claude_cli import ClaudeCliModel
 from envrec.model.openai_compat import OpenAICompatModel
 
 
 def load_profile(path: Path | str, name: str, include_local: bool = True) -> tuple[ModelProfile, dict[str, Any]]:
     """Return the profile and its adapter options (timeouts, json_mode, extra_body, ...).
 
-    A file `<name>.local.yaml` next to the config (same shape, kept out of version control) overrides or adds profiles.
+    A file `<name>.local.yaml` next to the config (same shape, kept out of version control) overrides profiles by name and adds new ones. `include_local=False` reads only the shipped file.
     """
     path = Path(path)
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -34,6 +35,8 @@ def make_adapter(profile: ModelProfile, options: dict[str, Any] | None = None) -
     options = dict(options or {})
     if profile.kind == ModelKind.openai_compat:
         return OpenAICompatModel(profile, **options)
+    if profile.kind == ModelKind.claude_cli:
+        return ClaudeCliModel(profile, **options)
     raise ValueError(f"profile kind {profile.kind.value!r} needs to be built in code (scripted models)")
 
 

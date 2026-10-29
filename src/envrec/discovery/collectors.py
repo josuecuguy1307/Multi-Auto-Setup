@@ -75,17 +75,44 @@ class LocalCollector:
         return Capture(cmd.name, src, data, 0, self.origin, self.platform)
 
     def http_get(self, name: str, url: str, timeout_s: float = 3.0) -> Capture:
-        """GET on 127.0.0.1 only: a read-only identify request to a local server. Anything else is refused."""
+        """One GET. A server on this computer (loopback) is read as before; an official documentation host from config/doc_sources.yaml is read over https with a size cap and a time cap.
+        Anything else is refused. Redirects are followed only to hosts on the same list. The body is untrusted data: it is stored as a capture whose source is the URL."""
+        import urllib.error
         import urllib.request
         from urllib.parse import urlparse
-        host = urlparse(url).hostname
-        if host not in ("127.0.0.1", "localhost", "::1"):
-            return Capture(name, url, b"", None, self.origin, self.platform, Reason.denied, "only loopback addresses may be asked")
+        from envrec.discovery.docsources import load_sources
+        u = urlparse(url)
+        host = u.hostname
+        if host in ("127.0.0.1", "localhost", "::1"):
+            limit, timeout, allowed = MAX_CAPTURE_BYTES, timeout_s, None
+        else:
+            src = load_sources()
+            if u.scheme != "https" or host not in src.hosts:
+                return Capture(name, url, b"", None, self.origin, self.platform, Reason.denied,
+                               f"only loopback and the official documentation hosts in config/doc_sources.yaml may be read ({', '.join(sorted(src.hosts))}), over https")
+            limit, timeout, allowed = src.max_bytes, src.timeout_s, src.hosts
+
+        class Guard(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, req, fp, code, msg, headers, newurl):
+                h = urlparse(newurl).hostname
+                if allowed is not None and (urlparse(newurl).scheme != "https" or h not in allowed):
+                    raise urllib.error.URLError(f"redirect to {h} is not an official documentation host")
+                return super().redirect_request(req, fp, code, msg, headers, newurl)
+
         try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "envrec-discovery"}), timeout=timeout_s) as r:  # noqa: S310
-                return Capture(name, f"GET {url}", r.read(MAX_CAPTURE_BYTES), 0, self.origin, self.platform)
-        except OSError as exc:
-            return Capture(name, f"GET {url}", b"", None, self.origin, self.platform, Reason.unavailable, type(exc).__name__)
+            opener = urllib.request.build_opener(Guard)
+            with opener.open(urllib.request.Request(url, headers={"User-Agent": "envrec-research", "Accept": "text/*, application/json"}, method="GET"), timeout=timeout) as r:  # noqa: S310
+                body = r.read(limit + 1)
+                if len(body) > limit:
+                    return Capture(name, f"GET {url}", body[:limit], 0, self.origin, self.platform)  # the first part is kept; the rest is not read
+                return Capture(name, f"GET {url}", body, 0, self.origin, self.platform)
+        except TimeoutError:
+            return Capture(name, f"GET {url}", b"", None, self.origin, self.platform, Reason.timeout, f"HANG: {host} did not answer in {timeout:g} s")
+        except urllib.error.HTTPError as exc:
+            return Capture(name, f"GET {url}", b"", None, self.origin, self.platform, Reason.unavailable, f"HTTP {exc.code}")
+        except (urllib.error.URLError, OSError) as exc:
+            reason = Reason.timeout if "timed out" in str(exc).lower() else Reason.unavailable
+            return Capture(name, f"GET {url}", b"", None, self.origin, self.platform, reason, ("HANG: " if reason == Reason.timeout else "") + type(exc).__name__)
 
     def serial_exchange(self, name: str, port: str, plan: dict) -> Capture:
         """Open one serial port exclusively, listen first, then send ONLY the entries of `plan["probes"]`, stopping at the first reply."""

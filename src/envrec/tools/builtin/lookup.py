@@ -16,7 +16,7 @@ def _answer(table, name: str, identifier: str, source: str) -> ToolResult:
                             "entries": [c.entry for c in cands][:5]}, provider=source)
 
 
-@tool(tags=("table_lookup", "identify"))
+@tool(tags=("table_lookup", "identify"), audience="skill")
 def lookup_usb_id(ctx: ToolContext, vid: str, pid: str = "") -> ToolResult:
     """Look up a USB vendor and product id in usb.ids.
 
@@ -37,7 +37,7 @@ def lookup_usb_id(ctx: ToolContext, vid: str, pid: str = "") -> ToolResult:
     return res
 
 
-@tool(tags=("table_lookup", "identify"))
+@tool(tags=("table_lookup", "identify"), audience="skill")
 def lookup_oui(ctx: ToolContext, mac_prefix: str) -> ToolResult:
     """Look up the vendor behind a network hardware address prefix.
 
@@ -52,7 +52,7 @@ def lookup_oui(ctx: ToolContext, mac_prefix: str) -> ToolResult:
     return _answer(tables.oui(), "oui", mac_prefix, "ieee.oui")
 
 
-@tool(tags=("table_lookup", "identify"))
+@tool(tags=("table_lookup", "identify"), audience="skill")
 def lookup_bluetooth_company(ctx: ToolContext, company_id: str) -> ToolResult:
     """Look up a Bluetooth company id.
 
@@ -67,7 +67,7 @@ def lookup_bluetooth_company(ctx: ToolContext, company_id: str) -> ToolResult:
     return _answer(tables.bt_companies(), "bt", company_id, "bluetooth.company_ids")
 
 
-@tool(tags=("table_lookup", "identify"))
+@tool(tags=("table_lookup", "identify"), audience="skill")
 def lookup_bluetooth_service(ctx: ToolContext, uuid: str) -> ToolResult:
     """Look up a Bluetooth service UUID.
 
@@ -82,7 +82,7 @@ def lookup_bluetooth_service(ctx: ToolContext, uuid: str) -> ToolResult:
     return _answer(tables.bt_services(), "bt", uuid, "bluetooth.service_uuids")
 
 
-@tool(tags=("table_lookup", "identify"))
+@tool(tags=("table_lookup", "identify"), audience="skill")
 def lookup_service_type(ctx: ToolContext, service_type: str) -> ToolResult:
     """Look up what a network service type means in the IANA registry.
 
@@ -97,7 +97,7 @@ def lookup_service_type(ctx: ToolContext, service_type: str) -> ToolResult:
     return _answer(tables.iana(), "iana", service_type, "iana.service_names")
 
 
-@tool(tags=("table_lookup", "identify"))
+@tool(tags=("table_lookup", "identify"), audience="skill")
 def match_serial_signature(ctx: ToolContext, text: str, sent: str = "") -> ToolResult:
     """Match a serial reply against the known protocol signatures.
 

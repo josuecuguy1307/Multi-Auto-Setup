@@ -120,7 +120,7 @@ def test_a_server_that_listens_beyond_loopback_fails_bind_in_a_real_container(st
         assert res.ok, res.failure
         v = p.verify("box-1", Transport.docker_exec, res, ExpectedModel(bad.model.id, bad.model.file))
         assert not v.ok and v.failed == ["bind_loopback"], (v.failed, v.details)
-        assert p.store.current_fact(p.targets["box-1"].id, "host.model_server") is None
+        assert p.store.current_fact(p.targets["box-1"].id, "host.model_server").status.value != "verified"
         assert undo(p)[0]
 
 

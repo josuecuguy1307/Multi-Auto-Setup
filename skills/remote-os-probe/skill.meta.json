@@ -1,0 +1,35 @@
+{
+ "provenance": "builtin",
+ "protocol": "connect",
+ "tier": "read",
+ "ring": 2,
+ "platforms": [
+  "any"
+ ],
+ "signature": {
+  "kind": "remote"
+ },
+ "plan": {
+  "steps": [
+   {
+    "id": "uname",
+    "tool": "remote_read",
+    "platforms": [
+     "any"
+    ],
+    "args": {
+     "shell": "sh",
+     "argv": [
+      "uname",
+      "-s"
+     ],
+     "name": "uname"
+    }
+   }
+  ],
+  "script": "scripts/parse.py"
+ },
+ "produces": [
+  "os.family"
+ ]
+}

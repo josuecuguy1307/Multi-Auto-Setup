@@ -1,1 +1,7 @@
 envrec
+envrec_coordinator
+envrec_mas
+envrec_net
+envrec_node
+envrec_os
+envrec_worker

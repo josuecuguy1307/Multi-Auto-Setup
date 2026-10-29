@@ -42,6 +42,8 @@ class PrivacyGate:
         for c in captures:
             data = reduce_capture_bytes(c.data, self.reducers.get(c.name))
             self.refs[c.name] = self.store.put_raw(data)
+            if self.target is not None and c.error is None:  # the model chooses WHICH capture by its id; the view lists these (name and size only)
+                self.store.index_capture(self.target.id, self.refs[c.name], c.name, len(data), self.provider, self.event_id, c.source)
             self.by_name[c.name] = c
             if self.first_ok is None and c.error is None:
                 self.first_ok = c.name

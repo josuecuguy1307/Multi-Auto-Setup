@@ -136,6 +136,12 @@ def main(argv: list[str] | None = None) -> int:
     add_tools_commands(sub)
     from envrec.cli_fleet import add_fleet_commands
     add_fleet_commands(sub)
+    from envrec.cli_skills import add_skills_commands
+    add_skills_commands(sub)
+    from envrec.cli_helper import add_helper_commands
+    add_helper_commands(sub)
+    from envrec.cli_media import add_media_commands
+    add_media_commands(sub)
     args = parser.parse_args(argv)
     return args.func(args)
 

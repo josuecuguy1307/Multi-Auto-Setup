@@ -12,14 +12,14 @@ from pathlib import Path
 import httpx
 import pytest
 
-from envrec.contracts import FactStatus, Target, TargetKind
+from envrec.contracts import CreatedBy, Evidence, Fact, FactStatus, Target, TargetKind
 from envrec.store import Store
 from envrec.verify import ExpectedModel, TunnelClient, verify_model
 from envrec.verify.model_check import plausible_tokens, reported_identities
 
 FAKES = Path(__file__).parent / "fakes"
 FILE = "tiny-test.gguf"
-EXPECTED = ExpectedModel("tiny-model", FILE)
+EXPECTED = ExpectedModel("qwen-tiny", FILE)
 
 
 def free_port() -> int:
@@ -68,7 +68,11 @@ def store(tmp_path):
 
 @pytest.fixture
 def target(store):
-    return store.put_target(Target(kind=TargetKind.net_host, ring=2, handle="box", authorized=True), from_config=True)
+    t = store.put_target(Target(kind=TargetKind.net_host, ring=2, handle="box", authorized=True), from_config=True)
+    # the deploy has recorded its claim that the server runs; the verifier only judges it (a verifier never creates the claim it verifies)
+    store.write_fact(Fact(target_id=t.id, key="host.model_server", value="running", status=FactStatus.hypothesis, created_by=CreatedBy.loop,
+                          evidence=[Evidence(provider="deploy", probe="start_server+health", confidence=0.6)]))
+    return t
 
 
 def check(store, target, mode="ok", probes=None, expected=EXPECTED, script="fake_llama_server.py", args=None):
@@ -85,7 +89,7 @@ def test_a_real_looking_server_passes_and_facts_are_recorded(store, target):
     assert r.ok and r.failed == [] and r.reason == "all conditions held"
     f = store.current_fact(target.id, "host.model_server")
     assert f.status == FactStatus.verified and f.created_by.value == "verifier"
-    assert store.current_fact(target.id, "host.model_identity").value == "tiny-model"
+    assert store.current_fact(target.id, "host.model_identity").value == "qwen-tiny"
     for key, val in (("host.model_tokens_per_s", 50.0), ("host.model_rss_mib", 123.0), ("host.model_startup_s", 1.5)):
         fact = store.current_fact(target.id, key)
         assert fact.status == FactStatus.tested and fact.value == val
@@ -95,7 +99,7 @@ def test_a_real_looking_server_passes_and_facts_are_recorded(store, target):
 def test_wrong_model_identity_fails_only_identity(store, target):
     r = check(store, target, mode="wrong_model")
     assert r.failed == ["identity"] and "some-other-model.gguf" in r.details["identity"]
-    assert store.current_fact(target.id, "host.model_server") is None and store.current_fact(target.id, "host.model_tokens_per_s") is None
+    assert store.current_fact(target.id, "host.model_server").status == FactStatus.hypothesis  # the deploy's claim stays a hypothesis: nothing was verified and store.current_fact(target.id, "host.model_tokens_per_s") is None
 
 
 def test_manifest_entry_naming_another_file_fails_identity(store, target):
@@ -106,7 +110,7 @@ def test_manifest_entry_naming_another_file_fails_identity(store, target):
 def test_canned_reply_server_fails_the_nonce_round_trip(store, target):
     r = check(store, target, mode="canned")
     assert "nonce_roundtrip" in r.failed and "distinct_replies" in r.failed and not r.ok
-    assert store.current_fact(target.id, "host.model_server") is None
+    assert store.current_fact(target.id, "host.model_server").status == FactStatus.hypothesis  # the deploy's claim stays a hypothesis: nothing was verified
 
 
 def test_empty_text_fails_generation(store, target):
@@ -150,7 +154,7 @@ def test_nothing_listening_or_unreadable_listeners_fails_bind(store, target):
 def test_the_old_echo_stub_fails(store, target):
     r = check(store, target, script="stub_echo_server.py", args=[])
     assert not r.ok and "identity" in r.failed and "not_a_mirror" in r.failed
-    assert store.current_fact(target.id, "host.model_server") is None
+    assert store.current_fact(target.id, "host.model_server").status == FactStatus.hypothesis  # the deploy's claim stays a hypothesis: nothing was verified
 
 
 def test_the_old_echo_stub_that_claims_the_right_model_still_fails(store, target):

@@ -13,6 +13,7 @@ build/worker/dist/
 .config/
 skills/state/
 skills/generated/
+consent/
 
 # local model profiles (endpoints and ids); not committed
 config/models.local.yaml

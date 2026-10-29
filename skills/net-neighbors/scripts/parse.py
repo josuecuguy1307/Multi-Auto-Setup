@@ -22,11 +22,20 @@ def _oui(mac):
     return (d or {}).get("name")
 
 
+LOOKUP_BUDGET = 60   # distinct vendor prefixes asked about per run: the sandbox allows 90 requests in all
+ENTITY_BUDGET = 400  # neighbours described one by one; the count fact always has the true number
+
+
 def neighbor_entities(rows, src):
-    out = []
-    for r in rows:
-        vendor = _oui(r["mac"])
-        out.append(Entity("host", 2, r["mac"], "unknown", {"ip": r["ip"], "vendor": vendor, "oui": r["mac"].replace(":", "")[:6], "randomized_mac": _randomized(r["mac"]),
+    out, asked = [], set()
+    for r in rows[:ENTITY_BUDGET]:
+        oui = r["mac"].replace(":", "")[:6]
+        if oui in asked or len(asked) < LOOKUP_BUDGET:
+            asked.add(oui)
+            vendor = _oui(r["mac"])
+        else:
+            vendor = None  # over the lookup budget: left unresolved (an Unknown), not guessed
+        out.append(Entity("host", 2, r["mac"], "unknown", {"ip": r["ip"], "vendor": vendor, "oui": oui, "randomized_mac": _randomized(r["mac"]),
                                                            "interface": r["iface"]}, prefix="net", resolved=bool(vendor), src=src))
     return out
 
@@ -72,7 +81,7 @@ def _parse(captures, platform):
     if not c.ok:
         return lost(c, "net.neighbors_count")
     rows, inc = parse_neighbors(c.text, platform)
-    return [FactOut("net.neighbors_count", len(rows), src=c.name, limitations=["only hosts already in the table; the table forgets idle hosts"]),
+    return [FactOut("net.neighbors_count", len(rows), src=c.name, limitations=["only hosts already in the table; the table forgets idle hosts"] + ([f"only the first {ENTITY_BUDGET} are listed one by one and vendors were looked up for the first {LOOKUP_BUDGET} distinct prefixes"] if len(rows) > ENTITY_BUDGET or len({r["mac"][:8] for r in rows}) > LOOKUP_BUDGET else [])),
             FactOut("net.neighbors_incomplete", inc, src=c.name)] + neighbor_entities(rows, c.name)
 
 

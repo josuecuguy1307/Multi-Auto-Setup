@@ -1,0 +1,155 @@
+{
+ "provenance": "builtin",
+ "protocol": "node-connect",
+ "tier": "observe",
+ "ring": 1,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "node"
+  ],
+  "start": "card",
+  "states": {
+   "card": {
+    "goal": "Read this machine's node card basics: host name, operating system, architecture.",
+    "tags": [],
+    "tools": [
+     "node_card_read"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "connect",
+      "needs": [
+       {
+        "fact": "node.hostname",
+        "at_least": "tested"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "connect": {
+    "goal": "Dial out to the paired coordinator over the pinned channel. The node never listens.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "online",
+      "needs": [
+       {
+        "fact": "net.connected",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "backoff",
+      "needs": [
+       {
+        "fact": "net.connected",
+        "at_least": "tested",
+        "equals": false
+       }
+      ]
+     },
+     {
+      "to": "stopped",
+      "needs": [
+       {
+        "fact": "node.stop",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "online": {
+    "goal": "Connected. Send heartbeats with the card basics; the coordinator answers with a signed acknowledgement.",
+    "tags": [],
+    "tools": [
+     "node_heartbeat_send"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "backoff",
+      "needs": [
+       {
+        "fact": "net.connected",
+        "at_least": "tested",
+        "equals": false
+       }
+      ]
+     },
+     {
+      "to": "stopped",
+      "needs": [
+       {
+        "fact": "node.stop",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "backoff": {
+    "goal": "The connection was lost or refused. Wait, with growing delays, then dial again.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "connect",
+      "needs": [
+       {
+        "fact": "net.retry_due",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "stopped",
+      "needs": [
+       {
+        "fact": "node.stop",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "stopped": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "the agent was stopped by its owner"
+   }
+  }
+ }
+}

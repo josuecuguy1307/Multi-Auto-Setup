@@ -1,0 +1,140 @@
+{
+ "provenance": "builtin",
+ "protocol": "door",
+ "tier": "observe",
+ "ring": 1,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "door"
+  ],
+  "start": "key",
+  "states": {
+   "key": {
+    "goal": "Make this computer's own key for the computer to come.",
+    "tags": [],
+    "tools": [
+     "ssh_key_create"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "serve",
+      "needs": [
+       {
+        "tried": "door.key_ready"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "serve": {
+    "goal": "Serve the one-time setup file. The owner is shown the link and a QR code; ask for nothing else.",
+    "tags": [],
+    "tools": [
+     "ssh_door_serve"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "wait",
+      "needs": [
+       {
+        "fact": "door.link_open",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "wait": {
+    "goal": "Wait for the other computer to open the link and report who it is. Its address comes from the connection; do not ask the owner for it.",
+    "tags": [],
+    "tools": [
+     "ssh_door_wait"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "pair",
+      "needs": [
+       {
+        "fact": "door.peer_address",
+        "at_least": "tested"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "pair": {
+    "goal": "Pair: the owner types the 6 digits the other computer shows; they are checked against its SSH host key.",
+    "tags": [],
+    "tools": [
+     "ssh_door_pair"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "propose",
+      "needs": [
+       {
+        "fact": "door.paired",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "propose": {
+    "goal": "Write the proposal of the target for the owner to confirm in enrollment.",
+    "tags": [],
+    "tools": [
+     "door_propose_target"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "fact": "door.proposed",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "the target is proposed; the owner confirms it by typing its name and yes in enrollment"
+   }
+  }
+ }
+}

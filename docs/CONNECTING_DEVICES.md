@@ -1,5 +1,7 @@
 # Connecting devices
 
+> LEGACY: these steps belong to the earlier design, in which a controller connects inbound to an SSH server on the device. New computers join with pairing and a node agent that only dials out; see [NETWORK_CONTRACT.md](NETWORK_CONTRACT.md).
+
 The harness performs none of these steps and never touches credentials. Enrollment gives it no access by itself: access exists only because you configured keys and services on the device first. Do these, then enroll (or edit `targets.yaml` by hand).
 
 After reading `inventory_report.md` (`python -m envrec inventory --store runs/<run>`), decide which devices you own and want to use, set one up below, and add it to `targets.yaml`.

@@ -43,6 +43,8 @@ class Draft(Strict):
     ring: int = Field(default=1, ge=0, le=3)
     platforms: list[str] = Field(default_factory=lambda: ["any"])
     signature: dict[str, Any] = Field(default_factory=dict)
+    identify: bool = False  # run at the first rung of a later run to produce the facts a signature matches (set for recipe skills)
+    recipe: dict[str, Any] | None = None  # a workspace recipe (shell, root, port, steps, health, absent, bind_check, rss): checked statically and by a dry run before anything is kept
 
     @model_validator(mode="after")
     def _tests(self) -> Draft:
@@ -65,7 +67,8 @@ def parse_draft(data: Any) -> Draft:
     try:
         return Draft.model_validate(data)
     except ValidationError as exc:
-        raise DraftError([f"{'.'.join(str(x) for x in e['loc']) or 'draft'}: {e['msg']}" for e in exc.errors()]) from None
+        hint = "each step is {id, tool, args}; each test is {name, captures: {capture name: text or \"@capture:name\"}, match: true|false, facts: {key: value}}"
+        raise DraftError([*(f"{'.'.join(str(x) for x in e['loc']) or 'draft'}: {e['msg']}" for e in exc.errors()[:4]), hint]) from None
 
 
 def stage_draft(data: Any, root: Path) -> Path:
@@ -80,7 +83,7 @@ def stage_draft(data: Any, root: Path) -> Path:
     (folder / "scripts" / "parse.py").write_text(d.script, encoding="utf-8")
     meta = {"provenance": "generated", "protocol": d.protocol, "tier": d.tier, "ring": d.ring, "platforms": d.platforms, "signature": d.signature,
             "plan": {"steps": [s.model_dump(exclude_defaults=True) | {"id": s.id, "tool": s.tool} for s in d.steps], "script": "scripts/parse.py"}, "produces": d.produces,
-            "script_sha256": hashlib.sha256(d.script.encode()).hexdigest()}
+            "script_sha256": hashlib.sha256(d.script.encode()).hexdigest(), **({"recipe": d.recipe, "identify": True} if d.recipe else ({"identify": True} if d.identify else {}))}
     (folder / "skill.meta.json").write_text(json.dumps(meta, indent=1), encoding="utf-8")
     for t in d.tests:
         c = folder / "tests" / t.name
@@ -105,6 +108,12 @@ def check_staged(folder: Path, script_runner=None) -> tuple[Skill | None, list[s
     problems = validate(sk)
     if problems:
         return sk, problems
+    if sk.meta.recipe is not None:
+        from envrec.recipes.dryrun import dry_run
+        from envrec.recipes.model import problems as recipe_problems
+        bad = recipe_problems(sk.meta.recipe) or dry_run(sk.meta.recipe)
+        if bad:
+            return sk, [f"recipe: {b}" for b in bad]
     kw = {"script_runner": script_runner} if script_runner is not None else {}
     return sk, [f"test {r.case}: {'; '.join(r.problems)}" for r in run_cases(sk, **kw) if not r.passed]
 

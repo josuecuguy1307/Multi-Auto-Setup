@@ -29,16 +29,13 @@ NODES = (Node("envrec-lab-mdns", "172.30.77.11", "mdns"), Node("envrec-lab-ssdp"
          Node("envrec-lab-http", "172.30.77.14", "http"), Node("envrec-lab-silent", "172.30.77.15", "silent"), Node("envrec-lab-unknown", "172.30.77.16", "unknown"))
 
 # Ground truth by construction. `hosts` must be found as live hosts; the rest are the observations each adapter must make.
+# The lab's contents are fixture data (tests/docker/lab/expected.json, next to the node that serves them), not code: the hosts follow from NODES, the rest is read from the file.
+_FIXTURE = json.loads((ROOT / "tests/docker/lab/expected.json").read_text())
 EXPECTED = {
     "hosts": [n.ip for n in NODES],
-    "mdns": {"172.30.77.11": ["_ipp._tcp", "_zxq-lab._tcp"]},
-    "unknown_mdns_types": ["_zxq-lab._tcp"],
-    "ssdp": {"172.30.77.12": {"manufacturer": "Lab Corp", "device_type_contains": "MediaRenderer"}},
-    "open_ports": {"172.30.77.13": [22], "172.30.77.14": [80, 8080], "172.30.77.16": [31337], "172.30.77.12": [], "172.30.77.15": []},
-    "banners": {"172.30.77.13": ("22", "SSH-2.0"), "172.30.77.16": ("31337", "ZXQ-PROTO v9 ready"), "172.30.77.14": ("80", "LabHTTPd/1.0")},
-    "silent_host": "172.30.77.15",
-    "unknown_service": ("172.30.77.16", 31337),
-    "classes": {"172.30.77.11": "printer"},
+    **_FIXTURE,
+    "banners": {ip: tuple(pair) for ip, pair in _FIXTURE["banners"].items()},
+    "unknown_service": tuple(_FIXTURE["unknown_service"]),
 }
 
 

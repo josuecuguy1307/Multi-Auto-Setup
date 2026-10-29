@@ -7,7 +7,9 @@ runs everything. Raw output goes to the store and never into a prompt.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
+import re
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -26,12 +28,11 @@ from envrec.contracts import (
     Fact,
     FactStatus,
     ProbeResult,
-    RingPolicy,
     Target,
     ToolSpec,
     new_id,
 )
-from envrec.discovery.sanitize import Salts
+from envrec.discovery.sanitize import Salts, quoted
 from envrec.guard import LOOP_ACTIVE
 from envrec.loop.menu import MenuEntry, build_menu, eligible_tools
 from envrec.loop.prompts import R45_ACTIONS, R45_PROMPT, RETRY_HINT, SYSTEM_PROMPT
@@ -51,6 +52,7 @@ class RunConfig:
     max_seconds: float = 300.0
     protocols: Any = None  # a ProtocolSet: when given, the loop enforces the protocol of each target kind (menu per step, evidence to advance)
     library: Any = None  # a skills Library: chosen skills put their body in the view for one turn
+    stop_at: str | None = None  # a protocol step name: the run ends there as a typed `stop_state_reached` (a read-only run that must not go on to write anything)
     repair: bool = True  # read two common form slips as call_tool, always counted and logged
 
 
@@ -69,11 +71,22 @@ class RunSummary:
     completion_tokens: int = 0
     model_latency_s: float = 0.0
     elapsed_s: float = 0.0
+    owner_wait_s: float = 0.0  # time spent waiting for the owner (approvals, answers): not counted against the time cap
     tools_run: list[str] = field(default_factory=list)
     ring_decisions: dict[str, str] = field(default_factory=dict)  # target id -> deepen/extend/stop
     escalated_turns: list[dict] = field(default_factory=list)
+    repeat_refusals: int = 0  # the same tool asked again with the same arguments
     protocol_refusals: int = 0  # advance requests refused for lacking evidence
+    walk_for_model: bool = False  # the experimental dial was on: code walked steps for the model, and said so in the log
     protocol_history: dict[str, list[dict]] = field(default_factory=dict)  # target id -> the steps it went through, and by whom (model or code)
+    hangs: int = 0  # calls (a model request or a tool) that did not answer within their hard limit
+    empty_menu_turns: int = 0  # turns the model was asked with an empty menu, and why (below): never silent
+    empty_menu_causes: dict[str, int] = field(default_factory=dict)
+
+
+MODEL_CALL_TIMEOUT_S = 240.0  # one model call; past it the run ends as a typed HANG (the model server is not answering), never a silent wait
+MAX_DONE_REFUSALS = 3  # the model said done this many times in an unfinished protocol: the run ends as `refused_done_loop` (incomplete, never success)
+NO_PROGRESS_TURNS = 5  # turns in a row that add no fact, move no step and run no tool end the run as `no_progress`
 
 
 class _Finished(Exception):
@@ -95,7 +108,18 @@ class Loop:
         self._asked: set[str] = set()
         self._visited: list[Target] = []
         self._proto_runs: dict[str, Any] = {}
+        self._done_refused = 0
+        self._blocked = False
+        self._asked_before: set[tuple[str, str, str]] = set()  # (target, tool, arguments) already asked
+        self._stuck: dict[str, int] = {}  # target -> consecutive turns with nothing new
         self._skill_note = ""
+        self._idle = 0
+        self._last_progress: tuple | None = None
+        self._waited = 0.0
+
+    def _owner_wait(self) -> float:
+        """Seconds the run has waited for the owner so far: the loop's own questions and approvals plus those the adapters' tools asked."""
+        return self._waited + sum(getattr(a, "owner_wait_s", 0.0) for a in self.adapters)
 
     # ---- events --------------------------------------------------------------------------------
 
@@ -124,46 +148,66 @@ class Loop:
         last_result = "nothing run yet"
         self._log(Actor.loop, "run_start", {
             "target": current.id, "model_profile": profile.name, "view_budget_facts": profile.view_budget_facts,
-            "menu_max": profile.menu_max, "max_steps": self.config.max_steps})
+            "menu_max": profile.menu_max, "max_steps": self.config.max_steps, "walk_for_model": profile.walk_for_model})
+        self.summary.walk_for_model = profile.walk_for_model
         stop = "step_cap"
         try:
             if await self._first_rung(current):  # rung 1: a stored skill recognised it; no model was asked anything
                 stop = "skill_reused"
                 raise _Finished
             for _ in range(self.config.max_steps):
-                remaining = self.config.max_seconds - (time.monotonic() - started)
+                if self._blocked:
+                    stop = "blocked_needs_human"
+                    break
+                remaining = self.config.max_seconds - (time.monotonic() - started - self._owner_wait())
                 if remaining <= 0:
                     stop = "time_cap"
                     break
                 current = self.store.get_target(current.id) or current  # tools may update it (signature)
                 proto = self._proto(current)
+                if proto is not None and self.config.stop_at and proto.state == self.config.stop_at:
+                    stop = "stop_state_reached"
+                    break
                 if proto is not None and proto.terminal and self._next_ring_target(current) is None:
                     stop = "protocol_done"
                     break
+                walk = profile.walk_for_model  # the experimental dial: code walks the protocol for the model (every forced step is SCRIPT)
+                if walk and proto is not None and not proto.terminal:
+                    ready = proto.ready(self._evidence(current, proto))
+                    if ready is not None:  # dial on: once a step's evidence is in, code moves on for the model. A forced step: tagged SCRIPT, counted, and the run says "dial on".
+                        before = proto.state
+                        proto.move(ready, "code")
+                        self._log(Actor.loop, "protocol_state", {"target": current.id, "from": before, "to": ready, "by": "code"})
+                        last_result = f"protocol step {before} is finished; now {ready} (moved by code)"
+                        continue
                 allow = (lambda e, p=proto: p.allows_entry(e.name, list(e.spec.tags), self._skill_protocol(e.name))) if proto is not None else None
                 menu = build_menu(self.adapters, current, self.store, profile.menu_max, self.policy_state, allow)
-                if not menu and proto is not None and not proto.terminal and profile.ring_policy == RingPolicy.fixed_order and self._code_advance(proto, current):
-                    last_result = f"protocol step is now {proto.state} (advanced by code: nothing left to do in the previous step)"
-                    continue
+                forward = proto.ready_all(self._evidence(current, proto)) if proto is not None and not proto.terminal else []
+                cands = self._candidates(current)
                 if not menu:
                     nxt = self._next_ring_target(current)
-                    if nxt is not None and profile.ring_policy == RingPolicy.fixed_order:
+                    if nxt is not None and walk:
                         # small-model policy: code walks the rings in fixed order, the model never decides this
                         self._log(Actor.loop, "ring_extended", {"from": current.id, "to": nxt.id,
                                                                 "ring": nxt.ring, "by": "code"})
                         self._visit(nxt)
                         current, last_result = nxt, f"moved to ring {nxt.ring}: {nxt.kind.value} {nxt.handle}"
                         continue
-                    if nxt is None and not self._wants_human(current) and not (proto is not None and not proto.terminal):
+                    cause = self._empty_menu_cause(current, proto, forward, cands, nxt)
+                    self.summary.empty_menu_turns += 1
+                    self.summary.empty_menu_causes[cause] = self.summary.empty_menu_causes.get(cause, 0) + 1
+                    self._log(Actor.loop, "menu_empty", {"target": current.id, "state": proto.state if proto is not None else None, "cause": cause, "forward": forward})
+                    if cause == "stuck":  # nothing on the menu, no way forward, nobody left to ask: a typed end, not a loop of dead turns
                         stop = "menu_empty"
                         break
+
                 view = build_view(self.store, current, profile, menu, last_result, self._unknown_reasons,
                                   proto.card() if proto is not None else "",
-                                  (R45_ACTIONS if self.workbench else "") + (" · advance(to)" if proto is not None else ""),
-                                  self.mission.render() if self.mission else "", self._skill_note)
+                                  (R45_ACTIONS if self.workbench else "") + (" · advance(to)" if proto is not None else "") + (" · extend_to(target_id)" if cands else ""),
+                                  self.mission.render() if self.mission else "", self._skill_note or self._kept_skills(proto), cands, forward)
                 self._skill_note = ""
                 self._log(Actor.loop, "view_built", {"target": current.id, "menu": [e.name for e in menu],
-                                                     "view_chars": len(view)})
+                                                     "forward": forward, "view_chars": len(view)})
                 fallback = Action(action=ActionType.record_unknown, key=f"{KIND_PREFIX[current.kind.value]}.identity",
                                   question="the model gave no valid action", why="fallback after two invalid replies")
                 try:
@@ -173,9 +217,14 @@ class Loop:
                                        retry_hint=RETRY_HINT,
                                        pick=(lambda: self.escalator.pick(self.model)) if self.escalator else None,
                                        observe=self.escalator.observe if self.escalator else None),
-                        remaining)
+                        min(remaining, MODEL_CALL_TIMEOUT_S))
                 except asyncio.TimeoutError:
-                    stop = "time_cap"
+                    if remaining <= MODEL_CALL_TIMEOUT_S:
+                        stop = "time_cap"
+                    else:
+                        stop = "HANG"
+                        self.summary.hangs += 1
+                        self._log(Actor.loop, "hang", {"kind": "model", "limit_s": MODEL_CALL_TIMEOUT_S, "model": profile.model_id})
                     break
                 self.summary.steps += 1
                 if self.escalator:
@@ -190,12 +239,31 @@ class Loop:
                                                   emit=self._emit_model_event)
                     action = second.action
                 self._log(Actor.loop, "action_chosen", {"action": action.action.value, "tool": action.tool,
-                                                        "fallback": res.used_fallback, "why": action.why})
+                                                        "fallback": res.used_fallback, "why": action.why,
+                                                        "view_digest": hashlib.sha256(view.encode()).hexdigest()[:16], "menu": [e.name for e in menu],
+                                                        "raw_reply": res.raw_reply, "validation": res.validation,
+                                                        "model": profile.model_id, "profile": profile.name})
                 if action.action == ActionType.done:
+                    if proto is not None and not proto.terminal:
+                        # the protocol has steps left: done is refused every time. A model that keeps asking ends the run as incomplete, never as a success.
+                        self._done_refused += 1
+                        self.summary.protocol_refusals += 1
+                        self._log(Actor.loop, "protocol_refused", {"target": current.id, "state": proto.state, "action": "done", "reason": "the protocol has not ended", "count": self._done_refused})
+                        last_result = f"refused: done is not available in step {proto.state}; the protocol has not ended. {proto.card().splitlines()[-1]}"
+                        if self._done_refused >= MAX_DONE_REFUSALS:
+                            stop = "refused_done_loop"
+                            break
+                        continue
                     stop = "done"
                     break
                 new_current, last_result = await self._apply(action, current, menu, res.used_fallback)
                 current = new_current
+                sig = self._progress(current)
+                self._idle = self._idle + 1 if sig == self._last_progress else 0
+                self._last_progress = sig
+                if self._idle >= NO_PROGRESS_TURNS:
+                    stop = "no_progress"
+                    break
         except _Finished:
             pass
         finally:
@@ -207,12 +275,27 @@ class Loop:
                 self.escalator.close()
             self.summary.stop_reason = stop
             self.summary.protocol_history = {tid: r.history for tid, r in self._proto_runs.items()}
-            self.summary.elapsed_s = time.monotonic() - started
+            self.summary.owner_wait_s = round(self._owner_wait(), 1)
+            self.summary.elapsed_s = time.monotonic() - started - self._owner_wait()  # the run's own time; the owner's thinking is reported separately
+            for adapter in self.adapters:
+                adapter.close()  # what an adapter left open (a link being served) is shut down, and recorded, before the run is declared over
             self._close_rings()
             self._log(Actor.loop, "run_end", {"stop_reason": stop, "steps": self.summary.steps,
                                               "tools_run": self.summary.tools_run,
                                               "ring_decisions": self.summary.ring_decisions})
         return self.summary
+
+    def _empty_menu_cause(self, current: Target, proto, forward: list[str], cands: list[Target], nxt) -> str:
+        """Why the menu is empty, and whether the model still has anything to do. `way_forward`: the step's evidence is in and the model's move is to advance. `actions`: the model can still
+        ask the human, move to a candidate, or take an action the step lists. `stuck`: none of those; the run ends as `menu_empty` instead of asking the model again and again."""
+        if forward:
+            return "way_forward"
+        if proto is not None and proto.terminal:
+            return "protocol_ended" if nxt is not None or cands else "stuck"
+        can_ask = self._wants_human(current) if proto is None else current.id not in self._asked  # without a protocol, only an open unknown is worth a question
+        if can_ask or cands or nxt is not None or (proto is not None and any(a in ("research", "propose_skill") for a in proto.current.actions) and self.workbench):
+            return "actions"
+        return "stuck"
 
     # ---- one action ------------------------------------------------------------------------------
 
@@ -237,14 +320,23 @@ class Loop:
             self._log(Actor.loop, "protocol_refused", {"target": current.id, "state": proto.state, "action": t.value, "reason": "not allowed in this step"})
             return current, self._reject(action, f"{t.value} is not allowed in protocol step {proto.state}")
         if proto is not None and t.value in ("research", "propose_skill", "ask_human"):
-            proto.taken.add(t.value)
+            proto.taken[t.value] = proto.taken.get(t.value, 0) + 1
         if t == ActionType.research and self.workbench:
             evt = self._log(Actor.loop, "research", {"target": current.id, "rung": 4, "question": action.question})
             return current, self.workbench.research(self.store, current, action.question or "", evt.id)
         if t == ActionType.propose_skill and self.workbench:
             evt = self._log(Actor.loop, "skill_proposed", {"target": current.id, "rung": 5, "draft_chars": len(json.dumps(action.skill_draft or {}))})
-            return current, await self.workbench.propose(self.store, current, action.skill_draft or {}, evt.id)
+            outcome = await self.workbench.propose(self.store, current, action.skill_draft or {}, evt.id)
+            self._log(Actor.loop, "skill_result", {"target": current.id, "saved": outcome.startswith("the verifier passed"), "result": outcome[:400]})
+            return current, outcome
         return current, self._reject(action, f"{t.value} is not available in this phase")
+
+    def _kept_skills(self, proto) -> str:
+        """The bodies of the guidance skills a protocol step keeps in the view for all its turns."""
+        lib = self.config.library
+        if proto is None or lib is None or proto.terminal:
+            return ""
+        return "\n\n".join(lib.body_for(n)[:6000] for n in proto.current.skills)
 
     # ---- rung 1: the stored skills ------------------------------------------------------------------
 
@@ -261,10 +353,11 @@ class Loop:
             m = sk.meta
             if m.identify and m.signature.kind in (None, target.kind.value) and ("any" in m.platforms or reg.platform in m.platforms):
                 evt = self._log(Actor.loop, "first_rung_identify", {"target": target.id, "skill": sk.name})
-                self._record_result(f"skill.{sk.key}", reg.run_skill_now(sk, ToolContext(store=self.store, target=target, event_id=evt.id), {}))
+                self._record_result(f"skill.{sk.key}", reg.run_skill_now(sk, ToolContext(store=self.store, target=target, event_id=evt.id), {}))  # run by code (rung 1): not a model-chosen tool, so it is not counted as "run" for a protocol step
         facts = {f.key: f.value for f in self.store.current_facts(target.id) if f.status != FactStatus.unknown}
         reused = False
-        matches = [s for s in lib.match(target, facts, reg.platform) if s.meta.provenance == "generated"]
+        # a recipe skill only supplies facts at this rung (it ran above as an identify skill): it never answers the whole question, the deploy is still the model's to choose
+        matches = [s for s in lib.match(target, facts, reg.platform) if s.meta.provenance == "generated" and s.meta.recipe is None]
         for sk in matches:
             before = self.summary.model_calls
             evt = self._log(Actor.loop, "skill_reuse", {"target": target.id, "skill": sk.name})
@@ -301,7 +394,8 @@ class Loop:
     def _evidence(self, target: Target, proto) -> Any:
         from envrec.protocols import EvidenceView
         tags = {s.name: set(s.tags) for a in self.adapters for s in a.tool_specs()}
-        return EvidenceView({f.key: f for f in self.store.current_facts(target.id)}, set(self.store.tools_run(target.id)), tags, proto.taken)
+        facts = self.store.current_facts(target.id)
+        return EvidenceView({f.key: f for f in facts}, set(self.store.tools_run(target.id)), tags, proto.taken, sum(1 for f in facts if f.created_by == CreatedBy.human and f.status != FactStatus.unknown))
 
     def _advance(self, action: Action, current: Target) -> str:
         proto = self._proto(current)
@@ -318,24 +412,10 @@ class Loop:
         self._log(Actor.loop, "protocol_state", {"target": current.id, "from": before, "to": proto.state, "by": "model"})
         return f"advanced from {before} to {proto.state}"
 
-    def _code_advance(self, proto, current: Target) -> bool:
-        """A small model is never left stuck in a step with no tool left: when the evidence for the exit is already in, code moves on; when only an unknown is missing
-        (a probe was tried and could not tell), code records that unknown and moves on. Anything else (a tool or an action still owed) is left to the model."""
-        ev = self._evidence(current, proto)
-        nxt = proto.ready(ev)
-        if nxt is None:
-            missing = [k for k in proto.missing_for_exit(ev) if k not in ev.facts]
-            for k in missing:
-                self.store.write_fact(Fact(target_id=current.id, key=k, created_by=CreatedBy.loop))
-                self._unknown_reasons[k] = "no tool left in this protocol step could determine it"
-                self._log(Actor.loop, "unknown_recorded", {"key": k, "target": current.id, "by": "code", "state": proto.state})
-            nxt = proto.ready(self._evidence(current, proto)) if missing else None
-        if nxt is None:
-            return False
-        before = proto.state
-        proto.move(nxt, "code")
-        self._log(Actor.loop, "protocol_state", {"target": current.id, "from": before, "to": nxt, "by": "code"})
-        return True
+    def _progress(self, target: Target) -> tuple:
+        """What counts as progress: a new fact, a protocol step moved, a tool that succeeded, a human answer."""
+        proto = self._proto_runs.get(target.id)
+        return (target.id, len(self.store.current_facts(target.id)), proto.state if proto else None, len(self.store.tools_run(target.id)), len(self.store.events(type="human_answer")))
 
     def _reject(self, action: Action, reason: str) -> str:
         self.summary.rejected_actions += 1
@@ -349,6 +429,14 @@ class Loop:
         target = self.store.get_target(action.target_id) if action.target_id else current
         if target is None:
             return self._reject(action, f"unknown target {action.target_id!r}")
+        asked = (target.id, entry.name, json.dumps(action.args, sort_keys=True, default=str))
+        if asked in self._asked_before and not entry.spec.repeatable:  # the same question again cannot get a different answer: its result is already in the facts
+            self.summary.repeat_refusals += 1
+            self._stuck[target.id] = self._stuck.get(target.id, 0) + 1
+            self._log(Actor.loop, "repeat_refused", {"tool": entry.name, "target": target.id})
+            return self._reject(action, f"{entry.name} was already asked with these arguments; its answer is in the facts")
+        self._asked_before.add(asked)
+        self._stuck[target.id] = 0
 
         verdict = decide(entry.spec, target, self.policy_state)
         self._log(Actor.policy, "policy_decision", {"tool": entry.name, "target": target.id,
@@ -357,7 +445,9 @@ class Loop:
             self.summary.policy_denied += 1
             return f"{entry.name} denied by policy: {verdict.reason}"
         if verdict.decision == Decision.needs_approval:
+            t0 = time.monotonic()
             granted = bool(self._approve and self._approve(entry.spec, target))
+            self._waited += time.monotonic() - t0
             self._log(Actor.human, "approval", {"tool": entry.name, "target": target.id, "granted": granted})
             if not granted:
                 return f"{entry.name} needs human approval and it was not granted"
@@ -373,11 +463,16 @@ class Loop:
         self.summary.tools_run.append(entry.name)
         if entry.name.startswith("skill.") and self.config.library is not None:
             self._skill_note = self.config.library.body_for(entry.name[6:])[:6000]  # level 2: the body of the chosen skill, for the next turn only
-        return self._record_result(entry.name, result)
-
-    def _record_result(self, tool: str, result: ProbeResult) -> str:
+        if not result.ok and re.search(r"(^|: )HANG:", result.error or ""):  # the adapter words it "<reason>: HANG: ..."
+            self.summary.hangs += 1
+            self._log(Actor.loop, "hang", {"kind": "tool", "tool": entry.name, "detail": result.error[:160]})
         if not result.ok:
-            self._log(Actor.loop, "tool_result", {"tool": tool, "ok": False, "error": result.error})
+            self._asked_before.discard(asked)  # a failed attempt is not an answer: the model may try again (the no-progress guard bounds it)
+        return self._record_result(entry.name, result, target.id)
+
+    def _record_result(self, tool: str, result: ProbeResult, target_id: str | None = None) -> str:
+        if not result.ok:
+            self._log(Actor.loop, "tool_result", {"tool": tool, "target": target_id, "ok": False, "error": result.error})
             return f"{tool} failed: {result.error}"
         from envrec.privacy.gate import PrivacyGate
         PrivacyGate(self.store, None, Salts(), tool).write_facts(result.facts)  # the one fact boundary
@@ -385,7 +480,7 @@ class Loop:
             self._unknown_reasons[u.key] = u.question or "could not be determined"
         unknown = sum(1 for f in result.facts if f.status == FactStatus.unknown)
         self._log(Actor.loop, "tool_result", {
-            "tool": tool, "ok": True, "facts": [f.key for f in result.facts], "unknown": unknown,
+            "tool": tool, "target": target_id, "ok": True, "facts": [f.key for f in result.facts], "unknown": unknown,
             "raw": result.raw_ref.sha256[:12] if result.raw_ref else None})
         return f"{tool} ok: {len(result.facts)} facts ({unknown} unknown)"
 
@@ -399,8 +494,9 @@ class Loop:
 
     def _record_unknown(self, action: Action, current: Target, fallback: bool = False) -> str:
         key = action.key or f"{KIND_PREFIX[current.kind.value]}.identity"
-        self.store.write_fact(Fact(target_id=current.id, key=key, created_by=CreatedBy.model))
-        self._unknown_reasons[key] = action.question or "recorded unknown by the model"
+        # a fallback is the loop's own action (the model gave nothing valid): the fact is the loop's, not the model's
+        self.store.write_fact(Fact(target_id=current.id, key=key, created_by=CreatedBy.loop if fallback else CreatedBy.model))
+        self._unknown_reasons[key] = action.question or ("recorded by the loop: the model gave no valid action" if fallback else "recorded unknown by the model")
         self._log(Actor.loop, "unknown_recorded", {"key": key, "question": action.question,
                                                    "target": current.id, "fallback": fallback})
         return f"recorded {key} as unknown"
@@ -414,10 +510,16 @@ class Loop:
     def _ask(self, action: Action, current: Target) -> str:
         key = action.key or f"{KIND_PREFIX[current.kind.value]}.identity"
         question = action.question or f"What is {key}?"
+        if current.id in self._asked:  # the human was asked about this device already: asking again changes nothing
+            return self._reject(action, "the human was already asked about this device")
         self._asked.add(current.id)
         evt = self._log(Actor.human, "human_question", {"key": key, "question": question, "target": current.id})
+        t0 = time.monotonic()
         answer = self._ask_human(question) if self._ask_human else None
+        self._waited += time.monotonic() - t0
         if not answer:
+            self._blocked = True  # nobody can answer: the run ends cleanly, saying it needs a human
+            self._log(Actor.human, "human_unavailable", {"key": key, "question": question[:200]})
             return "asked the human; no answer is available"
         self.store.write_fact(Fact(
             target_id=current.id, key=key, value=answer[:200], status=FactStatus.tested,
@@ -425,7 +527,7 @@ class Loop:
             evidence=[Evidence(provider="human", probe="ask_human", event_id=evt.id, confidence=1.0,
                                limitations=["stated by the human, not measured"])]))
         self._log(Actor.human, "human_answer", {"key": key})
-        return f"the human answered for {key}"
+        return f"the human answered for {key}: " + quoted(answer, 800)  # what the owner said, quoted: it reaches the model on the next turn
 
     def _next_ring_target(self, current: Target, ring: int | None = None) -> Target | None:
         """The nearest unvisited target on a further ring that hangs off the current one."""
@@ -435,12 +537,25 @@ class Loop:
                  and (ring is None or t.ring == ring)]
         return min(cands, key=lambda t: t.ring, default=None)
 
+    def _candidates(self, current: Target) -> list[Target]:
+        """Targets the model may move to: unvisited, on a further ring, hanging off the current one (or off nothing)."""
+        seen = {v.id for v in self._visited}
+        return [t for t in self.store.list_targets() if t.id not in seen and t.ring > current.ring and t.parent in (None, current.id)]
+
     def _extend(self, action: Action, current: Target) -> tuple[Target, str]:
         wanted = action.ring
-        nxt = self._next_ring_target(current, wanted)
+        if action.target_id:  # the model picked one of the candidates it was shown
+            nxt = next((t for t in self._candidates(current) if t.id == action.target_id), None)
+            if nxt is None:
+                return current, self._reject(action, f"{action.target_id!r} is not one of the candidates")
+        else:
+            nxt = self._next_ring_target(current, wanted)
         if nxt is None:
             return current, self._reject(action, f"no target on ring {wanted} to move to")
-        self._log(Actor.loop, "ring_extended", {"from": current.id, "to": nxt.id, "ring": wanted})
+        proto = self._proto(current)
+        if proto is not None:
+            proto.taken["extend_to"] = proto.taken.get("extend_to", 0) + 1
+        self._log(Actor.loop, "ring_extended", {"from": current.id, "to": nxt.id, "ring": nxt.ring, "by": "model"})
         self._visit(nxt)
         return nxt, f"moved to ring {wanted}: {nxt.kind.value} {nxt.handle}"
 

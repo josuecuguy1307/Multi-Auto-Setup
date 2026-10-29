@@ -1,0 +1,13 @@
+# Official documentation hosts the harness may READ (GET only, https only). One data file; the code has no host list of its own.
+# Reading a manual or release metadata is allowed; scanning the internet is not, so everything else is refused with the reason.
+# What is fetched is untrusted text: it is stored by hash with its URL, cleaned by the privacy gate, quoted when shown, and never obeyed.
+max_bytes: 400000
+timeout_s: 20
+hosts:
+  - raw.githubusercontent.com     # raw files of public repositories (READMEs, docs)
+  - github.com                    # release pages and repository files
+  - api.github.com                # release metadata
+  - learn.microsoft.com           # Microsoft's official documentation
+  - docs.python.org
+  - man7.org
+  - huggingface.co

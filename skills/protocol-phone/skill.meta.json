@@ -1,0 +1,115 @@
+{
+ "provenance": "builtin",
+ "protocol": "phone",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "phone"
+  ],
+  "start": "identity",
+  "states": {
+   "identity": {
+    "goal": "Read the model and the iOS version.",
+    "tags": [
+     "ios"
+    ],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "battery",
+      "needs": [
+       {
+        "tried": "ios.product_type"
+       },
+       {
+        "tried": "ios.version"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "battery": {
+    "goal": "Read the battery level and whether it is charging.",
+    "tags": [
+     "ios"
+    ],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "storage",
+      "needs": [
+       {
+        "tried": "ios.battery_pct"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "storage": {
+    "goal": "Read the storage totals.",
+    "tags": [
+     "ios"
+    ],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "name",
+      "needs": [
+       {
+        "tried": "ios.storage_total_gb"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "name": {
+    "goal": "Read the device name; only its hash is kept.",
+    "tags": [
+     "ios"
+    ],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "tried": "ios.name_sha"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "the phone's model, iOS version, battery, storage totals and name hash are read, or the owner did not trust this computer"
+   }
+  }
+ }
+}

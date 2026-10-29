@@ -1,0 +1,315 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.11, pytest-9.1.1, pluggy-1.7.0 -- <repo>/.venv/bin/python
+rootdir: <repo>
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collecting ... collected 84 items
+
+conformance/test_guards_verification.py::test_G1_an_authorized_target_cannot_be_registered_except_from_the_config_file PASSED [  1%]
+conformance/test_guards_verification.py::test_G1_enrollment_refuses_to_run_inside_the_loop_and_without_a_terminal PASSED [  2%]
+conformance/test_guards_verification.py::test_G1_the_only_code_that_writes_targets_yaml_is_enrollment PASSED [  3%]
+conformance/test_guards_verification.py::test_G1_the_scope_guard_refuses_public_addresses_and_ranges_wider_than_the_cap PASSED [  4%]
+conformance/test_guards_verification.py::test_G1_the_worker_contains_no_deploy_enroll_or_scan_code PASSED [  5%]
+conformance/test_guards_verification.py::test_G1_no_credential_or_key_material_is_stored_in_the_repository PASSED [  7%]
+conformance/test_guards_verification.py::test_V1_the_store_refuses_a_verified_fact_whose_creator_is_the_verifier_and_who_supersedes_nothing_by_another_creator PASSED [  8%]
+conformance/test_guards_verification.py::test_V1_two_evidences_from_the_same_raw_capture_are_not_independent PASSED [  9%]
+conformance/test_guards_verification.py::test_V1_two_evidences_from_distinct_raw_captures_do_count PASSED [ 10%]
+conformance/test_guards_verification.py::test_V2_the_false_verified_report_states_its_denominator_and_zero_over_zero_is_no_evidence PASSED [ 11%]
+conformance/test_guards_verification.py::test_V2_the_recorded_runs_are_labeled_real_or_fixture_and_never_summed PASSED [ 13%]
+conformance/test_guards_verification.py::test_V3_a_server_that_does_not_echo_a_fresh_nonce_is_not_verified PASSED [ 14%]
+conformance/test_guards_verification.py::test_V3_a_server_that_echoes_the_fresh_nonce_is_verified_by_code PASSED [ 15%]
+conformance/test_guards_verification.py::test_V4_no_test_file_contains_a_vacuous_assertion PASSED [ 16%]
+conformance/test_guards_verification.py::test_V1_two_captures_over_one_channel_are_not_independent PASSED [ 17%]
+conformance/test_guards_verification.py::test_V1_two_captures_over_two_channels_are_independent_even_with_the_same_provider_name PASSED [ 19%]
+conformance/test_guards_verification.py::test_V1_a_fact_stored_under_the_old_rule_still_loads PASSED [ 20%]
+conformance/test_guards_verification.py::test_T3_every_approval_of_a_read_tier_tool_is_an_event_and_a_refusal_too PASSED [ 21%]
+conformance/test_loop.py::test_L1_an_invalid_reply_gets_one_retry_that_carries_the_exact_error_text PASSED [ 22%]
+conformance/test_loop.py::test_L1_two_invalid_replies_end_in_a_logged_counted_fallback PASSED [ 23%]
+conformance/test_loop.py::test_L1_repair_never_changes_which_tool_was_chosen_and_is_counted PASSED [ 25%]
+conformance/test_loop.py::test_L2_a_tool_that_is_not_on_the_menu_never_executes PASSED [ 26%]
+conformance/test_loop.py::test_L2_a_tool_of_another_protocol_state_never_executes PASSED [ 27%]
+conformance/test_loop.py::test_L3_code_does_not_fabricate_the_evidence_that_moves_a_step_forward PASSED [ 28%]
+conformance/test_loop.py::test_L3_the_walk_for_the_model_dial_is_off_in_the_profiles_the_missions_use PASSED [ 29%]
+conformance/test_loop.py::test_L3_every_step_that_code_took_for_the_model_is_tagged_SCRIPT_in_the_log PASSED [ 30%]
+conformance/test_loop.py::test_L4_done_is_refused_for_as_long_as_the_protocol_has_not_ended PASSED [ 32%]
+conformance/test_loop.py::test_L4_the_step_cap_stops_the_run PASSED      [ 33%]
+conformance/test_loop.py::test_L4_the_time_cap_stops_the_run PASSED      [ 34%]
+conformance/test_loop.py::test_L4_the_same_action_again_with_nothing_new_is_refused PASSED [ 35%]
+conformance/test_loop.py::test_L4_a_repeated_ask_human_is_rejected PASSED [ 36%]
+conformance/test_loop.py::test_L4_with_no_human_available_the_run_ends_as_blocked_needs_human PASSED [ 38%]
+conformance/test_loop.py::test_L5_every_turn_records[a digest of the view] PASSED [ 39%]
+conformance/test_loop.py::test_L5_every_turn_records[the menu ids] PASSED [ 40%]
+conformance/test_loop.py::test_L5_every_turn_records[the model and profile] PASSED [ 41%]
+conformance/test_loop.py::test_L5_every_turn_records[the raw model reply] PASSED [ 42%]
+conformance/test_loop.py::test_L5_every_turn_records[the validation result] PASSED [ 44%]
+conformance/test_loop.py::test_L5_every_event_carries_one_of_the_four_actor_tags PASSED [ 45%]
+conformance/test_loop.py::test_L1_a_fallback_is_created_by_the_loop_and_tagged_SCRIPT_never_booked_to_the_model PASSED [ 46%]
+conformance/test_loop.py::test_L5_old_events_without_a_tag_still_load_and_derive_the_same_tag PASSED [ 47%]
+conformance/test_loop.py::test_L5_the_action_chosen_event_carries_the_raw_reply_the_validation_and_the_menu PASSED [ 48%]
+conformance/test_loop.py::test_L4_a_model_that_keeps_saying_done_ends_as_refused_done_loop_which_is_incomplete PASSED [ 50%]
+conformance/test_loop.py::test_L4_a_run_whose_turns_add_nothing_ends_as_no_progress PASSED [ 51%]
+conformance/test_loop.py::test_L3_a_protocol_step_is_passed_only_by_a_tool_the_model_chose_that_succeeded PASSED [ 52%]
+conformance/test_loop.py::test_L3_a_run_with_the_dial_on_says_so_and_a_run_without_it_does_not PASSED [ 53%]
+conformance/test_loop.py::test_L2_the_model_chooses_the_target_among_the_candidates_it_is_shown PASSED [ 54%]
+conformance/test_skills_context_memory.py::test_S1_the_shipped_library_loads_clean_and_every_description_starts_with_use_when PASSED [ 55%]
+conformance/test_skills_context_memory.py::test_S1_no_skill_body_is_longer_than_500_lines_and_a_menu_entry_is_only_name_and_description PASSED [ 57%]
+conformance/test_skills_context_memory.py::test_S1_every_skill_that_produces_facts_has_a_recorded_case_and_a_must_not_match_case PASSED [ 58%]
+conformance/test_skills_context_memory.py::test_S1_scripts_run_only_in_a_sandbox_with_no_network_a_read_only_fs_and_dropped_caps PASSED [ 59%]
+conformance/test_skills_context_memory.py::test_S1_the_sandbox_fails_closed_when_it_is_not_available PASSED [ 60%]
+conformance/test_skills_context_memory.py::test_S1_a_generated_skill_without_tests_is_never_added_to_the_library PASSED [ 61%]
+conformance/test_skills_context_memory.py::test_S1_an_approval_is_pinned_to_the_exact_script_by_hash PASSED [ 63%]
+conformance/test_skills_context_memory.py::test_S2_no_per_device_name_in_skill_scripts_or_their_rules PASSED [ 64%]
+conformance/test_skills_context_memory.py::test_S3_a_protocol_refuses_to_advance_without_its_evidence_and_filters_tools_by_state PASSED [ 65%]
+conformance/test_skills_context_memory.py::test_C1_a_hostile_banner_never_reaches_an_instruction_position PASSED [ 66%]
+conformance/test_skills_context_memory.py::test_C1_the_view_is_budgeted_ranked_and_lists_the_unknowns PASSED [ 67%]
+conformance/test_skills_context_memory.py::test_C2_the_ground_truth_and_the_scorer_are_not_importable_from_the_model_facing_code_path PASSED [ 69%]
+conformance/test_skills_context_memory.py::test_M1_the_event_log_is_append_only_and_facts_cannot_be_written_without_evidence PASSED [ 70%]
+conformance/test_skills_context_memory.py::test_M1_a_raw_capture_is_kept_by_hash_and_a_changed_file_is_detected PASSED [ 71%]
+conformance/test_skills_context_memory.py::test_M2_a_run_that_ended_by_reusing_a_stored_skill_made_zero_model_calls PASSED [ 72%]
+conformance/test_skills_context_memory.py::test_M3_an_ambient_identifier_is_hashed_and_a_raw_address_is_never_stored PASSED [ 73%]
+conformance/test_tools.py::test_T1_no_device_or_fixture_name_appears_in_src_outside_generic_tables FAILED [ 75%]
+conformance/test_tools.py::test_T1_tools_are_registered_in_one_place_only PASSED [ 76%]
+conformance/test_tools.py::test_T1_every_registered_tool_has_the_fixed_docstring_fields_and_a_provenance PASSED [ 77%]
+conformance/test_tools.py::test_T2_arguments_are_validated_before_anything_runs PASSED [ 78%]
+conformance/test_tools.py::test_T2_raw_output_never_enters_the_prompt PASSED [ 79%]
+conformance/test_tools.py::test_T2_evidence_has_provider_a_sha256_raw_reference_and_limitations PASSED [ 80%]
+conformance/test_tools.py::test_T3_a_write_records_its_undo_before_it_runs_and_asks_a_fresh_approval PASSED [ 82%]
+conformance/test_tools.py::test_T3_a_denied_write_changes_nothing PASSED [ 83%]
+conformance/test_tools.py::test_T3_a_write_tier_tool_does_not_run_without_approval_in_the_loop PASSED [ 84%]
+conformance/test_tools.py::test_T3_every_tool_that_sends_or_opens_something_shows_its_exact_action_before_it_runs PASSED [ 85%]
+conformance/test_tools.py::test_T4_no_tool_builds_a_fact_itself_so_every_tool_result_reaches_the_store_through_the_gate PASSED [ 86%]
+conformance/test_tools.py::test_T4_a_skill_run_builds_its_facts_with_the_gate_before_anything_is_written PASSED [ 88%]
+conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:run a read-only command on the enrolled laptop] FAILED [ 89%]
+conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:pair a runtime and a model from the laptop's facts] FAILED [ 90%]
+conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:deploy with an owner approval per write] FAILED [ 91%]
+conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:check health with a fresh nonce] FAILED [ 92%]
+conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:run one task through the tunnel] FAILED [ 94%]
+conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:undo everything it installed] FAILED [ 95%]
+conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[2:connect the earbuds] FAILED [ 96%]
+conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[2:route audio to them] FAILED [ 97%]
+conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[2:play a track] FAILED [ 98%]
+conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[2:read playback state] FAILED [100%]
+
+=================================== FAILURES ===================================
+___ test_T1_no_device_or_fixture_name_appears_in_src_outside_generic_tables ____
+
+    def test_T1_no_device_or_fixture_name_appears_in_src_outside_generic_tables():
+        hits = device_name_hits(SRC)
+>       assert hits == [], "\n" + "\n".join(hits)
+E       AssertionError: 
+E         src/envrec/lab.py:38: ZXQ
+E         src/envrec/enroll/enroll.py:87: iPhones
+E         src/envrec/enroll/enroll.py:90: iPhone
+E         src/envrec/mission/models.py:23: iPhone
+E         src/envrec/mission/models.py:112: iPhone
+E         src/envrec/remote/ios.py:1: iPhone
+E         src/envrec/remote/runner.py:142: iPhone
+E         src/envrec/tools/builtin/ios.py:1: iPhone
+E         src/envrec/tools/builtin/ios.py:15: iPhone
+E         src/envrec/tools/builtin/ios.py:27: iPhone
+E         src/envrec/tools/builtin/ios.py:39: iPhone
+E       assert ['src/envrec/... iPhone', ...] == []
+E         
+E         Left contains 11 more items, first extra item: 'src/envrec/lab.py:38: ZXQ'
+E         
+E         Full diff:
+E         - []
+E         + [
+E         +     'src/envrec/lab.py:38: ZXQ',...
+E         
+E         ...Full output truncated (11 lines hidden), use '-vv' to show
+
+conformance/test_tools.py:47: AssertionError
+_ test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:run a read-only command on the enrolled laptop] _
+
+cap = {'mission': 1, 'capability': 'run a read-only command on the enrolled laptop', 'kind': 'net_host', 'ring': 2, ...}
+tmp_path = PosixPath('<tmp>/pytest-of-user/pytest-325/test_T5_the_mission_tool_exist0')
+
+    @pytest.mark.parametrize("cap", MISSION_TOOLS, ids=lambda c: f"{c['mission']}:{c['capability']}")
+    def test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state(cap, tmp_path):
+        import sys
+        sys.path.insert(0, str(ROOT / "conformance" / "tools"))
+        import menu_truth
+        state_menu = menu_truth.menus(cap["kind"], cap.get("ring", 0), False)
+        offered = {n for v in state_menu.values() for n in (v[0] if isinstance(v, tuple) else v)}
+>       assert any(t in offered for t in cap["tools"]), f"none of {cap['tools']} is offered to a {cap['kind']} target in any state; offered: {sorted(offered)[:8]}"
+E       AssertionError: none of ['remote_run_readonly', 'ssh_run', 'remote_read'] is offered to a net_host target in any state; offered: []
+E       assert False
+E        +  where False = any(<generator object test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state.<locals>.<genexpr> at 0x105b7ea80>)
+
+conformance/test_tools.py:190: AssertionError
+_ test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:pair a runtime and a model from the laptop's facts] _
+
+cap = {'mission': 1, 'capability': "pair a runtime and a model from the laptop's facts", 'kind': 'net_host', 'ring': 2, ...}
+tmp_path = PosixPath('<tmp>/pytest-of-user/pytest-325/test_T5_the_mission_tool_exist1')
+
+    @pytest.mark.parametrize("cap", MISSION_TOOLS, ids=lambda c: f"{c['mission']}:{c['capability']}")
+    def test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state(cap, tmp_path):
+        import sys
+        sys.path.insert(0, str(ROOT / "conformance" / "tools"))
+        import menu_truth
+        state_menu = menu_truth.menus(cap["kind"], cap.get("ring", 0), False)
+        offered = {n for v in state_menu.values() for n in (v[0] if isinstance(v, tuple) else v)}
+>       assert any(t in offered for t in cap["tools"]), f"none of {cap['tools']} is offered to a {cap['kind']} target in any state; offered: {sorted(offered)[:8]}"
+E       AssertionError: none of ['select_model', 'choose_runtime', 'pair_runtime_model'] is offered to a net_host target in any state; offered: []
+E       assert False
+E        +  where False = any(<generator object test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state.<locals>.<genexpr> at 0x105b7e0c0>)
+
+conformance/test_tools.py:190: AssertionError
+_ test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:deploy with an owner approval per write] _
+
+cap = {'mission': 1, 'capability': 'deploy with an owner approval per write', 'kind': 'net_host', 'ring': 2, ...}
+tmp_path = PosixPath('<tmp>/pytest-of-user/pytest-325/test_T5_the_mission_tool_exist2')
+
+    @pytest.mark.parametrize("cap", MISSION_TOOLS, ids=lambda c: f"{c['mission']}:{c['capability']}")
+    def test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state(cap, tmp_path):
+        import sys
+        sys.path.insert(0, str(ROOT / "conformance" / "tools"))
+        import menu_truth
+        state_menu = menu_truth.menus(cap["kind"], cap.get("ring", 0), False)
+        offered = {n for v in state_menu.values() for n in (v[0] if isinstance(v, tuple) else v)}
+>       assert any(t in offered for t in cap["tools"]), f"none of {cap['tools']} is offered to a {cap['kind']} target in any state; offered: {sorted(offered)[:8]}"
+E       AssertionError: none of ['deploy_worker', 'install_runtime', 'transfer_model', 'start_server'] is offered to a net_host target in any state; offered: []
+E       assert False
+E        +  where False = any(<generator object test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state.<locals>.<genexpr> at 0x105b7e190>)
+
+conformance/test_tools.py:190: AssertionError
+_ test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:check health with a fresh nonce] _
+
+cap = {'mission': 1, 'capability': 'check health with a fresh nonce', 'kind': 'net_host', 'ring': 2, ...}
+tmp_path = PosixPath('<tmp>/pytest-of-user/pytest-325/test_T5_the_mission_tool_exist3')
+
+    @pytest.mark.parametrize("cap", MISSION_TOOLS, ids=lambda c: f"{c['mission']}:{c['capability']}")
+    def test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state(cap, tmp_path):
+        import sys
+        sys.path.insert(0, str(ROOT / "conformance" / "tools"))
+        import menu_truth
+        state_menu = menu_truth.menus(cap["kind"], cap.get("ring", 0), False)
+        offered = {n for v in state_menu.values() for n in (v[0] if isinstance(v, tuple) else v)}
+>       assert any(t in offered for t in cap["tools"]), f"none of {cap['tools']} is offered to a {cap['kind']} target in any state; offered: {sorted(offered)[:8]}"
+E       AssertionError: none of ['health_check', 'verify_server'] is offered to a net_host target in any state; offered: []
+E       assert False
+E        +  where False = any(<generator object test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state.<locals>.<genexpr> at 0x105b7dd80>)
+
+conformance/test_tools.py:190: AssertionError
+_ test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:run one task through the tunnel] _
+
+cap = {'mission': 1, 'capability': 'run one task through the tunnel', 'kind': 'net_host', 'ring': 2, ...}
+tmp_path = PosixPath('<tmp>/pytest-of-user/pytest-325/test_T5_the_mission_tool_exist4')
+
+    @pytest.mark.parametrize("cap", MISSION_TOOLS, ids=lambda c: f"{c['mission']}:{c['capability']}")
+    def test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state(cap, tmp_path):
+        import sys
+        sys.path.insert(0, str(ROOT / "conformance" / "tools"))
+        import menu_truth
+        state_menu = menu_truth.menus(cap["kind"], cap.get("ring", 0), False)
+        offered = {n for v in state_menu.values() for n in (v[0] if isinstance(v, tuple) else v)}
+>       assert any(t in offered for t in cap["tools"]), f"none of {cap['tools']} is offered to a {cap['kind']} target in any state; offered: {sorted(offered)[:8]}"
+E       AssertionError: none of ['run_task_via_tunnel', 'open_tunnel'] is offered to a net_host target in any state; offered: []
+E       assert False
+E        +  where False = any(<generator object test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state.<locals>.<genexpr> at 0x105b7e4d0>)
+
+conformance/test_tools.py:190: AssertionError
+_ test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:undo everything it installed] _
+
+cap = {'mission': 1, 'capability': 'undo everything it installed', 'kind': 'net_host', 'ring': 2, ...}
+tmp_path = PosixPath('<tmp>/pytest-of-user/pytest-325/test_T5_the_mission_tool_exist5')
+
+    @pytest.mark.parametrize("cap", MISSION_TOOLS, ids=lambda c: f"{c['mission']}:{c['capability']}")
+    def test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state(cap, tmp_path):
+        import sys
+        sys.path.insert(0, str(ROOT / "conformance" / "tools"))
+        import menu_truth
+        state_menu = menu_truth.menus(cap["kind"], cap.get("ring", 0), False)
+        offered = {n for v in state_menu.values() for n in (v[0] if isinstance(v, tuple) else v)}
+>       assert any(t in offered for t in cap["tools"]), f"none of {cap['tools']} is offered to a {cap['kind']} target in any state; offered: {sorted(offered)[:8]}"
+E       AssertionError: none of ['undo', 'uninstall', 'stop_server'] is offered to a net_host target in any state; offered: []
+E       assert False
+E        +  where False = any(<generator object test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state.<locals>.<genexpr> at 0x105b7fed0>)
+
+conformance/test_tools.py:190: AssertionError
+_ test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[2:connect the earbuds] _
+
+cap = {'mission': 2, 'capability': 'connect the earbuds', 'kind': 'ble', 'ring': 1, ...}
+tmp_path = PosixPath('<tmp>/pytest-of-user/pytest-325/test_T5_the_mission_tool_exist6')
+
+    @pytest.mark.parametrize("cap", MISSION_TOOLS, ids=lambda c: f"{c['mission']}:{c['capability']}")
+    def test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state(cap, tmp_path):
+        import sys
+        sys.path.insert(0, str(ROOT / "conformance" / "tools"))
+        import menu_truth
+        state_menu = menu_truth.menus(cap["kind"], cap.get("ring", 0), False)
+        offered = {n for v in state_menu.values() for n in (v[0] if isinstance(v, tuple) else v)}
+>       assert any(t in offered for t in cap["tools"]), f"none of {cap['tools']} is offered to a {cap['kind']} target in any state; offered: {sorted(offered)[:8]}"
+E       AssertionError: none of ['bt_connect', 'bluetooth_connect', 'connect_audio_device'] is offered to a ble target in any state; offered: ['skill.ble_paired', 'skill.ble_scan']
+E       assert False
+E        +  where False = any(<generator object test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state.<locals>.<genexpr> at 0x105b7ec20>)
+
+conformance/test_tools.py:190: AssertionError
+_ test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[2:route audio to them] _
+
+cap = {'mission': 2, 'capability': 'route audio to them', 'kind': 'ble', 'ring': 1, ...}
+tmp_path = PosixPath('<tmp>/pytest-of-user/pytest-325/test_T5_the_mission_tool_exist7')
+
+    @pytest.mark.parametrize("cap", MISSION_TOOLS, ids=lambda c: f"{c['mission']}:{c['capability']}")
+    def test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state(cap, tmp_path):
+        import sys
+        sys.path.insert(0, str(ROOT / "conformance" / "tools"))
+        import menu_truth
+        state_menu = menu_truth.menus(cap["kind"], cap.get("ring", 0), False)
+        offered = {n for v in state_menu.values() for n in (v[0] if isinstance(v, tuple) else v)}
+>       assert any(t in offered for t in cap["tools"]), f"none of {cap['tools']} is offered to a {cap['kind']} target in any state; offered: {sorted(offered)[:8]}"
+E       AssertionError: none of ['set_audio_output', 'select_audio_output'] is offered to a ble target in any state; offered: ['skill.ble_paired', 'skill.ble_scan']
+E       assert False
+E        +  where False = any(<generator object test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state.<locals>.<genexpr> at 0x105b7f370>)
+
+conformance/test_tools.py:190: AssertionError
+_ test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[2:play a track] _
+
+cap = {'mission': 2, 'capability': 'play a track', 'kind': 'ble', 'ring': 1, ...}
+tmp_path = PosixPath('<tmp>/pytest-of-user/pytest-325/test_T5_the_mission_tool_exist8')
+
+    @pytest.mark.parametrize("cap", MISSION_TOOLS, ids=lambda c: f"{c['mission']}:{c['capability']}")
+    def test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state(cap, tmp_path):
+        import sys
+        sys.path.insert(0, str(ROOT / "conformance" / "tools"))
+        import menu_truth
+        state_menu = menu_truth.menus(cap["kind"], cap.get("ring", 0), False)
+        offered = {n for v in state_menu.values() for n in (v[0] if isinstance(v, tuple) else v)}
+>       assert any(t in offered for t in cap["tools"]), f"none of {cap['tools']} is offered to a {cap['kind']} target in any state; offered: {sorted(offered)[:8]}"
+E       AssertionError: none of ['play_media', 'spotify_play', 'media_play'] is offered to a ble target in any state; offered: ['skill.ble_paired', 'skill.ble_scan']
+E       assert False
+E        +  where False = any(<generator object test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state.<locals>.<genexpr> at 0x10606b780>)
+
+conformance/test_tools.py:190: AssertionError
+_ test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[2:read playback state] _
+
+cap = {'mission': 2, 'capability': 'read playback state', 'kind': 'ble', 'ring': 1, ...}
+tmp_path = PosixPath('<tmp>/pytest-of-user/pytest-325/test_T5_the_mission_tool_exist9')
+
+    @pytest.mark.parametrize("cap", MISSION_TOOLS, ids=lambda c: f"{c['mission']}:{c['capability']}")
+    def test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state(cap, tmp_path):
+        import sys
+        sys.path.insert(0, str(ROOT / "conformance" / "tools"))
+        import menu_truth
+        state_menu = menu_truth.menus(cap["kind"], cap.get("ring", 0), False)
+        offered = {n for v in state_menu.values() for n in (v[0] if isinstance(v, tuple) else v)}
+>       assert any(t in offered for t in cap["tools"]), f"none of {cap['tools']} is offered to a {cap['kind']} target in any state; offered: {sorted(offered)[:8]}"
+E       AssertionError: none of ['playback_state', 'media_state', 'spotify_state'] is offered to a ble target in any state; offered: ['skill.ble_paired', 'skill.ble_scan']
+E       assert False
+E        +  where False = any(<generator object test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state.<locals>.<genexpr> at 0x105cc8860>)
+
+conformance/test_tools.py:190: AssertionError
+=========================== short test summary info ============================
+FAILED conformance/test_tools.py::test_T1_no_device_or_fixture_name_appears_in_src_outside_generic_tables
+FAILED conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:run a read-only command on the enrolled laptop]
+FAILED conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:pair a runtime and a model from the laptop's facts]
+FAILED conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:deploy with an owner approval per write]
+FAILED conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:check health with a fresh nonce]
+FAILED conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:run one task through the tunnel]
+FAILED conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[1:undo everything it installed]
+FAILED conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[2:connect the earbuds]
+FAILED conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[2:route audio to them]
+FAILED conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[2:play a track]
+FAILED conformance/test_tools.py::test_T5_the_mission_tool_exists_and_is_in_the_menu_in_its_protocol_state[2:read playback state]
+======================== 11 failed, 73 passed in 8.21s =========================

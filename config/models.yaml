@@ -1,20 +1,19 @@
 # Model profiles. The model id and endpoint live here and nowhere in code.
-# view_budget_facts and menu_max are the only dials that differ between a small and a strong profile. They are
-# harness settings, not specifications of any model.
+# view_budget_facts and menu_max are the only dials that differ between a small and a strong profile. They are harness settings, not specifications of any model.
 #
-# The values below are placeholders: set the real endpoint and model id for your deployment, preferably in
-# config/models.local.yaml (same shape; it overrides these profiles and is not meant to be committed).
+# The values below are PLACEHOLDERS: the model ids are empty on purpose. Put the real endpoint and model id for your deployment in config/models.local.yaml (same shape; its profiles
+# override these by name and add new ones; it is not committed). Endpoints used by node code are loopback literals (conformance N5).
 profiles:
   muse-glimmer:
     name: muse-glimmer
     kind: openai_compat
-    model_id: REPLACE_WITH_MUSE_GLIMMER_MODEL_ID
-    endpoint: http://REPLACE-ME.invalid/v1
+    model_id: REPLACE_WITH_MODEL_ID
+    endpoint: http://127.0.0.1:11434/v1
     supports_tool_calling: false
     context_tokens: 8192
     view_budget_facts: 8
     menu_max: 6
-    ring_policy: fixed_order
+    walk_for_model: false           # experimental dial: code walks the protocol and the rings for the model. OFF.
     options:
       timeout_s: 180
       max_tokens: 400
@@ -24,15 +23,28 @@ profiles:
   muse-spark:
     name: muse-spark
     kind: openai_compat
-    model_id: REPLACE_WITH_MUSE_SPARK_MODEL_ID
-    endpoint: http://REPLACE-ME.invalid/v1
+    model_id: REPLACE_WITH_MODEL_ID
+    endpoint: http://127.0.0.1:11434/v1
     supports_tool_calling: false    # tools are disabled on purpose; the menu is in the prompt
     context_tokens: 32768
     view_budget_facts: 24
     menu_max: 8
-    ring_policy: fixed_order
+    walk_for_model: false
     options:
       timeout_s: 120
       max_tokens: 400
       temperature: 0
       json_mode: false
+
+  subscription-cli:
+    name: subscription-cli
+    kind: claude_cli
+    model_id: REPLACE_WITH_MODEL_ID  # reached through a command-line tool the owner already has installed and logged in to
+    endpoint: claude-cli://local
+    supports_tool_calling: false    # tools are disabled on purpose; the menu is in the prompt
+    context_tokens: 200000
+    view_budget_facts: 24
+    menu_max: 8
+    walk_for_model: false
+    options:
+      timeout_s: 120

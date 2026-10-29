@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from envrec.contracts.enums import STATUS_RANK, FactStatus
-from envrec.contracts.models import Evidence, Fact
+from envrec.contracts.models import Evidence, Fact, independent_observations
 
 
 @dataclass(frozen=True)
@@ -66,8 +66,8 @@ def reconcile(current: Fact | None, incoming: Fact) -> Reconciled:
             STATUS_RANK[current.status] >= STATUS_RANK[FactStatus.tested]
             and STATUS_RANK[incoming.status] >= STATUS_RANK[FactStatus.tested]
         )
-        providers = {e.provider for e in evidence}
-        if both_measured and len(providers) >= 2:
+        captures, channels = independent_observations(evidence)  # distinct raw captures AND distinct channels; provider names alone prove nothing
+        if both_measured and captures >= 2 and channels >= 2:
             status = FactStatus.verified
         if status == current.status and len(evidence) == len(current.evidence):
             return Reconciled(current, None, False)

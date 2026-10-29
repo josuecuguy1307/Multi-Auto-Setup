@@ -1,0 +1,13 @@
+# The capabilities the two missions need, as a checklist for T5. A tool is looked for in the menu of an ENROLLED (authorized) target of `kind`.
+# `tools` lists acceptable tool names (any one suffices); `kind` is the target kind the menu is built for.
+capabilities:
+  - {mission: 1, capability: run a read-only command on the enrolled laptop, kind: remote, ring: 2, tools: [remote_read]}
+  - {mission: 1, capability: pair a runtime and a model from the laptop's facts, kind: remote, ring: 2, tools: [plan_workspace]}
+  - {mission: 1, capability: deploy with an owner approval per write, kind: remote, ring: 2, tools: [deploy_workspace]}
+  - {mission: 1, capability: check health with a fresh nonce, kind: remote, ring: 2, tools: [verify_workspace]}
+  - {mission: 1, capability: run one task through the tunnel, kind: remote, ring: 2, tools: [run_task_via_tunnel]}
+  - {mission: 1, capability: undo everything it installed, kind: remote, ring: 2, tools: [undo_workspace]}
+  - {mission: 2, capability: connect the earbuds, kind: media, ring: 1, tools: [bt_connect]}
+  - {mission: 2, capability: route audio to them, kind: media, ring: 1, tools: [audio_output]}
+  - {mission: 2, capability: play a track, kind: media, ring: 1, tools: [spotify_play]}
+  - {mission: 2, capability: read playback state, kind: media, ring: 1, tools: [spotify_state]}

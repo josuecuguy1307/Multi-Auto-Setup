@@ -1,0 +1,6 @@
+{
+ "_note": "operating system family -> folder template for the software's own state. Knowledge lives here, not in Python.",
+ "darwin": "~/Library/Application Support/mas",
+ "linux": "${XDG_DATA_HOME:-~/.local/share}/mas",
+ "windows": "%LOCALAPPDATA%\\mas"
+}

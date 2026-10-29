@@ -209,10 +209,11 @@ def test_a_denied_approval_downloads_nothing(store, tmp_path):
 def test_the_real_manifest_parses_and_describes_the_smoke_set():
     m = Manifest.load(ROOT / "config" / "runtime_manifest.yaml")
     arts = m.smoke_artifacts()
-    assert set(arts) == {"llama.cpp:b11856:linux/arm64:cpu", "llama.cpp:b11856:linux/amd64:cpu"}
+    assert set(arts) == {"llama.cpp:b11856:linux/arm64:cpu", "llama.cpp:b11856:linux/amd64:cpu",
+                         "qwen2.5-0.5b-q4km", "qwen2.5-1.5b-q4km", "qwen3-4b-q4km"}
     assert all(len(a.sha256) == 64 and a.url.startswith("https://") and a.license for a in arts.values())
-    assert m.approved_runtime_ids() == ["llama.cpp", "mistral.rs"] and "acme" in m.approved_model_source_ids()
-    assert "non-commercial" not in m.license_allowlist and "mit" in m.license_allowlist
+    assert m.approved_runtime_ids() == ["llama.cpp", "mistral.rs"] and "qwen" in m.approved_model_source_ids()
+    assert "gemma" not in m.license_allowlist and "mit" in m.license_allowlist
 
 
 def test_an_unapproved_manifest_refuses_to_build_a_fetcher(store, tmp_path):

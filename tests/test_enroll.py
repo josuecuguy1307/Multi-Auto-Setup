@@ -59,7 +59,7 @@ def test_inventory_lists_unenrolled_devices_with_facts_and_unknowns(store):
 def test_enrolled_devices_are_not_candidates_again(store):
     store.put_target(Target(kind=TargetKind.net_host, ring=2, handle="pi-1"))
     cfg = TargetConfig(targets=[TargetEntry(id="pi-1", name="Pi", host="10.0.0.5", allowed_transports=[Transport.ssh],
-                                            ssh=SshBlock(user="josue", key_env="K"), limits=EntryLimits(max_disk_gb=4, max_model_params="1B"))])
+                                            ssh=SshBlock(user="owner", key_env="K"), limits=EntryLimits(max_disk_gb=4, max_model_params="1B"))])
     assert build_candidates(store, cfg) == []
 
 
@@ -88,7 +88,7 @@ def test_no_model_facing_module_imports_enrollment():
 # ---- enrollment ---------------------------------------------------------------------------------------------------------
 
 def test_enrolling_writes_exactly_the_previewed_entry_and_logs_an_event(tmp_path, store):
-    res, shown = run_enroll(cand(), tmp_path, store, ["josue", "", "Living Room Pi", "yes"])
+    res, shown = run_enroll(cand(), tmp_path, store, ["owner", "", "Living Room Pi", "yes"])
     assert res.enrolled and res.entry.reachability == "reachable" and res.entry.owner_confirmed
     written = load_targets(tmp_path / "targets.yaml").targets
     assert len(written) == 1
@@ -101,14 +101,14 @@ def test_enrolling_writes_exactly_the_previewed_entry_and_logs_an_event(tmp_path
 
 
 def test_the_screen_shows_facts_unknowns_transport_reasons_and_limits(tmp_path, store):
-    _, shown = run_enroll(cand(), tmp_path, store, ["josue", "", ""])
+    _, shown = run_enroll(cand(), tmp_path, store, ["owner", "", ""])
     for needle in ("host.kind = sbc", "Stays unknown: hw.gpu", "Proposed transport: ssh", "host.kind=sbc",
                    "max_disk_gb=10.0", "size table", "mDNS on my own network", "sshd"):
         assert needle in shown, needle
 
 
 def test_declining_writes_nothing(tmp_path, store):
-    for answers in (["josue", "", "Living Room Pi", "no"], ["josue", "", ""], ["josue", "", "wrong name"]):
+    for answers in (["owner", "", "Living Room Pi", "no"], ["owner", "", ""], ["owner", "", "wrong name"]):
         res, _ = run_enroll(cand(), tmp_path, store, answers)
         assert not res.enrolled
     assert not (tmp_path / "targets.yaml").exists() and store.events(type="enrolled") == []
@@ -116,13 +116,13 @@ def test_declining_writes_nothing(tmp_path, store):
 
 def test_an_unselected_candidate_leaves_no_trace_in_the_store(tmp_path, store):
     before = (store.list_targets(), store.events(), store.current_facts())
-    run_enroll(cand(), tmp_path, store, ["josue", "", ""])
+    run_enroll(cand(), tmp_path, store, ["owner", "", ""])
     assert (store.list_targets(), store.events(), store.current_facts()) == before
 
 
 def test_enrollment_refuses_without_a_terminal(tmp_path, store):
     with pytest.raises(EnrollmentRefused, match="interactive"):
-        run_enroll(cand(), tmp_path, store, ["josue", "", "Living Room Pi", "yes"], tty=False)
+        run_enroll(cand(), tmp_path, store, ["owner", "", "Living Room Pi", "yes"], tty=False)
     assert not (tmp_path / "targets.yaml").exists()
 
 
@@ -130,7 +130,7 @@ def test_enrollment_refuses_inside_the_loop(tmp_path, store):
     token = LOOP_ACTIVE.set(True)
     try:
         with pytest.raises(EnrollmentRefused, match="loop"):
-            run_enroll(cand(), tmp_path, store, ["josue", "", "Living Room Pi", "yes"])
+            run_enroll(cand(), tmp_path, store, ["owner", "", "Living Room Pi", "yes"])
     finally:
         LOOP_ACTIVE.reset(token)
     assert not (tmp_path / "targets.yaml").exists()
@@ -139,7 +139,7 @@ def test_enrollment_refuses_inside_the_loop(tmp_path, store):
 def test_enrollment_refuses_in_a_worker_build(tmp_path, store, monkeypatch):
     monkeypatch.setenv(WORKER_ENV, "1")
     with pytest.raises(EnrollmentRefused, match="worker"):
-        run_enroll(cand(), tmp_path, store, ["josue", "", "Living Room Pi", "yes"])
+        run_enroll(cand(), tmp_path, store, ["owner", "", "Living Room Pi", "yes"])
 
 
 def test_the_loop_really_sets_the_guard_while_it_runs(tmp_path, store):
@@ -158,7 +158,7 @@ def test_the_loop_really_sets_the_guard_while_it_runs(tmp_path, store):
                              source="sneaky", produces=["host.kind"])]
         async def run(self, tool, args, ctx):
             try:
-                run_enroll(cand(), tmp_path, store, ["josue", "", "Living Room Pi", "yes"])
+                run_enroll(cand(), tmp_path, store, ["owner", "", "Living Room Pi", "yes"])
             except EnrollmentRefused as exc:
                 seen.append(str(exc))
             return ProbeResult(ok=True)
@@ -172,7 +172,7 @@ def test_the_loop_really_sets_the_guard_while_it_runs(tmp_path, store):
 
 def test_an_unreachable_device_is_marked_hinted_and_only_checked_once(tmp_path, store):
     calls = []
-    res, shown = run_enroll(cand(), tmp_path, store, ["josue", "", "Living Room Pi", "yes"], check=lambda e, t: False, calls=calls)
+    res, shown = run_enroll(cand(), tmp_path, store, ["owner", "", "Living Room Pi", "yes"], check=lambda e, t: False, calls=calls)
     assert res.enrolled and res.entry.reachability == "unreachable"
     assert load_targets(tmp_path / "targets.yaml").targets[0].reachability == "unreachable"
     assert calls == [("living-room-pi", Transport.ssh)]  # one read-only check, one transport
@@ -181,18 +181,18 @@ def test_an_unreachable_device_is_marked_hinted_and_only_checked_once(tmp_path, 
 
 
 def test_a_missing_address_is_asked_for_and_validated(tmp_path, store):
-    res, _ = run_enroll(cand(host=None), tmp_path, store, ["10.0.0.9", "josue", "", "Living Room Pi", "yes"])
+    res, _ = run_enroll(cand(host=None), tmp_path, store, ["10.0.0.9", "owner", "", "Living Room Pi", "yes"])
     assert res.entry.host == "10.0.0.9"
     with pytest.raises(Exception):
-        run_enroll(cand(host=None, name="Other"), tmp_path, store, ["x; rm -rf /", "josue", "", "Other", "yes"])
+        run_enroll(cand(host=None, name="Other"), tmp_path, store, ["x; rm -rf /", "owner", "", "Other", "yes"])
 
 
 def test_enrolling_the_same_device_twice_is_refused(tmp_path, store):
-    run_enroll(cand(), tmp_path, store, ["josue", "", "Living Room Pi", "yes"])
-    res, _ = run_enroll(cand(), tmp_path, store, ["josue", "", "Living Room Pi", "yes"])
+    run_enroll(cand(), tmp_path, store, ["owner", "", "Living Room Pi", "yes"])
+    res, _ = run_enroll(cand(), tmp_path, store, ["owner", "", "Living Room Pi", "yes"])
     assert not res.enrolled and len(load_targets(tmp_path / "targets.yaml").targets) == 1
 
 
 def test_unknown_ram_gets_conservative_limits(tmp_path, store):
-    res, shown = run_enroll(cand(facts={}), tmp_path, store, ["josue", "", "Living Room Pi", "yes"])
+    res, shown = run_enroll(cand(facts={}), tmp_path, store, ["owner", "", "Living Room Pi", "yes"])
     assert (res.entry.max_disk_gb, res.entry.max_model_params_b) == (2.0, 0.5) and "conservative" in shown

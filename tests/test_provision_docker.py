@@ -97,7 +97,7 @@ def ssh_box(tmp_path_factory):
 def ssh_setup(store, release, box, monkeypatch, answers):
     monkeypatch.setenv("TEST_SSH_KEY", box["key"])
     entry = TargetEntry(id="ssh-box", name="SSH Box", host="127.0.0.1", allowed_transports=[Transport.ssh],
-                        ssh=SshBlock(user="josue", port=box["port"], key_env="TEST_SSH_KEY"),
+                        ssh=SshBlock(user="owner", port=box["port"], key_env="TEST_SSH_KEY"),
                         limits=EntryLimits(max_disk_gb=20, max_model_params="13B"), owner_confirmed=True)
     return provisioner(store, release, entry, answers, host_key_policy="accept-new", known_hosts=box["known"])
 
@@ -345,5 +345,5 @@ def test_a_server_killed_after_a_good_start_is_reported_as_crashed_never_running
         st = json.loads(p.runner.run("box-1", Transport.docker_exec, "runtime_status", {"worker": res.facts["worker"], "root": ROOT}).stdout)
         assert st["state"] in ("crashed", "stopped_by_watchdog", "failed") and st["state"] != "running"
         v = verify_server(ExecClient(p.runner, "box-1", Transport.docker_exec, SERVER_PORT), store, p.targets["box-1"])
-        assert not v.ok and store.current_fact(p.targets["box-1"].id, "host.model_server") is None
+        assert not v.ok and store.current_fact(p.targets["box-1"].id, "host.model_server").status == FactStatus.hypothesis  # claimed at deploy, never verified
         assert undo(p)[0]

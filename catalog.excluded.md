@@ -1,0 +1,294 @@
+# catalog.excluded
+
+290 things were left out of the catalog automatically. Reason for each:
+
+- **source llamafile**: status is propose-off: needs the APE loader on the target and is a different execution model; worth enabling only if you want a third runtime in the comparison
+- **source ollama**: status is propose-off: archives are 1.5 GB each (over max_artifact_gb), it is a daemon with its own model registry (a source outside this manifest), and needs zstd
+- **source LocalAI**: status is exclude: downloads its inference backends at run time from its own gallery: would fetch things outside the manifest
+- **source cortex.cpp**: status is exclude: repository is archived
+- **source mlc-llm**: status is exclude: no prebuilt standalone binary in its releases (0 assets)
+- **source mlx-lm**: status is exclude: Python package for Apple silicon only, no release binaries; would add a Python dependency on the device
+- **source BitNet**: status is exclude: no releases or binaries; build-from-source only
+- **source ik_llama.cpp**: status is exclude: no binary release assets (a fork; llama.cpp is already approved)
+- **source fastllm**: status is exclude: no release binaries
+- **source ggml-org**: status is propose-off: 100 repos: 50 apache-2.0, 11 mit, 27 none, 7 other, 1 cc-by-nc, 1 gemma
+- **source bartowski**: status is propose-off: 100 repos: 54 apache-2.0, 11 mit, 14 none, 13 other, 4 gemma, 2 cc-by-nc
+- **source unsloth**: status is propose-off: 100 repos: 63 apache-2.0, 8 mit, 23 other, 2 llama3.2, 2 gemma, 1 llama3.3
+- **source google**: status is exclude: 37 gguf repos: 25 'gemma' license (restricted use), 9 apache-2.0, 3 llama; the Gemma terms restrict use
+- **source meta-llama**: status is exclude: 0 gguf repos; Llama licenses restrict use. Override yourself if the Meta angle matters.
+- **source liquidai**: status is exclude: 49 repos: 48 'other' (LFM license), restricted
+- **source lmstudio-community**: status is exclude: 100 repos: 41 apache-2.0 but also cc-by-nc, llama3, gemma, none; mixed and redundant with the first-party sources
+- **Qwen/Qwen2.5-Coder-7B-Instruct-GGUF/qwen2.5-coder-7b-instruct-q4_0-00001-of-00002.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-7B-Instruct-GGUF/qwen2.5-coder-7b-instruct-q4_0-00002-of-00002.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-7B-Instruct-GGUF/qwen2.5-coder-7b-instruct-q4_0.gguf**: 4.43 GB is over the 3.0 GB artifact cap
+- **Qwen/Qwen2.5-Coder-7B-Instruct-GGUF/qwen2.5-coder-7b-instruct-q4_k_m-00001-of-00002.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-7B-Instruct-GGUF/qwen2.5-coder-7b-instruct-q4_k_m-00002-of-00002.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-7B-Instruct-GGUF/qwen2.5-coder-7b-instruct-q4_k_m.gguf**: 4.68 GB is over the 3.0 GB artifact cap
+- **Qwen/Qwen2.5-Coder-7B-Instruct-GGUF/qwen2.5-coder-7b-instruct-q8_0-00001-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-7B-Instruct-GGUF/qwen2.5-coder-7b-instruct-q8_0-00002-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-7B-Instruct-GGUF/qwen2.5-coder-7b-instruct-q8_0-00003-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-7B-Instruct-GGUF/qwen2.5-coder-7b-instruct-q8_0.gguf**: 8.10 GB is over the 3.0 GB artifact cap
+- **Qwen/Qwen3-8B-GGUF/Qwen3-8B-Q4_K_M.gguf**: 5.03 GB is over the 3.0 GB artifact cap
+- **Qwen/Qwen3-8B-GGUF/Qwen3-8B-Q8_0.gguf**: 8.71 GB is over the 3.0 GB artifact cap
+- **Qwen/Qwen3-VL-8B-Instruct-GGUF/Qwen3VL-8B-Instruct-Q4_K_M.gguf**: 5.03 GB is over the 3.0 GB artifact cap
+- **Qwen/Qwen3-VL-8B-Instruct-GGUF/Qwen3VL-8B-Instruct-Q8_0.gguf**: 8.71 GB is over the 3.0 GB artifact cap
+- **Qwen/Qwen2.5-Coder-3B-Instruct-GGUF**: license 'other' is not in the allowlist
+- **Qwen/Qwen3-4B-GGUF/Qwen3-4B-Q8_0.gguf**: 4.28 GB is over the 3.0 GB artifact cap
+- **Qwen/Qwen2.5-Coder-14B-Instruct-GGUF/qwen2.5-coder-14b-instruct-q4_0.gguf**: 14B parameters is over the 8B cap
+- **Qwen/Qwen2.5-Coder-14B-Instruct-GGUF/qwen2.5-coder-14b-instruct-q4_k_m-00001-of-00002.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-14B-Instruct-GGUF/qwen2.5-coder-14b-instruct-q4_k_m-00002-of-00002.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-14B-Instruct-GGUF/qwen2.5-coder-14b-instruct-q4_k_m.gguf**: 14B parameters is over the 8B cap
+- **Qwen/Qwen2.5-Coder-14B-Instruct-GGUF/qwen2.5-coder-14b-instruct-q8_0-00001-of-00002.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-14B-Instruct-GGUF/qwen2.5-coder-14b-instruct-q8_0-00002-of-00002.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-14B-Instruct-GGUF/qwen2.5-coder-14b-instruct-q8_0.gguf**: 14B parameters is over the 8B cap
+- **Qwen/Qwen2.5-7B-Instruct-GGUF/qwen2.5-7b-instruct-q4_0-00001-of-00002.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-7B-Instruct-GGUF/qwen2.5-7b-instruct-q4_0-00002-of-00002.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-7B-Instruct-GGUF/qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-7B-Instruct-GGUF/qwen2.5-7b-instruct-q4_k_m-00002-of-00002.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-7B-Instruct-GGUF/qwen2.5-7b-instruct-q8_0-00001-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-7B-Instruct-GGUF/qwen2.5-7b-instruct-q8_0-00002-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-7B-Instruct-GGUF/qwen2.5-7b-instruct-q8_0-00003-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-72B-Instruct-GGUF**: license 'other' is not in the allowlist
+- **Qwen/Qwen2.5-3B-Instruct-GGUF**: license 'other' is not in the allowlist
+- **Qwen/Qwen3-Embedding-8B-GGUF/Qwen3-Embedding-8B-Q4_K_M.gguf**: 4.68 GB is over the 3.0 GB artifact cap
+- **Qwen/Qwen3-Embedding-8B-GGUF/Qwen3-Embedding-8B-Q8_0.gguf**: 8.05 GB is over the 3.0 GB artifact cap
+- **Qwen/Qwen3-VL-4B-Instruct-GGUF/Qwen3VL-4B-Instruct-Q8_0.gguf**: 4.28 GB is over the 3.0 GB artifact cap
+- **Qwen/Qwen1.5-72B-Chat-GGUF**: license 'other' is not in the allowlist
+- **Qwen/Qwen1.5-14B-Chat-GGUF**: license 'other' is not in the allowlist
+- **Qwen/Qwen1.5-0.5B-Chat-GGUF**: license 'other' is not in the allowlist
+- **Qwen/Qwen1.5-1.8B-Chat-GGUF**: license 'other' is not in the allowlist
+- **Qwen/Qwen1.5-4B-Chat-GGUF**: license 'other' is not in the allowlist
+- **Qwen/Qwen1.5-32B-Chat-GGUF**: license 'other' is not in the allowlist
+- **Qwen/Qwen1.5-110B-Chat-GGUF**: license 'other' is not in the allowlist
+- **Qwen/Qwen2-72B-Instruct-GGUF**: license 'other' is not in the allowlist
+- **Qwen/Qwen2-7B-Instruct-GGUF/qwen2-7b-instruct-q4_0.gguf**: 4.44 GB is over the 3.0 GB artifact cap
+- **Qwen/Qwen2-7B-Instruct-GGUF/qwen2-7b-instruct-q4_k_m.gguf**: 4.68 GB is over the 3.0 GB artifact cap
+- **Qwen/Qwen2-7B-Instruct-GGUF/qwen2-7b-instruct-q8_0.gguf**: 8.10 GB is over the 3.0 GB artifact cap
+- **Qwen/Qwen2-57B-A14B-Instruct-GGUF/qwen2-57b-a14b-instruct-q4_0.gguf**: 57B parameters is over the 8B cap
+- **Qwen/Qwen2-57B-A14B-Instruct-GGUF/qwen2-57b-a14b-instruct-q4_k_m.gguf**: 57B parameters is over the 8B cap
+- **Qwen/Qwen2-57B-A14B-Instruct-GGUF/qwen2-57b-a14b-instruct-q8_0-00001-of-00002.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2-57B-A14B-Instruct-GGUF/qwen2-57b-a14b-instruct-q8_0-00002-of-00002.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-14B-Instruct-GGUF/qwen2.5-14b-instruct-q4_0-00001-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-14B-Instruct-GGUF/qwen2.5-14b-instruct-q4_0-00002-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-14B-Instruct-GGUF/qwen2.5-14b-instruct-q4_0-00003-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-14B-Instruct-GGUF/qwen2.5-14b-instruct-q4_k_m-00001-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-14B-Instruct-GGUF/qwen2.5-14b-instruct-q4_k_m-00002-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-14B-Instruct-GGUF/qwen2.5-14b-instruct-q4_k_m-00003-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-14B-Instruct-GGUF/qwen2.5-14b-instruct-q8_0-00001-of-00004.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-14B-Instruct-GGUF/qwen2.5-14b-instruct-q8_0-00002-of-00004.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-14B-Instruct-GGUF/qwen2.5-14b-instruct-q8_0-00003-of-00004.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-14B-Instruct-GGUF/qwen2.5-14b-instruct-q8_0-00004-of-00004.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-32B-Instruct-GGUF/qwen2.5-coder-32b-instruct-q4_0-00001-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-32B-Instruct-GGUF/qwen2.5-coder-32b-instruct-q4_0-00002-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-32B-Instruct-GGUF/qwen2.5-coder-32b-instruct-q4_0-00003-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-32B-Instruct-GGUF/qwen2.5-coder-32b-instruct-q4_0.gguf**: 32B parameters is over the 8B cap
+- **Qwen/Qwen2.5-Coder-32B-Instruct-GGUF/qwen2.5-coder-32b-instruct-q4_k_m-00001-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-32B-Instruct-GGUF/qwen2.5-coder-32b-instruct-q4_k_m-00002-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-32B-Instruct-GGUF/qwen2.5-coder-32b-instruct-q4_k_m-00003-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-32B-Instruct-GGUF/qwen2.5-coder-32b-instruct-q4_k_m.gguf**: 32B parameters is over the 8B cap
+- **Qwen/Qwen2.5-Coder-32B-Instruct-GGUF/qwen2.5-coder-32b-instruct-q8_0-00001-of-00005.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-32B-Instruct-GGUF/qwen2.5-coder-32b-instruct-q8_0-00002-of-00005.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-32B-Instruct-GGUF/qwen2.5-coder-32b-instruct-q8_0-00003-of-00005.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-32B-Instruct-GGUF/qwen2.5-coder-32b-instruct-q8_0-00004-of-00005.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-32B-Instruct-GGUF/qwen2.5-coder-32b-instruct-q8_0-00005-of-00005.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-Coder-32B-Instruct-GGUF/qwen2.5-coder-32b-instruct-q8_0.gguf**: 32B parameters is over the 8B cap
+- **Qwen/QwQ-32B-GGUF/qwq-32b-q4_k_m.gguf**: 32B parameters is over the 8B cap
+- **Qwen/QwQ-32B-GGUF/qwq-32b-q8_0.gguf**: 32B parameters is over the 8B cap
+- **Qwen/Qwen3-32B-GGUF/Qwen3-32B-Q4_K_M.gguf**: 32B parameters is over the 8B cap
+- **Qwen/Qwen3-32B-GGUF/Qwen3-32B-Q8_0.gguf**: 32B parameters is over the 8B cap
+- **Qwen/Qwen3-30B-A3B-GGUF/Qwen3-30B-A3B-Q4_K_M.gguf**: 30B parameters is over the 8B cap
+- **Qwen/Qwen3-30B-A3B-GGUF/Qwen3-30B-A3B-Q8_0.gguf**: 30B parameters is over the 8B cap
+- **Qwen/Qwen3-Embedding-4B-GGUF/Qwen3-Embedding-4B-Q8_0.gguf**: 4.28 GB is over the 3.0 GB artifact cap
+- **Qwen/Qwen3-VL-32B-Thinking-GGUF/Qwen3VL-32B-Thinking-Q4_K_M.gguf**: 32B parameters is over the 8B cap
+- **Qwen/Qwen3-VL-32B-Thinking-GGUF/Qwen3VL-32B-Thinking-Q8_0.gguf**: 32B parameters is over the 8B cap
+- **Qwen/Qwen3-VL-32B-Thinking-GGUF/mmproj-Qwen3VL-32B-Thinking-Q8_0.gguf**: 32B parameters is over the 8B cap
+- **Qwen/Qwen3-VL-4B-Thinking-GGUF/Qwen3VL-4B-Thinking-Q8_0.gguf**: 4.28 GB is over the 3.0 GB artifact cap
+- **Qwen/Qwen3-VL-30B-A3B-Instruct-GGUF/Qwen3VL-30B-A3B-Instruct-Q4_K_M.gguf**: 30B parameters is over the 8B cap
+- **Qwen/Qwen3-VL-30B-A3B-Instruct-GGUF/Qwen3VL-30B-A3B-Instruct-Q8_0.gguf**: 30B parameters is over the 8B cap
+- **Qwen/Qwen3-VL-30B-A3B-Instruct-GGUF/mmproj-Qwen3VL-30B-A3B-Instruct-Q8_0.gguf**: 30B parameters is over the 8B cap
+- **Qwen/Qwen3-VL-235B-A22B-Instruct-GGUF/Qwen3VL-235B-A22B-Instruct-Q4_K_M-split-00001-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Instruct-GGUF/Qwen3VL-235B-A22B-Instruct-Q4_K_M-split-00002-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Instruct-GGUF/Qwen3VL-235B-A22B-Instruct-Q4_K_M-split-00003-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Instruct-GGUF/Qwen3VL-235B-A22B-Instruct-Q8_0-00001-of-00006.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Instruct-GGUF/Qwen3VL-235B-A22B-Instruct-Q8_0-00002-of-00006.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Instruct-GGUF/Qwen3VL-235B-A22B-Instruct-Q8_0-00003-of-00006.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Instruct-GGUF/Qwen3VL-235B-A22B-Instruct-Q8_0-00004-of-00006.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Instruct-GGUF/Qwen3VL-235B-A22B-Instruct-Q8_0-00005-of-00006.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Instruct-GGUF/Qwen3VL-235B-A22B-Instruct-Q8_0-00006-of-00006.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Instruct-GGUF/mmproj-Qwen3VL-235B-A22B-Instruct-Q8_0.gguf**: 235B parameters is over the 8B cap
+- **Qwen/Qwen3-VL-30B-A3B-Thinking-GGUF/Qwen3VL-30B-A3B-Thinking-Q4_K_M.gguf**: 30B parameters is over the 8B cap
+- **Qwen/Qwen3-VL-30B-A3B-Thinking-GGUF/Qwen3VL-30B-A3B-Thinking-Q8_0.gguf**: 30B parameters is over the 8B cap
+- **Qwen/Qwen3-VL-30B-A3B-Thinking-GGUF/mmproj-Qwen3VL-30B-A3B-Thinking-Q8_0.gguf**: 30B parameters is over the 8B cap
+- **Qwen/Qwen3-VL-235B-A22B-Thinking-GGUF/Qwen3VL-235B-A22B-Thinking-Q4_K_M-split-00001-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Thinking-GGUF/Qwen3VL-235B-A22B-Thinking-Q4_K_M-split-00002-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Thinking-GGUF/Qwen3VL-235B-A22B-Thinking-Q4_K_M-split-00003-of-00003.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Thinking-GGUF/Qwen3VL-235B-A22B-Thinking-Q8_0-00001-of-00006.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Thinking-GGUF/Qwen3VL-235B-A22B-Thinking-Q8_0-00002-of-00006.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Thinking-GGUF/Qwen3VL-235B-A22B-Thinking-Q8_0-00003-of-00006.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Thinking-GGUF/Qwen3VL-235B-A22B-Thinking-Q8_0-00004-of-00006.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Thinking-GGUF/Qwen3VL-235B-A22B-Thinking-Q8_0-00005-of-00006.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Thinking-GGUF/Qwen3VL-235B-A22B-Thinking-Q8_0-00006-of-00006.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-VL-235B-A22B-Thinking-GGUF/mmproj-Qwen3VL-235B-A22B-Thinking-Q8_0.gguf**: 235B parameters is over the 8B cap
+- **Qwen/Qwen3-Next-80B-A3B-Instruct-GGUF/Qwen3-Next-80B-A3B-Instruct-Q4_K_M.gguf**: 80B parameters is over the 8B cap
+- **Qwen/Qwen3-Next-80B-A3B-Instruct-GGUF/Qwen3-Next-80B-A3B-Instruct-Q8_0.gguf**: 80B parameters is over the 8B cap
+- **Qwen/Qwen3-Next-80B-A3B-Thinking-GGUF/Qwen3-Next-80B-A3B-Thinking-Q4_K_M.gguf**: 80B parameters is over the 8B cap
+- **Qwen/Qwen3-Next-80B-A3B-Thinking-GGUF/Qwen3-Next-80B-A3B-Thinking-Q8_0.gguf**: 80B parameters is over the 8B cap
+- **Qwen/Qwen1.5-7B-Chat-GGUF**: license 'other' is not in the allowlist
+- **Qwen/CodeQwen1.5-7B-Chat-GGUF**: license 'other' is not in the allowlist
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q4_0-00001-of-00005.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q4_0-00002-of-00005.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q4_0-00003-of-00005.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q4_0-00004-of-00005.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q4_0-00005-of-00005.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q4_k_m-00001-of-00005.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q4_k_m-00002-of-00005.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q4_k_m-00003-of-00005.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q4_k_m-00004-of-00005.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q4_k_m-00005-of-00005.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q8_0-00001-of-00009.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q8_0-00002-of-00009.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q8_0-00003-of-00009.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q8_0-00004-of-00009.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q8_0-00005-of-00009.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q8_0-00006-of-00009.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q8_0-00007-of-00009.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q8_0-00008-of-00009.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen2.5-32B-Instruct-GGUF/qwen2.5-32b-instruct-q8_0-00009-of-00009.gguf**: multi-file (sharded) model: not supported
+- **Qwen/Qwen3-14B-GGUF/Qwen3-14B-Q4_K_M.gguf**: 14B parameters is over the 8B cap
+- **Qwen/Qwen3-14B-GGUF/Qwen3-14B-Q8_0.gguf**: 14B parameters is over the 8B cap
+- **Qwen/Qwen3-VL-32B-Instruct-GGUF/Qwen3VL-32B-Instruct-Q4_K_M.gguf**: 32B parameters is over the 8B cap
+- **Qwen/Qwen3-VL-32B-Instruct-GGUF/Qwen3VL-32B-Instruct-Q8_0.gguf**: 32B parameters is over the 8B cap
+- **Qwen/Qwen3-VL-32B-Instruct-GGUF/mmproj-Qwen3VL-32B-Instruct-Q8_0.gguf**: 32B parameters is over the 8B cap
+- **Qwen/Qwen3-VL-8B-Thinking-GGUF/Qwen3VL-8B-Thinking-Q4_K_M.gguf**: 5.03 GB is over the 3.0 GB artifact cap
+- **Qwen/Qwen3-VL-8B-Thinking-GGUF/Qwen3VL-8B-Thinking-Q8_0.gguf**: 8.71 GB is over the 3.0 GB artifact cap
+- **HuggingFaceTB/smollm-360M-instruct-v0.2-Q8_0-GGUF/smollm-360m-instruct-add-basics-q8_0.gguf**: parameter count not readable from the name
+- **HuggingFaceTB/smollm-135M-instruct-v0.2-Q8_0-GGUF/smollm-135m-instruct-add-basics-q8_0.gguf**: parameter count not readable from the name
+- **HuggingFaceTB/SmolLM2-360M-Instruct-GGUF/smollm2-360m-instruct-q8_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.2-3b-GGUF/granite-4.2-3b-Q8_0.gguf**: 3.89 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-4.2-8b-GGUF/granite-4.2-8b-Q4_0.gguf**: 5.06 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-4.2-8b-GGUF/granite-4.2-8b-Q4_K_M.gguf**: 5.35 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-4.2-8b-GGUF/granite-4.2-8b-Q8_0.gguf**: 9.35 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-4.2-30b-GGUF/granite-4.2-30b-Q4_0.gguf**: 30B parameters is over the 8B cap
+- **ibm-granite/granite-4.2-30b-GGUF/granite-4.2-30b-Q4_K_M.gguf**: 30B parameters is over the 8B cap
+- **ibm-granite/granite-4.2-30b-GGUF/granite-4.2-30b-Q8_0.gguf**: 30B parameters is over the 8B cap
+- **ibm-granite/granite-switch-4.1-8b-GGUF/granite-switch-4.1-8b-Q4_0.gguf**: 6.01 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-switch-4.1-8b-GGUF/granite-switch-4.1-8b-Q4_K_M.gguf**: 6.41 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-switch-4.1-8b-GGUF/granite-switch-4.1-8b-Q8_0.gguf**: 10.10 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-20b-code-base-8k-GGUF/granite-20b-code-base.Q4_K_M.gguf**: 20B parameters is over the 8B cap
+- **ibm-granite/granite-20b-code-instruct-8k-GGUF/granite-20b-code-instruct.Q4_K_M.gguf**: 20B parameters is over the 8B cap
+- **ibm-granite/granite-34b-code-instruct-8k-GGUF/granite-34b-code-instruct.Q4_K_M.gguf**: 34B parameters is over the 8B cap
+- **ibm-granite/granite-34b-code-base-8k-GGUF/granite-34b-code-base.Q4_K_M.gguf**: 34B parameters is over the 8B cap
+- **ibm-granite/granite-8b-code-base-4k-GGUF/granite-8b-code-base.Q4_K_M.gguf**: 4.88 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-8b-code-instruct-4k-GGUF/granite-8b-code-instruct.Q4_K_M.gguf**: 4.88 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-3.3-8b-instruct-GGUF/granite-3.3-8b-instruct-Q4_0.gguf**: 4.65 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-3.3-8b-instruct-GGUF/granite-3.3-8b-instruct-Q4_K_M.gguf**: 4.94 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-3.3-8b-instruct-GGUF/granite-3.3-8b-instruct-Q8_0.gguf**: 8.68 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-3.3-8b-base-GGUF/granite-3.3-8b-base-Q4_0.gguf**: 4.65 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-3.3-8b-base-GGUF/granite-3.3-8b-base-Q4_K_M.gguf**: 4.94 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-3.3-8b-base-GGUF/granite-3.3-8b-base-Q8_0.gguf**: 8.68 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-guardian-3.3-8b-GGUF/granite-guardian-3.3-8b-Q4_K_M.gguf**: 4.94 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-guardian-3.3-8b-GGUF/granite-guardian-3.3-8b-Q8_0.gguf**: 8.68 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-4.0-tiny-preview-GGUF/granite-4.0-tiny-preview-Q4_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-tiny-preview-GGUF/granite-4.0-tiny-preview-Q4_K_M.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-tiny-preview-GGUF/granite-4.0-tiny-preview-Q8_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-tiny-base-preview-GGUF/granite-4.0-tiny-base-preview-Q4_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-tiny-base-preview-GGUF/granite-4.0-tiny-base-preview-Q4_K_M.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-tiny-base-preview-GGUF/granite-4.0-tiny-base-preview-Q8_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-micro-GGUF/granite-4.0-micro-Q4_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-micro-GGUF/granite-4.0-micro-Q4_K_M.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-micro-GGUF/granite-4.0-micro-Q8_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-micro-GGUF/granite-4.0-h-micro-Q4_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-micro-GGUF/granite-4.0-h-micro-Q4_K_M.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-micro-GGUF/granite-4.0-h-micro-Q8_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-tiny-GGUF/granite-4.0-h-tiny-Q4_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-tiny-GGUF/granite-4.0-h-tiny-Q4_K_M.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-tiny-GGUF/granite-4.0-h-tiny-Q8_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-micro-base-GGUF/granite-4.0-micro-base-Q4_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-micro-base-GGUF/granite-4.0-micro-base-Q4_K_M.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-micro-base-GGUF/granite-4.0-micro-base-Q8_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-micro-base-GGUF/granite-4.0-h-micro-base-Q4_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-micro-base-GGUF/granite-4.0-h-micro-base-Q4_K_M.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-micro-base-GGUF/granite-4.0-h-micro-base-Q8_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-tiny-base-GGUF/granite-4.0-h-tiny-base-Q4_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-tiny-base-GGUF/granite-4.0-h-tiny-base-Q4_K_M.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-tiny-base-GGUF/granite-4.0-h-tiny-base-Q8_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-small-GGUF/granite-4.0-h-small-Q4_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-small-GGUF/granite-4.0-h-small-Q4_K_M.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-small-GGUF/granite-4.0-h-small-Q8_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-small-base-GGUF/granite-4.0-h-small-base-Q4_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-small-base-GGUF/granite-4.0-h-small-base-Q4_K_M.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-small-base-GGUF/granite-4.0-h-small-base-Q8_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-docling-258M-GGUF**: no license stated on the model page
+- **ibm-granite/granite-4.0-350m-GGUF/granite-4.0-350m-Q4_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-350m-GGUF/granite-4.0-350m-Q4_K_M.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-350m-GGUF/granite-4.0-350m-Q8_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-350m-base-GGUF/granite-4.0-350m-base-Q4_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-350m-base-GGUF/granite-4.0-350m-base-Q4_K_M.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-350m-base-GGUF/granite-4.0-350m-base-Q8_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-350m-GGUF/granite-4.0-h-350m-Q4_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-350m-GGUF/granite-4.0-h-350m-Q4_K_M.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-350m-GGUF/granite-4.0-h-350m-Q8_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-350m-base-GGUF/granite-4.0-h-350m-base-Q4_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-350m-base-GGUF/granite-4.0-h-350m-base-Q4_K_M.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-4.0-h-350m-base-GGUF/granite-4.0-h-350m-base-Q8_0.gguf**: parameter count not readable from the name
+- **ibm-granite/granite-vision-3.3-2b-chart2csv-preview-GGUF**: no license stated on the model page
+- **ibm-granite/granite-4.1-3b-GGUF/granite-4.1-3b-Q8_0.gguf**: 3.62 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-4.1-8b-GGUF/granite-4.1-8b-Q4_0.gguf**: 5.06 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-4.1-8b-GGUF/granite-4.1-8b-Q4_K_M.gguf**: 5.35 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-4.1-8b-GGUF/granite-4.1-8b-Q8_0.gguf**: 9.35 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-4.1-30b-GGUF/granite-4.1-30b-Q4_0.gguf**: 30B parameters is over the 8B cap
+- **ibm-granite/granite-4.1-30b-GGUF/granite-4.1-30b-Q4_K_M.gguf**: 30B parameters is over the 8B cap
+- **ibm-granite/granite-4.1-30b-GGUF/granite-4.1-30b-Q8_0.gguf**: 30B parameters is over the 8B cap
+- **ibm-granite/granite-guardian-4.1-8b-GGUF/granite-guardian-4.1-8b-Q4_0.gguf**: 4.82 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-guardian-4.1-8b-GGUF/granite-guardian-4.1-8b-Q4_K_M.gguf**: 5.12 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-guardian-4.1-8b-GGUF/granite-guardian-4.1-8b-Q8_0.gguf**: 8.91 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-vision-4.1-4b-GGUF/granite-vision-4.1-4b-Q8_0.gguf**: 3.62 GB is over the 3.0 GB artifact cap
+- **ibm-granite/granite-switch-4.1-30b-GGUF/granite-switch-4.1-30b-Q4_0.gguf**: 30B parameters is over the 8B cap
+- **ibm-granite/granite-switch-4.1-30b-GGUF/granite-switch-4.1-30b-Q4_K_M.gguf**: 30B parameters is over the 8B cap
+- **ibm-granite/granite-switch-4.1-30b-GGUF/granite-switch-4.1-30b-Q8_0.gguf**: 30B parameters is over the 8B cap
+- **microsoft/phi-4-gguf/phi-4-Q4_0.gguf**: parameter count not readable from the name
+- **microsoft/phi-4-gguf/phi-4-Q8_0.gguf**: parameter count not readable from the name
+- **mistralai/Devstral-Small-2507_gguf/Devstral-Small-2507-Q4_K_M.gguf**: parameter count not readable from the name
+- **mistralai/Devstral-Small-2507_gguf/Devstral-Small-2507-Q8_0.gguf**: parameter count not readable from the name
+- **mistralai/Ministral-3-3B-Instruct-2512-GGUF/Ministral-3-3B-Instruct-2512-Q8_0.gguf**: 3.65 GB is over the 3.0 GB artifact cap
+- **mistralai/Ministral-3-8B-Reasoning-2512-GGUF/Ministral-3-8B-Reasoning-2512-Q4_K_M.gguf**: 5.20 GB is over the 3.0 GB artifact cap
+- **mistralai/Ministral-3-8B-Reasoning-2512-GGUF/Ministral-3-8B-Reasoning-2512-Q8_0.gguf**: 9.03 GB is over the 3.0 GB artifact cap
+- **mistralai/Devstral-Small-2505_gguf/devstralQ4_0.gguf**: parameter count not readable from the name
+- **mistralai/Devstral-Small-2505_gguf/devstralQ4_K_M.gguf**: parameter count not readable from the name
+- **mistralai/Devstral-Small-2505_gguf/devstralQ8_0.gguf**: parameter count not readable from the name
+- **mistralai/Magistral-Small-2507-GGUF/Magistral-Small-2507-Q4_K_M.gguf**: parameter count not readable from the name
+- **mistralai/Magistral-Small-2507-GGUF/Magistral-Small-2507-Q8_0.gguf**: parameter count not readable from the name
+- **mistralai/Magistral-Small-2509-GGUF/Magistral-Small-2509-Q4_K_M.gguf**: parameter count not readable from the name
+- **mistralai/Magistral-Small-2509-GGUF/Magistral-Small-2509-Q8_0.gguf**: parameter count not readable from the name
+- **mistralai/Magistral-Small-2506_gguf/Magistral-Small-2506_Q8_0.gguf**: parameter count not readable from the name
+- **mistralai/Ministral-3-3B-Reasoning-2512-GGUF/Ministral-3-3B-Reasoning-2512-Q8_0.gguf**: 3.65 GB is over the 3.0 GB artifact cap
+- **mistralai/Ministral-3-8B-Instruct-2512-GGUF/Ministral-3-8B-Instruct-2512-Q4_K_M.gguf**: 5.20 GB is over the 3.0 GB artifact cap
+- **mistralai/Ministral-3-8B-Instruct-2512-GGUF/Ministral-3-8B-Instruct-2512-Q8_0.gguf**: 9.03 GB is over the 3.0 GB artifact cap
+- **mistralai/Ministral-3-14B-Instruct-2512-GGUF/Ministral-3-14B-Instruct-2512-Q4_K_M.gguf**: 14B parameters is over the 8B cap
+- **mistralai/Ministral-3-14B-Instruct-2512-GGUF/Ministral-3-14B-Instruct-2512-Q8_0.gguf**: 14B parameters is over the 8B cap
+- **mistralai/Ministral-3-14B-Reasoning-2512-GGUF/Ministral-3-14B-Reasoning-2512-Q4_K_M.gguf**: 14B parameters is over the 8B cap
+- **mistralai/Ministral-3-14B-Reasoning-2512-GGUF/Ministral-3-14B-Reasoning-2512-Q8_0.gguf**: 14B parameters is over the 8B cap
+- **allenai/OLMoE-1B-7B-0924-GGUF/olmoe-1b-7b-0924-q4_0.gguf**: 3.93 GB is over the 3.0 GB artifact cap
+- **allenai/OLMoE-1B-7B-0924-GGUF/olmoe-1b-7b-0924-q4_k_m.gguf**: 4.21 GB is over the 3.0 GB artifact cap
+- **allenai/OLMoE-1B-7B-0924-GGUF/olmoe-1b-7b-0924-q8_0.gguf**: 7.36 GB is over the 3.0 GB artifact cap
+- **allenai/OLMoE-1B-7B-0924-Instruct-GGUF/olmoe-1b-7b-0924-instruct-q4_0.gguf**: 3.93 GB is over the 3.0 GB artifact cap
+- **allenai/OLMoE-1B-7B-0924-Instruct-GGUF/olmoe-1b-7b-0924-instruct-q4_k_m.gguf**: 4.21 GB is over the 3.0 GB artifact cap
+- **allenai/OLMoE-1B-7B-0924-Instruct-GGUF/olmoe-1b-7b-0924-instruct-q8_0.gguf**: 7.36 GB is over the 3.0 GB artifact cap
+- **allenai/OLMo-2-1124-7B-GGUF/OLMo-2-7B-1124-Q4_0.gguf**: 4.22 GB is over the 3.0 GB artifact cap
+- **allenai/OLMo-2-1124-7B-GGUF/OLMo-2-7B-1124-Q4_K_M.gguf**: 4.47 GB is over the 3.0 GB artifact cap
+- **allenai/OLMo-2-1124-7B-GGUF/OLMo-2-7B-1124-Q8_0.gguf**: 7.76 GB is over the 3.0 GB artifact cap
+- **allenai/OLMo-2-1124-13B-GGUF/OLMo-2-1124-13B-Q4_0.gguf**: 13B parameters is over the 8B cap
+- **allenai/OLMo-2-1124-13B-GGUF/OLMo-2-1124-13B-Q4_K_M.gguf**: 13B parameters is over the 8B cap
+- **allenai/OLMo-2-1124-13B-GGUF/OLMo-2-1124-13B-Q8_0.gguf**: 13B parameters is over the 8B cap
+- **allenai/OLMo-2-1124-13B-Instruct-GGUF/olmo-2-1124-13B-instruct-Q4_0.gguf**: 13B parameters is over the 8B cap
+- **allenai/OLMo-2-1124-13B-Instruct-GGUF/olmo-2-1124-13B-instruct-Q4_K_M.gguf**: 13B parameters is over the 8B cap
+- **allenai/OLMo-2-1124-13B-Instruct-GGUF/olmo-2-1124-13B-instruct-Q8_0.gguf**: 13B parameters is over the 8B cap
+- **allenai/OLMo-2-1124-7B-Instruct-GGUF/olmo-2-1124-7B-instruct-Q4_0.gguf**: 4.22 GB is over the 3.0 GB artifact cap
+- **allenai/OLMo-2-1124-7B-Instruct-GGUF/olmo-2-1124-7B-instruct-Q4_K_M.gguf**: 4.47 GB is over the 3.0 GB artifact cap
+- **allenai/OLMo-2-1124-7B-Instruct-GGUF/olmo-2-1124-7B-instruct-Q8_0.gguf**: 7.76 GB is over the 3.0 GB artifact cap
+- **allenai/OLMoE-1B-7B-0125-GGUF**: no license stated on the model page
+- **allenai/OLMoE-1B-7B-0125-Instruct-GGUF**: no license stated on the model page
+- **allenai/olmOCR-7B-0225-preview-GGUF**: no license stated on the model page
+- **allenai/OLMo-2-0325-32B-Instruct-GGUF**: no license stated on the model page
+- **allenai/OLMo-2-0425-1B-GGUF**: no license stated on the model page
+- **allenai/OLMo-2-0425-1B-Instruct-GGUF**: no license stated on the model page

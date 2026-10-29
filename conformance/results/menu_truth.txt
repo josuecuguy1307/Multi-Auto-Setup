@@ -1,0 +1,60 @@
+NOTE protocol protocol-connect is for kind 'connect', which is not a TargetKind: the loop can never start it
+
+=== target kind=host ring=0 authorized=False (menu_max=6)
+  basics     -> 5 shown of 5: ['read_cpu_ram', 'read_disks', 'read_hw_native', 'read_os', 'read_os_native']
+  context    -> 5 shown of 5: ['read_battery', 'read_display', 'read_net_interfaces', 'read_tool_versions', 'read_virtualization']
+  judge      -> 0 shown of 0: []
+  survey     -> 6 shown of 16: ['skill.app_agents', 'skill.app_containers', 'skill.app_installed', 'skill.app_model_servers', 'skill.app_processes', 'skill.app_tools']
+  done       -> 0 shown of 0: []
+
+=== target kind=host ring=3 authorized=False (menu_max=6)
+  basics     -> 0 shown of 0: []
+  context    -> 0 shown of 0: []
+  judge      -> 0 shown of 0: []
+  survey     -> 0 shown of 0: []
+  done       -> 0 shown of 0: []
+
+=== target kind=net_host ring=0 authorized=False (menu_max=6)
+  listen     -> 1 shown of 1: ['ble_scan_passive']
+  identify   -> 6 shown of 6: ['lookup_bluetooth_company', 'lookup_bluetooth_service', 'lookup_oui', 'lookup_service_type', 'lookup_usb_id', 'match_serial_signature']
+  probe      -> 5 shown of 5: ['capture_frame', 'ping_sweep', 'serial_identify', 'ssdp_search', 'tcp_scan']
+  ask        -> 0 shown of 0: []
+  done       -> 0 shown of 0: []
+
+=== target kind=ble ring=1 authorized=False (menu_max=6)
+  paired     -> 1 shown of 1: ['skill.ble_paired']
+  listen     -> 1 shown of 1: ['skill.ble_scan']
+  classify   -> 0 shown of 0: []
+  ask        -> 0 shown of 0: []
+  done       -> 0 shown of 0: []
+
+=== target kind=serial ring=0 authorized=False (menu_max=6)
+  list       -> 1 shown of 1: ['serial_identify']
+  listen     -> 1 shown of 1: ['serial_identify']
+  match      -> 6 shown of 6: ['lookup_bluetooth_company', 'lookup_bluetooth_service', 'lookup_oui', 'lookup_service_type', 'lookup_usb_id', 'match_serial_signature']
+  research   -> 0 shown of 0: []
+  ask        -> 0 shown of 0: []
+  generate   -> 0 shown of 0: []
+  unresolved -> 0 shown of 0: []
+  done       -> 0 shown of 0: []
+
+=== target kind=usb ring=0 authorized=False (menu_max=6)
+  read       -> 0 shown of 0: []
+  guess      -> 6 shown of 6: ['lookup_bluetooth_company', 'lookup_bluetooth_service', 'lookup_oui', 'lookup_service_type', 'lookup_usb_id', 'match_serial_signature']
+  confirm    -> 6 shown of 9: ['ble_scan_passive', 'capture_frame', 'http_get', 'ping_sweep', 'read_file', 'run_command']
+  ask        -> 0 shown of 0: []
+  done       -> 0 shown of 0: []
+
+=== target kind=phone ring=0 authorized=False (menu_max=6)
+  identity   -> 1 shown of 1: ['ios_info']
+  battery    -> 1 shown of 1: ['ios_info']
+  storage    -> 1 shown of 1: ['ios_info']
+  name       -> 1 shown of 1: ['ios_info']
+  done       -> 0 shown of 0: []
+
+=== target kind=sensor ring=0 authorized=False (menu_max=6)
+  find       -> 0 shown of 0: []
+  read       -> 6 shown of 9: ['ble_scan_passive', 'capture_frame', 'http_get', 'ping_sweep', 'read_file', 'run_command']
+  compare    -> 6 shown of 9: ['ble_scan_passive', 'capture_frame', 'http_get', 'ping_sweep', 'read_file', 'run_command']
+  ask        -> 0 shown of 0: []
+  done       -> 0 shown of 0: []

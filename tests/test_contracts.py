@@ -135,15 +135,25 @@ def test_fact_without_evidence_cannot_pass_hypothesis():
             Fact(target_id="t", key="usb.vendor_name", value="X", status=status)
 
 
-def test_verified_needs_verifier_or_two_independent_providers():
-    one = [ev("builtin"), ev("builtin", probe="other")]
-    with pytest.raises(ValidationError) as exc:
-        Fact(target_id="t", key="os.name", value="macOS", status=FactStatus.verified, evidence=one)
-    assert "two independent providers" in readable_error(exc.value)
-    Fact(target_id="t", key="os.name", value="macOS", status=FactStatus.verified,
-         evidence=[ev("builtin"), ev("sw_vers")])
-    Fact(target_id="t", key="os.name", value="macOS", status=FactStatus.verified,
-         evidence=[ev("verifier")], created_by=CreatedBy.verifier)
+def raw(n: str):
+    from envrec.contracts import RawRef
+    return RawRef(path=f"raw/{n}", sha256=n * 64)
+
+
+def test_verified_needs_the_verifier_or_two_independent_observations():
+    """Independent means distinct raw captures AND distinct channels; two provider names over one capture, or over no capture, are not."""
+    def verified(evidence, **kw):
+        return Fact(target_id="t", key="os.name", value="macOS", status=FactStatus.verified, evidence=evidence, **kw)
+    for not_enough in ([ev("builtin"), ev("builtin", probe="other")],                                         # one provider, no capture
+                       [ev("builtin"), ev("sw_vers")],                                                        # two provider names, no capture at all
+                       [ev("builtin", raw_ref=raw("a")), ev("sw_vers", raw_ref=raw("a"))],                    # two provider names over ONE capture
+                       [ev("builtin", raw_ref=raw("a"), channel="ssh"), ev("sw_vers", raw_ref=raw("b"), channel="ssh")]):  # two captures over ONE channel
+        with pytest.raises(ValidationError) as exc:
+            verified(not_enough)
+        assert "distinct raw captures AND distinct channels" in readable_error(exc.value)
+    ok = verified([ev("builtin", raw_ref=raw("a"), channel="usb"), ev("builtin", raw_ref=raw("b"), channel="serial")])
+    assert ok.status == FactStatus.verified and len(ok.evidence) == 2
+    assert verified([ev("verifier")], created_by=CreatedBy.verifier).created_by == CreatedBy.verifier
 
 
 def test_contradicted_keeps_both_evidence_entries():
@@ -180,10 +190,16 @@ def test_same_value_merges_evidence_and_supersedes():
 
 
 def test_two_independent_tested_sources_become_verified():
-    a = fact("os.name", "macOS", FactStatus.tested, [ev("builtin", "platform")])
-    b = fact("os.name", "macOS", FactStatus.tested, [ev("sw_vers", "cmd")])
+    a = fact("os.name", "macOS", FactStatus.tested, [ev("builtin", "platform", raw_ref=raw("a"))])
+    b = fact("os.name", "macOS", FactStatus.tested, [ev("sw_vers", "cmd", raw_ref=raw("b"))])
     r = reconcile(a, b)
-    assert r.fact.status == FactStatus.verified
+    assert r.fact.status == FactStatus.verified and len(r.fact.evidence) == 2
+
+
+def test_two_provider_names_over_one_capture_stay_tested():
+    a = fact("os.name", "macOS", FactStatus.tested, [ev("builtin", "platform", raw_ref=raw("a"))])
+    b = fact("os.name", "macOS", FactStatus.tested, [ev("sw_vers", "cmd", raw_ref=raw("a"))])
+    assert reconcile(a, b).fact.status == FactStatus.tested
 
 
 def test_same_provider_twice_is_not_independent():

@@ -1,0 +1,25 @@
+{
+ "label": "REAL (helper, Bluetooth), redacted: aggregated from one passive scan through envrec Helper. No identifiers, no device names, no network names.",
+ "helper_request": {
+  "req": "ble_scan",
+  "seconds": 10
+ },
+ "advertisers_seen": 195,
+ "by_class": {
+  "Apple, Inc.": 143,
+  "unclassified": 19,
+  "Microsoft": 17,
+  "Samsung Electronics Co. Ltd.": 8,
+  "Device Information": 7,
+  "Zhuhai Jieli technology Co.,Ltd": 1
+ },
+ "paired_by_class": {
+  "Headphones": 2,
+  "Headset": 1,
+  "Mobile Phone": 1,
+  "Speaker": 1,
+  "unclassified": 1
+ },
+ "paired_count": 6,
+ "connected_count": 0
+}

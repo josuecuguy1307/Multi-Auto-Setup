@@ -98,6 +98,8 @@ def verify_server(client: ServerClient, store: Store, target: Target, *, rounds:
                                 len(replies), replies)
     if len(set(replies)) < len(replies):
         return VerifyResult(False, "identical replies to different requests", len(replies), replies)
+    if not store.has_claim_by_other(target.id, "host.model_server", CreatedBy.verifier):
+        return VerifyResult(False, "nothing claims this server is running: the deploy records that claim first, and a verifier never creates the claim it verifies", len(replies), replies)
     raw = store.put_raw(json.dumps({"nonces": nonces, "replies": replies}))
     store.write_fact(Fact(
         target_id=target.id, key="host.model_server", value="running", status=FactStatus.verified, created_by=CreatedBy.verifier,

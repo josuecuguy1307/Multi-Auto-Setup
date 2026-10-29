@@ -21,6 +21,7 @@
     ],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "guess",
@@ -42,6 +43,7 @@
     ],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "confirm",
@@ -63,6 +65,7 @@
     ],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "ask",
@@ -91,6 +94,7 @@
     "tags": [],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "done",
@@ -109,6 +113,7 @@
     "tags": [],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [],
     "terminal": true,
     "reason": "identified, or handed to the human with the unknowns written down"

@@ -1,0 +1,47 @@
+{
+ "provenance": "builtin",
+ "protocol": "choose",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "scope"
+  ],
+  "start": "choose",
+  "states": {
+   "choose": {
+    "goal": "Pick the candidate that fits the goal and move to it with extend_to.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "action": "extend_to"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "a candidate was chosen"
+   }
+  }
+ }
+}

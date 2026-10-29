@@ -59,6 +59,19 @@ class Cap:
         return self.text.splitlines()
 
 
+def serial_text(cap):
+    """The text a serial device said, from a serial_identify capture (a JSON log with `passive` and `reply`) or from plain text. '' when there is none."""
+    if cap is None or not cap.ok:
+        return ""
+    try:
+        d = json.loads(cap.text)
+        if isinstance(d, dict):
+            return d.get("passive") or d.get("reply") or ""
+    except ValueError:
+        pass
+    return cap.text
+
+
 class Caps:
     pending: list = []
 

@@ -105,7 +105,10 @@ def test_top_k_default_is_three_and_a_model_appears_at_most_twice():
 
 def test_plan_lists_exact_artifacts_and_counts_shared_downloads_once():
     plan = make_plan()
-    assert len(plan.trials) == 3 and plan.trials[0].new_download_bytes > plan.trials[1].new_download_bytes - 1 or True
+    assert len(plan.trials) == 3
+    first, *rest = plan.trials
+    assert first.new_download_bytes == first.runtime_bytes + first.model_bytes  # the shared runtime is downloaded once, with the first trial...
+    assert [t.new_download_bytes for t in rest] == [t.model_bytes for t in rest]  # ...and is not counted again for the others
     ids = [t.entry_id for t in plan.trials]
     assert len(ids) == len(set(ids))
     # the runtime is shared by every trial, so it is paid for in the first trial only
@@ -191,7 +194,7 @@ def test_the_gate_grants_what_the_plan_lists_without_asking(store):
     action(sha="f" * 64),                                              # a file the plan does not list
     action(target="someone-elses-box"),                                # another device
     action(cmd="dd of=/etc/passwd status=none"),                       # a path outside the install root
-    action(cmd="rm -rf /opt/envrec/worker /home/josue"),               # a path outside, smuggled in with a legit one
+    action(cmd="rm -rf /opt/envrec/worker /home/owner"),               # a path outside, smuggled in with a legit one
     action("open_tunnel", "ssh -L 1:2:3 host", "dev"),                 # a recipe the plan never covered
     action("fetch_artifact", "GET https://x/other", "controller", sha="e" * 64),
 ])

@@ -9,14 +9,17 @@ from __future__ import annotations
 import hashlib
 import os
 import sqlite3
+import threading
 from pathlib import Path
 from typing import TypeVar
 
 from pydantic import BaseModel
 
 from envrec.contracts import (
+    CreatedBy,
     Event,
     Fact,
+    FactStatus,
     Hypothesis,
     HypothesisOutcome,
     RawRef,
@@ -55,7 +58,52 @@ CREATE TRIGGER IF NOT EXISTS events_no_delete BEFORE DELETE ON events
 BEGIN SELECT RAISE(ABORT, 'events are append-only'); END;
 CREATE TABLE IF NOT EXISTS hypotheses (id TEXT PRIMARY KEY, target_id TEXT NOT NULL, json TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS skills (id TEXT PRIMARY KEY, signature TEXT NOT NULL, json TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS captures (
+    seq INTEGER PRIMARY KEY AUTOINCREMENT,
+    target_id TEXT NOT NULL,
+    sha256 TEXT NOT NULL,
+    path TEXT NOT NULL,
+    name TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    tool TEXT NOT NULL,
+    event_id TEXT,
+    source TEXT NOT NULL DEFAULT '',
+    UNIQUE(target_id, sha256, name)
+);
 """
+
+
+LOADING = {"loading": True}  # facts already stored were accepted under the rules of their day: reading them back does not re-judge them
+
+
+_INSERT_EVENT = "INSERT INTO events(id, ts, actor, type, run_id, json) VALUES(?, ?, ?, ?, ?, ?)"
+_THREAD_WRITE = threading.Lock()
+
+
+def _tagged(event: Event) -> Event:
+    if event.tag is None:
+        from envrec.contracts.tags import derive_tag
+        event = event.model_copy(update={"tag": derive_tag(event.actor, event.type, event.payload)})
+    return event
+
+
+def _event_row(event: Event) -> tuple:
+    return (event.id, event.ts.isoformat(), event.actor.value, event.type, event.run_id, event.model_dump_json())
+
+
+def append_event_from_thread(root: Path | str, event: Event) -> Event:
+    """Append one event to the store at `root` from ANY thread, through its own short-lived connection (a sqlite connection belongs to the thread that made it). For code that
+    runs on a server thread and has to leave a record when something happens, whether or not a tool is running: the setup link's expiry, say. The events table is append-only
+    either way (its triggers apply to this connection too)."""
+    event = _tagged(event)
+    with _THREAD_WRITE:
+        db = sqlite3.connect(Path(root) / "envrec.db", timeout=10)
+        try:
+            with db:
+                db.execute(_INSERT_EVENT, _event_row(event))
+        finally:
+            db.close()
+    return event
 
 
 class RawHashMismatch(Exception):
@@ -69,6 +117,10 @@ class Store:
         self.db = sqlite3.connect(self.root / "envrec.db")
         self.db.row_factory = sqlite3.Row
         self.db.executescript(SCHEMA)
+        try:  # a store made before captures carried their source
+            self.db.execute("ALTER TABLE captures ADD COLUMN source TEXT NOT NULL DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
 
     def close(self) -> None:
         self.db.close()
@@ -106,8 +158,16 @@ class Store:
 
     # ---- facts -----------------------------------------------------------------------------
 
+    def has_claim_by_other(self, target_id: str, key: str, creator: CreatedBy) -> bool:
+        """Is there, in the history of this (target, key), a fact whose creator is not `creator`?"""
+        rows = self.db.execute("SELECT json FROM facts WHERE target_id = ? AND key = ?", (target_id, key)).fetchall()
+        return any(Fact.model_validate_json(r["json"], context=LOADING).created_by != creator for r in rows)
+
     def write_fact(self, fact: Fact) -> Fact:
-        """Reconcile with the current fact for (target, key) and return the fact that is now current."""
+        """Reconcile with the current fact for (target, key) and return the fact that is now current.
+        A verifier judges someone else's claim: a `verified` fact created by the verifier needs an earlier fact for the same key by another creator."""
+        if fact.status == FactStatus.verified and fact.created_by == CreatedBy.verifier and not self.has_claim_by_other(fact.target_id, fact.key, CreatedBy.verifier):
+            raise ValueError(f"the verifier cannot create the claim it verifies: {fact.key} has no earlier claim by another creator")
         current = self.current_fact(fact.target_id, fact.key)
         result = reconcile(current, fact)
         if not result.changed:
@@ -128,7 +188,7 @@ class Store:
         row = self.db.execute(
             "SELECT json FROM facts WHERE target_id = ? AND key = ? AND is_current = 1", (target_id, key)
         ).fetchone()
-        return Fact.model_validate_json(row["json"]) if row else None
+        return Fact.model_validate_json(row["json"], context=LOADING) if row else None
 
     def current_facts(self, target_id: str | None = None) -> list[Fact]:
         sql = "SELECT json FROM facts WHERE is_current = 1"
@@ -137,11 +197,11 @@ class Store:
             sql += " AND target_id = ?"
             args = (target_id,)
         rows = self.db.execute(sql + " ORDER BY seq", args).fetchall()
-        return [Fact.model_validate_json(r["json"]) for r in rows]
+        return [Fact.model_validate_json(r["json"], context=LOADING) for r in rows]
 
     def get_fact(self, fact_id: str) -> Fact | None:
         row = self.db.execute("SELECT json FROM facts WHERE id = ?", (fact_id,)).fetchone()
-        return Fact.model_validate_json(row["json"]) if row else None
+        return Fact.model_validate_json(row["json"], context=LOADING) if row else None
 
     def fact_chain(self, fact_id: str) -> list[Fact]:
         """The fact and everything it superseded, newest first."""
@@ -160,12 +220,9 @@ class Store:
     # ---- events (append-only) --------------------------------------------------------------
 
     def append_event(self, event: Event) -> Event:
+        event = _tagged(event)
         with self.db:
-            self.db.execute(
-                "INSERT INTO events(id, ts, actor, type, run_id, json) VALUES(?, ?, ?, ?, ?, ?)",
-                (event.id, event.ts.isoformat(), event.actor.value, event.type, event.run_id,
-                 event.model_dump_json()),
-            )
+            self.db.execute(_INSERT_EVENT, _event_row(event))
         return event
 
     def events(self, *, run_id: str | None = None, type: str | None = None) -> list[Event]:
@@ -180,8 +237,8 @@ class Store:
         return [Event.model_validate_json(r["json"]) for r in rows]
 
     def tools_run(self, target_id: str) -> set[str]:
-        """Names of tools that have already run on this target (from the append-only event log)."""
-        return {e.payload.get("tool") for e in self.events(type="tool_run") if e.payload.get("target") == target_id}
+        """Names of tools that have run here AND succeeded (from the append-only log). A failed attempt (a permission, an error) is not evidence and advances nothing."""
+        return {e.payload.get("tool") for e in self.events(type="tool_result") if e.payload.get("target") == target_id and e.payload.get("ok") is True}
 
     # ---- hypotheses and skills -------------------------------------------------------------
 
@@ -237,6 +294,37 @@ class Store:
             tmp.write_bytes(raw)
             os.replace(tmp, path)
         return RawRef(path=rel, sha256=sha)
+
+    # ---- the capture index: which stored captures belong to which target (names and sizes only; the bytes stay in the raw store) ------------------------------
+
+    def index_capture(self, target_id: str, ref: RawRef, name: str, size: int, tool: str, event_id: str | None = None, source: str = "") -> None:
+        with self.db:
+            self.db.execute("INSERT OR IGNORE INTO captures(target_id, sha256, path, name, size, tool, event_id, source) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+                            (target_id, ref.sha256, ref.path, name[:64], size, tool[:64], event_id, source[:300]))
+
+    def captures(self, target_id: str) -> list[dict]:
+        """The captures kept for a target, oldest first: {sha256, name, size, tool}. No content."""
+        rows = self.db.execute("SELECT sha256, path, name, size, tool, source FROM captures WHERE target_id = ? ORDER BY seq", (target_id,)).fetchall()
+        return [dict(r) for r in rows]
+
+    def resolve_capture(self, target_id: str, ref: str) -> RawRef:
+        """The RawRef a capture id names, among THIS target's captures. The id is the sha256 or its first 8 or more hex digits. KeyError says why it did not resolve."""
+        ref = ref.strip().lower()
+        hits = {r["sha256"]: r["path"] for r in self.captures(target_id) if r["sha256"].startswith(ref)} if len(ref) >= 8 else {}
+        if not hits:
+            raise KeyError(f"no capture {ref[:16]!r} for this target; the CAPTURES list shows the ones that exist")
+        if len(hits) > 1:
+            raise KeyError(f"the capture id {ref[:16]!r} matches {len(hits)} captures; give more digits")
+        sha, path = next(iter(hits.items()))
+        return RawRef(path=path, sha256=sha)
+
+    def delete_raw(self, ref: RawRef) -> bool:
+        """Delete one stored raw output (for example a camera frame the human asked to have removed). Facts that cite it keep the hash and lose the bytes."""
+        path = self.root / ref.path
+        if path.is_file():
+            path.unlink()
+            return True
+        return False
 
     def read_raw(self, ref: RawRef) -> bytes:
         path = self.root / ref.path

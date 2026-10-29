@@ -34,6 +34,7 @@ OLD_HINTS = {
     Transport.ssh: "enable sshd on the device (on Android: install Termux and run sshd), add your own public key, then re-run",
     Transport.docker_exec: "start the container and make sure the docker CLI can see it, then re-run",
     Transport.adb_usb: "connect the cable, turn on USB debugging in developer options and accept the key prompt on the phone, then re-run",
+    Transport.ios_usb: "connect the cable, unlock the phone and tap Trust when it asks, then re-run (libimobiledevice must be installed: brew install libimobiledevice)",
     Transport.serial: "connect the serial adapter, check the port name and permissions, then re-run",
     Transport.tcp: "power the instrument, check its address and port on your own network, then re-run",
 }

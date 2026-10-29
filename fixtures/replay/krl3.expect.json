@@ -1,0 +1,8 @@
+{
+ "values": {
+  "87": "bat",
+  "342": "temp",
+  "2": "mode"
+ },
+ "note": "values the frame holds and a word the fact key should contain; known by construction (fixtures/replay/krl3.json, fixtures/docs/krl3.md)"
+}

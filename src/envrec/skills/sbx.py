@@ -22,10 +22,13 @@ WRAPPER = (
     "import sys, json\n"
     "sys.path.insert(0, '/sbxlib')\n"
     "d = json.load(sys.stdin)\n"
+    "import signal\n"
+    "signal.alarm(max(1, int(d.get('limit_s', 10))))\n"  # the script's own time starts here, after the container and the interpreter are up
     "ns = {'__name__': 'skill_script', '__file__': '/skill/' + d['script']}\n"
     "exec(compile(open('/skill/' + d['script']).read(), d['script'], 'exec'), ns)\n"
     "sys.stdout.write(json.dumps(ns['parse'](d['input'])))\n"
 )
+START_SLACK_S = 45  # container start under load (a busy Docker VM) is not the script's time; the script's own limit is enforced inside by the alarm above
 SCRIPT_KEYS = {"facts", "entities", "unknowns", "next"}
 
 
@@ -95,17 +98,19 @@ def run_script(skill_dir: Path, script: str, payload: dict, *, timeout_s: float 
     """Run `<skill_dir>/<script>` over `payload` (its `parse(input)`), and return the validated output. Raises SandboxUnavailable (fail closed) or SandboxRefused."""
     if not (skill_dir / script).is_file():
         raise SandboxRefused(f"the script {script} does not exist")
-    body = json.dumps({"script": script, "input": payload}).encode()
+    body = json.dumps({"script": script, "input": payload, "limit_s": timeout_s}).encode()
     if len(body) > MAX_INPUT:
         raise SandboxRefused("input too large for the sandbox")
     if not docker_ready(image):
         raise SandboxUnavailable("Docker (or the sandbox image) is not available: skill scripts do not run without it")
     name = f"envrec-sbx-{uuid.uuid4().hex[:10]}"
     try:
-        done = subprocess.run(docker_argv(name, skill_dir, image), input=body, capture_output=True, timeout=timeout_s + 8)
+        done = subprocess.run(docker_argv(name, skill_dir, image), input=body, capture_output=True, timeout=timeout_s + START_SLACK_S)
     except subprocess.TimeoutExpired:
         subprocess.run(["docker", "kill", name], capture_output=True, timeout=15)
         raise SandboxRefused(f"the script ran over {timeout_s:g} s and was killed") from None
+    if done.returncode in (142, -14):  # SIGALRM: the in-container limit fired
+        raise SandboxRefused(f"the script ran over {timeout_s:g} s and was killed")
     if done.returncode != 0:
         last = done.stderr.decode("utf-8", "replace").strip().splitlines()
         raise ScriptFailed(f"the script failed (exit {done.returncode}): {last[-1][:160] if last else 'no message'}")

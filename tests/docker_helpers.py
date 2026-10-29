@@ -67,7 +67,7 @@ def wait_ssh(port: int, key: str, known_hosts: str, timeout: float = 40) -> None
     end = time.time() + timeout
     while time.time() < end:
         r = _sh("ssh", "-i", key, "-p", str(port), "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new",
-                "-o", f"UserKnownHostsFile={known_hosts}", "-o", "ConnectTimeout=3", "josue@127.0.0.1", "true", timeout=15)
+                "-o", f"UserKnownHostsFile={known_hosts}", "-o", "ConnectTimeout=3", "owner@127.0.0.1", "true", timeout=15)
         if r.returncode == 0:
             return
         time.sleep(0.5)

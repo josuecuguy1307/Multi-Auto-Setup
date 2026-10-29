@@ -80,7 +80,7 @@ def test_start_waits_for_health_then_status_stop_and_the_port_closes(run):
     port = sup.spec.port
     stopped = sup.stop()
     assert stopped.state == "stopped" and not port_open(port)
-    assert sup.proc.poll() is not None  # no process left behind
+    assert sup.proc.poll() == -15  # ended by SIGTERM: no process left behind
 
 
 def test_the_server_listens_on_127_0_0_1_only(run):
@@ -117,7 +117,7 @@ def test_a_server_that_never_becomes_healthy_is_killed_and_reported(run):
     sup = run("never_healthy", startup_timeout_s=2)
     with pytest.raises(RuntimeFailed, match="did not become healthy"):
         sup.start()
-    assert sup.proc.poll() is not None
+    assert sup.proc.poll() == -15  # killed by SIGTERM when it never became healthy
 
 
 def test_a_missing_binary_is_a_clean_failure(model, tmp_path):

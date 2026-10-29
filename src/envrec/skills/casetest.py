@@ -63,13 +63,19 @@ def run_case(skill: Skill, case_dir: Path, script_runner=run_script) -> CaseResu
     problems: list[str] = []
     if expect.get("match") is False:
         if facts or ents:
-            problems.append(f"a capture that must not match produced {len(facts)} fact(s) and {len(ents)} entity(ies)")
+            problems.append(f"a capture that must not match produced {len(facts)} fact(s) ({', '.join(sorted(facts))[:80]}): the script has to check that the text is from this device (its prefix) "
+                            "and return nothing otherwise")
         return CaseResult(case_dir.name, not problems, problems)
+    shown = False
     for k, v in expect.get("facts", {}).items():
         if k not in facts:
-            problems.append(f"{k}: expected {v!r}, the skill produced no such fact")
+            problems.append(f"{k}: expected {v!r}, the skill produced no such fact" + (f" (it did produce: {', '.join(sorted(facts))})" if facts else " (it produced no fact at all: check the pattern against the capture text)"))
+            shown = True
         elif json.loads(json.dumps(facts[k], default=str)) != v:
             problems.append(f"{k}: expected {v!r}, got {facts[k]!r}")
+    if shown or any("got" in p for p in problems):  # help the author: what the script did produce, and what the capture looks like
+        cap = next(iter(load_captures(case_dir, platform).values()), None)
+        problems.append(f"the script produced {json.dumps(facts, default=str)[:160]} from a capture that begins {(cap.text[:140] if cap else '')!r}")
     if "fact_keys" in expect and sorted(facts) != sorted(expect["fact_keys"]):
         problems.append(f"fact keys: expected {sorted(expect['fact_keys'])}, got {sorted(facts)}")
     if "entities" in expect and len(ents) != expect["entities"]:

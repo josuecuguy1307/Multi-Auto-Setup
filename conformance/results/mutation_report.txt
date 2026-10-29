@@ -1,0 +1,10 @@
+# Mutation check after Part A (scratch git worktree, deleted afterwards), focused on the files that cover each guard
+# command: MUTATION_TIMEOUT=60 conformance/mutation_check.sh "tests/test_loop.py tests/test_protocols.py tests/test_privacy_hashing.py tests/test_policy.py tests/test_discovery_scope.py tests/test_discover.py"   (8 s)
+policy denial      -> tests/test_loop.py::test_unauthorized_target_is_denied_by_policy_and_logged
+approval gate      -> tests/test_discover.py::test_everything_else_still_asks_the_human[a0]
+scope guard        -> tests/test_discovery_scope.py::test_a_public_address_is_refused
+privacy gate       -> tests/test_privacy_hashing.py::test_an_ambient_entity_key_is_a_short_hash_and_the_raw_address_appears_nowhere
+protocol done      -> tests/test_protocols.py::test_a_transition_without_its_evidence_is_refused_with_a_typed_message_and_counted
+# Full suite with ONLY the done guard removed (per-test limit 45 s, Docker tests apart): 3 failed, 2092 passed, 6 skipped in 8 min; Docker tests: 42 passed, 3 skipped in 3 min.
+# The 3 failures are all about the done guard (tests/test_protocols.py: the typed refusal, code never writes a missing fact, done always refused). No hang: the 33-minute hang of the first
+# attempt did NOT reproduce with the per-test limit active (HUNG count: 0). Cause not found; recorded as a known gap, and any future hang is now a failure named HANG.

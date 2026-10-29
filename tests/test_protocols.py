@@ -71,12 +71,19 @@ def host(store):
 
 
 def drive(store, host, replies, *, policy=RingPolicy.fixed_order, adapter=None, protocols=PS, steps=30):
-    profile = scripted_profile().model_copy(update={"ring_policy": policy})
+    profile = scripted_profile().model_copy(update={"ring_policy": policy, "walk_for_model": policy == RingPolicy.fixed_order})
+    if protocols is not None and replies and replies[-1] == DONE:
+        replies = [*replies, DONE, DONE, DONE]  # a protocol refuses `done` until it has ended (up to three times), so the model asks again
     model = ScriptedModel(replies, profile)
     adapter = adapter or host_tools()
     loop = Loop(store, [adapter], model, config=RunConfig(max_steps=steps, protocols=protocols, library=LIB))
     summary = asyncio.run(loop.run(host))
     return summary, model, adapter, loop
+
+
+def refusals(store):
+    """Refusals of advance and of actions; the refusals of `done` (a protocol that has not ended) are counted apart."""
+    return [e for e in store.events(type="protocol_refused") if e.payload.get("action") != "done"]
 
 
 def last_view(model):
@@ -88,9 +95,9 @@ def last_view(model):
 def test_every_target_kind_resolves_to_a_protocol():
     for kind in TargetKind:
         assert PS.for_kind(kind.value) is not None, kind
-    assert PS.for_kind("connect").meta.protocol == "connect"
+    assert PS.for_kind("remote").meta.protocol == "connect" and PS.for_kind("media").meta.protocol == "media"  # a computer reached over a transport; this computer's own paired devices and media apps
     assert PS.for_kind("something-new").meta.protocol == "generic"  # an unknown kind falls to the generic ladder
-    wanted = {"host", "usb", "serial", "ble", "network_host", "software", "sensor", "instrument", "signal", "connect", "generic"}
+    wanted = {"host", "usb", "serial", "ble", "network_host", "software", "sensor", "instrument", "signal", "connect", "media", "generic"}
     assert wanted <= set(PS.by_id)
 
 
@@ -112,22 +119,22 @@ def test_a_protocol_with_a_dangling_transition_or_no_end_is_rejected():
 
 def test_a_transition_without_its_evidence_is_refused_with_a_typed_message_and_counted(store, host):
     s, model, adapter, loop = drive(store, host, [advance("context"), advance("context"), DONE])
-    assert s.protocol_refusals == 2 and s.stop_reason == "done"
-    refused = [e for e in store.events(type="protocol_refused")]
+    assert len(refusals(store)) == 2 and s.stop_reason == "refused_done_loop"  # done is refused while the protocol has steps left
+    refused = refusals(store)
     assert len(refused) == 2 and "os.name" in " ".join(refused[0].payload["missing"]) and refused[0].payload["from"] == "basics"
     assert loop._proto_runs[host.id].state == "basics"  # it never moved
 
 
 def test_a_step_cannot_be_skipped(store, host):
     s, *_ = drive(store, host, [advance("judge"), DONE])
-    ev = store.events(type="protocol_refused")[0]
-    assert s.protocol_refusals == 1 and "no transition from basics to judge" in ev.payload["missing"][0]
+    ev = refusals(store)[0]
+    assert len(refusals(store)) == 1 and "no transition from basics to judge" in ev.payload["missing"][0]
 
 
 def test_with_the_evidence_in_the_model_may_advance(store, host):
     s, model, adapter, loop = drive(store, host, [call("read_os"), call("read_cpu_ram"), call("read_disks"), advance("context"), DONE], policy=RingPolicy.model_decides)
     run = loop._proto_runs[host.id]
-    assert s.protocol_refusals == 0 and run.state == "context" and run.history[-1] == {"state": "context", "by": "model"}
+    assert len(refusals(store)) == 0 and run.state == "context" and run.history[-1] == {"state": "context", "by": "model"}
     assert len(store.events(type="protocol_state")) == 1
 
 
@@ -136,7 +143,7 @@ def test_an_unknown_that_was_tried_counts_as_evidence(store, host):
     store.write_fact(Fact(target_id=host.id, key="hw.ram_total_gib"))
     store.write_fact(Fact(target_id=host.id, key="hw.disk_total_gib"))
     s, *_ , loop = drive(store, host, [advance("context"), DONE], policy=RingPolicy.model_decides)
-    assert s.protocol_refusals == 0 and loop._proto_runs[host.id].state == "context"
+    assert len(refusals(store)) == 0 and loop._proto_runs[host.id].state == "context"
 
 
 # ---- the menu is cut to the step ----------------------------------------------------------------------------------------------------------
@@ -156,7 +163,7 @@ def test_a_tool_outside_the_step_is_not_on_the_menu_so_it_cannot_be_called(store
 def test_actions_a_step_does_not_list_are_refused(store, host):
     research = json.dumps({"action": "research", "question": "what is this?"})
     s, *_ = drive(store, host, [research, DONE], policy=RingPolicy.model_decides)
-    assert s.protocol_refusals == 1 and s.rejected_actions == 1
+    assert len(refusals(store)) == 1 and s.rejected_actions == 1
     assert "not allowed in protocol step basics" in [e.payload["reason"] for e in store.events(type="action_rejected")][0]
 
 
@@ -166,7 +173,7 @@ def test_the_view_carries_the_card_of_the_current_step(store, host):
     assert view  # the card itself is in the prompt text the model got
     s, model, *_ = drive(store, host, [DONE], policy=RingPolicy.model_decides)
     text = model.prompts[0] if hasattr(model, "prompts") else str(model.calls[0])
-    assert "PROTOCOL host, STEP basics (1 of 5)" in text and "TO MOVE ON: reply advance to context" in text
+    assert 'PROTOCOL host, you are in the step named "basics" (step 1 of 5)' in text and 'TO MOVE ON: reply {"action":"advance","to":"context"}' in text
 
 
 # ---- a small model is never stuck, and a protocol ends ------------------------------------------------------------------------------------
@@ -178,16 +185,16 @@ def test_for_a_small_model_code_walks_the_steps_when_each_is_finished_and_the_pr
     assert [h["state"] for h in run.history] == ["basics", "context", "judge", "survey", "done"]
     assert [h["by"] for h in run.history] == ["start", "code", "code", "code", "code"]
     assert s.stop_reason == "protocol_done" and adapter.ran == ["read_os", "read_cpu_ram", "read_disks", "read_battery", "read_display", "read_virtualization", "read_net_interfaces", "classify_host"]
-    assert s.protocol_refusals == 0 and s.protocol_history[host.id][-1]["state"] == "done"
+    assert len(refusals(store)) == 0 and s.protocol_history[host.id][-1]["state"] == "done"
 
 
-def test_code_records_an_unknown_when_a_step_has_no_tool_left_and_a_fact_is_still_missing(store, host):
-    a = Fake([spec("read_os", "os.name"), spec("read_cpu_ram", "hw.ram_total_gib")])  # nothing reads the disks
+def test_code_never_writes_a_missing_fact_to_get_a_step_passed(store, host):
+    """Nothing reads the disks. The step needs hw.disk_total_gib: code must not record it as unknown to move on; the run ends with a typed stop, incomplete."""
+    a = Fake([spec("read_os", "os.name"), spec("read_cpu_ram", "hw.ram_total_gib")])
     s, model, adapter, loop = drive(store, host, [call("read_os"), call("read_cpu_ram"), DONE], adapter=a)
-    f = store.current_fact(host.id, "hw.disk_total_gib")
-    assert f is not None and f.status == FactStatus.unknown
-    assert loop._proto_runs[host.id].state != "basics"
-    assert any(e.payload.get("by") == "code" for e in store.events(type="unknown_recorded"))
+    assert store.current_fact(host.id, "hw.disk_total_gib") is None
+    assert loop._proto_runs[host.id].state == "basics" and s.stop_reason == "refused_done_loop"
+    assert [e for e in store.events(type="unknown_recorded") if e.payload.get("by") == "code"] == []
 
 
 def test_a_strong_model_decides_by_itself_and_is_not_moved_by_code(store, host):
@@ -207,3 +214,23 @@ def test_the_machine_alone_is_deterministic(store, host):
     assert not run.check("context", ev).ok  # a hypothesis is not the tested evidence this step demands... and the other two facts are missing
     assert run.ready(ev) is None
     assert run.check("nowhere", ev).missing[0].startswith("no transition")
+
+
+def test_done_is_always_refused_while_the_protocol_has_steps_left_and_a_model_that_insists_ends_the_run_as_incomplete(store, host):
+    profile = scripted_profile().model_copy(update={"ring_policy": RingPolicy.model_decides})
+    model = ScriptedModel([DONE, DONE, DONE, DONE], profile)
+    loop = Loop(store, [host_tools()], model, config=RunConfig(max_steps=10, protocols=PS))
+    s = asyncio.run(loop.run(host))
+    refused = [e for e in store.events(type="protocol_refused") if e.payload.get("action") == "done"]
+    assert len(refused) == 3 and s.protocol_refusals == 3 and s.steps == 3 and len(model.calls) == 3  # the third refusal ends the run: a fourth done is never honoured
+    assert s.stop_reason == "refused_done_loop" and loop._proto_runs[host.id].state == "basics"
+    assert "protocol has not ended" in refused[0].payload["reason"]
+
+
+def test_asking_the_same_tool_with_the_same_arguments_again_is_refused_and_a_stuck_small_model_is_moved_on(store, host):
+    asking = spec("read_os").model_copy(update={"input_model": {"type": "object", "properties": {"q": {"type": "string"}}, "required": ["q"]}})
+    a = Fake([asking, spec("read_cpu_ram", "hw.ram_total_gib")])
+    same = json.dumps({"action": "call_tool", "tool": "read_os", "args": {"q": "x"}, "why": "again"})
+    s, model, adapter, loop = drive(store, host, [same, same, same, DONE], adapter=a)
+    assert adapter.ran == ["read_os"] and s.repeat_refusals >= 1
+    assert any(e.type == "repeat_refused" for e in store.events())

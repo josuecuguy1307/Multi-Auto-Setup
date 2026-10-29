@@ -33,9 +33,9 @@ def manifest_raw(approved: bool = True) -> dict[str, Any]:
             {"id": "badrt", "status": "exclude", "license": "MIT", "reason": "fetches outside the manifest"},
         ],
         "model_sources": [
-            {"id": "acme", "status": "approve", "hub": "huggingface", "author": "Acme", "formats": ["gguf"]},
+            {"id": "qwen", "status": "approve", "hub": "huggingface", "author": "Qwen", "formats": ["gguf"]},
             {"id": "hub", "status": "propose-off", "author": "somehub", "formats": ["gguf"]},
-            {"id": "vendorx", "status": "exclude", "seen": "restricted-use license"},
+            {"id": "google", "status": "exclude", "seen": "gemma license"},
         ],
     }
 
@@ -69,26 +69,26 @@ class FakeMeta:
                 {"tag": "v1.1.0-rc1", "commit": "9" * 40, "prerelease": True, "assets": []},
             ],
         }
-        self.repos = {"Acme": [
-            {"repo": "Acme/Model-0.5B-Instruct-GGUF", "license": "apache-2.0"},
-            {"repo": "Acme/Model-1.5B-Instruct-GGUF", "license": "apache-2.0"},
-            {"repo": "Acme/Research-3B-GGUF", "license": "vendor-research"},
-            {"repo": "Acme/NoLicense-1B-GGUF", "license": None},
-            {"repo": "Acme/Big-32B-GGUF", "license": "apache-2.0"},
+        self.repos = {"Qwen": [
+            {"repo": "Qwen/Qwen2.5-0.5B-Instruct-GGUF", "license": "apache-2.0"},
+            {"repo": "Qwen/Qwen2.5-1.5B-Instruct-GGUF", "license": "apache-2.0"},
+            {"repo": "Qwen/Research-3B-GGUF", "license": "qwen-research"},
+            {"repo": "Qwen/NoLicense-1B-GGUF", "license": None},
+            {"repo": "Qwen/Big-32B-GGUF", "license": "apache-2.0"},
         ]}
         self.files = {
-            "Acme/Model-0.5B-Instruct-GGUF": {"revision": "r" * 40, "files": [
-                {"path": "model-0.5b-instruct-q4_k_m.gguf", "bytes": 491_000_000, "sha256": H("1")},
-                {"path": "model-0.5b-instruct-q8_0.gguf", "bytes": 676_000_000, "sha256": H("2")},
-                {"path": "model-0.5b-instruct-q2_k.gguf", "bytes": 400_000_000, "sha256": H("3")},  # quant not wanted
+            "Qwen/Qwen2.5-0.5B-Instruct-GGUF": {"revision": "r" * 40, "files": [
+                {"path": "qwen2.5-0.5b-instruct-q4_k_m.gguf", "bytes": 491_000_000, "sha256": H("1")},
+                {"path": "qwen2.5-0.5b-instruct-q8_0.gguf", "bytes": 676_000_000, "sha256": H("2")},
+                {"path": "qwen2.5-0.5b-instruct-q2_k.gguf", "bytes": 400_000_000, "sha256": H("3")},  # quant not wanted
                 {"path": "README.md", "bytes": 1000, "sha256": None}]},
-            "Acme/Model-1.5B-Instruct-GGUF": {"revision": "s" * 40, "files": [
-                {"path": "model-1.5b-instruct-q4_k_m.gguf", "bytes": 1_117_000_000, "sha256": H("4")},
-                {"path": "model-1.5b-instruct-q8_0.gguf", "bytes": 1_900_000_000, "sha256": None},  # no checksum
+            "Qwen/Qwen2.5-1.5B-Instruct-GGUF": {"revision": "s" * 40, "files": [
+                {"path": "qwen2.5-1.5b-instruct-q4_k_m.gguf", "bytes": 1_117_000_000, "sha256": H("4")},
+                {"path": "qwen2.5-1.5b-instruct-q8_0.gguf", "bytes": 1_900_000_000, "sha256": None},  # no checksum
                 {"path": "huge-1.5b-q8_0.gguf", "bytes": 3_500_000_000, "sha256": H("5")}]},          # over cap
-            "Acme/Research-3B-GGUF": {"revision": "t" * 40, "files": [{"path": "r-3b-q4_k_m.gguf", "bytes": 1_000_000_000, "sha256": H("6")}]},
-            "Acme/NoLicense-1B-GGUF": {"revision": "u" * 40, "files": [{"path": "n-1b-q4_k_m.gguf", "bytes": 500_000_000, "sha256": H("7")}]},
-            "Acme/Big-32B-GGUF": {"revision": "v" * 40, "files": [
+            "Qwen/Research-3B-GGUF": {"revision": "t" * 40, "files": [{"path": "r-3b-q4_k_m.gguf", "bytes": 1_000_000_000, "sha256": H("6")}]},
+            "Qwen/NoLicense-1B-GGUF": {"revision": "u" * 40, "files": [{"path": "n-1b-q4_k_m.gguf", "bytes": 500_000_000, "sha256": H("7")}]},
+            "Qwen/Big-32B-GGUF": {"revision": "v" * 40, "files": [
                 {"path": "big-32b-q4_k_m-00001-of-00004.gguf", "bytes": 2_000_000_000, "sha256": H("8")},
                 {"path": "big-32b-q4_k_m.gguf", "bytes": 2_000_000_000, "sha256": H("9")}]},
         }

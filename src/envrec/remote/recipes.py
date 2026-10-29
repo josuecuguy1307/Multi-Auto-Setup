@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from envrec.contracts import Origin, TargetKind, Tier, ToolSpec
 
-_KINDS = [TargetKind.net_host]
+_KINDS = [TargetKind.net_host, TargetKind.remote]
 
 
 def _r(name: str, tier: Tier, line: str, rung: int = 1) -> ToolSpec:

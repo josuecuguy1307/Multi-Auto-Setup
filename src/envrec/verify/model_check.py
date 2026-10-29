@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import secrets
 import time
 from collections.abc import Callable
@@ -96,7 +97,7 @@ def reported_identities(models: Any, props: Any) -> set[str]:
         for k in ("model_path", "model_alias", "model"):
             if isinstance(props.get(k), str):
                 names.add(props[k])
-    return {os.path.basename(n) for n in names if n}
+    return {re.split(r"[\\/]", n)[-1] for n in names if n}  # a server reports the path in its own system's style: split on both separators
 
 
 def plausible_tokens(text: str, tokens: Any, cap: int) -> str | None:
@@ -211,6 +212,10 @@ def verify_model(client: ModelServerClient, probes: DeviceProbes, store: Store, 
 
 
 def _record(store: Store, target: Target, expected: ExpectedModel, res: ModelVerification, nonces: list[str], sample: str) -> None:
+    if not store.has_claim_by_other(target.id, "host.model_server", CreatedBy.verifier):
+        res.ok = False
+        res.failed = [*res.failed, "claim"]
+        return  # nothing claims this server is running: the deploy records that claim first, and a verifier never creates the claim it verifies
     raw = store.put_raw(json.dumps({"expected": expected.entry_id, "file": expected.file, "nonces": nonces, "replies": res.replies,
                                     "sample": sample, "tokens_per_s": res.tokens_per_s, "rss_mib": res.rss_mib}))
     ev = lambda probe, conf, lim: Evidence(provider="verifier", probe=probe, raw_ref=raw, confidence=conf, limitations=lim)  # noqa: E731

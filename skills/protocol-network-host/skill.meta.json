@@ -22,6 +22,7 @@
     ],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "identify",
@@ -43,6 +44,7 @@
     ],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "probe",
@@ -74,6 +76,7 @@
     ],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "ask",
@@ -92,6 +95,7 @@
     "tags": [],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "done",
@@ -110,6 +114,7 @@
     "tags": [],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [],
     "terminal": true,
     "reason": "classified, or handed to the human"

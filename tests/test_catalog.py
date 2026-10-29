@@ -33,7 +33,7 @@ def test_only_approved_sources_are_read(gen):
     _, meta, _ = gen
     urls = {c[1] for c in meta.calls if c[0] == "releases"}
     assert urls == {"https://example.test/llama.cpp", "https://example.test/rustlm"}
-    assert {c[1] for c in meta.calls if c[0] == "model_repos"} == {"Acme"}  # not somehub, not google
+    assert {c[1] for c in meta.calls if c[0] == "model_repos"} == {"Qwen"}  # not somehub, not google
 
 
 def test_runtime_assets_pinned_and_filtered(gen):
@@ -51,23 +51,23 @@ def test_runtime_assets_pinned_and_filtered(gen):
 def test_model_filters_each_have_a_reason(gen):
     g, _, _ = gen
     kept = {m.id for m in g.lock.model_files}
-    assert kept == {"Acme/Model-0.5B-Instruct-GGUF/model-0.5b-instruct-q4_k_m.gguf",
-                    "Acme/Model-0.5B-Instruct-GGUF/model-0.5b-instruct-q8_0.gguf",
-                    "Acme/Model-1.5B-Instruct-GGUF/model-1.5b-instruct-q4_k_m.gguf"}
+    assert kept == {"Qwen/Qwen2.5-0.5B-Instruct-GGUF/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+                    "Qwen/Qwen2.5-0.5B-Instruct-GGUF/qwen2.5-0.5b-instruct-q8_0.gguf",
+                    "Qwen/Qwen2.5-1.5B-Instruct-GGUF/qwen2.5-1.5b-instruct-q4_k_m.gguf"}
     r = reasons(g)
-    assert "allowlist" in r["Acme/Research-3B-GGUF"]
-    assert "no license" in r["Acme/NoLicense-1B-GGUF"]
-    assert "no checksum" in r["Acme/Model-1.5B-Instruct-GGUF/model-1.5b-instruct-q8_0.gguf"]
-    assert "artifact cap" in r["Acme/Model-1.5B-Instruct-GGUF/huge-1.5b-q8_0.gguf"]
-    assert "sharded" in r["Acme/Big-32B-GGUF/big-32b-q4_k_m-00001-of-00004.gguf"]
-    assert "cap" in r["Acme/Big-32B-GGUF/big-32b-q4_k_m.gguf"]  # 32B > 8B
+    assert "allowlist" in r["Qwen/Research-3B-GGUF"]
+    assert "no license" in r["Qwen/NoLicense-1B-GGUF"]
+    assert "no checksum" in r["Qwen/Qwen2.5-1.5B-Instruct-GGUF/qwen2.5-1.5b-instruct-q8_0.gguf"]
+    assert "artifact cap" in r["Qwen/Qwen2.5-1.5B-Instruct-GGUF/huge-1.5b-q8_0.gguf"]
+    assert "sharded" in r["Qwen/Big-32B-GGUF/big-32b-q4_k_m-00001-of-00004.gguf"]
+    assert "cap" in r["Qwen/Big-32B-GGUF/big-32b-q4_k_m.gguf"]  # 32B > 8B
     assert not any("q2_k" in k for k in kept)  # quantization not in the manifest: silently ignored, not an exclusion
 
 
 def test_off_and_excluded_sources_are_listed(gen):
     g, _, _ = gen
     r = reasons(g)
-    assert "propose-off" in r["source offrt"] and "exclude" in r["source badrt"] and "restricted-use" in r["source vendorx"]
+    assert "propose-off" in r["source offrt"] and "exclude" in r["source badrt"] and "gemma" in r["source google"]
     assert "source hub" in r
 
 
@@ -108,9 +108,9 @@ def test_deterministic(tmp_path):
 
 
 def test_name_parsing():
-    assert parse_params_b("Model-1.5B-Instruct") == 1.5 and parse_params_b("model-0.5b-instruct-q4_k_m.gguf") == 0.5
-    assert parse_params_b("Model-4B-Q4_K_M.gguf") == 4 and parse_params_b("no-size-here") is None
-    assert parse_quant("Model-4B-Q4_K_M.gguf") == "Q4_K_M" and parse_quant("x-q8_0.gguf") == "Q8_0" and parse_quant("model.gguf") is None
+    assert parse_params_b("Qwen2.5-1.5B-Instruct") == 1.5 and parse_params_b("qwen2.5-0.5b-instruct-q4_k_m.gguf") == 0.5
+    assert parse_params_b("Qwen3-4B-Q4_K_M.gguf") == 4 and parse_params_b("no-size-here") is None
+    assert parse_quant("Qwen3-4B-Q4_K_M.gguf") == "Q4_K_M" and parse_quant("x-q8_0.gguf") == "Q8_0" and parse_quant("model.gguf") is None
 
 
 def test_real_manifest_source_statuses_exclude_the_right_things(tmp_path):
@@ -135,9 +135,9 @@ def test_real_manifest_source_statuses_exclude_the_right_things(tmp_path):
             return []
     g = generate(m, Empty())
     assert set(calls) == {"https://github.com/ggml-org/llama.cpp", "https://github.com/EricLBuehler/mistral.rs",
-                          "Acme"}
+                          "Qwen", "HuggingFaceTB", "ibm-granite", "microsoft", "mistralai", "allenai", "TinyLlama"}
     r = reasons(g)
-    for off in ("llamafile", "ollama", "LocalAI", "ggml-org"):
+    for off in ("llamafile", "ollama", "LocalAI", "ggml-org", "google", "meta-llama"):
         assert f"source {off}" in r
 
 
@@ -177,13 +177,13 @@ def test_live_client_parses_github_and_hf_shapes():
         if u.endswith("/tree/" + "s" * 40):
             return httpx.Response(200, json=[{"type": "file", "path": "m-q4_k_m.gguf", "lfs": {"size": 10, "oid": "c" * 64}},
                                              {"type": "file", "path": "README.md", "size": 3}])
-        if "/api/models/Acme/M" in u:
+        if "/api/models/Qwen/M" in u:
             return httpx.Response(200, json={"sha": "s" * 40, "tags": ["gguf", "license:apache-2.0"]})
-        return httpx.Response(200, json=[{"id": "Acme/M"}])
+        return httpx.Response(200, json=[{"id": "Qwen/M"}])
     lm = LiveMetadata(httpx.Client(transport=httpx.MockTransport(handler)))
     rel = lm.releases("https://github.com/o/r")
     assert rel[0]["assets"][0]["sha256"] == "b" * 64 and rel[0]["commit"] == "a" * 40
-    assert lm.model_repos("Acme") == [{"repo": "Acme/M", "license": "apache-2.0"}]
-    f = lm.repo_files("Acme/M")
+    assert lm.model_repos("Qwen") == [{"repo": "Qwen/M", "license": "apache-2.0"}]
+    f = lm.repo_files("Qwen/M")
     assert f["revision"] == "s" * 40 and f["files"][0] == {"path": "m-q4_k_m.gguf", "bytes": 10, "sha256": "c" * 64}
     assert f["files"][1]["sha256"] is None

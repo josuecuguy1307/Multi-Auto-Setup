@@ -105,9 +105,9 @@ def test_capture_reducers_run_before_the_raw_store(store, host):
     g.store_captures([Capture("mcp_0", "mcp:client", raw, 0, "local", "macos")])
     assert SECRET not in everything(store, host)
     assert json.loads(store.read_raw(g.refs["mcp_0"])) == {"files": "npx", "remote": "(remote url)"}
-    txt = b"x._ipp._tcp.local. can be reached at p.local.:631 (interface 4)\n ty=LaserJet UUID=abc deviceid=AA:BB:CC:00:00:01 model=X1 name=Josue's\n"
+    txt = b"x._ipp._tcp.local. can be reached at p.local.:631 (interface 4)\n ty=LaserJet UUID=abc deviceid=AA:BB:CC:00:00:01 model=X1 name=Alex's\n"
     out = reduce_txt_whitelist(txt).decode()
-    assert "ty=LaserJet" in out and "model=X1" in out and "UUID" not in out and "deviceid" not in out and "Josue" not in out
+    assert "ty=LaserJet" in out and "model=X1" in out and "UUID" not in out and "deviceid" not in out and "Alex" not in out
     assert json.loads(reduce_mcp_servers(reduce_mcp_servers(raw))) == {"files": "npx", "remote": "(remote url)"}  # idempotent
 
 

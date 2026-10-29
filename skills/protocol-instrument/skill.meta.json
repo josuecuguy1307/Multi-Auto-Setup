@@ -23,6 +23,7 @@
     ],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "identify",
@@ -50,6 +51,7 @@
      "serial_identify"
     ],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "match",
@@ -71,6 +73,7 @@
     ],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "ask",
@@ -89,6 +92,7 @@
     "tags": [],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "done",
@@ -107,6 +111,7 @@
     "tags": [],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [],
     "terminal": true,
     "reason": "identified, or handed to the human"

@@ -18,6 +18,11 @@ def parse(inp):
 
 `inp["captures"]` maps a capture name to `{text, ok, error, detail}`. A step of the plan produces a capture named by its `id` (the tool may name its own captures; they are listed in the tool's description). `inp["platform"]`, `inp["round"]` and `inp["params"]` are also there.
 
+## Helpers
+
+`serial_text(cap)` returns what a serial device said, whether the capture is the log that `serial_identify` makes (JSON with `passive` and `reply`) or plain text. Use it instead of parsing the log yourself, so a test written with a plain-text capture works the same.
+`clean_text(s, cap)` and `mask_ids(s, cap)` clean a world string; `Caps.with_prefix(p)` lists captures by name prefix.
+
 ## Output (built by `Out`)
 
 - `out.fact(key, value, src=, quote=, limitations=[], confidence=, hypothesis=False)`

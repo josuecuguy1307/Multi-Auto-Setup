@@ -1,0 +1,155 @@
+{
+ "provenance": "builtin",
+ "protocol": "media",
+ "tier": "observe",
+ "ring": 1,
+ "platforms": [
+  "macos"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "media"
+  ],
+  "start": "paired",
+  "states": {
+   "paired": {
+    "goal": "Find which Bluetooth devices macOS already has paired. Nothing is connected yet.",
+    "tags": [],
+    "tools": [
+     "skill.ble_paired"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "connect",
+      "needs": [
+       {
+        "tool": "skill.ble_paired"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "connect": {
+    "goal": "Connect the paired device the goal names (the earbuds). Choose it from the paired devices in FACTS by its type and name; an owner approval follows.",
+    "tags": [],
+    "tools": [
+     "bt_connect"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "output",
+      "needs": [
+       {
+        "tool": "bt_connect"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "output": {
+    "goal": "Read the audio outputs first (so the current one can be restored), then make the connected device the output. An owner approval follows.",
+    "tags": [],
+    "tools": [
+     "audio_state",
+     "audio_output"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "find",
+      "needs": [
+       {
+        "tool": "audio_output"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "find": {
+    "goal": "Find the track the goal asks for in the owner's own Spotify. Read-only; an owner approval follows.",
+    "tags": [],
+    "tools": [
+     "spotify_find"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "play",
+      "needs": [
+       {
+        "tried": "spotify.candidate_id"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "play": {
+    "goal": "Play that track in the Spotify desktop app. An owner approval follows.",
+    "tags": [],
+    "tools": [
+     "spotify_play"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "check",
+      "needs": [
+       {
+        "tool": "spotify_play"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "check": {
+    "goal": "Read what the Spotify app reports now, so the result is on the record.",
+    "tags": [],
+    "tools": [
+     "spotify_state"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "tool": "spotify_state"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "the steps ran; whether they worked is checked by code from the world, not by this protocol"
+   }
+  }
+ }
+}

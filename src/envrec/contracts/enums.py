@@ -16,6 +16,13 @@ class TargetKind(StrEnum):
     app = "app"
     repo = "repo"
     sensor = "sensor"
+    phone = "phone"
+    remote = "remote"  # a computer the owner enrolled in targets.yaml, reached over a transport (the connect protocol's target)
+    door = "door"  # this computer as the way in for a computer that is not enrolled yet: key, one-time link, pairing, a proposal (enrolled as a `local` entry with scope door)
+    pairing = "pairing"  # the coordinator's pairing of a new node: a code, a key exchange, the owner's yes (protocol-pair; walked by code, not by a model)
+    node = "node"  # a node's own connection to its coordinator: card, connect, heartbeat, reconnect (protocol-node-connect)
+    media = "media"  # this computer's own Bluetooth, audio output and media apps, enrolled in targets.yaml as a `local` entry
+    scope = "scope"  # the candidates a goal covers: the model picks one of them (protocol-choose)
     unknown = "unknown"
 
 
@@ -99,6 +106,7 @@ class RingPolicy(StrEnum):
 
 class ModelKind(StrEnum):
     openai_compat = "openai_compat"
+    claude_cli = "claude_cli"
     scripted = "scripted"
 
 

@@ -13,7 +13,7 @@ from typing import Any
 from envrec.mission.models import TargetEntry, Transport
 from envrec.skills.data import reference_json, reference_text
 
-_ROUTE_SKILL = {Transport.ssh: "connect-ssh", Transport.docker_exec: "connect-docker-exec", Transport.adb_usb: "connect-adb", Transport.serial: "connect-serial", Transport.tcp: "connect-tcp"}
+_ROUTE_SKILL = {Transport.ssh: "connect-ssh", Transport.docker_exec: "connect-docker-exec", Transport.adb_usb: "connect-adb", Transport.ios_usb: "connect-ios", Transport.serial: "connect-serial", Transport.tcp: "connect-tcp"}
 HINTS = {t: reference_text(skill, "setup-hint.txt").strip() for t, skill in _ROUTE_SKILL.items()}  # what the human can set up: written in each route's skill
 
 
@@ -57,7 +57,7 @@ def plan_transport(entry: TargetEntry, facts: dict[str, Any], reachable: dict[Tr
     first = ordered[0]
     return PlanResult(None, why, ordered,
                       hint=f"no allowed transport answered ({', '.join(t.value for t in ordered)}). "
-                           f"For {first.value}: {HINTS[first]}")
+                           f"For {first.value}: {HINTS.get(first, 'nothing to set up')}")
 
 
 def record_plan(store, target_id: str, plan: PlanResult) -> None:

@@ -1,11 +1,13 @@
 # Mission card and targets
 
+> LEGACY: this describes the single-controller flow of the earlier design. The current network rules are in [NETWORK_CONTRACT.md](NETWORK_CONTRACT.md).
+
 Two files, two roles. Keep them apart.
 
 | File | Written by | What it is | What it can do |
 |---|---|---|---|
 | `mission.yaml` | you | `goal` and `scope`, free text | Shown to the model as context at the top of every turn. **Authorizes nothing.** |
-| `targets.yaml` | only you: by hand, or `python -m envrec enroll` | One entry per device you own | The **only** source of valid targets. Policy denies every action on a device that is not listed. |
+| `targets.yaml` | only you: by hand, or `python -m envrec enroll` | One entry per device you own | A source of valid targets (the other is a pairing the owner confirmed on the coordinator, `docs/NETWORK_CONTRACT.md` section 2). Policy denies every action on a device that is neither listed nor paired. |
 
 Changing the words in `mission.yaml` cannot add, authorize or reach a device. That is tested: a whole session makes identical policy decisions with and without "also install on any device you find" in the goal, and the policy modules cannot even see the mission card.
 
@@ -26,6 +28,8 @@ limits:                      # fixed. Leave exactly as shipped; a file that chan
 
 `goal` is capped at 500 characters and `scope` at 300. They are never parsed as instructions. Shipped copy: `config/mission.example.yaml`.
 
+Note: this file and its fixed `limits` describe the single-controller flow that exists today. In the network design `targets_source` is `targets.yaml` or an owner-confirmed pairing, `max_workers` is replaced by the lease model and `model_server_bind` by local inference plus the signed channel (see `docs/PROVISIONING_SAFETY.md` and `docs/NETWORK_CONTRACT.md`). The schema and the example above are unchanged until Phase 1.
+
 ## targets.yaml
 
 ```yaml
@@ -35,7 +39,7 @@ targets:
     host: 192.168.1.42
     os: linux
     allowed_transports: [ssh]
-    ssh: { user: josue, port: 22, key_env: LAPTOP_B_KEY_PATH }
+    ssh: { user: owner, port: 22, key_env: LAPTOP_B_KEY_PATH }
     limits: { max_disk_gb: 20, max_model_params: 9B }
     owner_confirmed: true
 ```

@@ -21,6 +21,7 @@
     ],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "read",
@@ -42,6 +43,7 @@
     ],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "compare",
@@ -62,6 +64,7 @@
     ],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "ask",
@@ -80,6 +83,7 @@
     "tags": [],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "done",
@@ -98,6 +102,7 @@
     "tags": [],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [],
     "terminal": true,
     "reason": "what it measures is known, or the human has been asked"

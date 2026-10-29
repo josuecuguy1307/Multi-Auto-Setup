@@ -1,0 +1,149 @@
+{
+ "provenance": "builtin",
+ "protocol": "pair",
+ "tier": "observe",
+ "ring": 1,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "pairing"
+  ],
+  "start": "offered",
+  "states": {
+   "offered": {
+    "goal": "A fresh random code was issued on the coordinator and is valid for two minutes, for one attempt.",
+    "tags": [],
+    "tools": [
+     "nodes_list"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "exchange",
+      "needs": [
+       {
+        "fact": "pair.hello",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": "",
+    "timeout_s": 120,
+    "on_timeout": "expired"
+   },
+   "exchange": {
+    "goal": "The node and the coordinator run the password-authenticated key exchange and confirm each other's key. One attempt: a wrong confirmation ends it.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "owner_confirm",
+      "needs": [
+       {
+        "fact": "pair.key_confirmed",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "failed",
+      "needs": [
+       {
+        "fact": "pair.key_confirmed",
+        "at_least": "tested",
+        "equals": false
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": "",
+    "timeout_s": 120,
+    "on_timeout": "expired"
+   },
+   "owner_confirm": {
+    "goal": "Both confirmations held. The OWNER sees the node's name, operating system and fingerprint on the coordinator and says yes or no.",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "accepted",
+      "needs": [
+       {
+        "fact": "pair.owner_decision",
+        "at_least": "tested",
+        "equals": "accept"
+       }
+      ]
+     },
+     {
+      "to": "refused",
+      "needs": [
+       {
+        "fact": "pair.owner_decision",
+        "at_least": "tested",
+        "equals": "refuse"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": "",
+    "timeout_s": 120,
+    "on_timeout": "expired"
+   },
+   "accepted": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "the owner accepted: both sides pinned each other's identity keys"
+   },
+   "refused": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "the owner refused the node; nothing was stored"
+   },
+   "failed": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "the key confirmation failed (wrong code or a man in the middle); the code is dead and nothing was stored"
+   },
+   "expired": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "the code or the owner's answer timed out; the code is dead and nothing was stored"
+   }
+  }
+ }
+}

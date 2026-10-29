@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-ARCH = {"aarch64": "arm64", "arm64": "arm64", "x86_64": "amd64", "amd64": "amd64"}
-OS = {"linux": "linux", "darwin": "macos", "macos": "macos"}
+ARCH = {"aarch64": "arm64", "arm64": "arm64", "x86_64": "amd64", "amd64": "amd64", "x64": "amd64"}  # the names the operating systems use for the same two architectures
+OS = {"linux": "linux", "darwin": "macos", "macos": "macos", "windows": "windows"}
 KNOWN_ACCEL = {"none", "nvidia", "rocm", "dri", "metal"}
 RAM_BRACKETS = [(2.0, "<2"), (4.0, "2-4"), (8.0, "4-8"), (16.0, "8-16")]
 

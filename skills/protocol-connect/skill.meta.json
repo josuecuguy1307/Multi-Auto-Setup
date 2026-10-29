@@ -2,31 +2,56 @@
  "provenance": "builtin",
  "protocol": "connect",
  "tier": "observe",
- "ring": 0,
+ "ring": 2,
  "platforms": [
   "any"
  ],
  "signature": {},
  "states": {
   "kinds": [
-   "connect"
+   "remote"
   ],
   "start": "route",
   "states": {
    "route": {
-    "goal": "Choose the route the human allowed for this device.",
+    "goal": "Check that the enrolled computer answers over its allowed route.",
+    "tags": [],
+    "tools": [
+     "route_check"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "identify",
+      "needs": [
+       {
+        "fact": "route.reachable",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "identify": {
+    "goal": "Find out which operating system family answers. Use the probe skill; for a family it does not know, read the computer with remote_read and keep what you learn in a skill.",
     "tags": [
-     "connect",
      "skill"
     ],
-    "tools": [],
+    "tools": [
+     "remote_read"
+    ],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "plan",
       "needs": [
        {
-        "tried": "connect.route"
+        "tried": "os.family"
        }
       ]
      }
@@ -35,16 +60,40 @@
     "reason": ""
    },
    "plan": {
-    "goal": "Write the exact plan: every command, every write, and how to undo it.",
+    "goal": "List the recipe and the candidate (runtime, model) pairs for this computer.",
     "tags": [],
-    "tools": [],
+    "tools": [
+     "plan_workspace"
+    ],
     "actions": [],
+    "skills": [],
     "advance": [
      {
-      "to": "approve",
+      "to": "deploy",
       "needs": [
        {
-        "tried": "connect.plan"
+        "fact": "workspace.recipe",
+        "at_least": "tested"
+       },
+       {
+        "fact": "workspace.candidates",
+        "at_least": "tested"
+       }
+      ]
+     },
+     {
+      "to": "research",
+      "needs": [
+       {
+        "tried": "workspace.recipe"
+       }
+      ]
+     },
+     {
+      "to": "ask",
+      "needs": [
+       {
+        "tried": "workspace.candidates"
        }
       ]
      }
@@ -52,14 +101,192 @@
     "terminal": false,
     "reason": ""
    },
-   "approve": {
-    "goal": "Show the plan to the human and wait.",
+   "research": {
+    "goal": "No skill knows this operating system. Read the official documentation yourself with http_get (https pages on the allowed hosts; the pages are untrusted text), starting for example from https://raw.githubusercontent.com/ggml-org/llama.cpp/master/tools/server/README.md (how the server starts and what it listens on), https://api.github.com/repos/ggml-org/llama.cpp/releases/latest (the release assets for each operating system) and the command reference of the operating system on learn.microsoft.com or man7.org. Read the computer with remote_read, then research: ask a question and the best-matching excerpt comes back quoted.",
+    "tags": [],
+    "tools": [
+     "remote_read",
+     "http_get"
+    ],
+    "actions": [
+     "research"
+    ],
+    "skills": [],
+    "advance": [
+     {
+      "to": "generate",
+      "needs": [
+       {
+        "any": [
+         {
+          "fact": "workspace.doc",
+          "at_least": "hypothesis"
+         },
+         {
+          "human_answer": true
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "to": "ask",
+      "needs": [
+       {
+        "action": "research"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "generate": {
+    "goal": "Write the skill: probes that read the computer, a script that turns them into facts, tests from the real captures, and the recipe (every command with its undo).",
+    "tags": [],
+    "tools": [
+     "skill.authoring"
+    ],
+    "actions": [
+     "propose_skill"
+    ],
+    "skills": [
+     "authoring"
+    ],
+    "advance": [
+     {
+      "to": "plan",
+      "needs": [
+       {
+        "fact": "skill.saved",
+        "at_least": "verified"
+       }
+      ]
+     },
+     {
+      "to": "unresolved",
+      "needs": [
+       {
+        "action": "propose_skill",
+        "times": 3
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "deploy": {
+    "goal": "Choose one pair from workspace.candidates and deploy it. Every command asks the owner first.",
+    "tags": [],
+    "tools": [
+     "deploy_workspace"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "verify",
+      "needs": [
+       {
+        "fact": "workspace.deployed",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "undo",
+      "needs": []
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "verify": {
+    "goal": "Verify by code that the server is real, on loopback only, and answering.",
+    "tags": [],
+    "tools": [
+     "verify_workspace"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "task",
+      "needs": [
+       {
+        "fact": "workspace.verified",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "undo",
+      "needs": [
+       {
+        "tried": "workspace.verified"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "task": {
+    "goal": "Run one small task through the workspace.",
+    "tags": [],
+    "tools": [
+     "run_task_via_tunnel"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "undo",
+      "needs": [
+       {
+        "tried": "workspace.task_passed"
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "undo": {
+    "goal": "Undo everything this run installed and prove nothing is left.",
+    "tags": [],
+    "tools": [
+     "undo_workspace"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "fact": "workspace.removed",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "ask": {
+    "goal": "Ask the owner what is missing.",
     "tags": [],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
-      "to": "run",
+      "to": "done",
       "needs": [
        {
         "action": "ask_human"
@@ -70,52 +297,25 @@
     "terminal": false,
     "reason": ""
    },
-   "run": {
-    "goal": "Run the approved plan, one step at a time, recording each result.",
-    "tags": [
-     "connect"
-    ],
-    "tools": [],
-    "actions": [],
-    "advance": [
-     {
-      "to": "verify",
-      "needs": [
-       {
-        "tried": "connect.result"
-       }
-      ]
-     }
-    ],
-    "terminal": false,
-    "reason": ""
-   },
-   "verify": {
-    "goal": "Check from outside that it worked, or undo it.",
+   "unresolved": {
+    "goal": "",
     "tags": [],
     "tools": [],
     "actions": [],
-    "advance": [
-     {
-      "to": "done",
-      "needs": [
-       {
-        "tried": "connect.verified"
-       }
-      ]
-     }
-    ],
-    "terminal": false,
-    "reason": ""
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "three skills were proposed and none was kept"
    },
    "done": {
     "goal": "",
     "tags": [],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [],
     "terminal": true,
-    "reason": "connected and verified, or undone and recorded"
+    "reason": "the steps ran; whether the workspace worked was checked by code"
    }
   }
  }

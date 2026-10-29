@@ -6,7 +6,7 @@ targets:
     host: 192.168.1.42            # address of a device you own
     os: linux                     # optional, if known
     allowed_transports: [ssh]     # ordered; the planner may pick only from this list
-    ssh: { user: josue, port: 22, key_env: LAPTOP_B_KEY_PATH }
+    ssh: { user: owner, port: 22, key_env: LAPTOP_B_KEY_PATH }
     limits: { max_disk_gb: 20, max_model_params: 9B }
     owner_confirmed: true         # set only by enrollment or by hand
 
@@ -15,6 +15,6 @@ targets:
     host: 127.0.0.1
     allowed_transports: [docker_exec, ssh]    # tries docker_exec first, then ssh; nothing else, ever
     docker_exec: { container: lab-b }
-    ssh: { user: josue, port: 2222, key_env: LAB_BOX_KEY_PATH }
+    ssh: { user: owner, port: 2222, key_env: LAB_BOX_KEY_PATH }
     limits: { max_disk_gb: 5, max_model_params: 3B }
     owner_confirmed: true

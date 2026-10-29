@@ -12,6 +12,7 @@ from envrec.model.parse import ActionParseError, parse_action_repairing
 
 Emit = Callable[[str, dict[str, Any]], None]
 SNIPPET = 200
+RAW_CAP = 4000
 
 
 @dataclass
@@ -24,6 +25,8 @@ class RequestResult:
     prompt_tokens: int = 0
     completion_tokens: int = 0
     latency_s: float = 0.0
+    raw_reply: str = ""  # the reply that produced `action` (or the last one that did not parse)
+    validation: str = ""  # valid | repaired: <note> | invalid: <error> then fallback
 
 
 async def request_action(
@@ -63,6 +66,8 @@ async def request_action(
             try:
                 result.action, note = parse_action_repairing(done.text, repair_tools)
                 result.used_fallback = False
+                result.raw_reply = done.text[:RAW_CAP]
+                result.validation = f"repaired: {note}" if note else "valid"
                 if observe:
                     observe(True)
                 if note:
@@ -71,6 +76,8 @@ async def request_action(
                 return result
             except ActionParseError as exc:
                 error = str(exc)
+                result.raw_reply = done.text[:RAW_CAP]
+                result.validation = f"invalid: {error[:160]}"
                 if observe:
                     observe(False)
                 result.errors.append(error)
@@ -81,5 +88,6 @@ async def request_action(
             + (f"{retry_hint}\n" if retry_hint else "")
             + "Reply again with exactly one valid JSON Action and nothing else."
         )
+    result.validation = "fallback: " + (result.errors[-1][:140] if result.errors else "no reply")
     emit("model_fallback", {"errors": result.errors, "action": fallback.action.value})
     return result

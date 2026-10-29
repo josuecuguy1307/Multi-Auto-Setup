@@ -276,7 +276,7 @@ def test_ble_scan_hashes_addresses_inside_the_scanning_process(monkeypatch):
 
     class Dev:
         address = "AA:BB:CC:DD:EE:FF"
-        name = "Josue's AirPods"
+        name = "Example AirPods"
 
     class Adv:
         rssi, tx_power, manufacturer_data, service_uuids = -50, 4, {76: b"\x01"}, ["0000180f-0000-1000-8000-00805f9b34fb"]
@@ -290,7 +290,7 @@ def test_ble_scan_hashes_addresses_inside_the_scanning_process(monkeypatch):
     with redirect_stdout(buf):
         asyncio.run(_ble_scan.main(0.1, "salt-1"))
     out = buf.getvalue()
-    assert "AA:BB:CC" not in out and "AirPods" not in out and "Josue" not in out
+    assert "AA:BB:CC" not in out and "AirPods" not in out and "Example" not in out
     rec = json.loads(out)[0]
     assert rec["id"] == _ble_scan.short_hash("AA:BB:CC:DD:EE:FF", "salt-1") and rec["company"] == [76]
     other = io.StringIO()
@@ -301,7 +301,7 @@ def test_ble_scan_hashes_addresses_inside_the_scanning_process(monkeypatch):
 
 def test_a_denied_bluetooth_scan_is_recorded_with_the_settings_step(store, monkeypatch):
     from envrec.discovery import Capture
-    monkeypatch.setattr(hardware, "ble_collect", lambda seconds, salt: Capture("scan", "x", b"", 134, "local", "macos", Reason.permission, "System Settings > Privacy & Security > Bluetooth"))
+    monkeypatch.setattr(hardware, "ble_collect", lambda seconds, salt, approve=None: Capture("scan", "x", b"", 134, "local", "macos", Reason.permission, "System Settings > Privacy & Security > Bluetooth"))
 
     class Denied:
         origin, platform = "local", "macos"
@@ -320,3 +320,12 @@ def test_a_denied_bluetooth_scan_is_recorded_with_the_settings_step(store, monke
 def test_thunderbolt_real_output(store):
     _, f, _ = go(store, "hw_buses", FIX / "hw_buses" / "macos", "macos")
     assert f["hw.thunderbolt_ports"].value >= 1 and f["hw.thunderbolt_devices_connected"].value == 0
+
+
+def test_serial_identify_also_collects_what_the_device_said_as_plain_text(tmp_path):
+    from envrec.tools import ToolContext as TC, get_tool, run_tool
+    d = tmp_path / "rec"
+    d.mkdir()
+    (d / "probe.out").write_text(json.dumps({"port": "/dev/x", "passive": "", "sent": ["scpi_idn"], "reply": "KRL3 R4.2 b=87 t=342 m=2\r\n", "baud": 9600}))
+    res = run_tool(get_tool("serial_identify"), TC(collector=ReplayCollector(d, "linux"), platform="linux"), {})
+    assert [c.name for c in res.captures] == ["probe", "heard"] and res.captures[1].text == "KRL3 R4.2 b=87 t=342 m=2\r\n"

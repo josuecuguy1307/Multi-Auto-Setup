@@ -15,19 +15,18 @@
   "states": {
    "paired": {
     "goal": "See what this machine already knows about its Bluetooth devices.",
-    "tags": [
-     "bluetooth",
-     "attached",
-     "skill"
+    "tags": [],
+    "tools": [
+     "skill.ble_paired"
     ],
-    "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "listen",
       "needs": [
        {
-        "tool_tag": "bluetooth"
+        "tool": "skill.ble_paired"
        }
       ]
      }
@@ -36,26 +35,19 @@
     "reason": ""
    },
    "listen": {
-    "goal": "Listen passively for advertisements; never connect or pair.",
+    "goal": "Listen passively for advertisements with the ble_scan skill (it turns them into counts and classes); never connect or pair.",
     "tags": [],
     "tools": [
-     "ble_scan_passive",
      "skill.ble_scan"
     ],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "classify",
       "needs": [
        {
-        "any": [
-         {
-          "tool": "ble_scan_passive"
-         },
-         {
-          "tool": "skill.ble_scan"
-         }
-        ]
+        "tool": "skill.ble_scan"
        }
       ]
      }
@@ -64,19 +56,17 @@
     "reason": ""
    },
    "classify": {
-    "goal": "Name the vendor and service class from the public Bluetooth numbers.",
-    "tags": [
-     "table_lookup",
-     "identify"
-    ],
+    "goal": "Read the classes the scan produced and say what is still unknown.",
+    "tags": [],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "ask",
       "needs": [
        {
-        "tool_tag": "table_lookup"
+        "tried": "ble.nearby_by_class"
        }
       ]
      }
@@ -89,6 +79,7 @@
     "tags": [],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "done",
@@ -107,6 +98,7 @@
     "tags": [],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [],
     "terminal": true,
     "reason": "classified from public numbers, or handed to the human"

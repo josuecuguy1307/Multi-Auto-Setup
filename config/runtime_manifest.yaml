@@ -14,8 +14,8 @@ max_artifact_gb: 3.0           # per-file cap, so huge GPU builds cannot enter t
 max_model_params_b: 8          # these runtimes are for small models on small devices
 
 license_allowlist: [apache-2.0, mit, bsd-2-clause, bsd-3-clause, isc, unlicense]
-# Licenses outside the allowlist (restricted-use, non-commercial, "other") and any repo with no license field are
-# excluded automatically and listed with the reason.
+# Licenses seen on candidate sources and NOT allowed: gemma, llama2/3/3.1/3.2/3.3, qwen-research and other "other",
+# cc-by-nc-*, lfm (LiquidAI), and any repo with no license field. Excluded automatically, listed with the reason.
 
 # ----------------------------------------------------------------------------------------------------------------
 runtime_sources:
@@ -40,6 +40,11 @@ runtime_sources:
       - {os: macos, arch: amd64, backend: cpu,    pattern: '^llama-b\d+-bin-macos-x64\.tar\.gz$'}
       - {os: linux, arch: amd64, backend: cuda,   pattern: '^llama-b\d+-bin-ubuntu-cuda-12\.8-x64\.tar\.gz$'}
       - {os: linux, arch: arm64, backend: cuda,   pattern: '^llama-b\d+-bin-ubuntu-cuda-13\.4-arm64\.tar\.gz$'}
+      # Windows builds the same official release publishes (names read from release b11912's asset list); zip archives
+      - {os: windows, arch: amd64, backend: cpu,    pattern: '^llama-b\d+-bin-win-cpu-x64\.zip$'}
+      - {os: windows, arch: arm64, backend: cpu,    pattern: '^llama-b\d+-bin-win-cpu-arm64\.zip$'}
+      - {os: windows, arch: amd64, backend: vulkan, pattern: '^llama-b\d+-bin-win-vulkan-x64\.zip$'}
+      - {os: windows, arch: arm64, backend: vulkan, pattern: '^llama-b\d+-bin-win-vulkan-arm64\.zip$'}
     unavailable: ["linux-musl/arm64: not found", "linux-musl/amd64: not found (no Alpine build is published)"]
 
   - id: mistral.rs
@@ -93,11 +98,24 @@ runtime_sources:
 
 # ----------------------------------------------------------------------------------------------------------------
 model_sources:
-  # Example only: replace `author` with the publisher of the models you approve. The generator reads each repo's own
-  # license field from the model page and keeps a repo only if it is in license_allowlist.
-  - {id: acme,          status: approve, hub: huggingface, author: Acme,          formats: [gguf], seen: "placeholder, not a real publisher"}
+  # First-party publishers. The generator reads each repo's own license field from the model page and keeps a repo
+  # only if it is in license_allowlist. Counts are from the first 100 GGUF repos the Hugging Face API lists per author.
+  - {id: qwen,          status: approve, hub: huggingface, author: Qwen,          formats: [gguf], seen: "54 gguf repos: 41 apache-2.0, 13 'other' (excluded, includes qwen-research)"}
+  - {id: huggingfacetb, status: approve, hub: huggingface, author: HuggingFaceTB, formats: [gguf], seen: "6 gguf repos: 6 apache-2.0"}
+  - {id: ibm-granite,   status: approve, hub: huggingface, author: ibm-granite,   formats: [gguf], seen: "53 gguf repos: 51 apache-2.0, 2 without a license (excluded)"}
+  - {id: microsoft,     status: approve, hub: huggingface, author: microsoft,     formats: [gguf], seen: "6 gguf repos: 6 mit"}
+  - {id: mistralai,     status: approve, hub: huggingface, author: mistralai,     formats: [gguf], seen: "11 gguf repos: 11 apache-2.0"}
+  - {id: allenai,       status: approve, hub: huggingface, author: allenai,       formats: [gguf], seen: "12 gguf repos: 6 apache-2.0, 6 without a license (excluded)"}
+  - {id: tinyllama,     status: approve, hub: huggingface, author: TinyLlama,     formats: [gguf], seen: "3 gguf repos: 3 apache-2.0"}
   # Conversion hubs host other people's models under mixed licenses. Off by default; per-repo license filtering would still apply.
-  - {id: ggml-org,      status: propose-off, hub: huggingface, author: ggml-org,   formats: [gguf], seen: "mixed licenses; off by default"}
+  - {id: ggml-org,      status: propose-off, hub: huggingface, author: ggml-org,   formats: [gguf], seen: "100 repos: 50 apache-2.0, 11 mit, 27 none, 7 other, 1 cc-by-nc, 1 gemma"}
+  - {id: bartowski,     status: propose-off, hub: huggingface, author: bartowski,  formats: [gguf], seen: "100 repos: 54 apache-2.0, 11 mit, 14 none, 13 other, 4 gemma, 2 cc-by-nc"}
+  - {id: unsloth,       status: propose-off, hub: huggingface, author: unsloth,    formats: [gguf], seen: "100 repos: 63 apache-2.0, 8 mit, 23 other, 2 llama3.2, 2 gemma, 1 llama3.3"}
+  # Excluded publishers
+  - {id: google,        status: exclude, seen: "37 gguf repos: 25 'gemma' license (restricted use), 9 apache-2.0, 3 llama; the Gemma terms restrict use"}
+  - {id: meta-llama,    status: exclude, seen: "0 gguf repos; Llama licenses restrict use. Override yourself if the Meta angle matters."}
+  - {id: liquidai,      status: exclude, seen: "49 repos: 48 'other' (LFM license), restricted"}
+  - {id: lmstudio-community, status: exclude, seen: "100 repos: 41 apache-2.0 but also cc-by-nc, llama3, gemma, none; mixed and redundant with the first-party sources"}
 quantizations: [Q4_K_M, Q4_0, Q8_0]    # files outside these are ignored
 
 # ----------------------------------------------------------------------------------------------------------------
@@ -108,3 +126,7 @@ smoke_set:
   runtime_assets:
     linux/arm64: {file: llama-b11856-bin-ubuntu-arm64.tar.gz, url: "https://github.com/ggml-org/llama.cpp/releases/download/b11856/llama-b11856-bin-ubuntu-arm64.tar.gz", sha256: 540871d9a0aac2b9b92ff42dd6f14449e418a7638302e7c11ccaa9f8b9dc6c98, bytes: 18100000}
     linux/amd64: {file: llama-b11856-bin-ubuntu-x64.tar.gz,   url: "https://github.com/ggml-org/llama.cpp/releases/download/b11856/llama-b11856-bin-ubuntu-x64.tar.gz",   sha256: 71b660dd4a90c13db899acdef59862226f7ec8d27907b7c107febc99904c00be, bytes: 22400000}
+  models:
+    - {id: qwen2.5-0.5b-q4km, tier: phone,         source: qwen, license: apache-2.0, license_source: "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/blob/main/LICENSE", file: qwen2.5-0.5b-instruct-q4_k_m.gguf, url: "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/9217f5db79a29953eb74d5343926648285ec7e67/qwen2.5-0.5b-instruct-q4_k_m.gguf", revision: 9217f5db79a29953eb74d5343926648285ec7e67, sha256: 74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db, bytes: 491400000, min_ram_gib: 1.0, context: 2048}
+    - {id: qwen2.5-1.5b-q4km, tier: small-laptop,  source: qwen, license: apache-2.0, license_source: "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/blob/main/LICENSE", file: qwen2.5-1.5b-instruct-q4_k_m.gguf, url: "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/91cad51170dc346986eccefdc2dd33a9da36ead9/qwen2.5-1.5b-instruct-q4_k_m.gguf", revision: 91cad51170dc346986eccefdc2dd33a9da36ead9, sha256: 6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e, bytes: 1117300000, min_ram_gib: 2.0, context: 4096}
+    - {id: qwen3-4b-q4km,     tier: larger-laptop, source: qwen, license: apache-2.0, license_source: "https://huggingface.co/Qwen/Qwen3-4B-GGUF/blob/main/LICENSE", file: Qwen3-4B-Q4_K_M.gguf, url: "https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/bc640142c66e1fdd12af0bd68f40445458f3869b/Qwen3-4B-Q4_K_M.gguf", revision: bc640142c66e1fdd12af0bd68f40445458f3869b, sha256: 7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5, bytes: 2497300000, min_ram_gib: 6.0, context: 4096}

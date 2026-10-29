@@ -111,7 +111,7 @@ def test_menu_contains_only_entries_that_fit(store):
     assert "7B" not in prompt and "4B" not in prompt and "1.5B" in prompt
 
 
-@pytest.mark.parametrize("bad", ["I think the big one", '{"choice": "99"}', '{"choice": "other-7b"}', "{not json", '{"model": "x"}'])
+@pytest.mark.parametrize("bad", ["I think the big one", '{"choice": "99"}', '{"choice": "qwen-7b"}', "{not json", '{"model": "x"}'])
 def test_invalid_replies_fall_back_to_the_baseline(bad, store):
     m = ScriptedModel([bad, bad])
     res = run(choose_pair(catalog(), prof(8), store=store, model=m))

@@ -165,10 +165,11 @@ def test_a_script_that_is_not_python_or_does_not_define_parse_is_rejected(lib, t
     ({"script": SCRIPT.replace('out.fact("sensor.firmware", m.group(1), src="probe", quote="FW" + m.group(1))', 'out.fact("sensor.firmware", m.group(1), src="probe")')}, "no `quote`"),
     ({"script": SCRIPT.replace('quote="FW" + m.group(1)', 'quote="FW9.9"')}, "never in the capture"),
     ({"script": SCRIPT.replace('src="probe", quote="H=', 'src="nothing", quote="H=')}, "cites no usable capture"),
+    ({"script": SCRIPT.replace('out.fact("sensor.firmware", m.group(1), src="probe", quote="FW" + m.group(1))', 'out.fact("sensor.firmware", "zxq-sensor", src="probe", quote="FW" + m.group(1))')}, "is not in the text it is quoted from"),
     ({"script": SCRIPT.replace("sensor.humidity_pct", "Sensor Humidity")}, "bad fact key"),
     ({"script": SCRIPT.replace("    line = m.group(0)\n", "    import socket\n    socket.create_connection(('1.1.1.1', 80), 2)\n")}, "failed"),
     ({"script": SCRIPT.replace("    line = m.group(0)\n", "    open('/skill/scripts/parse.py', 'a').write('x')\n")}, "failed"),
-    ({"script": SCRIPT.replace('if not m:\n        return out.result()', 'if not m:\n        out.fact("sensor.firmware", "?", src="probe", quote=c.text.strip()[:3])\n        return out.result()')}, "must not match|produced"),
+    ({"script": SCRIPT.replace('if not m:\n        return out.result()', 'if not m:\n        out.fact("sensor.firmware", "?", src="probe", quote=c.text.strip()[:3])\n        return out.result()')}, "must not match|produced|not in the text it is quoted from"),
 ])
 def test_what_the_checks_catch_is_named(lib, tmp_path, change, naming):
     with pytest.raises(SkillInvalid, match=naming):
@@ -189,3 +190,10 @@ def test_staging_alone_writes_only_the_standard_folder_and_the_sidecar(tmp_path)
     meta = json.loads((folder / "skill.meta.json").read_text())
     assert meta["provenance"] == "generated" and meta["plan"]["steps"][0]["tool"] == "serial_identify"
     assert "---" in (folder / "SKILL.md").read_text() and (folder / "tests" / "other-protocol" / "expect.json").read_text().count('"match": false') == 1
+
+
+def test_a_value_must_be_in_the_text_it_is_quoted_from():
+    from envrec.skills.runner import _supported
+    assert _supported(7, "~~ZXQ 7/9 ~~") and _supported(9, "~~ZXQ 7/9 ~~") and _supported("zxq", "~~ZXQ 7/9 ~~") and _supported(21.5, "T=21.5C")
+    assert not _supported(8, "~~ZXQ 7/9 ~~") and not _supported(79, "~~ZXQ 7/9 ~~") and not _supported("zxq-sensor", "~~ZXQ 7/9 ~~")  # a name the capture does not contain
+    assert not _supported(True, "on") and not _supported(None, "x")  # not checkable this way: such a fact is a hypothesis

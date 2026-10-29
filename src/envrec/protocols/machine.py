@@ -5,17 +5,19 @@ one and the evidence required to move on are enforced HERE, in code, by the loop
 refused with a typed message and counted. Judgment stays in markdown; constraints do not.
 
 Evidence a transition can require (each entry of a `needs` list; all must hold):
-  {fact: KEY, at_least: hypothesis|tested|verified}   a fact with that status or better (default tested)
+  {fact: KEY, at_least: hypothesis|tested|verified}   a fact with that status or better (default tested); with `equals: VALUE` its value must also be that value
   {tried: KEY}                                         a fact exists in any status, an unknown the probe could not fill included: the attempt was made
   {tool: NAME}                                         that tool or skill has run on this target
   {tool_tag: TAG}                                      some tool carrying that tag has run on this target
-  {action: NAME}                                       the model took that action in this protocol run (research, propose_skill, ask_human)
+  {action: NAME, times: N}                             the model took that action (research, propose_skill, ask_human) at least N times in this protocol run (default 1)
   {facts_prefix: "usb.", at_least_n: N, status_min: tested}   at least N facts under a prefix
+  {human_answer: true}                                 the human has answered a question about this target
   {any: [need, ...]}                                   at least one of the listed needs holds
 """
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 
 from envrec.contracts import FactStatus
@@ -34,7 +36,8 @@ class EvidenceView:
     facts: dict[str, object] = field(default_factory=dict)  # key -> Fact
     tools_run: set[str] = field(default_factory=set)
     tool_tags: dict[str, set[str]] = field(default_factory=dict)
-    actions: set[str] = field(default_factory=set)
+    actions: dict[str, int] = field(default_factory=dict)
+    human_answers: int = 0  # facts the human stated on this target
 
 
 @dataclass
@@ -52,7 +55,9 @@ def _met(need: dict, ev: EvidenceView) -> tuple[bool, str]:
         key, floor = need["fact"], need.get("at_least", "tested")
         f = ev.facts.get(key)
         ok = f is not None and f.status != FactStatus.unknown and _rank(f.status) >= STATUS_RANK[FactStatus(floor)]
-        return ok, f"{key} ({floor} or better)"
+        if ok and "equals" in need:
+            ok = f.value == need["equals"]
+        return ok, f"{key}{' = ' + json.dumps(need['equals']) if 'equals' in need else ''} ({floor} or better)"
     if "tried" in need:
         return need["tried"] in ev.facts, f"{need['tried']} (known, or recorded as unknown after a try)"
     if "tool" in need:
@@ -61,11 +66,14 @@ def _met(need: dict, ev: EvidenceView) -> tuple[bool, str]:
         tag = need["tool_tag"]
         return any(tag in ev.tool_tags.get(t, set()) for t in ev.tools_run), f"a tool tagged {tag} to have run"
     if "action" in need:
-        return need["action"] in ev.actions, f"the action {need['action']} to have been taken"
+        n = int(need.get("times", 1))
+        return ev.actions.get(need["action"], 0) >= n, f"the action {need['action']} to have been taken" + (f" {n} times" if n > 1 else "")
     if "facts_prefix" in need:
         pre, n, floor = need["facts_prefix"], int(need.get("at_least_n", 1)), need.get("status_min", "tested")
         have = [k for k, f in ev.facts.items() if k.startswith(pre) and f.status != FactStatus.unknown and _rank(f.status) >= STATUS_RANK[FactStatus(floor)]]
         return len(have) >= n, f"{n} fact(s) under {pre}* ({floor} or better)"
+    if "human_answer" in need:
+        return ev.human_answers > 0, "an answer from the human (the manual or a description of the format)"
     if "any" in need:
         results = [_met(n, ev) for n in need["any"]]
         return any(ok for ok, _ in results), "one of: " + " | ".join(m for _, m in results)
@@ -81,7 +89,7 @@ class ProtocolRun:
         self.skill, self.defn, self.id = skill, d, skill.meta.protocol
         self.state = d.start
         self.refusals = 0
-        self.taken: set[str] = set()  # model actions taken in this run (research, propose_skill, ask_human)
+        self.taken: dict[str, int] = {}  # model actions taken in this run and how many times (research, propose_skill, ask_human)
         self.history: list[dict] = [{"state": self.state, "by": "start"}]
 
     @property
@@ -129,6 +137,10 @@ class ProtocolRun:
                 return a.to
         return None
 
+    def ready_all(self, ev: EvidenceView) -> list[str]:
+        """Every state whose evidence is already in: the ways forward the model may take right now. Code lists them; only the model moves."""
+        return [a.to for a in self.current.advance if all(ok for ok, _ in (_met(n, ev) for n in a.needs))]
+
     def missing_for_exit(self, ev: EvidenceView) -> list[str]:
         """Fact keys the first exit still needs and that a try could settle (what code records as unknown when no tool is left in this step)."""
         out: list[str] = []
@@ -151,7 +163,7 @@ class ProtocolRun:
     def card(self) -> str:
         st = self.current
         names = list(self.defn.states)
-        lines = [f"PROTOCOL {self.id}, STEP {self.state} ({names.index(self.state) + 1} of {len(names)}): {st.goal}".rstrip(": ")]
+        lines = [f'PROTOCOL {self.id}, you are in the step named "{self.state}" (step {names.index(self.state) + 1} of {len(names)}): {st.goal}'.rstrip(": ")]
         if st.terminal:
             lines.append(f"This protocol has ended: {st.reason or 'nothing is left to do here'}. Reply done.")
         else:
@@ -160,7 +172,7 @@ class ProtocolRun:
                 for n in a.needs:
                     key = n.get("fact") or n.get("tried") or n.get("tool") or n.get("tool_tag") or n.get("action") or n.get("facts_prefix") or "one of several"
                     needs.append(str(key))
-                lines.append(f"TO MOVE ON: reply advance to {a.to}" + (f" once you have {', '.join(needs)}." if needs else "."))
+                lines.append(f'TO MOVE ON: reply {{"action":"advance","to":"{a.to}"}}' + (f" once you have {', '.join(needs)}." if needs else "."))
         return "\n".join(lines)
 
 

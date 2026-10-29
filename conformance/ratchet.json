@@ -1,0 +1,4 @@
+{
+ "_rule": "A commit may remove IDs from allowed_to_fail and may never add one. Never weaken, skip or delete a check to make it pass.",
+ "allowed_to_fail": {}
+}

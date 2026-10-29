@@ -1,0 +1,113 @@
+{
+ "_about": "Read-only phone-over-cable table for the connect-ios skill. Code reads it (envrec.remote.ios); edit this file, not the Python. Nothing outside `aspects` can be asked.",
+ "aspects": {
+  "identity": [
+   [
+    "ios.product_type",
+    null,
+    "ProductType",
+    "text"
+   ],
+   [
+    "ios.version",
+    null,
+    "ProductVersion",
+    "text"
+   ],
+   [
+    "ios.device_class",
+    null,
+    "DeviceClass",
+    "text"
+   ]
+  ],
+  "battery": [
+   [
+    "ios.battery_pct",
+    "com.apple.mobile.battery",
+    "BatteryCurrentCapacity",
+    "int"
+   ],
+   [
+    "ios.battery_charging",
+    "com.apple.mobile.battery",
+    "BatteryIsCharging",
+    "bool"
+   ]
+  ],
+  "storage": [
+   [
+    "ios.storage_total_gb",
+    "com.apple.disk_usage",
+    "TotalDiskCapacity",
+    "gb"
+   ],
+   [
+    "ios.storage_data_total_gb",
+    "com.apple.disk_usage",
+    "TotalDataCapacity",
+    "gb"
+   ]
+  ],
+  "name": [
+   [
+    "ios.name_sha",
+    null,
+    "DeviceName",
+    "hash"
+   ]
+  ]
+ },
+ "columns": [
+  "fact key",
+  "lockdown domain or null",
+  "lockdown key",
+  "how the value becomes the fact: text | int | bool | gb | hash"
+ ],
+ "hidden_keys": [
+  "DeviceName"
+ ],
+ "udid_pattern": "^[0-9A-Fa-f][0-9A-Fa-f\\-]{15,63}$",
+ "errors": [
+  {
+   "code": 127,
+   "category": "not_installed",
+   "sentence": "libimobiledevice is not installed (brew install libimobiledevice)"
+  },
+  {
+   "code": 124,
+   "category": "timeout",
+   "sentence": "the phone did not answer in time; unlock it and watch for the Trust prompt"
+  },
+  {
+   "regex": "user denied|denied pairing|-19\\b",
+   "category": "trust_denied",
+   "sentence": "the owner did not trust this computer on the phone: stopped, nothing was read"
+  },
+  {
+   "regex": "pairing dialog|trust|-18\\b|dialog response pending",
+   "category": "trust_pending",
+   "sentence": "the phone is waiting for you: unlock it and tap Trust, then run this again"
+  },
+  {
+   "regex": "passcode|password protected|-17\\b|locked",
+   "category": "locked",
+   "sentence": "the phone is locked: unlock it, then run this again"
+  },
+  {
+   "regex": "no device found|not found",
+   "category": "not_attached",
+   "sentence": "the phone is not attached: connect the cable"
+  },
+  {
+   "regex": "lockdownd",
+   "category": "not_trusted",
+   "sentence": "the phone did not complete the handshake: unlock it and tap Trust when it asks"
+  }
+ ],
+ "failed_category": "failed",
+ "failed_default": "libimobiledevice failed",
+ "plan_template": "read the {aspect} of {device_hint} over the cable: `idevice_id -l` to see which devices are attached, then `ideviceinfo -u <that identifier> -k <KEY>` for {keys}. Read-only: it writes nothing to the phone. The phone may ask you to tap Trust; unlock it first. The identifier is never stored and the name is kept only as a salted hash.",
+ "default_device_hint": "the attached device whose identifier hashes to the entry",
+ "hint": "connect the cable, unlock the phone and tap Trust when it asks, then re-run"
+}

@@ -1,0 +1,5 @@
+profiles:
+  local:
+    endpoint: http://127.0.0.1:11434/v1
+  subscription:
+    endpoint: claude-cli://local

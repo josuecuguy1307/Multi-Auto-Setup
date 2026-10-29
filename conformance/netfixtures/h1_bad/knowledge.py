@@ -1,0 +1,6 @@
+OLLAMA = "/usr/local/bin/ollama"
+WIN = "C:\\Program Files\\Ollama\\ollama.exe"
+KEY = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Ollama"
+STATE = "~/Library/Application Support/mas"
+INSTALL = "brew install aider"
+UNIT = "systemctl enable --now ollama"

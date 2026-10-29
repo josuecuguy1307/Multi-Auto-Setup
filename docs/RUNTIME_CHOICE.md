@@ -42,15 +42,27 @@ Model formats: GGUF (both runtimes), safetensors (mistral.rs only).
 
 ## Model sources
 
-Model publishers are approved by you in `config/runtime_manifest.yaml`; the shipped file holds one placeholder publisher. A repo is kept only if the license on **its own model page** is in the allowlist (`apache-2.0, mit, bsd-2/3-clause, isc, unlicense`), otherwise it is excluded automatically and listed with the reason. Conversion hubs host other people's models under mixed licenses: **off by default**.
+First-party publishers, approved; a repo is kept only if the license on **its own model page** is in the allowlist (`apache-2.0, mit, bsd-2/3-clause, isc, unlicense`), otherwise it is excluded automatically and listed with the reason.
+
+| Publisher | GGUF repos seen (first 100) | Licenses seen |
+|---|---|---|
+| Qwen | 54 | 41 apache-2.0, 13 other (incl. `qwen-research`: excluded) |
+| HuggingFaceTB | 6 | 6 apache-2.0 |
+| ibm-granite | 53 | 51 apache-2.0, 2 none (excluded) |
+| microsoft | 6 | 6 mit |
+| mistralai | 11 | 11 apache-2.0 |
+| allenai | 12 | 6 apache-2.0, 6 none (excluded) |
+| TinyLlama | 3 | 3 apache-2.0 |
+
+Conversion hubs (ggml-org, bartowski, unsloth) host other people's models under mixed licenses, including cc-by-nc and no license at all: **off by default**. Excluded outright: Google (the Gemma license restricts use), meta-llama and Llama-family licenses, LiquidAI (LFM license), lmstudio-community (mixed, and redundant). If the Meta angle matters, overriding the Llama exclusion is your call.
 
 ## Size of the space
 
-Parameter cap (8B), the 3 GB file cap, format support per runtime and the target's limits cut that down a lot. The generator, not this estimate, reports the real number.
+Upper bound before any filter: about 124 allowed repos x 3 quantizations is roughly 370 model files, times 11 runtime assets is on the order of 4,000 raw combinations. Parameter cap (8B), the 3 GB file cap, format support per runtime and the target's limits cut that down a lot. The generator, not this estimate, reports the real number.
 
 ## Initial smoke set
 
-The manifest lists the runtime artifacts that were cross-checked (hash, size, URL, pinned revision all match the source APIs): llama.cpp `b11856` for arm64 and amd64. Models are not listed in the shipped manifest; add the ones you approve.
+So work can start before the generator exists, the manifest lists the artifacts I already cross-checked (hash, size, URL, pinned revision all match the source APIs): llama.cpp `b11856` for arm64 and amd64, and three Qwen models (0.5B 491 MB, 1.5B 1.12 GB, Qwen3-4B 2.50 GB). They sit inside the approved sources. The default live run uses the runtime plus the 0.5B model, about 0.5 GB.
 
 ## Risks, stated up front
 

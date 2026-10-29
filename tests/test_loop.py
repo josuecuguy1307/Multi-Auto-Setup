@@ -155,10 +155,11 @@ def test_invalid_json_twice_falls_back_to_record_unknown_and_the_run_goes_on(sto
     s, model, _ = run(store, host, ["not json", "still {not json", call("t0"), DONE])
     assert (s.invalid_replies, s.fallbacks) == (2, 1)
     unknown = store.current_fact(host.id, "host.identity")
-    assert unknown.status == FactStatus.unknown and unknown.created_by == CreatedBy.model
+    assert unknown.status == FactStatus.unknown and unknown.created_by == CreatedBy.loop  # a fallback is the loop's action, never booked to the model
     types = [e.type for e in events(store)]
     assert types.count("model_invalid") == 2 and "model_fallback" in types
-    assert store.current_fact(host.id, "os.name") is not None  # recovered on the next step
+    recovered = store.current_fact(host.id, "os.name")  # recovered on the next step
+    assert (recovered.value, recovered.status) == ("value-of-os.name", FactStatus.tested)
 
 
 def test_a_tool_not_on_the_menu_is_rejected_and_logged(store, host):
@@ -236,7 +237,8 @@ def test_time_cap(store, host):
     s, _, adapter = run(store, host, [call("t0"), call("t1"), call("t2"), call("t3")], adapter=slow,
                         config=RunConfig(max_seconds=0.2))
     assert s.stop_reason == "time_cap" and len(adapter.ran) == 1
-    assert store.current_fact(host.id, "ring.0.coverage") is not None  # rings still close on a cap
+    cov = store.current_fact(host.id, "ring.0.coverage")  # rings still close on a cap
+    assert cov.value["decision"] == "deepen" and s.ring_decisions[host.id] == "deepen"  # three of four tools were never tried
 
 
 # ---- the one dial -------------------------------------------------------------------------------------------------
@@ -290,8 +292,8 @@ def two_ring_adapter():
 
 def test_fixed_order_profiles_have_the_code_walk_the_rings(store, host):
     usb = store.put_target(Target(kind=TargetKind.usb, ring=1, handle="replay:a", parent=host.id))
-    s, model, a = run(store, host, [call("t0"), call("u0")], adapter=two_ring_adapter())
-    assert a.ran == [("t0", host.id), ("u0", usb.id)] and len(model.calls) == 2  # the model never chose to move
+    s, model, a = run(store, host, [call("t0"), call("u0")], adapter=two_ring_adapter(), profile=scripted_profile(walk_for_model=True))
+    assert a.ran == [("t0", host.id), ("u0", usb.id)] and len(model.calls) == 2 and s.walk_for_model is True  # the dial is on: the model never chose to move
     assert [e.payload["by"] for e in events(store, "ring_extended")] == ["code"]
     assert s.ring_decisions[host.id] == "extend" and s.ring_decisions[usb.id] == "stop"
 

@@ -9,6 +9,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import queue
+import re
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -26,6 +27,7 @@ from envrec.skills.skillmd import Skill
 from envrec.tools.ctx import ToolContext, ToolResult, run_tool
 from envrec.tools.registry import ToolArgError, get_tool
 
+_SKIP = object()  # an entity has no single value to check against its quote
 SKILL_TIMEOUT_S = 120.0
 MAX_CALLS_TOTAL = 160
 TIERS = {"observe": 0, "read": 1}
@@ -210,13 +212,27 @@ def _norm(s: str) -> str:
     return " ".join(str(s).split())
 
 
+def _supported(value: Any, quote: str) -> bool:
+    """Is the value in the text it is quoted from? A string must occur in the quote (ignoring case and spacing); a number must occur as written. Anything else (a boolean, a list)
+    cannot be checked this way and so cannot be a `tested` fact of a generated skill: it must be marked as a hypothesis."""
+    q = " ".join(quote.split()).lower()
+    if isinstance(value, bool) or value is None:
+        return False
+    if isinstance(value, str):
+        return " ".join(value.split()).lower() in q
+    if isinstance(value, (int, float)):
+        forms = {str(value), f"{value:g}"} | ({str(int(value))} if float(value).is_integer() else set())
+        return any(re.search(rf"(?<![\d.]){re.escape(f)}(?![\d])", q) for f in forms)
+    return False
+
+
 def to_outs(skill: Skill, col: Collected) -> list:
     """Typed outputs from the script's final answer. Anything that cites no capture of this run is rejected (the whole answer: a skill that lies once is not trusted
     for the rest). A generated skill must also quote, from the capture it cites, the text each observed value came from."""
     generated = skill.meta.provenance == "generated"
     outs: list = []
 
-    def cite(kind: str, label: str, src: str | None, quote: str | None, hypothesis: bool) -> str:
+    def cite(kind: str, label: str, src: str | None, quote: str | None, hypothesis: bool, value: Any = None) -> str:
         if not src or src not in col.caps or not col.caps[src].ok:
             raise SkillRejected(f"{kind} {label} cites no usable capture of this run (src={src!r}): evidence is required")
         if generated and not hypothesis:
@@ -224,13 +240,15 @@ def to_outs(skill: Skill, col: Collected) -> list:
                 raise SkillRejected(f"{kind} {label} has no `quote`: a generated skill must quote the capture text the value came from")
             if _norm(quote) not in _norm(col.caps[src].text):
                 raise SkillRejected(f"{kind} {label}: the quote is not in capture {src!r}; facts that were never in the capture are rejected")
+            if value is not _SKIP and not _supported(value, quote):
+                raise SkillRejected(f"{kind} {label}: the value {value!r} is not in the text it is quoted from ({quote[:40]!r}); a value that is not read from the capture is a hypothesis, not a tested fact")
         return src
 
     for f in col.out["facts"]:
-        src = cite("fact", f["key"], f.get("src"), f.get("quote"), bool(f.get("hypothesis")))
+        src = cite("fact", f["key"], f.get("src"), f.get("quote"), bool(f.get("hypothesis")), f.get("value"))
         outs.append(FactOut(f["key"], f.get("value"), float(f.get("confidence", 0.9)), [str(x) for x in f.get("limitations", [])], src, bool(f.get("hypothesis"))))
     for e in col.out["entities"]:
-        src = cite("entity", e["kind"], e.get("src"), e.get("quote"), bool(e.get("hypothesis")))
+        src = cite("entity", e["kind"], e.get("src"), e.get("quote"), bool(e.get("hypothesis")), _SKIP)
         outs.append(Entity(e["kind"], int(e.get("ring", skill.meta.ring)), e["ident"], e.get("owned", "unknown"), dict(e.get("attrs", {})), resolved=bool(e.get("resolved", True)),
                            prefix=e.get("prefix"), src=src, hypothesis=bool(e.get("hypothesis")), confidence=float(e.get("confidence", 0.9)),
                            links=[(str(a), str(b)) for a, b in e.get("links", [])]))

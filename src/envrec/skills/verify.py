@@ -165,7 +165,8 @@ class Approvals:
         if not ask(plan_text):
             return False
         data = self._read()
-        data[skill.name] = {"sha256": script_hash(skill), "at": time.strftime("%Y-%m-%dT%H:%M:%S")}
+        data[skill.name] = {"sha256": script_hash(skill), "at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                            **({"recipe_sha256": __import__("envrec.recipes.model", fromlist=["recipe_hash"]).recipe_hash(skill.meta.recipe)} if skill.meta.recipe else {})}
         self.path.parent.mkdir(parents=True, exist_ok=True)
         tmp = self.path.with_suffix(".tmp")
         tmp.write_text(json.dumps(data, indent=1))
@@ -177,7 +178,8 @@ def script_hash(skill: Skill) -> str:
     import hashlib
     plan = skill.meta.plan
     body = (skill.path / plan.script).read_bytes() if plan and plan.script else b""
-    return hashlib.sha256(body + json.dumps([s.model_dump() for s in plan.steps] if plan else [], sort_keys=True).encode()).hexdigest()
+    recipe = json.dumps(skill.meta.recipe, sort_keys=True, separators=(",", ":")).encode() if skill.meta.recipe else b""  # the commands it will run are part of what the owner approves
+    return hashlib.sha256(body + json.dumps([s.model_dump() for s in plan.steps] if plan else [], sort_keys=True).encode() + recipe).hexdigest()
 
 
 def approval_text(skill: Skill) -> str:
@@ -187,6 +189,11 @@ def approval_text(skill: Skill) -> str:
         lines.append(f"  step {s.id}: tool {s.tool} {json.dumps(s.args)} on {', '.join(s.platforms)}")
     lines.append("The script runs in a sandbox with no network and no files; it can only read what those tools return and ask for more registered reads. "
                  "Tools that send anything (read tier) ask again, showing exactly what they send.")
+    if skill.meta.recipe:
+        from envrec.recipes.model import describe, recipe_hash
+        lines.append(f"It also carries a RECIPE for a workspace self-setup (pinned {recipe_hash(skill.meta.recipe)[:12]}); these are all the commands it can ever run on the device. "
+                     "Each write asks again, showing the exact command and its undo:")
+        lines += describe(skill.meta.recipe)
     return "\n".join(lines)
 
 

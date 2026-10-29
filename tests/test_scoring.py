@@ -29,8 +29,11 @@ def ev(provider="p"):
 
 
 def put(store, target, key, value, status=FactStatus.tested, providers=("p",)):
-    store.write_fact(Fact(target_id=target.id, key=key, value=value, status=status,
-                          evidence=[ev(p) for p in providers]))
+    from envrec.contracts import RawRef
+    evidence = [ev(p) for p in providers]
+    if status == FactStatus.verified:  # verified needs independent observations: a distinct raw capture per provider
+        evidence = [e.model_copy(update={"raw_ref": RawRef(path=f"raw/{i}", sha256=str(i + 1) * 64)}) for i, e in enumerate(evidence)]
+    store.write_fact(Fact(target_id=target.id, key=key, value=value, status=status, evidence=evidence))
 
 
 def gt(**fields):

@@ -24,6 +24,9 @@ class ToolContext:
 class Adapter(ABC):
     name: str
 
+    def close(self) -> None:
+        """Called once when a run ends: release what the adapter left open (a server it started, say) and leave a record of it. Nothing by default."""
+
     @abstractmethod
     def tool_specs(self) -> list[ToolSpec]: ...
 

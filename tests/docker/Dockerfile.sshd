@@ -3,9 +3,9 @@ FROM python:3.12-slim
 RUN apt-get update && apt-get install -y --no-install-recommends openssh-server procps libgomp1 \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /run/sshd /opt/envrec \
-    && useradd -m -s /bin/bash josue && passwd -l josue \
+    && useradd -m -s /bin/bash owner && passwd -l owner \
     && ssh-keygen -A \
-    && chown josue /opt/envrec
+    && chown owner /opt/envrec
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

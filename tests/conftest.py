@@ -6,7 +6,7 @@ import pytest
 def pytest_addoption(parser):
     parser.addoption("--live-model", action="store_true", default=False,
                      help="run the tests that download the real runtime and a real small model (needs approved: true in the manifest)")
-    parser.addoption("--live-tier", default="model-0.5b-q4km",
+    parser.addoption("--live-tier", default="qwen2.5-0.5b-q4km",
                      help="which smoke-set model the live tests use; the default is the smallest")
 
 
@@ -21,3 +21,9 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if "live_model" in item.keywords:
             item.add_marker(skip)
+
+
+@pytest.fixture(autouse=True)
+def _helper_files_stay_in_a_temp_dir(tmp_path, monkeypatch):
+    """No test may write to the owner's real helper directory (its approval log lives there)."""
+    monkeypatch.setenv("ENVREC_HELPER_DIR", str(tmp_path / "helper-dir"))

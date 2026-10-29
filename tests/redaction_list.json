@@ -1,0 +1,17 @@
+{
+ "_note": "Hashes of real names that must never appear in a committed file (a name is normalized: lower case, alphanumeric words joined by one space). The names themselves are not kept here.",
+ "entries": [
+  {
+   "words": 6,
+   "sha256": "125756c0579ab5059add8e703613116b5b6ea2ed20646176221b367eecc8fa32"
+  },
+  {
+   "words": 1,
+   "sha256": "716bb25605335eb4d90f02970ab0115161a8141c26dc406686b298568007d01b"
+  },
+  {
+   "words": 1,
+   "sha256": "7b1ef051a1102c782fb1110f61b747df0066fca7339056d0328283e2e0567212"
+  }
+ ]
+}

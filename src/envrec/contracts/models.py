@@ -13,7 +13,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import Field, JsonValue, field_validator, model_validator
+from pydantic import Field, JsonValue, ValidationInfo, field_validator, model_validator
 
 from envrec.contracts.base import Strict, new_id, utcnow, word_count
 from envrec.contracts.enums import (
@@ -52,6 +52,18 @@ class Evidence(Strict):
     confidence: float = Field(ge=0.0, le=1.0)
     limitations: list[str] = Field(default_factory=list)
     note: str = Field(default="", max_length=240)
+    # How the observation reached us (usb, serial, mdns, ssh, ble, ...). Empty on older data: `effective_channel` then falls back to the provider name.
+    channel: str = Field(default="", max_length=32)
+
+    @property
+    def effective_channel(self) -> str:
+        return self.channel or self.provider
+
+
+def independent_observations(evidence: list[Evidence]) -> tuple[int, int]:
+    """(distinct raw captures, distinct channels) among the evidence that points at a capture. Independent means at least two of each: provider names alone prove nothing."""
+    with_raw = [e for e in evidence if e.raw_ref is not None]
+    return len({e.raw_ref.sha256 for e in with_raw}), len({e.effective_channel for e in with_raw})
 
 
 class Target(Strict):
@@ -84,18 +96,19 @@ class Fact(Strict):
         return check_key(key)
 
     @model_validator(mode="after")
-    def _status_rules(self) -> Fact:
+    def _status_rules(self, info: ValidationInfo) -> Fact:
         s = self.status
         if s in (FactStatus.tested, FactStatus.verified, FactStatus.contradicted) and not self.evidence:
             raise ValueError(
                 f"status {s.value!r} needs evidence; a fact without evidence cannot pass 'hypothesis'"
             )
-        if s == FactStatus.verified and self.created_by != CreatedBy.verifier:
-            providers = {e.provider for e in self.evidence}
-            if len(providers) < 2:
+        if s == FactStatus.verified and self.created_by != CreatedBy.verifier and not (info.context or {}).get("loading"):
+            # independent evidence: DISTINCT raw captures AND distinct channels. Two provider names over one capture are one observation.
+            captures, channels = independent_observations(self.evidence)
+            if captures < 2 or channels < 2:
                 raise ValueError(
-                    "status 'verified' needs the verifier or two independent providers; "
-                    f"got providers {sorted(providers)}"
+                    "status 'verified' needs the verifier or two independent observations (distinct raw captures AND distinct channels); "
+                    f"got {captures} distinct capture(s) over {channels} channel(s)"
                 )
         if s == FactStatus.contradicted and len(self.evidence) < 2:
             raise ValueError("status 'contradicted' must keep both evidence entries (need at least 2)")
@@ -124,6 +137,8 @@ class ToolSpec(Strict):
     produces: list[str] = Field(default_factory=list)
     # Fact keys that must already exist (known or tried) before the tool is worth offering.
     requires: list[str] = Field(default_factory=list)
+    # True: what it answers depends on what changed since it last ran (a plan after a new skill was kept), so asking it again is a real question and the menu keeps offering it.
+    repeatable: bool = False
 
     @field_validator("one_line")
     @classmethod
@@ -200,7 +215,7 @@ class Action(Strict):
         missing: list[str] = []
         if a == ActionType.call_tool and not self.tool:
             missing.append("tool")
-        elif a == ActionType.extend_to and self.ring is None:
+        elif a == ActionType.extend_to and self.ring is None and not self.target_id:
             missing.append("ring")
         elif a == ActionType.expand_fact and not (self.fact_id or self.key):
             missing.append("fact_id or key")
@@ -229,6 +244,13 @@ class Event(Strict):
     type: str = Field(min_length=1, max_length=64)
     payload: dict[str, JsonValue] = Field(default_factory=dict)
     run_id: str | None = None
+    # Who decided: MODEL, GUARD, SCRIPT or OWNER (envrec.contracts.tags). None only on events written before the field existed; the store fills it on write.
+    tag: Literal["MODEL", "GUARD", "SCRIPT", "OWNER"] | None = None
+
+    @property
+    def effective_tag(self) -> str:
+        from envrec.contracts.tags import derive_tag
+        return self.tag or derive_tag(self.actor, self.type, self.payload)
 
 
 class Hypothesis(Strict):
@@ -291,4 +313,13 @@ class ModelProfile(Strict):
     context_tokens: int = Field(gt=0)
     view_budget_facts: int = Field(ge=1, le=200)
     menu_max: int = Field(ge=2, le=12)
-    ring_policy: RingPolicy = RingPolicy.fixed_order
+    ring_policy: RingPolicy = RingPolicy.model_decides  # legacy name of the dial below; `fixed_order` still means walk_for_model
+    # EXPERIMENTAL, off by default: code advances protocol steps and walks the rings for the model. Every step it forces is tagged SCRIPT and the run's result says "dial on".
+    walk_for_model: bool = False
+
+    @model_validator(mode="before")
+    @classmethod
+    def _legacy_dial(cls, data):
+        if isinstance(data, dict) and str(getattr(data.get("ring_policy"), "value", data.get("ring_policy"))) == "fixed_order":
+            data = {**data, "walk_for_model": True}
+        return data

@@ -35,6 +35,30 @@ def render_table(runs: list[AdapterRun]) -> str:
     return "\n".join(rows)
 
 
+def skill_coverage(store: Store, target_id: str, skills, runs: list[AdapterRun]) -> list[dict]:
+    """For each skill that ran: of the fact keys it can write, how many are known, how many are unknown (tried, could not tell) and how many were never written. A key that
+    changes on its own is flagged volatile: it is reported but never judged wrong for changing."""
+    from envrec.discovery.volatile import is_volatile
+    by_key = {f.key: f for f in store.current_facts(target_id) if ".entity." not in f.key}
+    out = []
+    ran = {r.adapter_id: r for r in runs}
+    for sk in skills:
+        r = ran.get(sk.id)
+        if r is None:
+            continue
+        keys = list(sk.meta.produces)
+        known = [k for k in keys if k in by_key and by_key[k].status != FactStatus.unknown]
+        unknown = [k for k in keys if k in by_key and by_key[k].status == FactStatus.unknown]
+        out.append({"skill": sk.name, "status": r.status, "keys": len(keys), "known": len(known), "unknown": len(unknown), "missing": len(keys) - len(known) - len(unknown),
+                    "volatile": [k for k in known if is_volatile(k)], "entities": r.entities, "resolved": r.resolved})
+    return out
+
+
+def render_coverage(rows: list[dict]) -> str:
+    head = f"{'SKILL':20} {'STATUS':12} {'KEYS':>4} {'KNOWN':>5} {'UNKNOWN':>7} {'NEVER':>5} {'ENTITIES':>8}  VOLATILE"
+    return "\n".join([head, *(f"{r['skill']:20} {r['status']:12} {r['keys']:>4} {r['known']:>5} {r['unknown']:>7} {r['missing']:>5} {r['resolved']:>3}/{r['entities']:<4}  {', '.join(r['volatile'])[:50]}" for r in rows)])
+
+
 def render_entities(store: Store, target_id: str) -> str:
     groups: dict[str, list] = collections.defaultdict(list)
     for f in _entities(store, target_id):
@@ -73,7 +97,15 @@ def run_active(args, cfg: DiscoveryConfig, store: Store, host: Target, salts: Sa
     except ScopeError as exc:
         print(f"refused: {exc}", file=sys.stderr)
         return [record_denied(get_adapter(a), store, host, str(exc)) for a in wanted], None
-    ask = (lambda _p: "approve" if str(scope.network) == SUBNET else "deny") if args.lab_approve else input
+    from envrec.consent import NetworkConsent, current_network
+    net = current_network(str(scope.network))
+    consented = NetworkConsent().granted(net)
+    if consented:  # the owner said once that this network is theirs: read-only discovery on it needs no prompt, and every action is still logged with its exact text
+        from envrec.contracts import Actor, Event
+        store.append_event(Event(actor=Actor.human, type="network_consent_applied", payload={"fingerprint": net["fingerprint"], "subnet": net["subnet"]}))
+        ask = lambda _p: "approve"  # noqa: E731
+    else:
+        ask = (lambda _p: "approve" if str(scope.network) == SUBNET else "deny") if args.lab_approve else input
     gate = ApprovalGate(store, ask, (lambda t: None) if args.json else print)
     runs: list[AdapterRun] = []
     params = {"scope": scope, "rate": cfg.scan_rate_per_s, "cap_prefix": cfg.subnet_cap_prefix}
@@ -149,10 +181,12 @@ def cmd_discover(args: argparse.Namespace) -> int:
             devices = [f.value for f in store.current_facts(host.id) if f.key.startswith("net.device.")]
             facts = {f.key: f.value for f in store.current_facts(host.id) if ".entity." not in f.key and not f.key.startswith(("ring.", "net.device."))}
             print(json.dumps({"store": str(out_dir), "platform": collector.platform, "scope": str(scope.network) if scope else None, "adapters": [r.__dict__ for r in runs],
-                              "entities": ents, "devices": devices, "facts": facts, "not_run": skipped}, indent=1, default=str))
+                              "entities": ents, "devices": devices, "facts": facts, "not_run": skipped,
+                              "coverage": skill_coverage(store, host.id, adapters, runs)}, indent=1, default=str))
             return 0
         print(f"discovery on this {collector.platform} machine, store {out_dir}\n")
         print(render_table(runs))
+        print("\ncoverage by skill (keys it can write: known / unknown after a try / never written):\n" + render_coverage(skill_coverage(store, host.id, adapters, runs)))
         print("\nentities by group:\n" + render_entities(store, host.id))
         devs = [f.value for f in store.current_facts(host.id) if f.key.startswith("net.device.")]
         if devs:

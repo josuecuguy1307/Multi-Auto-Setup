@@ -1,0 +1,2 @@
+[console_scripts]
+mas = envrec_mas.cli:main

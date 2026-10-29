@@ -14,7 +14,7 @@ from envrec.skills.lib import Library
 from envrec.skills.runner import SKILL_TIMEOUT_S, _Info, run_skill
 from envrec.skills.skillmd import Skill
 from envrec.store import Store
-from envrec.tools.ctx import ToolContext
+from envrec.tools.ctx import ToolContext, flush_approvals
 
 _LIB: Library | None = None
 
@@ -47,7 +47,10 @@ def run_adapter(skill: Skill | str, collector: Collector, store: Store, target: 
     platform = platform or collector.platform
     ctx = ToolContext(collector=collector, platform=platform, store=store, target=target, salts=salts, params={"salt": salts.run, **(params or {})}, approve=approve, event_id=event_id)
     kw = {"script_runner": script_runner} if script_runner is not None else {}
-    return run_skill(sk, ctx, params=dict(params or {}), timeout_s=timeout_s, **kw)
+    try:
+        return run_skill(sk, ctx, params=dict(params or {}), timeout_s=timeout_s, **kw)
+    finally:
+        flush_approvals(ctx)  # approvals asked on a worker thread are written here, on the thread that owns the store
 
 
 def survey(skills: list[Skill], collector: Collector, store: Store, target: Target, *, salts: Salts, platform: str | None = None,

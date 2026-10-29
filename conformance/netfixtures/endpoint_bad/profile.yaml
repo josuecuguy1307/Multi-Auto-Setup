@@ -1,0 +1,6 @@
+profiles:
+  local:
+    endpoint: http://localhost:11434/v1
+  remote:
+    options:
+      base_url: https://api.example.invalid/v1

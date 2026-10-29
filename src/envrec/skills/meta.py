@@ -56,9 +56,12 @@ class State(Strict):
     tags: list[str] = Field(default_factory=list)  # tool tags offered in this state
     tools: list[str] = Field(default_factory=list)  # extra tool or skill names offered in this state
     actions: list[str] = Field(default_factory=list)  # extra model actions allowed here (research, propose_skill, ...)
+    skills: list[str] = Field(default_factory=list)  # guidance skills whose body stays in the view for every turn of this step (the authoring skill while a skill is being written)
     advance: list[Advance] = Field(default_factory=list)
     terminal: bool = False
     reason: str = ""
+    timeout_s: float | None = Field(default=None, gt=0)  # a protocol that code walks (pairing): seconds this step may last; past it the guard moves to `on_timeout`
+    on_timeout: str | None = None
 
 
 class ProtocolDef(Strict):
@@ -74,6 +77,8 @@ class ProtocolDef(Strict):
             for a in st.advance:
                 if a.to not in self.states:
                     raise ValueError(f"state {name!r} advances to {a.to!r}, which is not defined")
+            if (st.timeout_s is None) != (st.on_timeout is None) or (st.on_timeout is not None and st.on_timeout not in self.states):
+                raise ValueError(f"state {name!r}: timeout_s and on_timeout go together, and on_timeout must be a defined state")
         if not any(s.terminal for s in self.states.values()):
             raise ValueError("a protocol needs at least one terminal state")
         return self
@@ -95,6 +100,7 @@ class SkillMeta(Strict):
     legacy_id: str | None = None  # the id of the YAML skill or adapter it replaced (golden outputs are keyed by it)
     baseline: dict[str, Any] | None = None  # generated skills: the with/without-skill comparison that justified accepting it
     script_sha256: str | None = None  # generated skills: pinned hash of the script that was approved
+    recipe: dict[str, Any] | None = None  # the write steps of a workspace self-setup as data (envrec.recipes); the owner approves its canonical hash together with the script
 
     @field_validator("provenance")
     @classmethod

@@ -43,12 +43,14 @@ def cmd_enroll(args) -> int:
 
         def check(entry, transport) -> bool:
             try:
+                if transport == Transport.ios_usb:
+                    return RemoteRunner(load_targets(args.targets)).ios_attached(entry.id)
                 return RemoteRunner(load_targets(args.targets), host_key_policy="yes").run(entry.id, transport, "uname_s", timeout=15).ok
             except (MissingKey, TargetNotAllowed, OSError):
                 return False
 
         try:
-            res = enroll(cands[int(pick) - 1], targets_path=args.targets, store=store, check=check)
+            res = enroll(cands[int(pick) - 1], targets_path=args.targets, store=store, check=check, transport=Transport(args.transport) if args.transport else None)
         except EnrollmentRefused as exc:
             print(f"Refused: {exc}", file=sys.stderr)
             return 2
@@ -142,6 +144,7 @@ def add_fleet_commands(sub) -> None:
     i = sub.add_parser("inventory", help="print the inventory report for a finished store (writes nothing)")
     common(i); i.set_defaults(func=cmd_inventory)
     e = sub.add_parser("enroll", help="interactively enroll ONE seen device into targets.yaml (needs a terminal)")
+    e.add_argument("--transport", choices=[t.value for t in Transport], default=None, help="the route you set up for this device (default: the planner proposes one)")
     common(e); e.set_defaults(func=cmd_enroll)
     f = sub.add_parser("fleet", help="read-only capability table of the enrolled devices")
     common(f); f.set_defaults(func=cmd_fleet)

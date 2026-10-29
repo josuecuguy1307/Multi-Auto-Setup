@@ -11,7 +11,7 @@ from envrec.tools.ctx import ToolContext, ToolResult
 from envrec.tools.registry import tool
 
 
-@tool(tags=("extract",))
+@tool(tags=("extract",), audience="skill")
 def regex_extract(ctx: ToolContext, text: str, pattern: str, multiline: bool = True) -> ToolResult:
     """Pull every match of one regular expression out of text.
 
@@ -37,7 +37,7 @@ def regex_extract(ctx: ToolContext, text: str, pattern: str, multiline: bool = T
     return ToolResult(data={"matches": out})
 
 
-@tool(tags=("extract",))
+@tool(tags=("extract",), audience="skill")
 def json_path(ctx: ToolContext, text: str, path: str) -> ToolResult:
     """Read values out of JSON text with a simple path.
 
@@ -58,7 +58,7 @@ def json_path(ctx: ToolContext, text: str, path: str) -> ToolResult:
     return ToolResult(data={"values": select(doc, path)})
 
 
-@tool(tags=("extract",))
+@tool(tags=("extract",), audience="skill")
 def parse_table(ctx: ToolContext, text: str, columns: list, separator: str = "") -> ToolResult:
     """Split lines of text into rows with named columns.
 
@@ -85,7 +85,7 @@ def parse_table(ctx: ToolContext, text: str, columns: list, separator: str = "")
     return ToolResult(data={"rows": rows})
 
 
-@tool(tags=("extract", "privacy"))
+@tool(tags=("extract", "privacy"), audience="skill")
 def sanitize_text(ctx: ToolContext, text: str, cap: int = 80) -> ToolResult:
     """Clean an untrusted string: strip control characters and cap length.
 
@@ -101,7 +101,7 @@ def sanitize_text(ctx: ToolContext, text: str, cap: int = 80) -> ToolResult:
     return ToolResult(data={"text": clean_text(text, int(cap))})
 
 
-@tool(tags=("extract", "privacy"))
+@tool(tags=("extract", "privacy"), audience="skill")
 def mask_identifiers(ctx: ToolContext, text: str) -> ToolResult:
     """Replace device identifiers hiding in a name with a placeholder.
 

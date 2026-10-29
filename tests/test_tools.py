@@ -42,14 +42,14 @@ def test_every_registered_tool_has_a_docstring_in_the_fixed_format():
     for t in tools:
         d = parse_docstring(t.fn.__doc__, t.name)
         assert d.summary == t.summary and len(t.summary.split()) <= 12
-        assert d.tier in ("observe", "read") and d.platforms and d.notes and d.returns
+        assert d.tier in ("observe", "read", "write") and d.platforms and d.notes and d.returns
 
 
 @pytest.mark.parametrize("doc,why", [
     (None, "needs a docstring"),
     ("This summary has far too many words to be a summary of anything useful at all.\n\nArgs:\n    none\nReturns:\n    x\nTier: observe\nPlatforms: any\nNotes: none", "summary"),
     ("Short.\n\nArgs:\n    none\nReturns:\n    x\nTier: observe\nPlatforms: any", "missing section"),
-    ("Short.\n\nArgs:\n    none\nReturns:\n    x\nTier: write\nPlatforms: any\nNotes: none", "Tier must be"),
+    ("Short.\n\nArgs:\n    none\nReturns:\n    x\nTier: sudo\nPlatforms: any\nNotes: none", "Tier must be"),
     ("Short.\n\nArgs:\n    none\nReturns:\n    x\nTier: observe\nPlatforms: plan9\nNotes: none", "Platforms"),
     ("Short.\n\nArgs:\n    bad line\nReturns:\n    x\nTier: observe\nPlatforms: any\nNotes: none", "Args lines"),
 ])

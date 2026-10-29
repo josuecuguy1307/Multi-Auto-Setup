@@ -11,10 +11,10 @@ Reply = str | Callable[[str, str], str] | Exception
 
 
 def scripted_profile(view_budget_facts: int = 8, menu_max: int = 6, name: str = "scripted",
-                     ring_policy: RingPolicy = RingPolicy.fixed_order) -> ModelProfile:
+                     ring_policy: RingPolicy = RingPolicy.model_decides, walk_for_model: bool = False) -> ModelProfile:
     return ModelProfile(
         name=name, kind=ModelKind.scripted, model_id="scripted", endpoint="scripted://",
-        context_tokens=8192, view_budget_facts=view_budget_facts, menu_max=menu_max, ring_policy=ring_policy,
+        context_tokens=8192, view_budget_facts=view_budget_facts, menu_max=menu_max, ring_policy=ring_policy, walk_for_model=walk_for_model,
     )
 
 

@@ -294,7 +294,8 @@ def test_the_shipped_library_loads_without_errors_and_every_skill_obeys_the_rule
     lib = Library().load()
     assert lib.errors == [], lib.errors
     names = set(lib.skills)
-    assert len([s for s in lib.runnable() if s.meta.provenance == "builtin"]) == 29 and len(lib.protocols()) == 11
+    # 17 protocols: the 15 before, plus protocol-pair and protocol-node-connect, added ON PURPOSE for the network layer (docs/NETWORK_CONTRACT.md); the count is not loosened, it follows the library
+    assert len([s for s in lib.runnable() if s.meta.provenance == "builtin"]) == 30 and len(lib.protocols()) == 17
     for s in lib.skills.values():
         assert s.description.startswith("Use when") and len(s.body.splitlines()) <= MAX_BODY_LINES and s.name == s.path.name
         assert not validate(s)

@@ -24,6 +24,7 @@
      "read_hw_native"
     ],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "context",
@@ -54,6 +55,7 @@
      "read_net_interfaces"
     ],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "judge",
@@ -83,6 +85,7 @@
      "classify_host"
     ],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "survey",
@@ -103,6 +106,7 @@
     ],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "done",
@@ -121,6 +125,7 @@
     "tags": [],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [],
     "terminal": true,
     "reason": "this machine has been identified and surveyed"

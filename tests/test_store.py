@@ -48,7 +48,8 @@ def test_everything_persists_across_reopen(tmp_path):
         assert s.current_fact(t.id, "os.name").value == "macOS"
         assert [e.type for e in s.events(run_id="r1")] == ["run_start"]
         assert s.hypotheses(t.id)[0].id == h.id
-        assert s.find_skill("sig") is not None
+        found = s.find_skill("sig")
+        assert (found.signature, found.code_ref, found.tests_ref) == ("sig", "a", "b")
         assert s.read_raw(ref) == b"raw output"
 
 

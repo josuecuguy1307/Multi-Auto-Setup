@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import shutil
 from pathlib import Path
 
@@ -9,6 +10,7 @@ import pytest
 from envrec.contracts import Action, ActionType, ModelKind, ModelProfile
 from envrec.model import (
     ActionParseError,
+    ClaudeCliModel,
     ModelError,
     OpenAICompatModel,
     ScriptedModel,
@@ -18,6 +20,7 @@ from envrec.model import (
     request_action,
     with_view_budget,
 )
+from envrec.model.claude_cli import build_argv, parse_cli_output
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG = ROOT / "config" / "models.yaml"
@@ -176,28 +179,62 @@ def test_openai_compat_connection_error_becomes_model_error():
         asyncio.run(OpenAICompatModel(profile(), client=mock_client(handler)).complete("s", "u"))
 
 
+# ---- claude CLI adapter (no process started) -------------------------------------------------
+
+def test_cli_argv_is_a_bare_completion():
+    argv = build_argv("claude", "some-model", "SYSTEM")
+    assert argv[:2] == ["claude", "-p"]
+    assert argv[argv.index("--model") + 1] == "some-model"
+    assert argv[argv.index("--tools") + 1] == ""
+    assert argv[argv.index("--setting-sources") + 1] == ""
+    assert "--no-session-persistence" in argv and "--disable-slash-commands" in argv
+
+
+def test_cli_output_parsing_skips_a_warning_line():
+    out = ('[claude-code:unrecognized_model] {"model":"x"}\n'
+           + json.dumps({"is_error": False, "result": GOOD, "total_cost_usd": 0.001,
+                         "usage": {"input_tokens": 2, "cache_creation_input_tokens": 700,
+                                   "cache_read_input_tokens": 0, "output_tokens": 10}}))
+    done = parse_cli_output(out)
+    assert done.text == GOOD and done.prompt_tokens == 702 and done.completion_tokens == 10
+
+
+def test_cli_output_errors():
+    with pytest.raises(ModelError):
+        parse_cli_output("no json here")
+    with pytest.raises(ModelError) as exc:
+        parse_cli_output(json.dumps({"is_error": True, "result": "Not logged in"}))
+    assert "Not logged in" in str(exc.value)
+
+
+def test_cli_missing_binary_is_a_model_error():
+    model = ClaudeCliModel(profile(kind=ModelKind.claude_cli), binary="definitely-not-installed-xyz")
+    with pytest.raises(ModelError):
+        asyncio.run(model.complete("s", "u"))
+
+
 # ---- config ----------------------------------------------------------------------------------
 
 def test_profiles_load_from_yaml_and_build_the_right_adapters():
-    glimmer, g_opts = load_profile(CONFIG, "muse-glimmer", include_local=False)
-    spark, s_opts = load_profile(CONFIG, "muse-spark", include_local=False)
-    assert isinstance(make_adapter(glimmer, g_opts), OpenAICompatModel)
-    assert isinstance(make_adapter(spark, s_opts), OpenAICompatModel)
-    assert glimmer.view_budget_facts < spark.view_budget_facts
+    small, s_opts = load_profile(CONFIG, "muse-glimmer", include_local=False)
+    strong, g_opts = load_profile(CONFIG, "muse-spark", include_local=False)
+    cli, c_opts = load_profile(CONFIG, "subscription-cli", include_local=False)
+    assert isinstance(make_adapter(small, s_opts), OpenAICompatModel)
+    assert isinstance(make_adapter(strong, g_opts), OpenAICompatModel)
+    assert isinstance(make_adapter(cli, c_opts), ClaudeCliModel)
+    assert small.view_budget_facts < strong.view_budget_facts
+    assert small.model_id == strong.model_id == cli.model_id == "REPLACE_WITH_MODEL_ID"  # the shipped profiles are placeholders: no real model id is shipped
 
 
 def test_a_local_file_overrides_and_adds_profiles(tmp_path):
-    (tmp_path / "models.yaml").write_text(
-        "profiles:\n  a: {name: a, kind: openai_compat, model_id: m1, endpoint: http://x/v1, supports_tool_calling: false,"
-        " context_tokens: 100, view_budget_facts: 1, menu_max: 2}\n", encoding="utf-8")
-    (tmp_path / "models.local.yaml").write_text(
-        "profiles:\n  a: {name: a, kind: openai_compat, model_id: m2, endpoint: http://y/v1, supports_tool_calling: false,"
-        " context_tokens: 100, view_budget_facts: 1, menu_max: 2}\n"
-        "  b: {name: b, kind: openai_compat, model_id: m3, endpoint: http://z/v1, supports_tool_calling: false,"
-        " context_tokens: 100, view_budget_facts: 1, menu_max: 2}\n", encoding="utf-8")
+    entry = "{{name: {n}, kind: openai_compat, model_id: {m}, endpoint: http://127.0.0.1:{p}/v1, supports_tool_calling: false, context_tokens: 100, view_budget_facts: 1, menu_max: 2}}"
+    (tmp_path / "models.yaml").write_text("profiles:\n  a: " + entry.format(n="a", m="m1", p=1) + "\n", encoding="utf-8")
+    (tmp_path / "models.local.yaml").write_text("profiles:\n  a: " + entry.format(n="a", m="m2", p=2) + "\n  b: " + entry.format(n="b", m="m3", p=3) + "\n", encoding="utf-8")
     assert load_profile(tmp_path / "models.yaml", "a")[0].model_id == "m2"
     assert load_profile(tmp_path / "models.yaml", "b")[0].model_id == "m3"
     assert load_profile(tmp_path / "models.yaml", "a", include_local=False)[0].model_id == "m1"
+    with pytest.raises(KeyError):
+        load_profile(tmp_path / "models.yaml", "b", include_local=False)
 
 
 def test_unknown_profile_name_lists_the_known_ones():
@@ -217,7 +254,7 @@ def test_view_budget_override_changes_only_the_dials():
 def test_no_model_name_is_hard_coded_in_the_source():
     import re
 
-    names = re.compile(r"\b(muse|glimmer|spark|gpt-|llama)", re.I)  # \b keeps 'ollama' legal
+    names = re.compile(r"\b(qwen|haiku|muse|glimmer|spark|gpt-|llama)", re.I)  # \b keeps 'ollama' legal
     for path in (ROOT / "src" / "envrec").rglob("*.py"):
         hit = names.search(path.read_text(encoding="utf-8"))
         assert hit is None, f"{path.name} mentions {hit.group(0)!r}"
@@ -235,9 +272,21 @@ def _ollama_has(model_id: str) -> bool:
 
 @pytest.mark.live
 def test_live_local_model_returns_a_valid_action():
-    prof, opts = load_profile(CONFIG, "muse-glimmer")
+    prof, opts = load_profile(CONFIG, os.environ.get("ENVREC_LIVE_PROFILE", "muse-glimmer"))  # name a profile from config/models.local.yaml to run this against your own server
     if not _ollama_has(prof.model_id):
         pytest.skip("ollama is not running or the configured model is not installed")
+    system = "You control a recognition harness. Reply with one JSON object only."
+    user = 'MENU\n1 read_cpu  read cpu model\nReply with {"action":"call_tool","tool":"read_cpu","why":"..."}'
+    result = asyncio.run(request_action(make_adapter(prof, opts), system, user, fallback=FALLBACK))
+    assert not result.used_fallback and result.action.action == ActionType.call_tool
+
+
+@pytest.mark.live
+def test_live_claude_cli_returns_a_valid_action(monkeypatch):
+    import os
+    if not shutil.which("claude") or os.environ.get("ENVREC_LIVE_CLAUDE") != "1":
+        pytest.skip("set ENVREC_LIVE_CLAUDE=1 with the claude CLI installed to spend one subscription call")
+    prof, opts = load_profile(CONFIG, os.environ.get("ENVREC_LIVE_CLI_PROFILE", "subscription-cli"))
     system = "You control a recognition harness. Reply with one JSON object only."
     user = 'MENU\n1 read_cpu  read cpu model\nReply with {"action":"call_tool","tool":"read_cpu","why":"..."}'
     result = asyncio.run(request_action(make_adapter(prof, opts), system, user, fallback=FALLBACK))

@@ -25,6 +25,8 @@ from envrec.mission.models import (
     AdbBlock,
     DockerExecBlock,
     EntryLimits,
+    IosBlock,
+    LocalBlock,
     SerialBlock,
     SshBlock,
     TcpBlock,
@@ -58,8 +60,13 @@ def _slug(name: str) -> str:
     return (("d-" + s) if not s or not s[0].isalpha() else s)[:32].rstrip("-") or "device"
 
 
+def render_yaml(data: dict) -> str:
+    """The one YAML writer of the project (the source-scan test lets only this package dump YAML); other code that needs YAML text, such as a proposal, calls it."""
+    return yaml.safe_dump(data, sort_keys=False)
+
+
 def _write_atomic(path: Path, config: TargetConfig) -> None:
-    text = yaml.safe_dump(config.model_dump(mode="json"), sort_keys=False)
+    text = render_yaml(config.model_dump(mode="json"))
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".targets-")
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
@@ -67,15 +74,32 @@ def _write_atomic(path: Path, config: TargetConfig) -> None:
     os.replace(tmp, path)
 
 
-def _ask_connection(t: Transport, slug: str, ask: Callable[[str], str]) -> dict:
+def _ask_connection(t: Transport, slug: str, ask: Callable[[str], str], prefill: dict | None = None) -> dict:
+    prefill = prefill or {}
+    if t == Transport.local:
+        return {"local": LocalBlock(scope=prefill.get("scope", "bluetooth_audio_media"))}
     if t == Transport.ssh:
-        user = ask("SSH user on the device: ").strip()
-        port = ask("SSH port [22]: ").strip() or "22"
+        user = prefill.get("ssh_user") or ask("SSH user on the device: ").strip()  # proposed by the door from what the computer reported; typed only when there was no door
+        port = str(prefill.get("ssh_port", "")) or ask("SSH port [22]: ").strip() or "22"
         return {"ssh": SshBlock(user=user, port=int(port), key_env=f"ENVREC_KEY_{slug.upper().replace('-', '_')}")}
+    if t == Transport.local:
+        return {"local": LocalBlock()}  # nothing to type: it grants the right to ask, with a fresh approval each time, for effects on this computer's own Bluetooth, audio and media apps
     if t == Transport.docker_exec:
         return {"docker_exec": DockerExecBlock(container=ask("Container name: ").strip())}
     if t == Transport.adb_usb:
         return {"adb_usb": AdbBlock(serial=ask("adb serial (from `adb devices`): ").strip())}
+    if t == Transport.ios_usb:
+        import subprocess
+
+        from envrec.remote import ios
+        try:
+            done = subprocess.run(["idevice_id", "-l"], capture_output=True, text=True, timeout=15, stdin=subprocess.DEVNULL)
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise EnrollmentRefused(f"cannot list attached phones ({type(exc).__name__}); install libimobiledevice and connect the cable") from exc
+        found = ios.parse_udids(done.stdout)
+        if len(found) != 1:
+            raise EnrollmentRefused(f"exactly one phone must be attached by cable to enroll it; {len(found)} found. {ios.HINT}")
+        return {"ios_usb": IosBlock(udid_sha256=ios.udid_hash(found[0]))}  # the identifier itself is not kept anywhere
     if t == Transport.tcp:
         return {"tcp": TcpBlock(host=ask("Instrument address on your own network: ").strip(), port=int(ask("Port: ").strip()),
                                 allow_send=ask("May discovery send the fixed `*IDN?` identify query? [no]: ").strip().lower() in ("y", "yes"))}
@@ -105,9 +129,9 @@ def screen(c: Candidate, entry: TargetEntry, transport_reasons: list[str], limit
         f"Proposed transport: {entry.allowed_transports[0].value} (because: {'; '.join(transport_reasons)})",
         f"Proposed limits: max_disk_gb={entry.max_disk_gb}, max_model_params={entry.limits.max_model_params} ({limit_note})",
         "Steps only the device owner can do (this harness performs none of them and never touches credentials):",
-        f"  - {HINTS[entry.allowed_transports[0]]}",
+        f"  - {HINTS.get(entry.allowed_transports[0], 'nothing to set up: this is the computer you are typing on; it only grants the right to ask, with a fresh approval each time')}",
         "Exact entry that will be written to targets.yaml:",
-        *["  " + ln for ln in yaml.safe_dump(entry.model_dump(mode="json"), sort_keys=False).splitlines()],
+        *["  " + ln for ln in render_yaml(entry.model_dump(mode="json")).splitlines()],
     ])
 
 
@@ -120,6 +144,8 @@ def enroll(
     input_fn: Callable[[str], str] = input,
     output_fn: Callable[[str], None] = print,
     is_tty: Callable[[], bool] = lambda: sys.stdin.isatty() and sys.stdout.isatty(),
+    transport: Transport | None = None,
+    prefill: dict | None = None,
 ) -> EnrollResult:
     """Enroll ONE candidate. Returns enrolled=False (and writes nothing) if the human declines."""
     if in_worker_build():
@@ -137,10 +163,10 @@ def enroll(
     plan_facts = candidate.known_values()
     all_transports = list(Transport)
     pref_entry = TargetEntry.model_construct(id=_slug(candidate.name), allowed_transports=all_transports)
-    proposed = plan_transport(pref_entry, plan_facts, {}).considered[0]
+    proposed = transport or plan_transport(pref_entry, plan_facts, {}).considered[0]  # the human may name the route; otherwise the planner proposes
     disk, params, limit_note = _limits_for(candidate)
     slug = _slug(candidate.name)
-    blocks = _ask_connection(proposed, slug, input_fn)  # facts about HOW to reach it, typed by the human; no secrets
+    blocks = _ask_connection(proposed, slug, input_fn, prefill)  # facts about HOW to reach it, typed by the human; no secrets
     entry = TargetEntry(
         id=slug, name=candidate.name, host=host, os=str(plan_facts["os.name"]).lower() if plan_facts.get("os.name") else None,
         allowed_transports=[proposed], **blocks,
@@ -169,5 +195,5 @@ def enroll(
     _write_atomic(path, config)
     store.append_event(Event(actor=Actor.human, type="enroll_check", payload={"target": entry.id, "reachable": ok}))
     if not ok:
-        output_fn(f"Not reachable over {entry.allowed_transports[0].value}. {HINTS[entry.allowed_transports[0]]}")
+        output_fn(f"Not reachable over {entry.allowed_transports[0].value}. {HINTS.get(entry.allowed_transports[0], '')}")
     return EnrollResult(True, entry, "enrolled" if ok else "enrolled, unreachable")

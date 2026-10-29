@@ -33,7 +33,8 @@ def test_configured_parameter_cap_can_be_the_strictest():
 
 
 def test_free_disk_below_the_configured_budget_also_counts():
-    assert choose_model(32, free_disk_gb=1.0, max_disk_gb=100, max_model_params_b=13).params_b == 0.5 or True
+    c = choose_model(32, free_disk_gb=1.0, max_disk_gb=100, max_model_params_b=13)
+    assert c.params_b == 0.5 and c.limited_by == "disk"
     assert choose_model(32, free_disk_gb=0.5, max_disk_gb=100, max_model_params_b=13).params_b == 0.0
 
 

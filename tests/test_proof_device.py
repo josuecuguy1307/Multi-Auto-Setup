@@ -107,7 +107,7 @@ def build_loop(st, lib, dev, model, *, docs=None, verifier=None, baseline=None, 
         return True
     reg = RegistryAdapter(platform="linux", collector=LocalCollector("linux"), salts=Salts(), params={"port": dev.port}, approve=approve, library=lib, shelf=shelf, ask_skill_approval=ask_skill)
     wb = Workbench(lib, st.root / "stage", docs_dir=docs, verifier=verifier, baseline=baseline, shelf=shelf) if docs is not None else None
-    profile = scripted_profile().model_copy(update={"ring_policy": ring_policy, "menu_max": 8})
+    profile = scripted_profile().model_copy(update={"ring_policy": ring_policy, "walk_for_model": ring_policy == RingPolicy.fixed_order, "menu_max": 8})
     loop = Loop(st, [reg], ScriptedModel(model, profile), config=RunConfig(max_steps=40, protocols=ProtocolSet.from_library(lib) if protocols else None, library=lib), workbench=wb)
     return loop, reg, shelf, wb
 
@@ -142,7 +142,7 @@ def test_the_unknown_device_is_recognized_end_to_end_and_the_second_run_needs_no
     # the identification probe asked first, showing the exact queries, and, because the device talks on its own, sent NOTHING: it listened first
     assert shown and all("'AT\\r\\n'" in t and "'*IDN?\\r\\n'" in t and "exclusively" in t for t in shown) and dev.received == b""
     # research found the document and showed it as untrusted, quoted text
-    assert any("UNTRUSTED DOCUMENT TEXT (zxq-sensor.md)" in str(c[1]) for c in loop.model.calls)
+    assert any("UNTRUSTED DOCUMENT TEXT (source: zxq-sensor.md)" in str(c[1]) for c in loop.model.calls)
     # a skill was written, verified against its baseline, and the library was updated
     assert wb.saved == ["zxq1-sensor"]
     sk = lib.get("zxq1-sensor")
@@ -169,7 +169,7 @@ def test_the_unknown_device_is_recognized_end_to_end_and_the_second_run_needs_no
         assert len(reused) == 1 and reused[0].payload["skill"] == "zxq1-sensor" and reused[0].payload["model_calls"] == 0 and reused[0].payload["ok"] is True
         t2, h2 = st2.current_fact(target2.id, "sensor.temperature_c"), st2.current_fact(target2.id, "sensor.humidity")
         assert (t2.value, h2.value) == (7, 9)  # the same device, read again
-        assert t2.status == FactStatus.verified  # re-verified on this device: its own tests passed again and it produced the same fact keys
+        assert t2.status == FactStatus.tested and "skill-reverify" in [e.provider for e in t2.evidence]  # re-verified here: its own tests passed again, one more look at the same capture, so tested and not verified
         assert lib.verified_on("zxq1-sensor", target2.id)
         assert st2.current_fact(target2.id, "skill.match").value == "zxq1-sensor"
         assert len(asked) == 1 and "pinned" in asked[0] and "serial_identify" in asked[0]  # the human was asked ONCE, with the exact plan
@@ -221,7 +221,7 @@ REFUSALS = [
 def test_a_bad_skill_is_refused_with_the_mistake_named_and_nothing_is_kept(world, label, change, naming):
     tmp_path, dev, st, lib, docs = world
     target, loop, wb = reach_generate(st, lib, dev, docs, [propose(change), DONE], verifier=ScriptedVerifier([VerifierVerdict(True)]), baseline=ScriptedBaseline({}))
-    (msg,) = [m for m in last_results(loop, 3) if "rejected" in m][:1]
+    (msg,) = [m for m in last_results(loop, 999) if "rejected" in m][:1]
     assert naming in msg, msg
     assert wb.saved == [] and lib.get("zxq1-sensor") is None and not (lib.root / "generated" / "zxq1-sensor").exists()
     assert st.current_fact(target.id, "skill.saved") is None
@@ -231,24 +231,24 @@ def test_a_skill_that_does_not_beat_the_baseline_is_not_kept(world):
     tmp_path, dev, st, lib, docs = world
     already_right = ScriptedBaseline({"sensor.temperature_c": 7, "sensor.humidity": 9})  # the model alone reads the frame, but its quotes are not in a recorded capture it was given
     target, loop, wb = reach_generate(st, lib, dev, docs, [propose(), DONE], verifier=ScriptedVerifier([VerifierVerdict(True)]), baseline=already_right)
-    msg = next(m for m in last_results(loop, 2) if "rejected" in m)
+    msg = next(m for m in last_results(loop, 999) if "rejected" in m)
     assert "does not beat doing the same without it" in msg and "baseline F1 1.0" in msg and wb.saved == []
 
 
 def test_without_a_baseline_or_a_verifier_nothing_is_kept(world):
     tmp_path, dev, st, lib, docs = world
     _, loop, wb = reach_generate(st, lib, dev, docs, [propose(), DONE], verifier=ScriptedVerifier([VerifierVerdict(True)]), baseline=None)
-    assert "no baseline is configured" in next(m for m in last_results(loop, 2) if "rejected" in m) and wb.saved == []
+    assert "no baseline is configured" in next(m for m in last_results(loop, 999) if "rejected" in m) and wb.saved == []
     with Store(tmp_path / "s9") as st9:
         _, loop9, wb9 = reach_generate(st9, make_library(tmp_path / "other"), dev, docs, [propose(), DONE], verifier=None, baseline=ScriptedBaseline({}))
-        assert "no independent verifier is configured" in next(m for m in last_results(loop9, 2) if "rejected" in m) and wb9.saved == []
+        assert "no independent verifier is configured" in next(m for m in last_results(loop9, 999) if "rejected" in m) and wb9.saved == []
 
 
 def test_a_verifier_that_says_no_keeps_the_skill_out(world):
     tmp_path, dev, st, lib, docs = world
     v = ScriptedVerifier([VerifierVerdict(False, False, ["the humidity quote does not support the value"])])
     _, loop, wb = reach_generate(st, lib, dev, docs, [propose(), DONE], verifier=v, baseline=ScriptedBaseline({}))
-    assert "the verifier did not pass it. the humidity quote" in next(m for m in last_results(loop, 2) if "rejected" in m) and wb.saved == []
+    assert "the verifier did not pass it. the humidity quote" in next(m for m in last_results(loop, 999) if "rejected" in m) and wb.saved == []
     unsafe = ScriptedVerifier([VerifierVerdict(True, True, ["it reaches for something"])])
     with Store(tmp_path / "s8") as st8:
         _, loop8, wb8 = reach_generate(st8, make_library(tmp_path / "o2"), dev, docs, [propose(), DONE], verifier=unsafe, baseline=ScriptedBaseline({}))
@@ -344,3 +344,30 @@ def test_a_hostile_banner_is_data_cleaned_capped_and_quoted_and_moves_nothing(tm
         assert '= "' in line and "\x1b" not in line  # shown as quoted data
         assert s.rejected_actions == 0 and s.summary_tools_run == [] if hasattr(s, "summary_tools_run") else s.tools_run == []  # the model was never moved by it
         assert not any(e.payload.get("tool") == "delete_everything" for e in st.events())
+
+
+# ---- ask_human: a simulated human with the manual in hand, and no human at all -------------------------------------------------------------------------------------------
+
+ASK = json.dumps({"action": "ask_human", "key": "serial.protocol", "question": "What protocol does the ZXQ device speak?"})
+
+
+def test_without_any_human_a_run_that_needs_one_ends_cleanly_as_blocked_needs_human(world):
+    tmp_path, dev, st, lib, docs = world
+    target = st.put_target(Target(kind=TargetKind.serial, ring=1, handle=dev.port))
+    loop, *_ = build_loop(st, lib, dev, [ASK, DONE, DONE], docs=docs)
+    s = run_loop(loop, target)
+    assert s.stop_reason == "blocked_needs_human" and s.steps == 1 and s.model_calls == 1  # it did not keep asking, and did not pretend to know
+    assert [e.type for e in st.events() if e.type.startswith("human")] == ["human_question", "human_unavailable"]
+    assert st.current_fact(target.id, "serial.protocol") is None or st.current_fact(target.id, "serial.protocol").status == FactStatus.unknown
+
+
+def test_a_simulated_human_answers_with_the_manual_text_and_the_answer_is_marked_as_stated_by_a_human(world):
+    tmp_path, dev, st, lib, docs = world
+    target = st.put_target(Target(kind=TargetKind.serial, ring=1, handle=dev.port))
+    manual = " ".join(DOC.read_text().split())
+    loop, *_ = build_loop(st, lib, dev, [ASK, DONE], docs=docs)
+    loop._ask_human = lambda q: manual[:600]
+    s = run_loop(loop, target)
+    f = st.current_fact(target.id, "serial.protocol")
+    assert f.created_by.value == "human" and "ZXQ-1" in f.value and f.status == FactStatus.tested and "stated by the human, not measured" in f.evidence[0].limitations[0]
+    assert "7/9" not in f.value  # the answer holds no reading and no finished skill

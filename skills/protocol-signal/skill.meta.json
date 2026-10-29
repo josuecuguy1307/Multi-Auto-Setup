@@ -22,6 +22,7 @@
     ],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "describe",
@@ -42,6 +43,7 @@
     ],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "match",
@@ -63,6 +65,7 @@
     ],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "research",
@@ -83,6 +86,7 @@
     "actions": [
      "research"
     ],
+    "skills": [],
     "advance": [
      {
       "to": "ask",
@@ -101,6 +105,7 @@
     "tags": [],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [
      {
       "to": "done",
@@ -119,6 +124,7 @@
     "tags": [],
     "tools": [],
     "actions": [],
+    "skills": [],
     "advance": [],
     "terminal": true,
     "reason": "the encoding is known, or the human has been asked"

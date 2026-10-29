@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -34,9 +35,22 @@ def store(tmp_path):
         yield s
 
 
+def is_remote(adapter) -> bool:
+    """A remote adapter reads another computer through the owner's enrolled connection, so a replay collector cannot feed it; its recorded cases live in its own skill folder
+    (`tests/<case>/expect.json`) and `test_skillmd` runs them for every skill."""
+    return adapter.meta.signature.kind == "remote"
+
+
 def test_every_adapter_has_a_fixture_for_every_platform_it_claims():
-    missing = [f"{a.id}/{p}" for a in all_adapters() for p in a.platforms if not (FIX / a.id / p).is_dir()]
+    missing = [f"{a.id}/{p}" for a in all_adapters() if not is_remote(a) for p in a.platforms if not (FIX / a.id / p).is_dir()]
     assert missing == []
+
+
+def test_every_remote_adapter_has_recorded_cases_of_its_own_in_its_skill_folder():
+    remote = [a for a in all_adapters() if is_remote(a)]
+    assert remote, "if no remote adapter exists any more, delete is_remote and this test"
+    bare = [a.id for a in remote if not [d for d in (a.path / "tests").glob("*/expect.json")]]
+    assert bare == []
 
 
 def test_adapter_ids_are_unique_and_valid():
@@ -55,7 +69,8 @@ def test_adapter_parses_its_fixture_and_every_fact_cites_a_capture(adapter, plat
     for f in facts:
         if f.status != FactStatus.unknown:
             assert f.evidence and f.evidence[0].raw_ref and f.evidence[0].provider == adapter.id
-            assert store.read_raw(f.evidence[0].raw_ref) is not None
+            data = store.read_raw(f.evidence[0].raw_ref)
+            assert hashlib.sha256(data).hexdigest() == f.evidence[0].raw_ref.sha256  # the cited capture exists and is the one that was hashed (an empty output is a capture too)
     status = store.current_fact(host.id, f"ring.adapter.{adapter.id}").value
     assert status["status"] == "ran"
 

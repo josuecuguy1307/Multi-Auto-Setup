@@ -86,7 +86,7 @@ def test_processes_are_names_and_counts_only(store):
     _, _, f = run(store, "app_processes", "macos")
     rows = f["app.processes"].value
     assert rows and all(set(x) == {"name", "count", "class"} and "/" not in x["name"] for x in rows)
-    assert f["app.process_count"].value >= sum(x["count"] for x in rows) or True
+    assert f["app.process_count"].value >= sum(x["count"] for x in rows)  # the listed rows are a subset of all processes
     assert f["app.process_classes"].value.keys() <= {"system", "user"}
 
 

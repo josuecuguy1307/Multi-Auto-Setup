@@ -20,6 +20,8 @@ class Transport(StrEnum):
     docker_exec = "docker_exec"
     adb_usb = "adb_usb"
     serial = "serial"
+    ios_usb = "ios_usb"  # a phone or tablet the human owns, on a cable: libimobiledevice, read-only, after the Trust tap on the device
+    local = "local"  # this computer itself, for effects on its OWN Bluetooth, audio output and media apps; nothing is connected to
     tcp = "tcp"  # an instrument or sensor endpoint on your own network (read-only identify, and a passive stream sample)
 
 
@@ -85,6 +87,12 @@ class SshBlock(Strict):
         return v
 
 
+class LocalBlock(Strict):
+    """This computer. The only thing it grants is the right to ask, with a fresh approval each time, for effects on its own Bluetooth (already-paired devices), audio output and media apps."""
+
+    scope: str = Field(default="bluetooth_audio_media", pattern=r"^(bluetooth_audio_media|door)$")  # door: the steps of a door to a computer not enrolled yet
+
+
 class DockerExecBlock(Strict):
     container: str
 
@@ -104,6 +112,19 @@ class AdbBlock(Strict):
     def _s(cls, v: str) -> str:
         if not _ADB_SERIAL.match(v):
             raise ValueError("adb serial has characters it should not")
+        return v
+
+
+class IosBlock(Strict):
+    """Which attached phone or tablet this entry means. Only the SHA-256 of its UDID is kept: the identifier itself is never written to the file."""
+
+    udid_sha256: str
+
+    @field_validator("udid_sha256")
+    @classmethod
+    def _h(cls, v: str) -> str:
+        if not re.fullmatch(r"[0-9a-f]{64}", v):
+            raise ValueError("udid_sha256 must be the 64 hex characters of a SHA-256 digest")
         return v
 
 
@@ -160,8 +181,10 @@ class TargetEntry(Strict):
     ssh: SshBlock | None = None
     docker_exec: DockerExecBlock | None = None
     adb_usb: AdbBlock | None = None
+    ios_usb: IosBlock | None = None
     serial: SerialBlock | None = None
     tcp: TcpBlock | None = None
+    local: LocalBlock | None = None
     limits: EntryLimits
     owner_confirmed: bool = False  # set only by the enrollment flow or by hand
     # Set only by enrollment's one read-only check. The planner never writes to this file.

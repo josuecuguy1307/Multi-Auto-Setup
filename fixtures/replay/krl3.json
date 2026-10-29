@@ -1,0 +1,16 @@
+{
+ "name": "krl3",
+ "handle": "replay:krl3",
+ "kind": "usb",
+ "descriptor": {
+  "vendor_id": "ffff",
+  "product_id": "0003",
+  "manufacturer": null
+ },
+ "stream": [],
+ "responses": {
+  "$I\r\n": "KRL3 R4.2 b=87 t=342 m=2\r\n"
+ },
+ "synthetic": true,
+ "note": "hand-written for tests: a silent data logger that answers the fixed `$I` query; not a capture from real hardware"
+}

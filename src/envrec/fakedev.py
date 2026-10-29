@@ -20,6 +20,7 @@ class PtyDevice:
         self.name, self.stream, self.responses, self.period_s = name, list(stream or []), dict(responses or {}), period_s
         self.master, self.slave = pty.openpty()
         tty.setraw(self.master)
+        os.set_blocking(self.master, False)  # a pty nobody reads fills up; a blocked write would hang close()
         self.port = os.ttyname(self.slave)
         self.received = b""
         self._stop = False
@@ -46,12 +47,17 @@ class PtyDevice:
                 self.received += data
                 for q, reply in self.responses.items():
                     if data.endswith(q.encode("latin-1")) and reply:
-                        os.write(self.master, reply.encode("latin-1"))
+                        try:
+                            os.write(self.master, reply.encode("latin-1"))
+                        except BlockingIOError:
+                            pass
             now = time.monotonic()
             if self.stream and now - last > self.period_s:
                 last = now
                 try:
                     os.write(self.master, self.stream[self._i % len(self.stream)].encode("latin-1"))
+                except BlockingIOError:
+                    pass  # nobody is reading: drop the frame, as a real device with a full buffer would
                 except OSError:
                     break
                 self._i += 1
