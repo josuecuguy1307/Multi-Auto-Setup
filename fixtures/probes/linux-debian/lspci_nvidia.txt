@@ -1,0 +1,3 @@
+00:02.0 "VGA compatible controller" "Intel Corporation" "Alder Lake-P GT2 [Iris Xe Graphics]" -r0c "Example Vendor" "Device 22c5"
+01:00.0 "3D controller" "NVIDIA Corporation" "GA107M [GeForce RTX 3050 Mobile]" -ra1 "Example Vendor" "Device 22c5"
+00:1f.3 "Audio device" "Intel Corporation" "Alder Lake PCH-P High Definition Audio" -r01 "Example Vendor" "Device 22c5"

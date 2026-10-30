@@ -234,3 +234,21 @@ def test_asking_the_same_tool_with_the_same_arguments_again_is_refused_and_a_stu
     s, model, adapter, loop = drive(store, host, [same, same, same, DONE], adapter=a)
     assert adapter.ran == ["read_os"] and s.repeat_refusals >= 1
     assert any(e.type == "repeat_refused" for e in store.events())
+
+
+def test_a_step_that_closes_on_a_tool_must_have_an_exit_to_close_into():
+    from pydantic import ValidationError
+
+    from envrec.skills.meta import ProtocolDef
+    ok = {"kinds": ["host"], "start": "a", "states": {"a": {"close_on": ["t"], "advance": [{"to": "b", "needs": [{"tool": "t"}]}]}, "b": {"terminal": True}}}
+    assert ProtocolDef.model_validate(ok).states["a"].close_on == ["t"]
+    bad = {"kinds": ["host"], "start": "a", "states": {"a": {"close_on": ["t"]}, "b": {"terminal": True}}}
+    with pytest.raises(ValidationError, match="closes on"):
+        ProtocolDef.model_validate(bad)
+
+
+def test_the_card_of_a_closing_step_says_so_from_the_spec():
+    from envrec.skills.meta import ProtocolDef
+    d = ProtocolDef.model_validate({"kinds": ["host"], "start": "a", "states": {"a": {"close_on": ["t"], "advance": [{"to": "b", "needs": [{"fact": "k.x"}]}]}, "b": {"terminal": True}}})
+    skill = type("S", (), {"meta": type("M", (), {"states": d, "protocol": "x"})(), "name": "x"})()
+    assert "THIS STEP ENDS when t succeeds and the evidence for an exit is in" in ProtocolRun(skill).card()

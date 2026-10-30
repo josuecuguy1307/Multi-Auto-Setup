@@ -338,3 +338,17 @@ def test_the_retry_prompt_carries_the_format_hint():
     model = ScriptedModel(['{"action": "dance"}', GOOD])
     asyncio.run(request_action(model, "S", "U", fallback=FALLBACK, retry_hint="HINT: tool names go in tool"))
     assert "HINT: tool names go in tool" in model.calls[1][1]
+
+
+def test_argument_keys_beside_the_action_move_into_args_and_the_repair_is_reported():
+    action, note = parse_action_repairing('{"action": "ask_owner", "question": "which_ai", "why": "w"}', {"ask_owner"})
+    assert (action.action, action.tool, action.args) == ("call_tool", "ask_owner", {"question": "which_ai"}) and "moved into args" in note
+    action, note = parse_action_repairing('{"action": "call_tool", "tool": "ask_owner", "args": {"question": "q1"}}', {"ask_owner"})
+    assert action.args == {"question": "q1"} and note is None  # real args are never touched
+    action, note = parse_action_repairing('{"action": "call_tool", "tool": "not_on_menu", "question": "q"}', {"ask_owner"})
+    assert action.args in (None, {}) and note is None  # nothing outside the menu is repaired
+
+
+def test_the_form_s_own_fields_beside_a_tool_call_are_never_moved_into_args():
+    action, note = parse_action_repairing('{"action": "call_tool", "tool": "probe", "target_id": "tgt_x", "ring": 1, "text": "t"}', {"probe"})
+    assert (action.target_id, action.ring, action.args) == ("tgt_x", 1, {"text": "t"}) and "['text']" in note

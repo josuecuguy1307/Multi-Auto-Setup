@@ -7,7 +7,7 @@ import re
 NAMESPACE: frozenset[str] = frozenset(
     {
         "host", "os", "hw", "usb", "serial", "ble", "net", "instr",
-        "signal", "app", "fw", "repo", "sensor", "ring", "skill", "ios", "media", "spotify", "route", "workspace", "door",
+        "signal", "app", "fw", "repo", "sensor", "ring", "skill", "ios", "media", "spotify", "route", "workspace", "door", "machine", "lan", "analysis", "finding", "owner", "option",
     }
 )
 
@@ -17,7 +17,7 @@ _SEGMENT = re.compile(r"^[a-z0-9_\-]+$")
 KIND_PREFIX = {
     "host": "host", "usb": "usb", "serial": "serial", "ble": "ble", "net_host": "net",
     "instrument": "instr", "signal": "signal", "app": "app", "repo": "repo",
-    "sensor": "sensor", "phone": "ios", "remote": "host", "door": "door", "media": "media", "scope": "host", "unknown": "host",
+    "sensor": "sensor", "phone": "ios", "remote": "host", "door": "door", "coordinator": "machine", "setup": "option", "lan": "lan", "media": "media", "scope": "host", "unknown": "host",
 }
 
 

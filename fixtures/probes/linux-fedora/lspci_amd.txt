@@ -1,0 +1,1 @@
+06:00.0 "VGA compatible controller" "Advanced Micro Devices, Inc. [AMD/ATI]" "Navi 23 [Radeon RX 6600/6600 XT/6600M]" -rc7 "Sapphire Technology Limited" "Device e451"

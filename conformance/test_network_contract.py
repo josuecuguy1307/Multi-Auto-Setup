@@ -423,7 +423,7 @@ def test_T1_the_allowlist_is_read_only_by_name():
     import ast
     tree = ast.parse((SRC / "envrec_node" / "tasks.py").read_text())
     allowed = next(n for n in tree.body if isinstance(n, ast.AnnAssign) and getattr(n.target, "id", "") == "ALLOWED")
-    assert [k.value for k in allowed.value.keys] == ["node_report", "machine_analysis"]
+    assert [k.value for k in allowed.value.keys] == ["node_report", "machine_analysis", "os_details", "installed_programs", "gpus", "model_runtimes", "ai_clis", "memory_for_models"]
 
 
 def test_T1_fails_on_a_dispatcher_that_runs_a_shell_command_from_a_task_or_dispatches_by_name():
@@ -465,3 +465,23 @@ def test_clock_fails_on_a_session_that_compares_a_timestamp_with_the_clock_and_u
 
 def test_clock_passes_a_session_that_relies_on_the_session_id_and_the_sequence_number():
     assert netrules.session_clock_sites([FIX / "clock_ok" / "session.py"]) == []
+
+
+# ---- the agent cannot make a pairing offer without an OWNER pick ----------------------------------------------------------------------------------------------------------
+
+def test_the_agents_pair_offer_checks_for_the_owners_pick_before_it_makes_a_code():
+    assert netrules.owner_pick_violations(SRC / "envrec_coordinator" / "agent.py", "_offer") == []
+
+
+def test_the_pick_check_fails_when_the_offer_comes_first_or_the_check_is_missing(tmp_path):
+    assert any("before it checks" in h for h in netrules.owner_pick_violations(FIX / "pick_bad" / "agent.py"))
+    f = tmp_path / "agent.py"
+    f.write_text("class A:\n    async def _offer(self, args, ctx):\n        return self.offer_for_waiting(args['m'], 'agent')\n")
+    assert any("without checking" in h for h in netrules.owner_pick_violations(f))
+    f.write_text("class A:\n    async def _offer(self, args, ctx):\n        r = self.require_owner_pick(args['m'])\n        return self.offer_for_waiting(args['m'], 'agent')\n")
+    assert any("early return" in h for h in netrules.owner_pick_violations(f))
+    assert any("not found" in h for h in netrules.owner_pick_violations(f, "nope"))
+
+
+def test_the_pick_check_passes_the_correct_shape():
+    assert netrules.owner_pick_violations(FIX / "pick_ok" / "agent.py") == []

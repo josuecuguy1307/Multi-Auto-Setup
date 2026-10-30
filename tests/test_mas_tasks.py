@@ -156,7 +156,7 @@ def test_the_real_machine_analysis_on_this_machine_returns_grouped_facts_and_nev
     assert {"provider": "openai", "name": "OPENAI_API_KEY"} in result["ai"]["api_key_variable_names"]
     assert "sk-should-never-appear" not in repr(result) + repr(evidence)
     assert all("port" not in app for app in result["programs"]["installed_apps"])  # a model server is an AI fact, not an installed app
-    assert result["ai"]["largest_model_that_fits"]["limited_by"] in ("ram", "disk", "config_params", "none") and evidence
+    assert result["ai"]["largest_model_that_fits"]["limited_by"] in ("ram", "vram", "disk", "catalog_top", "ram_no_gpu_detected") and evidence  # a real limit is named, never "none"
     assert any(e["provider"] in ("platform", "psutil", "stdlib") for e in evidence)
 
 
@@ -210,7 +210,7 @@ def test_the_not_allowed_tool_is_refused_before_anything_runs(tmp_path):
         r, coord, me = make_runner(tmp_path)
         sent = await offer_task(r, coord, me, "write_file", {"path": "x"}, tools=["write_file"])
         assert [(m[0], m[1]["state"], m[1]["reason"]) for m in sent] == [("task_update", "rejected", "tool_not_allowed")] and r.running == 0
-        assert set(node_tasks.ALLOWED) == {"node_report", "machine_analysis"}  # the allowlist is exactly these two
+        assert set(node_tasks.ALLOWED) == {"node_report", "machine_analysis", *T.PROBES}  # the allowlist is exactly the report, the analysis and the six read-only probes
     run(go())
 
 

@@ -52,6 +52,7 @@ def parse_action_repairing(text: str, tool_names: set[str] | None) -> tuple[Acti
 
       {"action": "<a menu tool name>", ...}   -> {"action": "call_tool", "tool": "<name>", ...}
       {"tool": "<a menu tool name>", ...}     -> {"action": "call_tool", "tool": "<name>", ...}
+      {"action": "call_tool", "tool": "t", "question": "x"}  -> the stray top-level keys move into "args" (the tool's own schema still validates them)
 
     Nothing outside the menu is ever repaired, and the repair is reported so it can be counted.
     """
@@ -71,6 +72,12 @@ def parse_action_repairing(text: str, tool_names: set[str] | None) -> tuple[Acti
         elif "action" not in data and isinstance(data.get("tool"), str) and data["tool"] in tool_names:
             data = {**data, "action": "call_tool"}
             note = "no action given: read as call_tool"
+    if tool_names and data.get("action") == "call_tool" and data.get("tool") in tool_names and not data.get("args"):
+        keep = set(Action.model_fields) - {"question"}  # the form's own fields stay where they are; `question` means nothing on call_tool, but it is the name of an argument some tools take
+        stray = {k: v for k, v in data.items() if k not in keep}
+        if stray:
+            data = {**{k: v for k, v in data.items() if k in keep}, "args": stray}
+            note = (note + "; " if note else "") + f"argument keys {sorted(stray)} were beside the action: moved into args"
     try:
         return Action.model_validate(data), note
     except ValidationError as exc:

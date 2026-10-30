@@ -1,0 +1,81 @@
+{
+ "provenance": "builtin",
+ "protocol": "setup-options",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "setup"
+  ],
+  "start": "options",
+  "states": {
+   "options": {
+    "goal": "Choose which AI could run on this machine. Read the stored analysis first (load_analysis); it is not probed again. Ask the owner which AI they want (ask_owner which_ai, and which_cli, which_api_provider or sensitivity when it matters), look up the catalog and evidence if useful, build the options (build_options: code applies the filters and the order), then explain EACH option in plain words (explain_option). You do not rank.",
+    "tags": [],
+    "tools": [
+     "load_analysis",
+     "ask_owner",
+     "catalog_lookup",
+     "evidence_lookup",
+     "build_options",
+     "explain_option"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "fact": "option.explained",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "no_options",
+      "needs": [
+       {
+        "fact": "option.none",
+        "at_least": "tested"
+       }
+      ]
+     }
+    ],
+    "close_on": [
+     "explain_option",
+     "build_options"
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "close_on": [],
+    "terminal": true,
+    "reason": "every option is explained and ready for the owner to pick one; nothing was installed"
+   },
+   "no_options": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "close_on": [],
+    "terminal": true,
+    "reason": "no option survived the filters; the reasons are in the facts; nothing was installed"
+   }
+  }
+ }
+}

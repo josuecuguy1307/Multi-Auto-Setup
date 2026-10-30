@@ -1,0 +1,55 @@
+{
+ "which_ai": {
+  "text": "Which AI do you want to use on this machine?",
+  "options": [
+   {
+    "id": "local",
+    "label": "Open-source local",
+    "detail": "a model that runs on this machine and keeps data here"
+   },
+   {
+    "id": "cli",
+    "label": "My subscription, through its official command-line tool",
+    "detail": "a cloud service you already pay for; data goes to the provider"
+   },
+   {
+    "id": "api",
+    "label": "My API key",
+    "detail": "a cloud provider you pay per use; data goes to the provider"
+   },
+   {
+    "id": "mix",
+    "label": "A combination",
+    "detail": "one of each kind that applies"
+   }
+  ]
+ },
+ "which_cli": {
+  "text": "Which of the installed command-line tools do you want to use?",
+  "dynamic": "ai_clis"
+ },
+ "which_api_provider": {
+  "text": "Which provider's API key do you want to use?",
+  "dynamic": "providers"
+ },
+ "sensitivity": {
+  "text": "How sensitive is the work on this machine?",
+  "options": [
+   {
+    "id": "public",
+    "label": "Public",
+    "detail": "nothing here is private"
+   },
+   {
+    "id": "internal",
+    "label": "Internal",
+    "detail": "private to you or your team, but not secret"
+   },
+   {
+    "id": "confidential",
+    "label": "Confidential",
+    "detail": "must not leave this machine: cloud options are removed"
+   }
+  ]
+ }
+}

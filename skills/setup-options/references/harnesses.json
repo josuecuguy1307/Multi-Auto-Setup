@@ -1,0 +1,66 @@
+{
+ "label": "declared-by-project",
+ "cli": [
+  {
+   "id": "claude",
+   "name": "Claude Code",
+   "source": "https://www.anthropic.com/claude-code",
+   "terms": "a commercial product; its own terms apply (not evaluated here)"
+  },
+  {
+   "id": "codex",
+   "name": "Codex CLI",
+   "source": "https://github.com/openai/codex",
+   "terms": "a command-line tool signed in with an OpenAI account; its own terms apply (not evaluated here)"
+  },
+  {
+   "id": "gemini",
+   "name": "Gemini CLI",
+   "source": "https://github.com/google-gemini/gemini-cli",
+   "terms": "a command-line tool signed in with a Google account; its own terms apply (not evaluated here)"
+  },
+  {
+   "id": "copilot",
+   "name": "GitHub Copilot CLI",
+   "source": "https://github.com/features/copilot/cli",
+   "terms": "needs a Copilot plan; its own terms apply (not evaluated here)"
+  }
+ ],
+ "api_providers": [
+  {
+   "id": "anthropic",
+   "name": "Anthropic API"
+  },
+  {
+   "id": "openai",
+   "name": "OpenAI API"
+  },
+  {
+   "id": "google",
+   "name": "Google Gemini API"
+  },
+  {
+   "id": "mistral",
+   "name": "Mistral API"
+  },
+  {
+   "id": "groq",
+   "name": "Groq API"
+  },
+  {
+   "id": "openrouter",
+   "name": "OpenRouter"
+  },
+  {
+   "id": "other",
+   "name": "Another provider"
+  }
+ ],
+ "licenses_allowed": [
+  "apache-2.0",
+  "mit",
+  "bsd-3-clause",
+  "bsd-2-clause",
+  "isc"
+ ]
+}

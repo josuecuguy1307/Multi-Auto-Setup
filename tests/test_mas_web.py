@@ -505,7 +505,10 @@ def test_every_string_the_page_asks_for_exists_and_no_copy_is_hardcoded():
     strings = json.loads((STATIC / "strings.es.json").read_text())
     html = (STATIC / "index.html").read_text()
     js = (STATIC / "app.js").read_text()
-    wanted = set(re.findall(r'data-i18n="([\w.]+)"', html)) | set(re.findall(r'\bt\("([\w.]+)"', js)) - {"pair.result."}  # (that one is built from the status below)
+    wanted = set(re.findall(r'data-i18n="([\w.]+)"', html)) | set(re.findall(r'\bt\("([\w.]+)"', js)) - {"pair.result.", "node.analysis.limit.", "run.status.", "run.step.", "run.group.", "run.cost.", "run.finished."}  # (those are built from a status or a limit name below)
+    wanted |= {f"node.analysis.limit.{x}" for x in ("vram", "ram", "ram_no_gpu_detected", "disk", "catalog_top", "config_params")}
+    wanted |= {f"run.status.{x}" for x in ("starting", "running", "done", "no_options", "blocked_needs_human", "stopped", "no_model", "failed")} | {f"run.step.{x}" for x in ("MODEL", "GUARD", "SCRIPT", "OWNER")}
+    wanted |= {f"run.group.{x}" for x in ("system", "hardware", "programs", "ai", "security")} | {f"run.cost.{x}" for x in ("free_local", "subscription", "metered_api")} | {f"run.finished.{x}" for x in ("known", "unknown", "why")}
     wanted |= {f"pair.result.{s}" for s in ("accepted", "refused", "failed", "expired", "rejected")} | {"error.session", "error.generic"}
     assert wanted - set(strings) == set(), wanted - set(strings)
     visible = re.sub(r"<(script|style|title|code)\b.*?</\1>|<[^>]+>", "", html, flags=re.S)  # (the title and the command to type are not copy)
@@ -593,4 +596,82 @@ def test_the_pair_for_a_waiting_machine_request_needs_the_same_guards_and_refuse
             await asyncio.sleep(0.3)
             status, body = await b.post("/api/pair/offer-for", {"waiting": wid})
             assert status == 409 and body["error"] == "waiting_gone"
+    run(go())
+
+
+# ---- the agent run endpoints ---------------------------------------------------------------------------------------------------------------
+
+def test_run_endpoints_need_the_session_the_csrf_and_a_well_formed_body(tmp_path):
+    async def go():
+        async with coordinator(tmp_path, web=True, answer=None) as c:
+            b = Browser(c)
+            status, _, _ = await b.raw("GET", "/api/run?id=x", cookie=False)
+            assert status == 401
+            await b.open()
+            await b.state()
+            for path in ("/api/analysis/start", "/api/options/start", "/api/run/answer", "/api/run/pick"):
+                status, _ = await b.post(path, {}, csrf=False)
+                assert status == 403, path
+                status, _ = await b.post(path, {"node": 5, "run": 5, "question": "", "option": ""})
+                assert status == 400, path
+            status, _, _ = await b.raw("GET", "/api/run?id=nope")
+            assert status == 404
+            assert not events(c, "analysis_requested")
+    run(go())
+
+
+def test_pressing_analyze_for_a_computer_that_is_not_paired_is_recorded_as_the_owners_and_fails_plainly(tmp_path):
+    async def go():
+        async with coordinator(tmp_path, web=True, answer=None) as c:
+            b = Browser(c)
+            await b.open()
+            await b.state()
+            status, d = await b.post("/api/analysis/start", {"node": "n-unknown"})
+            assert status == 200 and d["run"]["status"] == "failed" and d["run"]["reason"] == "that computer is not paired"
+            req = events(c, "analysis_requested")
+            assert len(req) == 1 and req[0].effective_tag == "OWNER" and req[0].payload["via"] == "web"
+            status, _, data = await b.raw("GET", "/api/run?id=" + d["run"]["id"])
+            assert status == 200 and json.loads(data)["status"] == "failed"
+    run(go())
+
+
+def test_a_start_that_says_it_is_the_operators_is_logged_as_not_the_owners_and_counted_as_claude_code(tmp_path):
+    async def go():
+        async with coordinator(tmp_path, web=True, answer=None) as c:
+            b = Browser(c)
+            await b.open()
+            await b.state()
+            status, d = await b.post("/api/analysis/start", {"node": "n-unknown", "by": "claude-code"})
+            assert status == 200 and d["run"]["via"] == "claude-code" and d["run"]["actors"]["CLAUDE-CODE"] == 1 and d["run"]["actors"]["OWNER"] == 0
+            req = events(c, "analysis_requested")
+            assert len(req) == 1 and req[0].effective_tag == "GUARD" and req[0].payload["via"] == "claude-code"  # not an OWNER event
+    run(go())
+
+
+def test_options_cannot_be_started_from_the_web_without_a_stored_analysis(tmp_path):
+    async def go():
+        async with coordinator(tmp_path, web=True, answer=None) as c:
+            b = Browser(c)
+            await b.open()
+            await b.state()
+            status, d = await b.post("/api/options/start", {"node": "n-unknown"})
+            assert status == 200 and d["run"]["status"] == "failed" and d["run"]["reason"] == "that computer is not paired"
+            req = events(c, "options_requested")
+            assert len(req) == 1 and req[0].effective_tag == "OWNER" and req[0].payload["via"] == "web"
+    run(go())
+
+
+def test_the_lan_run_over_the_web_with_no_model_makes_no_offer_and_answers_and_picks_with_nothing_pending_are_409(tmp_path):
+    async def go():
+        async with coordinator(tmp_path, web=True, answer=None, discovery=True) as c:
+            b = Browser(c)
+            await b.open()
+            await b.state()
+            status, d = await b.post("/api/lan/start", {})
+            assert status == 200 and d["run"]["status"] == "no_model"
+            status, _ = await b.post("/api/run/answer", {"run": d["run"]["id"], "question": "pick_waiting_machine", "option": "w1"})
+            assert status == 409
+            status, _ = await b.post("/api/run/pick", {"run": d["run"]["id"], "option": "none"})
+            assert status == 409
+            assert c.owner.view() is None and not events(c, "pair_offer_created")
     run(go())

@@ -18,6 +18,7 @@ from envrec_coordinator.discovery import DiscoveryResponder, open_responder
 from envrec_coordinator.owner import OwnerDesk
 from envrec_coordinator.pairing import HELLO_TIMEOUT_S, Decision, PairingBusy, PairingDesk
 from envrec_coordinator.registry import Registry
+from envrec_coordinator.runs import AgentRuns
 from envrec_coordinator.tasks import ALERT_SKEW_S, TaskDesk, evaluate_report
 from envrec_coordinator.waiting import WaitingDesk
 from envrec_coordinator.web import WEB_HOST, WebScreen
@@ -60,7 +61,8 @@ def _clip(v, cap: int) -> str:
 class Coordinator:
     def __init__(self, state_dir: Path, host: str, port: int, *, clock=time.time, idle_timeout_s: float = IDLE_TIMEOUT_S, owner_ttl_s: float = 120.0, summary_every_s: float = SUMMARY_EVERY_S,
                  web: bool = False, web_port: int = 0, discovery_port: int | None = None, name: str | None = None, include_virtual: bool = False,
-                 skew_alert_s: float = ALERT_SKEW_S, report_every_s: float = 300.0) -> None:
+                 skew_alert_s: float = ALERT_SKEW_S, report_every_s: float = 300.0,
+                 model_profile: str | None = None, models_file=None) -> None:
         self.state, self.host, self.port, self.clock, self.idle_timeout_s = Path(state_dir) / "coordinator", check_bind(host), port, clock, idle_timeout_s
         self.layer = envrec_os.current()
         self.owner_ttl_s = owner_ttl_s
@@ -69,6 +71,7 @@ class Coordinator:
         self._conns: set[asyncio.StreamWriter] = set()
         self.summary_every_s, self.skew_alert_s, self.report_every_s = summary_every_s, skew_alert_s, report_every_s
         self._sessions: dict[str, NodeSession] = {}
+        self._model_profile, self._models_file = model_profile, models_file
         self._discovery_port, self.include_virtual = discovery_port, include_virtual
         self.display_name = (name or envrec_os.card()['hostname'])[:60]
         self.responder: DiscoveryResponder | None = None
@@ -89,6 +92,7 @@ class Coordinator:
         self.tasks = TaskDesk(clock=self.clock, log=lambda t, p, owner=False: self.log.add(t, p, owner=owner), sessions=lambda nid: self._sessions.get(nid))
         self.tasks.on_result = self._on_task_result
         self.tasks.on_change = self._publish_tasks
+        self.runs = AgentRuns(self, model_profile=self._model_profile, models_file=self._models_file)
         self.waiting = WaitingDesk(clock=self.clock, log=lambda t, p: self.log.add(t, p), on_change=self._publish_waiting)
         self.owner = OwnerDesk(self.clock)
         self.desk = PairingDesk(identity=self.identity, registry=self.registry, log=self.log, ask_owner=self._ask_owner, on_paired=lambda der: tls.add_trusted(self.ctx, der),
@@ -132,7 +136,10 @@ class Coordinator:
             if self.desk.busy:
                 raise PairingBusy()
             target = w.name
-        self.log.add("owner_requested_pairing", {"offer": offer_id, "via": via, **({"waiting": bound_to, "machine": target} if bound_to else {})}, owner=True)
+        if via == "agent":  # the OWNER's pick came first (an OWNER event in the run); making the code is code's act, and is logged as code's
+            self.log.add("pairing_offer_for_picked", {"offer": offer_id, "via": via, "waiting": bound_to, "machine": target})
+        else:
+            self.log.add("owner_requested_pairing", {"offer": offer_id, "via": via, **({"waiting": bound_to, "machine": target} if bound_to else {})}, owner=True)
         offer = self.desk.open_offer(offer_id, code, bound_to)
         self.owner.opened(offer_id, code, offer.expires, via, target=target)
         if bound_to is not None:
@@ -195,8 +202,8 @@ class Coordinator:
         self.desk.expire_due()
         machines = [{"id": n.node_id, "name": n.name, "os": n.os, "arch": n.arch, "status": "online" if self._online.get(n.node_id) else "offline",
                      "last_heartbeat": n.last_heartbeat, "fingerprint": n.fingerprint, "paired_at": n.paired_at, "skew_s": n.skew_s, "report": n.report, "report_at": n.report_at,
-                     "alerts": self._alerts_of(n), "analysis_at": n.analysis_at} for n in self.registry.all()]
-        return {"now": self.clock(), "machines": machines, "pairing": self.owner.view(), "waiting": [w.view() for w in self.waiting.list()], "tasks": [t.view() for t in self.tasks.list()[-30:]]}
+                     "alerts": self._alerts_of(n), "analysis_at": n.analysis_at, "agent_analysis_at": (self.runs.stored_analysis(n.node_id) or {}).get("stored_at")} for n in self.registry.all()]
+        return {"now": self.clock(), "machines": machines, "pairing": self.owner.view(), "waiting": [w.view() for w in self.waiting.list()], "tasks": [t.view() for t in self.tasks.list()[-30:]], "runs": self.runs.listing(), "model": self.runs.model_status()}
 
     def _alerts_of(self, n) -> list:
         """The stored alerts of the last report, plus a clock warning measured at the last connect (never a refusal)."""
@@ -236,6 +243,27 @@ class Coordinator:
     def analysis_of(self, node_id: str) -> dict | None:
         return self.registry.load_analysis(node_id) if self.registry.get(node_id) else None
 
+    # ---- harness runs (the model drives; see runs.py) ----
+
+    def start_analysis(self, node_id: str, via: str = "web", **kw) -> dict:
+        """The owner pressed "Analizar esta máquina": an agent run starts (an OWNER event)."""
+        return self.runs.view(self.runs.start_analysis(node_id, via, **kw).id, events=False)
+
+    def start_options_run(self, node_id: str, via: str = "web", **kw) -> dict:
+        return self.runs.view(self.runs.start_options(node_id, via, **kw).id, events=False)
+
+    def start_lan_run(self, via: str = "web", **kw) -> dict:
+        return self.runs.view(self.runs.start_lan(via, **kw).id, events=False)
+
+    def run_view(self, run_id: str) -> dict | None:
+        return self.runs.view(run_id)
+
+    def answer_run(self, run_id: str, qid: str, option: str, by: str = "owner") -> bool:
+        return self.runs.answer(run_id, qid, option, by)
+
+    def pick_option(self, run_id: str, option_id: str) -> bool:
+        return self.runs.pick_option(run_id, option_id)
+
     def run_task(self, node_id: str, task_type: str, via: str = "web", params: dict | None = None) -> dict:
         """The owner asks for a task on one node (the web screen and the CLI call this). Returns the task's view; it ends on its own."""
         rec = self.tasks.start(node_id, task_type, params, by="OWNER")
@@ -247,6 +275,7 @@ class Coordinator:
     async def stop(self) -> None:
         if self._udp is not None:
             self._udp.close()
+        await self.runs.shutdown()
         if self.web is not None:
             await asyncio.to_thread(self.web.stop)  # first: its handlers call back into this loop
         for t in self._tasks:

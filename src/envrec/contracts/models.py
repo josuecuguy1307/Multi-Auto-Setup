@@ -245,7 +245,7 @@ class Event(Strict):
     payload: dict[str, JsonValue] = Field(default_factory=dict)
     run_id: str | None = None
     # Who decided: MODEL, GUARD, SCRIPT or OWNER (envrec.contracts.tags). None only on events written before the field existed; the store fills it on write.
-    tag: Literal["MODEL", "GUARD", "SCRIPT", "OWNER"] | None = None
+    tag: Literal["MODEL", "GUARD", "SCRIPT", "OWNER", "CLAUDE-CODE"] | None = None
 
     @property
     def effective_tag(self) -> str:

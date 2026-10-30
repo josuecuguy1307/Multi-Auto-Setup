@@ -1,0 +1,102 @@
+{
+ "provenance": "builtin",
+ "protocol": "analyze",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "coordinator"
+  ],
+  "start": "survey",
+  "states": {
+   "survey": {
+    "goal": "Find out what this machine is, so that a later step can choose which AI could run on it. Pick read-only probes one at a time; each runs on the machine through a signed task. The analysis is complete when it covers the system and its architecture, the memory for models (RAM, VRAM, disk), the graphics cards, the local model runtimes and servers, the official AI command-line tools (installed and whether a sign-in exists, never a token) and the NAMES of API-key variables. Record what you conclude with the facts it rests on (record_finding). Then finish_analysis states what is known, what is unknown and why, and ends this analysis.",
+    "tags": [],
+    "tools": [
+     "node_os_details",
+     "node_programs",
+     "node_gpu",
+     "node_runtimes",
+     "node_ai_clis",
+     "node_memory_fit",
+     "node_security_report",
+     "record_finding",
+     "finish_analysis"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "fact": "machine.os.name",
+        "at_least": "tested"
+       },
+       {
+        "fact": "machine.os.arch",
+        "at_least": "tested"
+       },
+       {
+        "fact": "machine.model_path",
+        "at_least": "tested"
+       },
+       {
+        "fact": "machine.ram_total_gib",
+        "at_least": "tested"
+       },
+       {
+        "fact": "machine.vram_gib",
+        "at_least": "tested"
+       },
+       {
+        "fact": "machine.disk_free_gib",
+        "at_least": "tested"
+       },
+       {
+        "fact": "machine.gpus",
+        "at_least": "tested"
+       },
+       {
+        "fact": "machine.runtimes",
+        "at_least": "tested"
+       },
+       {
+        "fact": "machine.ai_clis",
+        "at_least": "tested"
+       },
+       {
+        "fact": "machine.api_key_variable_names",
+        "at_least": "tested"
+       },
+       {
+        "fact": "analysis.finished",
+        "at_least": "tested"
+       }
+      ]
+     }
+    ],
+    "close_on": [
+     "finish_analysis"
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "close_on": [],
+    "terminal": true,
+    "reason": "the analysis is finished and stored; nothing was installed. Choosing which AI to use on this machine is a separate protocol (setup-options)"
+   }
+  }
+ }
+}

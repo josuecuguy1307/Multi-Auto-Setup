@@ -2,13 +2,43 @@
 
 A harness is everything around a model that turns it into an agent. The model does two things only: it reasons, and it chooses. Everything else is the harness: senses (tools), know-how (skills), a view of the world (context), a past (memory), a loop that keeps going, and guard rails. Five parts plus guards, each requirement with an ID. Each ID has at least one executable check in `conformance/` (run `pytest conformance`; the file is named after the ID). A check that fails is a true statement about the code, not a bug in the check.
 
-Five actors appear in every decision, and every event must say which one acted (ROUTER is new; it exists only once the router is built, and it is not a loophole for SCRIPT):
+Six actors appear in every decision, and every event must say which one acted (ROUTER is new; it exists only once the router is built, and it is not a loophole for SCRIPT):
 
 * **MODEL**: the model chose an action from the menu (no fallback involved).
 * **GUARD**: code refused or enforced a rule. Legitimate: it never picks what happens next, it only stops what must not happen.
 * **SCRIPT**: code decided the next action or the outcome (a forced advance, a fallback action, a fixed sequence, a rule table that picks a route, a repair that rewrites the action). Not legitimate in the missions, because then the model is decoration.
 * **OWNER**: the human approved, or typed an answer.
+* **CLAUDE-CODE**: the operator (the assistant that builds this) acted for the owner in a verification run, with the owner's authorization given in chat. It is counted apart, written into the evidence of what it answered, and never mistaken for OWNER. It is zero in any run the owner drove.
 * **ROUTER**: the router chose a harness/model/machine combination for a task, by a written rule, only among combinations that passed the admission exam and that the task's sensitivity allows (`docs/NETWORK_CONTRACT.md` section 10). The event lists the candidates, the rule and the choice. It never chooses the model's actions.
+
+## Harness, not encoder
+
+The failure this project is built to avoid is an *encoder*: a program that already knows the right answer and carries the model along to it, so that the model's "decision" is decoration. A run that ends well is not evidence of a harness. Who decided is.
+
+**Encoder (forbidden).** The outcome is decided in advance and forced. That can be:
+* an `if` or a table that picks the next tool, or the next protocol step, for the model;
+* code that calls a tool on the model's behalf, advances the protocol for it, or declares success for it;
+* wording of the view, the menu or a skill that has been tuned, by trial against one model, until that model reliably picks the action we wanted. The code is innocent and the text is the encoder; the log will say MODEL for a choice the text made.
+
+**Harness (required).**
+* Code is GUARD: it validates, blocks what is invalid or out of order, executes what the model chose, records everything, and is the only thing that can say "the protocol has not ended". It never picks.
+* Knowledge lives in skills, protocols (`SKILL.md` and their data files) and the per-OS layer (`envrec_os`), not in Python branches.
+* The view tells the truth: what is known and how well, what is missing, which registered tool says it produces the missing thing, and why something was refused (a typed reason). The model decides what to do with that.
+* Every decision carries its actor: MODEL, GUARD, SCRIPT, OWNER. CLAUDE-CODE steps in a verification run are zero.
+
+**The fine line.** Improving what the model sees is allowed, and is most of the work. A change to the view, the menu or a skill text passes only if all of these hold:
+1. *Generic.* It is built from the protocol spec and the tool specs (a missing key, its declared producers, a refusal reason), and is valid for any step, any protocol, any key. It names no tool, step or key written into the code for the sake of one run.
+2. *Neutral to the answer.* It would still be correct if the right answer were a different tool. It points at facts, not at an action.
+3. *Held on other views.* It was checked on other runs and other views, not only on the one it was tuned on, and by what the log shows, not by one model's one lucky reply.
+4. *True.* It never states something false: not completion before a tool has run, not "nothing more is needed" when the guard would still allow more, not a rule nothing enforces.
+
+**Short protocols, closed by a terminal action (the machine analysis, 2026-10-30).** A protocol that needs the model to take a pure formality ("advance") after its real work invites a stall that no wording should be tuned to cure. Instead the protocol is cut at its natural end. A step may list `close_on` tools in its skill data: when the MODEL chose one of them, it succeeded, and the evidence for an exit is in, the GUARD takes that exit and records it; the closing tool itself is offered only once the rest of an exit's evidence is in, which the loop reads from the same spec (no tool names in code) (`protocol_state` by `evidence`, tag GUARD, with `closed_by`). That is validating a terminal action; the choice of the action, its arguments and its meaning stay with the model. `protocol-analyze` is one step that ends on `finish_analysis` and stores the analysis; "which AI do you want here" is a different protocol, `protocol-setup-options`, which refuses to start without a stored analysis and reads it instead of probing again. Each has its own skill, a small menu and its own typed end. The loop moves a protocol in exactly three ways: the model's `advance`, the guard closing a step on a tool the model chose, and the experimental dial that the shipped profiles leave off (every move it makes is SCRIPT); a test fails if a fourth appears.
+
+**How to tell a fix is an encoder in disguise.** Ask: if I ran the same wording on a stronger model, a weaker one, and a view from another step, would it still be right? Did I choose the wording by trying variants until the model produced the action I wanted? Would the text read differently if the correct next action were another tool? Does the log now tag as MODEL a choice that the text all but dictated? Any "yes, I tuned it" is a failed check.
+
+*Example (2026-10-30, Phase 2 step 1).* A local 9B model kept replying `done` or repeating `record_finding` and never ran `node_memory_fit`. Legitimate fixes: the view says "to move on it needs `machine.model_path`, produced by `node_memory_fit`" (built from the protocol's `needs` and the tools' `produces`), the `done` refusal is typed and names the missing key, required arguments are shown in the menu, and the capped menu keeps the producer of a missing key inside the cap. Not legitimate: rewording the step goal, the way-forward line and adding an extra "evidence is in" line, and replaying one view until the model picked `advance` 8 times out of 8. That was caught and all three were reverted; what the model does after that is its own, or a typed stop, and the log says which.
+
+Every report that asks for approval states a **harness check: passed / why** for the changes it contains. Before touching agent, protocol, view, menu or skill code, re-read this section.
 
 ## LOOP (L): the cycle that keeps going
 

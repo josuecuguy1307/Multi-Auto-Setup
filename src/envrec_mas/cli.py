@@ -42,10 +42,12 @@ def cmd_coordinator_start(a) -> int:
     state = _state(a)
 
     async def run() -> None:
-        coord = Coordinator(state, a.bind, a.port, idle_timeout_s=a.idle_timeout, web=a.web, web_port=a.web_port, name=a.name, include_virtual=a.include_virtual,
+        coord = Coordinator(state, a.bind, a.port, idle_timeout_s=a.idle_timeout, web=a.web, web_port=a.web_port, name=a.name, model_profile=a.model_profile, models_file=Path(a.models_file) if a.models_file else None, include_virtual=a.include_virtual,
                             discovery_port=None if a.no_discovery else a.discovery_port)
         await coord.start()
         print(f"coordinator listening on {coord.host}:{coord.port} (one port, TLS). fingerprint {coord.identity.fingerprint}", flush=True)
+        st = coord.runs.model_status()
+        print(f"agent model: {st['profile']} is reachable." if st["available"] else f"agent model: none ({st['reason']}). Analyses will be code-only and labeled so.", flush=True)
         if coord._udp is not None:
             print(f"discovery on UDP port {coord._discovery_port}: computers with the program installed on this network can find this coordinator as '{coord.display_name}'. "
                   "If your firewall asks, allow it; this program never changes a firewall itself.", flush=True)
@@ -332,6 +334,8 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--no-discovery", action="store_true", help="do not open the discovery UDP socket")
     c.add_argument("--name", default=None, help="the name shown to computers that find this coordinator (default: the host name)")
     c.add_argument("--include-virtual", action="store_true", help="also answer on VPN, container and virtual-machine interfaces")
+    c.add_argument("--model-profile", default=None, help="the model profile (from config/models.yaml and config/models.local.yaml) the coordinator's agent uses for machine analyses; without one the analysis is code-only and says so")
+    c.add_argument("--models-file", default=None, help="the models file (default config/models.yaml)")
     c.add_argument("--web", action="store_true", help="also serve the owner's screen on this computer only (loopback; prints a one-time link). Off by default")
     c.add_argument("--web-port", type=int, default=0, help="the loopback port of the web screen (default: any free one)")
     c.set_defaults(fn=cmd_coordinator_start)

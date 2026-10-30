@@ -9,18 +9,12 @@ decides whether an approval is needed (write tiers always are).
 from __future__ import annotations
 
 import re
-import shlex
-from collections.abc import Callable
-from dataclasses import dataclass, field
 
+from envrec.cmdtemplate import Schema, Template, TemplateError
 from envrec.contracts import Tier
 
 INSTALL_ROOT = "/opt/envrec"
 _META = set(";&|`$<>(){}[]*?!\\\"'\n\r\t ")
-
-
-class TemplateError(ValueError):
-    """A placeholder value or a template name was rejected."""
 
 
 def _plain(value: object, pattern: str, what: str) -> str:
@@ -64,9 +58,6 @@ def dir_probe_schema(v: object) -> str:
     return s
 
 
-Schema = Callable[[object], str]
-
-
 def int_schema(lo: int, hi: int, what: str = "number") -> Schema:
     def check(v: object) -> str:
         try:
@@ -86,37 +77,6 @@ def http_path_schema(v: object) -> str:
     if v not in HTTP_PATHS:
         raise TemplateError(f"path {v!r} is not one of {HTTP_PATHS}")
     return str(v)
-
-
-@dataclass(frozen=True)
-class Template:
-    name: str
-    argv: tuple[str, ...]
-    tier: Tier
-    placeholders: dict[str, Schema] = field(default_factory=dict)
-    description: str = ""
-    sends_stdin: bool = False  # a file transfer: the bytes go on stdin, never in argv
-
-    def render(self, values: dict[str, object] | None = None) -> list[str]:
-        values = dict(values or {})
-        unknown = set(values) - set(self.placeholders)
-        if unknown:
-            raise TemplateError(f"template {self.name!r} has no placeholder(s) {sorted(unknown)}")
-        missing = set(self.placeholders) - set(values)
-        if missing:
-            raise TemplateError(f"template {self.name!r} needs {sorted(missing)}")
-        clean = {k: self.placeholders[k](v) for k, v in values.items()}
-        out = []
-        for part in self.argv:
-            for n in re.findall(r"\{(\w+)\}", part):
-                if n in clean:  # only declared placeholders; braces in fixed script text (e.g. ${10}) are left alone
-                    part = part.replace("{" + n + "}", clean[n])
-            out.append(part)
-        return out
-
-    def remote_command(self, values: dict[str, object] | None = None) -> str:
-        """The single string ssh sends to the remote shell: every argv element shell-quoted."""
-        return " ".join(shlex.quote(p) for p in self.render(values))
 
 
 def _t(name: str, argv: list[str], tier: Tier, ph: dict[str, Schema] | None = None, desc: str = "", stdin: bool = False) -> Template:

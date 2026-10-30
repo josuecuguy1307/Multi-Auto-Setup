@@ -1,7 +1,7 @@
 """machine_analysis: a node describes itself to its coordinator, read-only (skill `machine-analysis`).
 
 It REUSES the repository's discovery: the Ring 0 probes (`envrec.probes.ring0`), the observe-tier discovery skills run through `envrec.skills.discover` where the operating system is
-supported, and the workspace sizing table (`envrec.remote.sizing`). The facts come from the repository's own Store and privacy gate; this module only groups them for the owner. It
+supported, and the workspace sizing table (`envrec.sizing`). The facts come from the repository's own Store and privacy gate; this module only groups them for the owner. It
 never reads a secret: environment variables are listed by NAME, never by value."""
 
 from __future__ import annotations
@@ -19,17 +19,9 @@ SUPPORTED_SKILL_OSES = ("macos", "linux")  # the discovery skills' platforms tod
 
 
 def ai_env_names(env: dict[str, str] | None = None) -> list[dict]:
-    """The names (never the values) of environment variables that look like an AI provider's key, from the table in the machine-analysis skill."""
-    import json
-    table = json.loads((envrec_os.SKILLS_DIR / "machine-analysis" / "references" / "ai-env-names.json").read_text())
-    env = os.environ if env is None else env
-    out = []
-    for provider, names in table["providers"].items():
-        out += [{"provider": provider, "name": n} for n in names if n in env]
-    known = {o["name"] for o in out}
-    suffixes = tuple(table.get("generic_suffixes", []))
-    out += [{"provider": "other", "name": n} for n in sorted(env) if n.endswith(suffixes) and n not in known]
-    return out
+    """The names (never the values) of environment variables that look like an AI provider's key."""
+    from envrec_os.probes import key_names
+    return key_names(env)
 
 
 def _entity_rows(facts, ekind: str, limit: int) -> list[dict]:
@@ -94,11 +86,30 @@ def run_analysis(params: MachineAnalysisParams, *, adapters=None) -> tuple[dict,
             groups["skills_run"] = ran
     else:
         limits.append(f"the repository's discovery skills cover macOS and Linux today; on {plat_name} only the Ring 0 probes ran (system, CPU, memory, disk)")
-    ram, free = values.get("hw.ram_total_gib"), values.get("hw.disk_free_gib")
-    if ram is not None and free is not None:
-        from envrec.remote.sizing import choose_model
-        c = choose_model(float(ram), float(free), float(free), 70.0)
-        groups["ai"]["largest_model_that_fits"] = {"params_b": c.params_b, "quant": c.quant, "disk_gb": c.disk_gb, "limited_by": c.limited_by}
+    from envrec_os import probes
+    for name in ("os_details", "installed_programs", "gpus", "model_runtimes", "ai_clis", "memory_for_models"):
+        try:
+            out = getattr(probes, name)(**({"limit": params.max_apps} if name == "installed_programs" else {}))
+        except Exception as exc:  # a probe never takes the analysis down
+            limits.append(f"{name}: {type(exc).__name__}")
+            continue
+        evidence.append({"provider": "envrec_os.probes", "tool": name})
+        limits += out["limits"]
+        f = out["facts"]
+        if name == "os_details":
+            groups["system"].update({k.removeprefix("machine."): v for k, v in f.items()})
+        elif name == "installed_programs" and params.include_apps:
+            groups["programs"]["installed_programs_count"] = f["machine.programs_count"]
+            groups["programs"]["installed_programs"] = f["machine.programs"][:params.max_apps]
+        elif name == "gpus":
+            groups["hardware"]["gpus"] = f["machine.gpus"]
+        elif name == "model_runtimes":
+            groups["ai"]["runtimes"] = f["machine.runtimes"]
+        elif name == "ai_clis":
+            groups["ai"]["clis"] = f["machine.ai_clis"]
+        elif name == "memory_for_models":
+            groups["hardware"].update({k.removeprefix("machine."): v for k, v in f.items()})
+            groups["ai"]["largest_model_that_fits"] = {"params_b": f["machine.largest_model_params_b"], "limited_by": f["machine.largest_model_limited_by"], "path": f["machine.model_path"]}
     groups["ai"]["api_key_variable_names"] = ai_env_names()  # names only: values are never read into this result
     groups["limits"] = limits
     groups["seconds"] = round(time.monotonic() - started, 1)

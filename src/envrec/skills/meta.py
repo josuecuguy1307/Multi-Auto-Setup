@@ -58,6 +58,7 @@ class State(Strict):
     actions: list[str] = Field(default_factory=list)  # extra model actions allowed here (research, propose_skill, ...)
     skills: list[str] = Field(default_factory=list)  # guidance skills whose body stays in the view for every turn of this step (the authoring skill while a skill is being written)
     advance: list[Advance] = Field(default_factory=list)
+    close_on: list[str] = Field(default_factory=list)  # tools whose SUCCESS ends this step: when one of them has run (chosen by the model) and an exit's evidence is in, the guard takes that exit and records it
     terminal: bool = False
     reason: str = ""
     timeout_s: float | None = Field(default=None, gt=0)  # a protocol that code walks (pairing): seconds this step may last; past it the guard moves to `on_timeout`
@@ -74,6 +75,8 @@ class ProtocolDef(Strict):
         if self.start not in self.states:
             raise ValueError(f"the start state {self.start!r} is not defined")
         for name, st in self.states.items():
+            if st.close_on and not st.advance:
+                raise ValueError(f"state {name!r} closes on {st.close_on} but has no exit to close into")
             for a in st.advance:
                 if a.to not in self.states:
                     raise ValueError(f"state {name!r} advances to {a.to!r}, which is not defined")

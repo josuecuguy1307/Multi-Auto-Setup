@@ -41,11 +41,14 @@ def eligible_tools(adapters: list[Adapter], target: Target, store: Store,
 
 
 def build_menu(adapters: list[Adapter], target: Target, store: Store, menu_max: int,
-               state: PolicyState | None = None, allow=None) -> list[MenuEntry]:
-    """The closed list shown to the model: at most `menu_max` tools. `allow` is the protocol's filter for the current step, applied before the cap."""
+               state: PolicyState | None = None, allow=None, missing: set[str] | None = None) -> list[MenuEntry]:
+    """The closed list shown to the model: at most `menu_max` tools. `allow` is the protocol's filter for the current step, applied before the cap. `missing` is the fact keys the step's
+    exit still lacks: the tools that produce one are kept ahead of the cap (a stable reorder; nothing is added, removed or chosen)."""
     entries = eligible_tools(adapters, target, store, state)
     if allow is not None:
         entries = [e for e in entries if allow(e)]
+    if missing:
+        entries = sorted(entries, key=lambda e: not (set(e.spec.produces) & missing))
     return entries[:menu_max]
 
 
@@ -56,7 +59,7 @@ def _arg_lines(spec: ToolSpec) -> list[str]:
     lines = []
     for name, p in props.items():
         where = {"capture": "a capture id from CAPTURES", "fact": "a fact key from FACTS"}.get(p.get("x-ref", ""), p.get("type", "value"))
-        lines.append(f"      {name} ({'required' if name in required else 'optional'}, {where}): {str(p.get('description', ''))[:110]}")
+        lines.append(f"      {name} ({'required' if name in required else 'optional'}, {where}): {str(p.get('description', ''))[:240]}")
     return lines
 
 

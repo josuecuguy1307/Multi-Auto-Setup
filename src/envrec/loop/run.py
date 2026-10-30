@@ -36,7 +36,7 @@ from envrec.discovery.sanitize import Salts, quoted
 from envrec.guard import LOOP_ACTIVE
 from envrec.loop.menu import MenuEntry, build_menu, eligible_tools
 from envrec.loop.prompts import R45_ACTIONS, R45_PROMPT, RETRY_HINT, SYSTEM_PROMPT
-from envrec.loop.view import build_view, expand_fact_text
+from envrec.loop.view import build_view, expand_fact_text, way_forward_text
 from envrec.model import ModelAdapter, request_action
 from envrec.policy import PolicyState, decide
 from envrec.rings import close_ring
@@ -110,6 +110,7 @@ class Loop:
         self._proto_runs: dict[str, Any] = {}
         self._done_refused = 0
         self._blocked = False
+        self._last_ok_tool: str | None = None
         self._asked_before: set[tuple[str, str, str]] = set()  # (target, tool, arguments) already asked
         self._stuck: dict[str, int] = {}  # target -> consecutive turns with nothing new
         self._skill_note = ""
@@ -180,9 +181,12 @@ class Loop:
                         self._log(Actor.loop, "protocol_state", {"target": current.id, "from": before, "to": ready, "by": "code"})
                         last_result = f"protocol step {before} is finished; now {ready} (moved by code)"
                         continue
-                allow = (lambda e, p=proto: p.allows_entry(e.name, list(e.spec.tags), self._skill_protocol(e.name))) if proto is not None else None
-                menu = build_menu(self.adapters, current, self.store, profile.menu_max, self.policy_state, allow)
-                forward = proto.ready_all(self._evidence(current, proto)) if proto is not None and not proto.terminal else []
+                live = proto is not None and not proto.terminal
+                ev = self._evidence(current, proto) if live else None
+                allow = (lambda e, p=proto, ev=ev: p.allows_entry(e.name, list(e.spec.tags), self._skill_protocol(e.name)) and (ev is None or p.closing_open(e.name, list(e.spec.produces), ev))) if proto is not None else None
+                need = proto.missing_facts(ev) if live else None  # (exit, fact keys it lacks): shown to the model, and the tools that make those keys stay inside the capped menu
+                menu = build_menu(self.adapters, current, self.store, profile.menu_max, self.policy_state, allow, set(need[1]) if need else None)
+                forward = proto.ready_all(ev) if live else []
                 cands = self._candidates(current)
                 if not menu:
                     nxt = self._next_ring_target(current)
@@ -204,10 +208,11 @@ class Loop:
                 view = build_view(self.store, current, profile, menu, last_result, self._unknown_reasons,
                                   proto.card() if proto is not None else "",
                                   (R45_ACTIONS if self.workbench else "") + (" · advance(to)" if proto is not None else "") + (" · extend_to(target_id)" if cands else ""),
-                                  self.mission.render() if self.mission else "", self._skill_note or self._kept_skills(proto), cands, forward)
+                                  self.mission.render() if self.mission else "", self._skill_note or self._kept_skills(proto), cands, forward,
+                                  self._missing_text(current, need, menu))
                 self._skill_note = ""
                 self._log(Actor.loop, "view_built", {"target": current.id, "menu": [e.name for e in menu],
-                                                     "forward": forward, "view_chars": len(view)})
+                                                     "forward": forward, "view_chars": len(view), "view": view})  # the text itself: the audit of a run needs what the model was shown, not its digest
                 fallback = Action(action=ActionType.record_unknown, key=f"{KIND_PREFIX[current.kind.value]}.identity",
                                   question="the model gave no valid action", why="fallback after two invalid replies")
                 try:
@@ -248,15 +253,32 @@ class Loop:
                         # the protocol has steps left: done is refused every time. A model that keeps asking ends the run as incomplete, never as a success.
                         self._done_refused += 1
                         self.summary.protocol_refusals += 1
-                        self._log(Actor.loop, "protocol_refused", {"target": current.id, "state": proto.state, "action": "done", "reason": "the protocol has not ended", "count": self._done_refused})
-                        last_result = f"refused: done is not available in step {proto.state}; the protocol has not ended. {proto.card().splitlines()[-1]}"
+                        ev_now = self._evidence(current, proto)
+                        need, open_to = proto.missing_facts(ev_now), proto.ready_all(ev_now)
+                        clause = self._missing_text(current, need, menu)
+                        why_not = ("; this step's evidence is in, the way forward is to advance to " + " or ".join(open_to)) if open_to else (f"; still missing: {clause}" if clause else "")
+                        self._log(Actor.loop, "protocol_refused", {"target": current.id, "state": proto.state, "action": "done", "code": "protocol_not_ended", "count": self._done_refused,
+                                                                   "reason": "the protocol has not ended" + why_not, "forward": open_to,
+                                                                   "missing": need[1] if need else [], "produced_by": self._producers(current, need[1]) if need else {}})
+                        last_result = (f"refused: done is not available in step {proto.state}; the protocol has not ended. "
+                                       + (way_forward_text(open_to) if open_to else f"Still missing: {clause}" if clause else proto.card().splitlines()[-1]))
                         if self._done_refused >= MAX_DONE_REFUSALS:
                             stop = "refused_done_loop"
                             break
                         continue
                     stop = "done"
                     break
+                self._last_ok_tool = None
                 new_current, last_result = await self._apply(action, current, menu, res.used_fallback)
+                if proto is not None and not proto.terminal and self._last_ok_tool in proto.current.close_on:
+                    to = proto.ready(self._evidence(current, proto))  # the model chose the closing tool and it succeeded: if an exit's evidence is in, the guard takes it (GUARD, not MODEL)
+                    if to is not None:
+                        before = proto.state
+                        proto.move(to, "evidence")
+                        self._log(Actor.loop, "protocol_state", {"target": current.id, "from": before, "to": to, "by": "evidence", "closed_by": self._last_ok_tool})
+                        last_result += f"; the step is complete: {before} -> {to}"
+                if forward and last_result.startswith("rejected:"):  # a refused action while this step's evidence is in: the next view says where the open way is (the model still has to take it)
+                    last_result += ". " + way_forward_text(forward)
                 current = new_current
                 sig = self._progress(current)
                 self._idle = self._idle + 1 if sig == self._last_progress else 0
@@ -284,6 +306,30 @@ class Loop:
                                               "tools_run": self.summary.tools_run,
                                               "ring_decisions": self.summary.ring_decisions})
         return self.summary
+
+    def _producers(self, target: Target, keys: list[str]) -> dict[str, list[str]]:
+        """For each fact key: the tools registered for this kind of target that declare they produce it (a lookup in the specs; nothing is run)."""
+        out: dict[str, list[str]] = {k: [] for k in keys}
+        for a in self.adapters:
+            for s in a.tool_specs():
+                if target.kind in s.target_kinds:
+                    for k in keys:
+                        if k in s.produces:
+                            out[k].append(s.name)
+        return out
+
+    def _missing_text(self, target: Target, need: tuple[str, list[str]] | None, menu: list[MenuEntry]) -> str:
+        """`to move on to <exit> it needs KEY (produced by TOOL, on the menu now)`: the key the exit lacks, the tool that makes it, and whether the model can pick it this turn."""
+        if not need:
+            return ""
+        on_menu = {e.name for e in menu}
+        parts = []
+        for key, names in self._producers(target, need[1]).items():
+            if not names:
+                parts.append(f"{key} (no tool for this target produces it)")
+            else:
+                parts.append(f"{key} (produced by {' or '.join(names)}, {'on the menu now' if on_menu & set(names) else 'not on the menu now'})")
+        return f"to move on to {need[0]} it needs " + "; ".join(parts)
 
     def _empty_menu_cause(self, current: Target, proto, forward: list[str], cands: list[Target], nxt) -> str:
         """Why the menu is empty, and whether the model still has anything to do. `way_forward`: the step's evidence is in and the model's move is to advance. `actions`: the model can still
@@ -468,6 +514,7 @@ class Loop:
             self._log(Actor.loop, "hang", {"kind": "tool", "tool": entry.name, "detail": result.error[:160]})
         if not result.ok:
             self._asked_before.discard(asked)  # a failed attempt is not an answer: the model may try again (the no-progress guard bounds it)
+        self._last_ok_tool = entry.name if result.ok else None
         return self._record_result(entry.name, result, target.id)
 
     def _record_result(self, tool: str, result: ProbeResult, target_id: str | None = None) -> str:

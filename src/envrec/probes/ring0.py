@@ -94,7 +94,7 @@ def read_os() -> ProbeOut:
         "os.name": OS_NAMES.get(system, system) or None,
         "os.version": version,
         "os.arch": platform.machine() or None,
-        "os.kernel": platform.release() or None,
+        "os.kernel": (platform.version() or None) if system == "Windows" else (platform.release() or None),  # Windows: the real build (10.0.26100), not a repeat of the release
     }
     reasons: dict[str, str] = {}
     _fill(values, reasons, f"platform module has no value on {system or 'this OS'}")

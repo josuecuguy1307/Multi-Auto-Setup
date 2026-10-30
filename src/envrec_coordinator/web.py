@@ -242,6 +242,9 @@ class WebScreen:
             return _json(200, self.strings)
         if req.path == "/api/state":
             return _json(200, self._state(sess))
+        if req.path == "/api/run":
+            data = self._on_loop(self.front.run_view, (req.query.get("id") or [""])[0][:40])
+            return _json(200, data) if data is not None else _json(404, {"error": "not_found"})
         if req.path == "/api/node/analysis":
             nid = (req.query.get("id") or [""])[0][:80]
             data = self._on_loop(self.front.analysis_of, nid)
@@ -275,6 +278,35 @@ class WebScreen:
                 if type(exc).__name__ == "WaitingGone":
                     return _json(409, {"error": "waiting_gone"})
                 raise
+            return _json(200, self._state(sess))
+        if req.path == "/api/analysis/start":
+            node = body.get("node")
+            if not isinstance(node, str) or not 0 < len(node) <= 80:
+                return self._refuse(req, 400, "bad_body", "server.bad_request")
+            view = self._on_loop(self.front.start_analysis, node, "claude-code" if body.get("by") == "claude-code" else "web")  # `by` is a label for the log, not an authority: the screen is the owner's, and a start that is not the owner's click says so
+            return _json(200, {**self._state(sess), "run": view})
+        if req.path == "/api/options/start":
+            node = body.get("node")
+            if not isinstance(node, str) or not 0 < len(node) <= 80:
+                return self._refuse(req, 400, "bad_body", "server.bad_request")
+            view = self._on_loop(self.front.start_options_run, node, "claude-code" if body.get("by") == "claude-code" else "web")
+            return _json(200, {**self._state(sess), "run": view})
+        if req.path == "/api/lan/start":
+            view = self._on_loop(self.front.start_lan_run, "claude-code" if body.get("by") == "claude-code" else "web")
+            return _json(200, {**self._state(sess), "run": view})
+        if req.path == "/api/run/answer":
+            run, q, opt = body.get("run"), body.get("question"), body.get("option")
+            if not all(isinstance(x, str) and 0 < len(x) <= 80 for x in (run, q, opt)):
+                return self._refuse(req, 400, "bad_body", "server.bad_request")
+            if not self._on_loop(self.front.answer_run, run, q, opt, "claude-code" if body.get("by") == "claude-code" else "owner"):  # a label for the log, as for the start: an answer that is not the owner's says so
+                return _json(409, {"error": "nothing_to_answer"})
+            return _json(200, self._state(sess))
+        if req.path == "/api/run/pick":
+            run, opt = body.get("run"), body.get("option")
+            if not all(isinstance(x, str) and 0 < len(x) <= 120 for x in (run, opt)):
+                return self._refuse(req, 400, "bad_body", "server.bad_request")
+            if not self._on_loop(self.front.pick_option, run, opt):
+                return _json(409, {"error": "nothing_to_pick"})
             return _json(200, self._state(sess))
         if req.path == "/api/task/run":
             node, ttype = body.get("node"), body.get("type")

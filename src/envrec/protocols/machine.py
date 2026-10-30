@@ -152,6 +152,27 @@ class ProtocolRun:
                         out.append(key)
         return out
 
+    def closing_open(self, tool: str, produces: list[str], ev: EvidenceView) -> bool:
+        """A tool that closes this step is offered once the rest of an exit's evidence is in: every need still unmet is a fact key that the tool itself produces. Read from the spec; any other tool is unaffected."""
+        if tool not in self.current.close_on:
+            return True
+        made = set(produces)
+        for a in self.current.advance:
+            unmet = [n for n in a.needs if not _met(n, ev)[0]]
+            if all((n.get("fact") or n.get("tried")) in made for n in unmet):
+                return True
+        return False
+
+    def missing_facts(self, ev: EvidenceView) -> tuple[str, list[str]] | None:
+        """When no way forward is open: the first exit and the fact keys it still lacks (only needs that name a fact key; the others have no key to show). None when an exit is open or
+        nothing is named. This is for the model's VIEW and menu order; code never produces the key and never moves."""
+        rules = self.current.advance
+        if not rules or self.ready_all(ev):
+            return None
+        a = rules[0]
+        keys = [n.get("fact") or n.get("tried") for n in a.needs if not _met(n, ev)[0] and (n.get("fact") or n.get("tried"))]
+        return (a.to, keys) if keys else None
+
     def move(self, to: str, by: str) -> None:
         self.state = to
         self.history.append({"state": to, "by": by})
@@ -173,6 +194,8 @@ class ProtocolRun:
                     key = n.get("fact") or n.get("tried") or n.get("tool") or n.get("tool_tag") or n.get("action") or n.get("facts_prefix") or "one of several"
                     needs.append(str(key))
                 lines.append(f'TO MOVE ON: reply {{"action":"advance","to":"{a.to}"}}' + (f" once you have {', '.join(needs)}." if needs else "."))
+            if st.close_on:  # from the spec: the step ends by itself when one of these tools succeeds and an exit's evidence is in
+                lines.append(f"THIS STEP ENDS when {' or '.join(st.close_on)} succeeds and the evidence for an exit is in; you need not advance yourself then.")
         return "\n".join(lines)
 
 

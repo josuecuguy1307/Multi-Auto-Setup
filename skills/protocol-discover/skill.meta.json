@@ -9,8 +9,7 @@
  "signature": {},
  "states": {
   "kinds": [
-   "node",
-   "coordinator"
+   "node"
   ],
   "start": "searching",
   "states": {

@@ -2,7 +2,7 @@
 "use strict";
 
 const POLL_MS = 1500;
-const state = { strings: {}, data: null, skew: 0, csrf: "", dismissed: new Set(), deciding: false, confirmShownFor: null, stopped: false };
+const state = { runId: null, runTimer: null, strings: {}, data: null, skew: 0, csrf: "", dismissed: new Set(), deciding: false, confirmShownFor: null, stopped: false };
 const $ = (id) => document.getElementById(id);
 
 function t(key, vars) {
@@ -90,7 +90,7 @@ function section(titleKey, rows) {
   return box;
 }
 
-function kv(obj) { return Object.entries(obj || {}).map(([k, v]) => k + ": " + (typeof v === "object" ? JSON.stringify(v) : String(v))); }
+function kv(obj) { return Object.entries(obj || {}).map(([k, v]) => k + ": " + (v === undefined || v === null ? t("node.analysis.not_checked") : typeof v === "object" ? JSON.stringify(v) : String(v))); }
 
 function renderAnalysis(panel, a) {
   const ai = a.ai || {};
@@ -99,10 +99,13 @@ function renderAnalysis(panel, a) {
   (ai.agents || []).forEach((x) => aiRows.push([x.name, x.state, x.category].filter(Boolean).join(" · ")));
   (ai.model_servers || []).forEach((x) => aiRows.push([x.kind || x.name, x.version, x.port].filter(Boolean).join(" · ")));
   const fit = ai.largest_model_that_fits;
-  if (fit) aiRows.push(t("node.analysis.fit", { p: fit.params_b, q: fit.quant, l: fit.limited_by }));
+  if (fit) aiRows.push(t("node.analysis.fit", { p: fit.params_b, q: fit.path || fit.quant || "", l: t("node.analysis.limit." + fit.limited_by) }));
+  (ai.runtimes || []).forEach((x) => aiRows.push([x.name, x.running ? "running" : "installed", (x.models || []).length + " models"].join(" · ")));
+  (ai.clis || []).forEach((x) => aiRows.push([x.name, x.set_up ? "set up" : "installed"].join(" · ")));
   const names = (ai.api_key_variable_names || []).map((x) => x.name);
   if (names.length) aiRows.push(t("node.analysis.keys", { names: names.join(", ") }));
-  const progRows = kv({ tools_found: prog.tools_found, ...(prog.by_category || {}) });
+  const progRows = (prog.tools_found === undefined || prog.tools_found === null) ? [t("node.analysis.tools_not_checked")] : kv({ tools_found: prog.tools_found, ...(prog.by_category || {}) });
+  (prog.installed_programs || []).slice(0, 10).forEach((x) => progRows.push([x.name, x.version].filter(Boolean).join(" ")));
   (prog.installed_apps || []).slice(0, 8).forEach((x) => progRows.push([x.name, x.version].filter(Boolean).join(" ")));
   panel.replaceChildren(section("node.analysis.system", kv(a.system)), section("node.analysis.hardware", kv(a.hardware)), section("node.analysis.programs", progRows.filter(Boolean)),
     section("node.analysis.ai", aiRows), ...((a.limits || []).length ? [section("node.analysis.limits", a.limits)] : []));
@@ -115,9 +118,208 @@ async function showAnalysis(id, panel) {
   } catch (err) { fail(err); }
 }
 
+async function startOptions(id) {
+  notice("");
+  try {
+    const res = await api("POST", "/api/options/start", { node: id });
+    accept(res);
+    followRun(res.run.id);
+  } catch (err) { fail(err); }
+}
+
 async function runTask(id, type) {
   notice("");
-  try { accept(await api("POST", "/api/task/run", { node: id, type })); } catch (err) { fail(err); }
+  try {
+    const res = await api("POST", "/api/analysis/start", { node: id });
+    accept(res);
+    followRun(res.run.id);
+  } catch (err) { fail(err); }
+}
+
+/* ---- the agent run, live ---- */
+
+function chip(tag) {
+  const s = document.createElement("span");
+  s.className = "tag tag-" + tag;
+  s.textContent = t("run.step." + tag);
+  return s;
+}
+
+function row(text, cls) {
+  const li = document.createElement("li");
+  if (cls) li.className = cls;
+  li.textContent = text;
+  return li;
+}
+
+function resultView(run) {
+  const box = document.createElement("div");
+  const res = run.result || {};
+  if (!res.agent) {
+    const p = document.createElement("p");
+    p.className = "banner";
+    p.textContent = t("run.code_only");
+    box.append(p);
+  }
+  Object.entries(res.groups || {}).forEach(([g, kv]) => {
+    if (!Object.keys(kv).length) return;
+    const h = document.createElement("h4");
+    h.textContent = t("run.group." + g);
+    const ul = document.createElement("ul");
+    ul.className = "ana-list";
+    Object.entries(kv).forEach(([k, v]) => {
+      const state = (res.evidence_state || {})[k];
+      ul.append(row(k + ": " + (typeof v === "object" ? JSON.stringify(v).slice(0, 160) : String(v)) + (state ? " [" + t("run.evidence", { s: state }) + "]" : "")));
+    });
+    box.append(h, ul);
+  });
+  if ((res.findings || []).length) {
+    const h = document.createElement("h4");
+    h.textContent = t("run.findings");
+    const ul = document.createElement("ul");
+    ul.className = "ana-list";
+    res.findings.forEach((f) => ul.append(row(f.text + " ← " + f.rests_on.join(", ") + " [" + f.status + "]")));
+    box.append(h, ul);
+  }
+  if (res.finished) {
+    const h = document.createElement("h4");
+    h.textContent = t("run.unknowns");
+    const ul = document.createElement("ul");
+    ul.className = "ana-list";
+    ["known", "unknown", "why"].forEach((k) => res.finished[k] && ul.append(row(t("run.finished." + k) + ": " + res.finished[k])));
+    box.append(h, ul);
+  }
+  return box;
+}
+
+function optionsView(run) {
+  const res = run.result || {};
+  const wrap = document.createElement("div");
+  if (!res.agent || !res.option_set) return wrap;
+  const h = document.createElement("h4");
+  h.textContent = t("run.options");
+  const hint = document.createElement("p");
+  hint.className = "muted";
+  hint.textContent = t("run.options.hint");
+  wrap.append(h, hint);
+  if (!res.options.length) { const p = document.createElement("p"); p.textContent = t("run.option.none"); wrap.append(p); return wrap; }
+  const list = document.createElement("ul");
+  list.className = "cards";
+  res.options.forEach((o) => {
+    const li = document.createElement("li");
+    li.className = "card";
+    const title = document.createElement("h3");
+    title.textContent = o.title;
+    const facts = document.createElement("ul");
+    facts.className = "ana-list";
+    facts.append(row(o.cloud ? t("run.option.cloud") : t("run.option.local"), o.cloud ? "check bad" : "check ok"), row(t("run.option.cost", { c: t("run.cost." + o.cost_class) })), row(t("run.option.status") + " · " + o.label),
+                 row((o.license ? String(o.license) : "") + (o.source ? " · " + o.source : "")));
+    (o.limits || []).forEach((l) => facts.append(row(l)));
+    li.append(title, facts);
+    if (o.explanation) {
+      const p = document.createElement("p");
+      p.textContent = t("run.option.explanation") + ": " + o.explanation;
+      li.append(p);
+    }
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn primary";
+    const picked = run.picked_option === o.id;
+    btn.textContent = picked ? t("run.option.picked") : t("run.option.pick");
+    btn.disabled = !!run.picked_option;
+    btn.addEventListener("click", async () => {
+      try { await api("POST", "/api/run/pick", { run: run.id, option: o.id }); pollRun(); } catch (err) { fail(err); }
+    });
+    li.append(btn);
+    list.append(li);
+  });
+  wrap.append(list);
+  return wrap;
+}
+
+function renderRun(run) {
+  const panel = $("run-panel");
+  const key = JSON.stringify([run.id, run.status, (run.events || []).length, run.pending && run.pending.question, run.finished, run.picked_option]);
+  if (panel.dataset.key === key) return;  // rebuilt only when something changed: a button must not move under the owner's pointer
+  panel.dataset.key = key;
+  panel.hidden = false;
+  const head = document.createElement("div");
+  head.className = "bar";
+  const h = document.createElement("h2");
+  h.id = "run-title";
+  h.textContent = run.kind === "lan" ? t("run.title.lan") : run.kind === "options" ? t("run.title.options", { node: run.node }) : t("run.title", { node: run.node });
+  const status = document.createElement("span");
+  status.className = "badge " + (["done", "running", "starting"].includes(run.status) ? "online" : "offline");
+  status.textContent = t("run.status." + run.status);
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "btn";
+  close.textContent = t("run.close");
+  close.addEventListener("click", () => { state.runId = null; panel.hidden = true; panel.dataset.key = ""; });
+  head.append(h, status, close);
+  const info = document.createElement("p");
+  info.className = "muted";
+  info.textContent = (run.model && run.model.available ? t("run.model.ok", { p: run.model.profile }) : t("run.model.none", { r: (run.model && run.model.reason) || run.reason })) + " — "
+    + t("run.actors", { m: run.actors.MODEL || 0, g: run.actors.GUARD || 0, s: run.actors.SCRIPT || 0, o: run.actors.OWNER || 0, c: run.actors["CLAUDE-CODE"] || 0 });
+  const parts = [head, info];
+  if (run.reason && run.status !== "no_model") { const p = document.createElement("p"); p.className = "notice"; p.textContent = run.reason; parts.push(p); }
+  if (run.pending) {
+    const q = document.createElement("div");
+    q.className = "panel confirm";
+    const qt = document.createElement("h3");
+    qt.textContent = t("run.question") + ": " + run.pending.text;
+    const acts = document.createElement("div");
+    acts.className = "actions";
+    run.pending.options.forEach((o) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "btn primary";
+      b.textContent = o.label;
+      b.title = o.detail || "";
+      b.addEventListener("click", async () => {
+        try { await api("POST", "/api/run/answer", { run: run.id, question: run.pending.question, option: o.id }); pollRun(); } catch (err) { fail(err); }
+      });
+      acts.append(b);
+      if (o.detail) { const d = document.createElement("span"); d.className = "muted opt-detail"; d.textContent = o.detail; acts.append(d); }
+    });
+    q.append(qt, acts);
+    parts.push(q);
+  }
+  if (run.result) { parts.push(resultView(run), optionsView(run)); }
+  const sh = document.createElement("h4");
+  sh.textContent = t("run.steps");
+  const steps = document.createElement("ol");
+  steps.className = "steps";
+  (run.events || []).forEach((e) => { const li = document.createElement("li"); li.append(chip(e.tag), document.createTextNode(" " + e.text)); steps.append(li); });
+  parts.push(sh, steps);
+  panel.replaceChildren(...parts);
+}
+
+async function pollRun() {
+  if (!state.runId) return;
+  try {
+    const run = await api("GET", "/api/run?id=" + encodeURIComponent(state.runId));
+    renderRun(run);
+    if (["starting", "running"].includes(run.status) || run.pending) state.runTimer = setTimeout(pollRun, 1200);
+    else if (run.status === "no_model" && !run.finished) state.runTimer = setTimeout(pollRun, 1200);
+  } catch (err) { fail(err); }
+}
+
+function followRun(id) {
+  state.runId = id;
+  const panel = $("run-panel");
+  panel.dataset.key = "";
+  clearTimeout(state.runTimer);
+  pollRun();
+}
+
+async function askLanAgent() {
+  notice("");
+  try {
+    const res = await api("POST", "/api/lan/start", {});
+    accept(res);
+    followRun(res.run.id);
+  } catch (err) { fail(err); }
 }
 
 function reportBlock(m) {
@@ -157,7 +359,7 @@ function renderMachines(data) {
   $("machines-count").textContent = data.machines.length ? t("machines.count", { n: data.machines.length, online }) : "";
   $("machines-empty").hidden = data.machines.length > 0;
   const running = new Set((data.tasks || []).filter((x) => x.type === "machine_analysis" && ["created", "sent", "accepted", "running"].includes(x.status)).map((x) => x.node));
-  const key = JSON.stringify(data.machines.map((m) => [m.id, m.name, m.os, m.arch, m.status, m.fingerprint, m.report_at, m.analysis_at, m.alerts, running.has(m.id)]));
+  const key = JSON.stringify(data.machines.map((m) => [m.id, m.name, m.os, m.arch, m.status, m.fingerprint, m.report_at, m.analysis_at, m.agent_analysis_at, m.alerts, running.has(m.id)]));
   if (list.dataset.key !== key) {  // rebuilt only when something changed: a button must not be replaced under the owner's pointer
     list.dataset.key = key;
     list.replaceChildren(...data.machines.map((m) => {
@@ -186,6 +388,14 @@ function renderMachines(data) {
       an.disabled = m.status !== "online" || running.has(m.id);
       an.addEventListener("click", () => runTask(m.id, "machine_analysis"));
       actions.append(an);
+      if (m.agent_analysis_at) {  // the options protocol reads the stored analysis: the button exists only when there is one
+        const op = document.createElement("button");
+        op.type = "button";
+        op.className = "btn";
+        op.textContent = t("node.options");
+        op.addEventListener("click", () => startOptions(m.id));
+        actions.append(op);
+      }
       const panel = document.createElement("div");
       panel.className = "analysis";
       panel.hidden = !openAnalysis.has(m.id);
@@ -363,6 +573,7 @@ async function main() {
   } catch (_) { state.strings = {}; }
   applyStrings();
   $("start-from-machines").addEventListener("click", startPairing);
+  $("lan-agent").addEventListener("click", askLanAgent);
   $("start-pair").addEventListener("click", startPairing);
   $("again").addEventListener("click", startPairing);
   $("approve").addEventListener("click", () => decide(true));

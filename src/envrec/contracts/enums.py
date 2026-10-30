@@ -21,6 +21,9 @@ class TargetKind(StrEnum):
     door = "door"  # this computer as the way in for a computer that is not enrolled yet: key, one-time link, pairing, a proposal (enrolled as a `local` entry with scope door)
     pairing = "pairing"  # the coordinator's pairing of a new node: a code, a key exchange, the owner's yes (protocol-pair; walked by code, not by a model)
     node = "node"  # a node's own connection to its coordinator: card, connect, heartbeat, reconnect (protocol-node-connect)
+    coordinator = "coordinator"  # the coordinator analysing one paired machine: the model picks read-only probes that run on the node through signed tasks (protocol-analyze)
+    setup = "setup"  # the coordinator choosing which AI to set up on one analysed machine: reads the stored analysis, asks the owner, builds and explains options (protocol-setup-options)
+    lan = "lan"  # the coordinator's own network: waiting machines and pairing offers the OWNER picked (protocol-lan)
     media = "media"  # this computer's own Bluetooth, audio output and media apps, enrolled in targets.yaml as a `local` entry
     scope = "scope"  # the candidates a goal covers: the model picks one of them (protocol-choose)
     unknown = "unknown"

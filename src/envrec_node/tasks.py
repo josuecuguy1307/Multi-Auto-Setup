@@ -12,6 +12,7 @@ from collections.abc import Awaitable, Callable
 
 import envrec_os
 from envrec_net import task as T
+from envrec_os import probes
 from envrec_node import analysis
 
 MAX_CONCURRENT = 2
@@ -29,9 +30,44 @@ def _machine_analysis(params: T.MachineAnalysisParams, ctx: dict) -> tuple[dict,
     return analysis.run_analysis(params)
 
 
+def _as_result(out: dict) -> tuple[dict, list[dict]]:
+    """A probe of the per-OS layer as a task result: its facts and limits are the typed result, its evidence travels with it."""
+    return {"facts": out["facts"], "limits": out["limits"]}, out["evidence"]
+
+
+def _os_details(params: T.TaskParams, ctx: dict) -> tuple[dict, list[dict]]:
+    return _as_result(probes.os_details())
+
+
+def _installed_programs(params: T.TaskParams, ctx: dict) -> tuple[dict, list[dict]]:
+    return _as_result(probes.installed_programs(limit=params.limit))  # type: ignore[attr-defined]
+
+
+def _gpus(params: T.TaskParams, ctx: dict) -> tuple[dict, list[dict]]:
+    return _as_result(probes.gpus())
+
+
+def _model_runtimes(params: T.TaskParams, ctx: dict) -> tuple[dict, list[dict]]:
+    return _as_result(probes.model_runtimes())
+
+
+def _ai_clis(params: T.TaskParams, ctx: dict) -> tuple[dict, list[dict]]:
+    return _as_result(probes.ai_clis())
+
+
+def _memory_for_models(params: T.TaskParams, ctx: dict) -> tuple[dict, list[dict]]:
+    return _as_result(probes.memory_for_models())
+
+
 ALLOWED: dict[str, Callable[[T.TaskParams, dict], tuple[dict, list[dict]]]] = {
     "node_report": _node_report,
     "machine_analysis": _machine_analysis,
+    "os_details": _os_details,
+    "installed_programs": _installed_programs,
+    "gpus": _gpus,
+    "model_runtimes": _model_runtimes,
+    "ai_clis": _ai_clis,
+    "memory_for_models": _memory_for_models,
 }
 
 Send = Callable[[str, dict], Awaitable[None]]

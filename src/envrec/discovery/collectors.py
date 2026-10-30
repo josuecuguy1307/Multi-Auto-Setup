@@ -16,7 +16,7 @@ from typing import Protocol
 from envrec.contracts import Tier
 from envrec.discovery.commands import CommandRefused, validate_argv
 from envrec.discovery.types import MAX_CAPTURE_BYTES, Capture, Cmd, Reason, this_platform
-from envrec.remote.templates import Template
+from envrec.cmdtemplate import Template
 
 _PERMISSION = re.compile(r"not authorized|operation not permitted|permission denied|not permitted|access denied|privacy", re.I)
 

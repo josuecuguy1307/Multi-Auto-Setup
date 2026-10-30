@@ -368,3 +368,29 @@ def session_clock_sites(paths: list[Path]) -> list[str]:
             elif isinstance(n, ast.Compare) and any(isinstance(x, ast.Call) and isinstance(x.func, ast.Name) and x.func.id == "abs" and "ts" in ast.unparse(x) for x in [n.left, *n.comparators]):
                 out.append(f"{p.name}:{n.lineno}: abs(... ts ...) compared")
     return out
+
+
+# ---- the agent's pairing offer: not without an OWNER pick -----------------------------------------------------------------------------------------------------------------
+def owner_pick_violations(path: Path, func: str = "_offer") -> list[str]:
+    """`func` makes the pairing code (a call to `offer_for_waiting`). Before that call it must call `require_owner_pick` and return early when that gives a refusal."""
+    path = Path(path)
+    tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"), filename=str(path))
+    fn = next((n for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == func), None)
+    if fn is None:
+        return [f"{path.name}: function {func} not found"]
+
+    def calls(stmt, attr):
+        return any(isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == attr for n in ast.walk(stmt))
+
+    pick = next((i for i, s in enumerate(fn.body) if calls(s, "require_owner_pick")), None)
+    offer = next((i for i, s in enumerate(fn.body) if calls(s, "offer_for_waiting")), None)
+    if offer is None:
+        return [f"{path.name}:{fn.lineno}: {func} never makes an offer (nothing to guard: the check is looking at the wrong function)"]
+    if pick is None:
+        return [f"{path.name}:{fn.lineno}: {func} makes a pairing offer without checking for the owner's pick"]
+    if pick > offer or (pick == offer):
+        return [f"{path.name}:{fn.body[offer].lineno}: {func} makes the pairing offer before it checks for the owner's pick"]
+    guard = fn.body[pick + 1] if pick + 1 < len(fn.body) else None
+    if not (isinstance(guard, ast.If) and any(isinstance(n, ast.Return) for n in ast.walk(guard))):
+        return [f"{path.name}:{fn.body[pick].lineno}: the owner-pick check is not followed by an early return"]
+    return []

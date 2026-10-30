@@ -1,0 +1,73 @@
+{
+ "provenance": "builtin",
+ "protocol": "lan",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "lan"
+  ],
+  "start": "look",
+  "states": {
+   "look": {
+    "goal": "See which computers are waiting to be paired (lan_discover_nodes). If one is, ask the owner which to pair (ask_owner); only after the owner picked it, start the pairing offer (pair_offer_start). You never pick a computer for the owner.",
+    "tags": [],
+    "tools": [
+     "lan_discover_nodes",
+     "nodes_list",
+     "ask_owner",
+     "pair_offer_start"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "offered",
+      "needs": [
+       {
+        "fact": "lan.pair_offer_started",
+        "at_least": "tested"
+       }
+      ]
+     },
+     {
+      "to": "nobody_waiting",
+      "needs": [
+       {
+        "fact": "lan.waiting_count",
+        "at_least": "tested",
+        "equals": 0
+       }
+      ]
+     }
+    ],
+    "terminal": false,
+    "reason": ""
+   },
+   "offered": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "a pairing code was made for the computer the owner picked; the key exchange and the owner's approval follow in code"
+   },
+   "nobody_waiting": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "terminal": true,
+    "reason": "no computer is waiting; the owner is told how to make one appear (`mas join` on the other computer)"
+   }
+  }
+ }
+}

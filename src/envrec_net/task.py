@@ -49,8 +49,18 @@ class MachineAnalysisParams(TaskParams):
     max_apps: int = Field(default=60, ge=0, le=500)
 
 
-PARAMS: dict[str, type[TaskParams]] = {"node_report": NodeReportParams, "machine_analysis": MachineAnalysisParams}
-TIMEOUTS_S = {"node_report": 30.0, "machine_analysis": 240.0}
+class NoParams(TaskParams):
+    pass
+
+
+class ProgramsParams(TaskParams):
+    limit: int = Field(default=200, ge=1, le=500)
+
+
+PARAMS: dict[str, type[TaskParams]] = {"node_report": NodeReportParams, "machine_analysis": MachineAnalysisParams, "os_details": NoParams, "installed_programs": ProgramsParams, "gpus": NoParams,
+                                        "model_runtimes": NoParams, "ai_clis": NoParams, "memory_for_models": NoParams}
+PROBES = ("os_details", "installed_programs", "gpus", "model_runtimes", "ai_clis", "memory_for_models")  # the read-only probes a model can pick, one by one
+TIMEOUTS_S = {"node_report": 30.0, "machine_analysis": 240.0, "os_details": 20.0, "installed_programs": 60.0, "gpus": 30.0, "model_runtimes": 30.0, "ai_clis": 20.0, "memory_for_models": 30.0}
 
 
 class TaskResult(BaseModel):

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from envrec.contracts import Fact, FactStatus, ModelProfile, Target
+from envrec.contracts import CreatedBy, Fact, FactStatus, ModelProfile, Target
 from envrec.discovery.sanitize import quoted
 from envrec.loop.menu import MenuEntry, render_menu, takes_capture
 from envrec.loop.prompts import META_ACTIONS
@@ -35,7 +35,7 @@ def short_value(value: Any, limit: int = VALUE_CHARS) -> str:
 
 def rank_facts(facts: list[Fact]) -> list[Fact]:
     shown = [f for f in facts if f.status != FactStatus.unknown and not f.key.startswith("ring.")]
-    return sorted(shown, key=lambda f: (f.key not in _FIRST, -_WEIGHT[f.status], f.key))
+    return sorted(shown, key=lambda f: (f.key not in _FIRST, f.created_by != CreatedBy.human, -_WEIGHT[f.status], f.key))  # what the human stated is never pushed out of the budget by what a tool read
 
 
 def fact_line(f: Fact) -> str:
@@ -43,9 +43,14 @@ def fact_line(f: Fact) -> str:
     return f"  {f.key} = {short_value(f.value)} ({f.status.value}, {n} source{'s' if n != 1 else ''})"
 
 
+def way_forward_text(forward: list[str]) -> str:
+    return "WAY FORWARD (this step's evidence is in): " + " or ".join(f'{{"action":"advance","to":"{t}"}}' for t in forward)
+
+
 def build_view(store: Store, target: Target, profile: ModelProfile, menu: list[MenuEntry],
                last_result: str, unknown_reasons: dict[str, str], protocol_text: str = "",
-               extra_actions: str = "", mission_text: str = "", skill_text: str = "", candidates: list[Target] | None = None, forward: list[str] | None = None) -> str:
+               extra_actions: str = "", mission_text: str = "", skill_text: str = "", candidates: list[Target] | None = None, forward: list[str] | None = None,
+               missing_text: str = "") -> str:
     facts = store.current_facts(target.id)
     ranked = rank_facts(facts)
     budget = profile.view_budget_facts
@@ -65,9 +70,11 @@ def build_view(store: Store, target: Target, profile: ModelProfile, menu: list[M
     if caps:  # the ids a tool on the menu can take: name, size and the tool that made it. Never the content.
         lines.append("CAPTURES (stored raw data; a tool takes the id, code reads it): " + "; ".join(f"{c['sha256'][:8]} {c['name']} ({c['size']} bytes, by {c['tool']})" for c in caps[-6:]))
     lines.append(f"LAST RESULT: {last_result}")
-    if forward:  # the way forward is always shown, and shown as the exact reply: an empty menu is never a dead end the model has to guess its way out of
-        lines.append("WAY FORWARD (this step's evidence is in): " + " or ".join(f'{{"action":"advance","to":"{t}"}}' for t in forward))
+    if missing_text:  # what the exit still lacks and which tool on this target makes it: named, never run for the model
+        lines.append("STILL MISSING: " + missing_text)
     empty = "  (nothing is left to run in this step)" if protocol_text else "  (no tools left)"
+    if forward:  # the way forward is always shown, and shown as the exact reply, above the menu, where it always was: an empty menu is never a dead end to guess out of
+        lines.append(way_forward_text(forward))
     lines += ["MENU", render_menu(menu) if menu else empty, f"OTHER ACTIONS: {META_ACTIONS if not protocol_text else META_ACTIONS.replace(' · done', '')}{extra_actions}",
               "Reply with one Action as JSON."]
     head = [protocol_text] if protocol_text else []

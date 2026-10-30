@@ -1,0 +1,244 @@
+{
+ "allowed_programs": [
+  "powershell",
+  "nvidia-smi",
+  "rocm-smi",
+  "lspci",
+  "system_profiler",
+  "dpkg-query",
+  "rpm",
+  "flatpak",
+  "winget",
+  "ollama",
+  "sw_vers",
+  "uname",
+  "wmic"
+ ],
+ "programs": {
+  "windows": {
+   "registry": [
+    "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+    "HKLM\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+    "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall"
+   ]
+  },
+  "darwin": {
+   "dirs": [
+    "/Applications",
+    "~/Applications"
+   ]
+  },
+  "linux": {
+   "commands": {
+    "dpkg": [
+     "dpkg-query",
+     "-W",
+     "-f=${Package}\t${Version}\n"
+    ],
+    "rpm": [
+     "rpm",
+     "-qa",
+     "--qf",
+     "%{NAME}\t%{VERSION}\n"
+    ],
+    "flatpak": [
+     "flatpak",
+     "list",
+     "--columns=application,version"
+    ]
+   }
+  }
+ },
+ "gpu": {
+  "windows": {
+   "commands": {
+    "cim": [
+     "powershell",
+     "-NoProfile",
+     "-NonInteractive",
+     "-Command",
+     "Get-CimInstance Win32_VideoController | Select-Object Name,AdapterRAM,DriverVersion | ConvertTo-Json -Compress"
+    ]
+   },
+   "nvidia": [
+    "nvidia-smi",
+    "--query-gpu=name,memory.total,driver_version",
+    "--format=csv,noheader,nounits"
+   ]
+  },
+  "darwin": {
+   "commands": {
+    "profiler": [
+     "system_profiler",
+     "SPDisplaysDataType",
+     "-json"
+    ]
+   }
+  },
+  "linux": {
+   "commands": {
+    "lspci": [
+     "lspci",
+     "-mm"
+    ]
+   },
+   "nvidia": [
+    "nvidia-smi",
+    "--query-gpu=name,memory.total,driver_version",
+    "--format=csv,noheader,nounits"
+   ]
+  }
+ },
+ "runtimes": [
+  {
+   "id": "ollama",
+   "name": "Ollama",
+   "binaries": [
+    "ollama"
+   ],
+   "processes": [
+    "ollama",
+    "ollama.exe",
+    "ollama app.exe"
+   ],
+   "default_port": 11434,
+   "models_path": "/api/tags",
+   "models_format": "ollama_tags"
+  },
+  {
+   "id": "llama.cpp",
+   "name": "llama.cpp server",
+   "binaries": [
+    "llama-server",
+    "llama-server.exe"
+   ],
+   "processes": [
+    "llama-server",
+    "llama-server.exe"
+   ],
+   "default_port": 8080,
+   "models_path": "/v1/models",
+   "models_format": "openai_models"
+  },
+  {
+   "id": "lm-studio",
+   "name": "LM Studio",
+   "binaries": [
+    "lms",
+    "lms.exe"
+   ],
+   "processes": [
+    "lm studio",
+    "lm-studio",
+    "LM Studio.exe"
+   ],
+   "default_port": 1234,
+   "models_path": "/v1/models",
+   "models_format": "openai_models"
+  },
+  {
+   "id": "llamafile",
+   "name": "llamafile",
+   "binaries": [
+    "llamafile"
+   ],
+   "processes": [
+    "llamafile"
+   ],
+   "default_port": 8080,
+   "models_path": "/v1/models",
+   "models_format": "openai_models"
+  },
+  {
+   "id": "vllm",
+   "name": "vLLM",
+   "binaries": [
+    "vllm"
+   ],
+   "processes": [
+    "vllm"
+   ],
+   "default_port": 8000,
+   "models_path": "/v1/models",
+   "models_format": "openai_models"
+  }
+ ],
+ "ai_clis": [
+  {
+   "id": "claude",
+   "name": "Claude Code",
+   "binaries": [
+    "claude",
+    "claude.exe",
+    "claude.cmd"
+   ],
+   "setup_marks": [
+    "~/.claude"
+   ],
+   "kind": "subscription_cli"
+  },
+  {
+   "id": "codex",
+   "name": "Codex CLI",
+   "binaries": [
+    "codex",
+    "codex.exe",
+    "codex.cmd"
+   ],
+   "setup_marks": [
+    "~/.codex/auth.json"
+   ],
+   "kind": "subscription_cli"
+  },
+  {
+   "id": "gemini",
+   "name": "Gemini CLI",
+   "binaries": [
+    "gemini",
+    "gemini.exe",
+    "gemini.cmd"
+   ],
+   "setup_marks": [
+    "~/.gemini"
+   ],
+   "kind": "subscription_cli"
+  },
+  {
+   "id": "copilot",
+   "name": "GitHub Copilot CLI",
+   "binaries": [
+    "copilot",
+    "copilot.exe",
+    "copilot.cmd"
+   ],
+   "setup_marks": [
+    "~/.copilot"
+   ],
+   "kind": "subscription_cli"
+  },
+  {
+   "id": "aider",
+   "name": "Aider",
+   "binaries": [
+    "aider",
+    "aider.exe"
+   ],
+   "setup_marks": [
+    "~/.aider.conf.yml"
+   ],
+   "kind": "api_key_cli"
+  },
+  {
+   "id": "opencode",
+   "name": "OpenCode",
+   "binaries": [
+    "opencode",
+    "opencode.exe"
+   ],
+   "setup_marks": [
+    "~/.local/share/opencode/auth.json"
+   ],
+   "kind": "api_key_cli"
+  }
+ ]
+}

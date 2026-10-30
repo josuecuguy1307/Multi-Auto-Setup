@@ -1,0 +1,6 @@
+{
+ "pick_waiting_machine": {
+  "text": "Which waiting computer do you want to pair?",
+  "dynamic": "waiting"
+ }
+}
