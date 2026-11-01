@@ -90,3 +90,40 @@ def native_confirm(title: str, message: str, *, timeout_s: float = 120.0, fam: s
         ok = out2 == spec["approved"]
         return {"result": "approved" if ok else "declined" if code2 is not None else "timeout", "mechanism": tool["id"], "strong": spec["id"] if ok else None, "assurance": "strong" if ok else None}
     return {"result": "unavailable", "mechanism": None, "strong": None, "assurance": None}
+
+
+# ---- notices: information for the owner's own screen --------------------------------------------------------------------------------------------------------------
+
+class Notice:
+    """A dialog the owner reads. It was started without waiting; `alive` says whether it is still on the screen and `close` takes it down (the pairing code is useless once the exchange began)."""
+
+    def __init__(self, proc, mechanism: str) -> None:
+        self._proc, self.mechanism = proc, mechanism
+
+    def alive(self) -> bool:
+        return self._proc is not None and self._proc.poll() is None
+
+    def close(self) -> None:
+        if self.alive():
+            try:
+                self._proc.terminate()
+            except OSError:
+                pass
+
+
+def native_notice(title: str, message: str, *, timeout_s: float = 120.0, fam: str | None = None, popen: Callable = subprocess.Popen, which: Callable[[str], str | None] = shutil.which) -> Notice | None:
+    """Show `message` to the owner in a dialog of this computer and return at once. The program and its arguments are data (`notices` in dialogs.json); the text is passed as a separate argument or an
+    environment variable, never through a shell. None when this computer has no way to show one: the caller then says so, it does not fall back to a chat."""
+    notices = table().get(fam or family(), {}).get("notices", [])
+    for tool in notices:
+        exe = which(tool["exe"])
+        if not exe:
+            continue
+        values = {"title": title[:200], "message": message[:MAX_FIELD], "timeout": str(int(timeout_s))}
+        env = {**os.environ, **{k: _fill(v, values) for k, v in tool.get("env", {}).items()}}
+        try:
+            proc = popen([exe, *[_fill(a, values) for a in tool["argv"]]], env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        return Notice(proc, tool["id"])
+    return None

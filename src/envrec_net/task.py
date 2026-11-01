@@ -7,11 +7,12 @@ wall clock). The node checks all of it before it runs anything, and runs only wh
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import secrets
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from envrec_net.identity import Identity, node_id_of, verify_signature
 
@@ -30,6 +31,7 @@ REJECTIONS = {  # typed reasons a node (or the coordinator) gives for not runnin
     "token_reused": "The task's permission token was already used (it is single-use).",
     "token_expired": "The task's permission token expired before it could start.",
     "token_tool_mismatch": "The task's permission token does not allow this task.",
+    "access_missing": "The access this task needs is not on this computer (the credential it names is missing), so nothing was sent.",
     "busy": "This computer is already running as many tasks as it is allowed to.",
     "node_offline": "The computer is not connected, so the task was not sent (tasks are not queued).",
     "write_refused": "A task that changes this computer needs the owner's approval of the exact plan; without it, and for any type but the one setup task, nothing was run.",
@@ -51,6 +53,11 @@ REJECTIONS = {  # typed reasons a node (or the coordinator) gives for not runnin
     "outside_workspace": "The environment tried to write outside its task workspace; what it wrote was removed.",
     "environment_failed": "The environment ended with an error.",
     "confidential_cloud": "A confidential task cannot run in a cloud environment, so nothing was run.",
+    "credential_store_missing": "This computer has no credential store to keep the key in (Windows Credential Manager, the macOS Keychain or a Linux Secret Service). Nothing was stored, and no other place is ever used.",
+    "bad_credential_name": "A credential name is a plain variable name such as MODEL_API_KEY, so nothing was done.",
+    "bad_credential_value": "The credential value was empty, so nothing was stored.",
+    "credential_absent": "There is no such credential on this computer, so nothing was changed.",
+    "credential_store_failed": "The credential store refused the change, so nothing was changed.",
 }
 
 
@@ -75,6 +82,26 @@ class ProgramsParams(TaskParams):
     limit: int = Field(default=200, ge=1, le=500)
 
 
+class CredentialPresenceParams(TaskParams):
+    """Read-only: which of these variable NAMES exist on this computer, in its credential store or its environment. The answer is names, never values."""
+    names: list[str] = Field(max_length=32)
+
+
+class CredentialStepParams(TaskParams):
+    """The third task that writes. A credential `set` carries its value (the only place a value travels, inside the sealed session, never logged); `remove` moves it aside inside the store and `restore`
+    brings it back. It is tied to the owner's approval of one plan hash, name and action."""
+    name: str = Field(pattern=r"^[A-Z][A-Z0-9_]{1,63}$")
+    action: Literal["set", "remove", "restore"]
+    plan_hash: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    value: str | None = Field(default=None, max_length=4096, repr=False)
+
+    @model_validator(mode="after")
+    def _value_only_for_set(self):
+        if (self.action == "set") != (self.value is not None):
+            raise ValueError("bad_parameters")
+        return self
+
+
 class SetupStepParams(TaskParams):
     """The one task that writes. The plan travels whole; the node recomputes its hash and checks it against the signed token, the owner's approval named in it and the node's own copy of the recipe."""
     plan: dict[str, Any]
@@ -86,7 +113,7 @@ class EnvironmentRunParams(TaskParams):
     """The second task that writes (docs/NETWORK_CONTRACT.md 3.9, amended). The environment is named, never described: its executable, arguments and confinement come from the node's own copy of the
     catalog (data), and the hash of that recipe must match the signed token. The input travels as text; the workspace is a plain id under the node's own folder."""
     environment_id: str = Field(min_length=1, max_length=48, pattern=r"^[a-z0-9][a-z0-9-]*$")
-    task_type: Literal["code", "text"]
+    task_type: str = Field(pattern=r"^[a-z][a-z0-9-]{0,31}$")  # which types exist is data (the catalog and the suites), not a list here
     sensitivity: Literal["public", "internal", "confidential"]
     mode: str = Field(min_length=1, max_length=48)
     workspace_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{0,47}$")
@@ -94,14 +121,15 @@ class EnvironmentRunParams(TaskParams):
     input_text: str = Field(max_length=100_000)
     endpoint: str | None = Field(default=None, max_length=64)
     model_id: str | None = Field(default=None, max_length=120, pattern=r"^[A-Za-z0-9._:/-]+$")
+    access_id: str | None = Field(default=None, max_length=64, pattern=r"^[A-Za-z0-9._:-]+$")  # the access the route went through: it decides whether the run leaves the network
 
 
-WRITE_TYPES = ("setup_step", "environment_run")  # every other task type is read-only; this is the only one the coordinator sends with a scoped token and the node runs after the checks of `envrec_node.setup`
+WRITE_TYPES = ("setup_step", "environment_run", "credential_step")  # every other task type is read-only; this is the only one the coordinator sends with a scoped token and the node runs after the checks of `envrec_node.setup`
 
-PARAMS: dict[str, type[TaskParams]] = {"setup_step": SetupStepParams, "environment_run": EnvironmentRunParams, "node_report": NodeReportParams, "machine_analysis": MachineAnalysisParams, "os_details": NoParams, "installed_programs": ProgramsParams, "gpus": NoParams,
+PARAMS: dict[str, type[TaskParams]] = {"setup_step": SetupStepParams, "environment_run": EnvironmentRunParams, "credential_step": CredentialStepParams, "credential_presence": CredentialPresenceParams, "node_report": NodeReportParams, "machine_analysis": MachineAnalysisParams, "os_details": NoParams, "installed_programs": ProgramsParams, "gpus": NoParams,
                                         "model_runtimes": NoParams, "ai_clis": NoParams, "memory_for_models": NoParams}
 PROBES = ("os_details", "installed_programs", "gpus", "model_runtimes", "ai_clis", "memory_for_models")  # the read-only probes a model can pick, one by one
-TIMEOUTS_S = {"setup_step": 1800.0, "environment_run": 1200.0, "node_report": 30.0, "machine_analysis": 240.0, "os_details": 20.0, "installed_programs": 60.0, "gpus": 30.0, "model_runtimes": 30.0, "ai_clis": 20.0, "memory_for_models": 30.0}
+TIMEOUTS_S = {"setup_step": 1800.0, "environment_run": 1200.0, "credential_step": 60.0, "credential_presence": 20.0, "node_report": 30.0, "machine_analysis": 240.0, "os_details": 20.0, "installed_programs": 60.0, "gpus": 30.0, "model_runtimes": 30.0, "ai_clis": 20.0, "memory_for_models": 30.0}
 
 
 class TaskResult(BaseModel):
@@ -171,6 +199,28 @@ class TokenChecker:
             raise TokenRejected("token_reused")
         self.seen.add(jti)
         return token
+
+
+def credential_plan_hash(node: str, access: str, name: str, action: str) -> str:
+    """The hash an owner's approval of a credential change is bound to: this node, this access, this credential name and this action. No value is part of it."""
+    return "sha256:" + hashlib.sha256(json.dumps({"node": node, "access": access, "name": name, "action": action}, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def credential_scope(plan_hash: str, name: str, action: str, approval_event: str) -> dict:
+    """The scope signed into a credential task's token: the plan, the name and the action the owner approved, and the OWNER event that approved exactly those."""
+    return {"credential": name, "action": action, "plan_hash": plan_hash, "approval": {"actor": "OWNER", "event": approval_event, "plan_hash": plan_hash, "name": name, "action": action}}
+
+
+def check_credential_scope(token: dict, params: "CredentialStepParams") -> None:
+    """The node's check of a credential task's token against the parameters it received. Raises TokenRejected with the typed reason; nothing is touched before this passes."""
+    sc = token.get("scope")
+    if not isinstance(sc, dict) or sc.get("credential") != params.name or sc.get("action") != params.action:
+        raise TokenRejected("bad_scope")
+    ap = sc.get("approval")
+    if not (isinstance(ap, dict) and ap.get("actor") == "OWNER" and ap.get("event")):
+        raise TokenRejected("no_owner_approval")
+    if sc.get("plan_hash") != params.plan_hash or ap.get("plan_hash") != params.plan_hash or ap.get("name") != params.name or ap.get("action") != params.action:
+        raise TokenRejected("plan_altered")
 
 
 def write_scope(plan_hash: str, recipe: str, step: int, action: str, writes: list[str], approval_event: str) -> dict:

@@ -1,0 +1,36 @@
+Clean this CSV: trim spaces, lowercase the emails, drop duplicate rows (keep the first), write dates as YYYY-MM-DD (the input is DD/MM/YYYY). Reply with only the CSV.
+
+id,email,joined
+ 1 , USER1@X.COM ,01/11/2025
+ 2 , user2@x.com ,08/07/2025
+ 3 , user3@x.com ,26/01/2025
+ 4 , user4@x.com ,18/01/2025
+ 5 , USER5@X.COM ,10/01/2025
+ 6 , user6@x.com ,21/08/2025
+ 7 , user7@x.com ,04/06/2025
+ 8 , user8@x.com ,02/08/2025
+ 9 , USER9@X.COM ,22/11/2025
+ 10 , user10@x.com ,27/11/2025
+ 11 , user11@x.com ,08/01/2025
+ 12 , user12@x.com ,17/09/2025
+ 13 , USER13@X.COM ,14/09/2025
+ 14 , user14@x.com ,06/10/2025
+ 15 , user15@x.com ,18/07/2025
+ 16 , user16@x.com ,09/04/2025
+ 17 , USER17@X.COM ,08/01/2025
+ 18 , user18@x.com ,11/10/2025
+ 19 , user19@x.com ,06/08/2025
+ 20 , user20@x.com ,02/10/2025
+ 21 , USER21@X.COM ,05/11/2025
+ 22 , user22@x.com ,24/02/2025
+ 23 , user23@x.com ,23/05/2025
+ 24 , user24@x.com ,27/11/2025
+ 25 , USER25@X.COM ,10/10/2025
+ 26 , user26@x.com ,24/11/2025
+ 27 , user27@x.com ,08/02/2025
+ 28 , user28@x.com ,04/12/2025
+ 29 , USER29@X.COM ,23/09/2025
+ 30 , user30@x.com ,25/07/2025
+ 3 , user3@x.com ,26/01/2025
+ 10 , USER10@X.COM ,27/11/2025
+16,user16@x.com,09/04/2025

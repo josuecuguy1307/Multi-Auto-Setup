@@ -19,12 +19,14 @@ from envrec_coordinator.harness import HarnessCore
 from envrec_coordinator.owner import OwnerDesk
 from envrec_coordinator.pairing import HELLO_TIMEOUT_S, Decision, PairingBusy, PairingDesk
 from envrec_coordinator.registry import Registry
-from envrec_coordinator.runs import AgentRuns
+from envrec_coordinator.services import Services
+from envrec_coordinator.runs import OWNER_GESTURES, AgentRuns
 from envrec_coordinator.tasks import ALERT_SKEW_S, TaskDesk, evaluate_report
 from envrec_coordinator.waiting import WaitingDesk
 from envrec_coordinator.web import WEB_HOST, WebScreen
 from envrec_net import envrun as ER
 from envrec_net import identity as ident
+from envrec_net import task as T
 from envrec_net import pake, tls
 from envrec_net.envelope import EnvelopeRejected
 from envrec_net.session import PLAIN, PROTOCOL, Sealer, SessionVerifier, new_challenge
@@ -72,7 +74,8 @@ class Coordinator:
     def __init__(self, state_dir: Path, host: str, port: int, *, clock=time.time, idle_timeout_s: float = IDLE_TIMEOUT_S, owner_ttl_s: float = 120.0, summary_every_s: float = SUMMARY_EVERY_S,
                  web: bool = False, web_port: int = 0, discovery_port: int | None = None, name: str | None = None, include_virtual: bool = False,
                  skew_alert_s: float = ALERT_SKEW_S, report_every_s: float = 300.0,
-                 model_profile: str | None = None, models_file=None) -> None:
+                 model_profile: str | None = None, models_file=None, board_escalation_limit: int = 2) -> None:
+        self.board_escalation_limit = board_escalation_limit  # settings key board_escalation_limit; Services clamps it to 0..the router's maximum
         self.state, self.host, self.port, self.clock, self.idle_timeout_s = Path(state_dir) / "coordinator", check_bind(host), port, clock, idle_timeout_s
         self.layer = envrec_os.current()
         self.owner_ttl_s = owner_ttl_s
@@ -100,11 +103,12 @@ class Coordinator:
         self.log = EventLog(self.state / "log")  # opened on this thread: the store belongs to it
         self.ctx = tls.server_context(self.state / "identity", self.registry.trusted_certs())
         self.watcher = ControlWatcher(self.state, self.layer, self._on_cli_offer, self._on_cli_task, self._on_cli_unpair)
-        self.tasks = TaskDesk(clock=self.clock, log=lambda t, p, owner=False: self.log.add(t, p, owner=owner), sessions=lambda nid: self._sessions.get(nid), approvals=self._owner_approval, origins=self._owner_origin)
+        self.tasks = TaskDesk(clock=self.clock, log=lambda t, p, owner=False: self.log.add(t, p, owner=owner), sessions=lambda nid: self._sessions.get(nid), approvals=self._owner_approval, origins=self._owner_origin, credential_approvals=self._owner_credential_approval)
         self.tasks.on_result = self._on_task_result
         self.tasks.on_change = self._publish_tasks
         self.runs = AgentRuns(self, model_profile=self._model_profile, models_file=self._models_file)
         self.harness = HarnessCore(self, native_confirm=self._native_confirm, clock=self.clock)
+        self.services = Services(self)  # the router, the admission desk and the access flows, wired to this coordinator; they decide nothing the owner or the written rule decides
         self._connect_env = None  # what the connection of a chat needs to know about this computer; a test gives it a temporary home and fake commands
         self.waiting = WaitingDesk(clock=self.clock, log=lambda t, p: self.log.add(t, p), on_change=self._publish_waiting)
         self.owner = OwnerDesk(self.clock)
@@ -152,6 +156,8 @@ class Coordinator:
             target = w.name
         if via == "agent":  # the OWNER's pick came first (an OWNER event in the run); making the code is code's act, and is logged as code's
             self.log.add("pairing_offer_for_picked", {"offer": offer_id, "via": via, "waiting": bound_to, "machine": target})
+        elif via.startswith("chat:"):  # a chat's tool call is not the owner: the code is only SHOWN, and nothing is approved until the owner confirms with a gesture
+            self.log.add("pairing_offer_requested_by_chat", {"offer": offer_id, "via": via, **({"waiting": bound_to, "machine": target} if bound_to else {})})
         else:
             self.log.add("owner_requested_pairing", {"offer": offer_id, "via": via, **({"waiting": bound_to, "machine": target} if bound_to else {})}, owner=True)
         offer = self.desk.open_offer(offer_id, code, bound_to)
@@ -411,9 +417,27 @@ class Coordinator:
                 return e.id
         return None
 
+    def _owner_credential_approval(self, plan_hash: str, name: str, action: str) -> str | None:
+        """The id of the OWNER confirmation in the log that approved exactly this credential change, or None. The plan (node, access, name, action) is the GUARD's own record and must hash to `plan_hash`; the
+        confirmation must be tagged OWNER, approved, bound to that hash and given with a human gesture. A model's tool call, the operator and the code never count."""
+        plan = next((e for e in reversed(self.log.events("credential_plan")) if e.payload.get("plan_hash") == plan_hash), None)
+        if plan is None or plan.payload.get("name") != name or plan.payload.get("action") != action:
+            return None
+        p = plan.payload
+        if T.credential_plan_hash(str(p.get("node")), str(p.get("access")), name, action) != plan_hash:
+            return None
+        for e in reversed(self.log.events("owner_confirmation")):
+            q = e.payload
+            if e.effective_tag == "OWNER" and q.get("plan_hash") == plan_hash and q.get("approved") is True and q.get("mechanism") in OWNER_GESTURES:
+                return e.id
+        return None
+
     def _owner_origin(self, task_id: str, task_type: str | None = None, sensitivity: str | None = None) -> str | None:
         """The id of the OWNER event in the log that created or approved exactly this task, or None. Only an event tagged OWNER counts: the operator's (CLAUDE-CODE) and the code's never do. A subtask of an
         owner-approved decomposition counts through the OWNER decision that approved it (`_decomposition_origin`)."""
+        if task_id.startswith("adm-"):  # a task of an admission exam: its origin is the owner's approval of that exam (`adm-<id>:<suite task>`)
+            aid = task_id.split(":", 1)[0]
+            return next((e.id for e in reversed(self.log.events("admission_approved")) if e.effective_tag == "OWNER" and e.payload.get("admission") == aid), None)
         for e in reversed(self.log.events("environment_task_origin")):
             if e.effective_tag == "OWNER" and e.payload.get("task") == task_id:
                 return e.id

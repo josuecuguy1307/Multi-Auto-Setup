@@ -1,0 +1,1 @@
+[{"kind":"missing_in_bank","ref":"R1003"},{"kind":"amount_differs","ref":"R1011"},{"kind":"missing_in_bank","ref":"R1025"},{"kind":"missing_in_ledger","ref":"R2001"},{"kind":"missing_in_ledger","ref":"R2002"}]

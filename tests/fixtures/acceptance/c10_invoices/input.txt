@@ -1,0 +1,33 @@
+invoices.py counts an invoice twice when it appears twice. Fix it; return the whole file as a block starting with '# file: invoices.py'.
+
+# file: invoices.py
+def total(invoices):
+    seen = []
+    s = 0
+    for inv in invoices:
+        s += inv['amount']
+        seen.append(inv['id'])
+    return s
+
+
+def count(invoices):
+    return len(invoices)
+
+# file: test_invoices.py
+import unittest
+from invoices import total, count
+
+
+class T(unittest.TestCase):
+    def test_plain(self):
+        self.assertEqual(total([{'id': 1, 'amount': 10}, {'id': 2, 'amount': 5}]), 15)
+    def test_double_counted(self):
+        self.assertEqual(total([{'id': 1, 'amount': 10}, {'id': 1, 'amount': 10}]), 10)
+    def test_empty(self):
+        self.assertEqual(total([]), 0)
+    def test_count(self):
+        self.assertEqual(count([{'id': 1, 'amount': 1}]), 1)
+    def test_three(self):
+        self.assertEqual(total([{'id': 1, 'amount': 1}, {'id': 2, 'amount': 2}, {'id': 1, 'amount': 1}]), 3)
+    def test_float(self):
+        self.assertEqual(total([{'id': 7, 'amount': 2.5}]), 2.5)

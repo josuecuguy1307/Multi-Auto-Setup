@@ -1,0 +1,14 @@
+Summarize these client payment notes in 3 lines: the total paid and the largest payment.
+
+1. Quinta Alba (FAKE-1001) paid 1982 USD on 2026-06-26; reference note: pending review.
+2. Taller Norte (FAKE-1002) paid 915 USD on 2026-04-26; reference note: pending review.
+3. Ferretería Sol (FAKE-1003) paid 661 USD on 2026-01-24; reference note: pending review.
+4. Imprenta Lago (FAKE-1004) paid 1240 USD on 2026-05-15; reference note: pending review.
+5. Café Ceiba (FAKE-1005) paid 1058 USD on 2026-03-21; reference note: pending review.
+6. Radio Faro (FAKE-1006) paid 1227 USD on 2026-01-17; reference note: pending review.
+7. Panadería Luna (FAKE-1007) paid 745 USD on 2026-04-19; reference note: pending review.
+8. Estudio Mapa (FAKE-1008) paid 2106 USD on 2026-08-21; reference note: pending review.
+9. Viveros Sur (FAKE-1009) paid 2008 USD on 2026-08-18; reference note: pending review.
+10. Clínica Ruiz (FAKE-1010) paid 1152 USD on 2026-05-12; reference note: pending review.
+11. Textiles Ola (FAKE-1011) paid 982 USD on 2026-07-11; reference note: pending review.
+12. Gráfica Nube (FAKE-1012) paid 1926 USD on 2026-03-20; reference note: pending review.

@@ -139,3 +139,16 @@ def test_run_tests_in_the_real_sandbox_container_passes_a_right_solution_and_fai
     assert r.grade("g", ref).passed is True
     bad = r.outputs.put("g", "public", {"output_text": "```python\ndef f():\n    return 2\n```"})
     assert r.grade("g", bad).passed is False
+
+
+def test_two_task_types_measured_on_one_route_are_both_fresh_the_identity_is_per_task_type(store):
+    """The identity of a measurement includes its suite, so it is asked per task type: the latest fact of ANOTHER type must not make this type's fact look stale."""
+    c = _measure(store)
+    s = load_suite("text")
+    t = Combo("text", "mac", "llamacpp-local", "qwen3-8b", "local-hardware", SHA, VER)
+    run_exam(t, s, Env(s), store)
+    route_key = "|".join((c.environment_id, c.model_id, c.access_id, c.machine_id))
+    fresh = _facts(store, lambda k: (SHA, VER))
+    code_fact, text_fact = fresh.admission(c.key), fresh.admission(t.key)
+    assert fresh.identity(route_key, "code") == code_fact["identity"] and fresh.identity(route_key, "text") == text_fact["identity"] and code_fact["identity"] != text_fact["identity"]
+    assert fresh.identity(route_key, "summarize") == {}  # nothing measured for that type on that route

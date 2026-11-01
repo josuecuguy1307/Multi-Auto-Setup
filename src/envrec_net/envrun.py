@@ -48,21 +48,97 @@ def load_environments(path: Path | None = None) -> dict[str, dict]:
     p = path or ENVIRONMENTS_FILE
     if not p.is_file():
         return {}
-    return {e["id"]: e for e in json.loads(p.read_text(encoding="utf-8")).get("environments", [])}
+    envs = {e["id"]: e for e in json.loads(p.read_text(encoding="utf-8")).get("environments", [])}
+    problems = check_catalog(envs)
+    if problems:
+        raise ValueError("the environments catalog is unsafe: " + "; ".join(problems))  # fail closed: a catalog that lets an API pass for a local model is never loaded
+    return envs
 
 
 def load_policy(path: Path | None = None) -> dict:
     return json.loads((path or POLICY_FILE).read_text(encoding="utf-8"))
 
 
+def access_of(entry: dict, access_id: str | None) -> dict | None:
+    return next((a for a in entry.get("accesses", []) if a.get("id") == access_id), None)
+
+
+def is_cloud(entry: dict, access_id: str | None = None) -> bool:
+    """Whether a run of this environment through this access sends data out of the owner's network. `cloud` is a property of the ACCESS when the access declares it, else of the environment (one
+    environment can run on a loopback model through one access and on an API through another). Fail closed: an access that is not named, or not found, counts as cloud when the environment is cloud
+    or when ANY of its accesses is."""
+    acc = access_of(entry, access_id)
+    if acc is not None and "cloud" in acc:
+        return bool(acc["cloud"])
+    if acc is not None:
+        return bool(entry.get("cloud"))
+    return bool(entry.get("cloud")) or any(bool(a.get("cloud")) for a in entry.get("accesses", []))
+
+
 def recipe_sha256(entry: dict) -> str:
     """The hash of what decides how an environment runs (its adapter, its task types, where it counts): a node whose copy differs refuses (`stale_recipe`)."""
     body = {"id": entry["id"], "cloud": bool(entry.get("cloud")), "task_types": sorted(entry.get("task_types", [])), "adapter": entry.get("adapter", {})}
+    per_access = {a["id"]: bool(a["cloud"]) for a in entry.get("accesses", []) if "cloud" in a}
+    if per_access:  # only when an access declares it, so the hash of an entry without any stays what it was
+        body["access_cloud"] = per_access
+    own_adapter = {a["id"]: a["adapter"] for a in entry.get("accesses", []) if a.get("adapter")}
+    if own_adapter:
+        body["access_adapter"] = own_adapter
     return hashlib.sha256(json.dumps(body, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
-def mode_of(entry: dict, task_type: str) -> dict | None:
-    return (entry.get("adapter", {}).get("modes") or {}).get(task_type)
+def _merge(base: Any, over: Any) -> Any:
+    if isinstance(base, dict) and isinstance(over, dict):
+        out = dict(base)
+        for k, v in over.items():
+            out[k] = _merge(base.get(k), v) if k in base else v
+        return out
+    return over
+
+
+def adapter_of(entry: dict, access_id: str | None = None) -> dict:
+    """The adapter of this environment as it runs through this access: the environment's own, with the access's `adapter` laid over it (dicts merge key by key, anything else is replaced). One
+    environment can thus run on a loopback model through one access and on an API through another, all of it data."""
+    acc = access_of(entry, access_id)
+    base = entry.get("adapter", {})
+    return _merge(base, acc["adapter"]) if acc is not None and acc.get("adapter") else base
+
+
+def declared_model(entry: dict, access_id: str | None = None) -> str | None:
+    """The model id the data names for this access (an API's model), else None: the machine's own local model is then the one."""
+    acc = access_of(entry, access_id)
+    return (acc or {}).get("model") or entry.get("model")
+
+
+def uses_local_endpoint(entry: dict, access_id: str | None = None) -> bool:
+    """Whether a run through this access talks to the node's loopback model server."""
+    ad = adapter_of(entry, access_id)
+    return bool(ad.get("needs_model_endpoint")) or (ad.get("kind") == "http_chat" and not ad.get("base_url"))
+
+
+def mode_of(entry: dict, task_type: str, access_id: str | None = None) -> dict | None:
+    return (adapter_of(entry, access_id).get("modes") or {}).get(task_type)
+
+
+def check_catalog(envs: dict[str, dict]) -> list[str]:
+    """Problems that make a catalog unsafe to use, by environment and access. Empty means: an adapter that talks to an address of its own (`base_url`) is https, belongs to an access that declares
+    `cloud: true`, and takes no model endpoint; an adapter that uses the node's loopback model server is never cloud."""
+    out: list[str] = []
+    for e in envs.values():
+        for acc in e.get("accesses", []) or [{"id": None}]:
+            ad = adapter_of(e, acc.get("id"))
+            where = f"{e['id']} / {acc.get('id')}"
+            base = ad.get("base_url")
+            if base is not None:
+                if not str(base).startswith("https://"):
+                    out.append(f"{where}: base_url must be https")
+                if not is_cloud(e, acc.get("id")):
+                    out.append(f"{where}: an adapter with a base_url leaves the network, so the access must declare cloud: true")
+                if ad.get("needs_model_endpoint"):
+                    out.append(f"{where}: an adapter with a base_url cannot also need the loopback model endpoint")
+            elif (ad.get("kind") == "http_chat" or ad.get("needs_model_endpoint")) and is_cloud(e, acc.get("id")):
+                out.append(f"{where}: a cloud access must name its base_url (the loopback endpoint is only for local models)")
+    return out
 
 
 def parse_endpoint(endpoint: str) -> tuple[str, int]:
@@ -92,11 +168,11 @@ def expand(template: str, values: dict[str, str]) -> str:
     return out
 
 
-def env_scope(*, entry: dict, task_type: str, sensitivity: str, workspace_id: str, endpoint: str | None, origin_event: str, decision: dict) -> dict:
+def env_scope(*, entry: dict, task_type: str, sensitivity: str, workspace_id: str, endpoint: str | None, origin_event: str, decision: dict, access_id: str | None = None) -> dict:
     """The scope the coordinator signs into an `environment_run` token. `origin` names the OWNER event that created or approved the task."""
-    mode = mode_of(entry, task_type) or {}
+    mode = mode_of(entry, task_type, access_id) or {}
     return {"environment": entry["id"], "recipe_sha256": recipe_sha256(entry), "task_type": task_type, "sensitivity": sensitivity, "mode": mode.get("name", ""), "confinement": mode.get("confinement", ""),
-            "workspace_id": workspace_id, "endpoint": endpoint or "", "origin": {"actor": "OWNER", "event": origin_event}, "decision": decision}
+            "workspace_id": workspace_id, "endpoint": endpoint or "", "access": access_id or "", "origin": {"actor": "OWNER", "event": origin_event}, "decision": decision}
 
 
 def check_env_scope(token: dict, params: Any) -> None:
@@ -108,5 +184,5 @@ def check_env_scope(token: dict, params: Any) -> None:
     if not (isinstance(og, dict) and og.get("actor") == "OWNER" and og.get("event")):
         raise T.TokenRejected("no_owner_origin")
     if (sc.get("environment") != params.environment_id or sc.get("recipe_sha256") != params.recipe_sha256 or sc.get("task_type") != params.task_type or sc.get("sensitivity") != params.sensitivity
-            or sc.get("mode") != params.mode or sc.get("workspace_id") != params.workspace_id or sc.get("endpoint") != (params.endpoint or "")):
+            or sc.get("mode") != params.mode or sc.get("workspace_id") != params.workspace_id or sc.get("endpoint") != (params.endpoint or "") or sc.get("access", "") != (getattr(params, "access_id", None) or "")):
         raise T.TokenRejected("bad_scope")

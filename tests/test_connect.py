@@ -233,7 +233,7 @@ def test_claude_desktop_merges_our_entry_and_leaves_every_other_entry_byte_for_b
     doc = json.loads(cfg.read_text())
     assert doc["mcpServers"]["other"] == json.loads(original)["mcpServers"]["other"] and doc["theme"] == "dark"  # untouched
     entry = doc["mcpServers"][SERVER]
-    assert entry == {"command": "/opt/py/bin/python", "args": ["-m", "envrec_harness.mcp_server", "--state-dir", str(tmp_path / "state"), "--channel", "claude-desktop"]}
+    assert entry == {"command": "/opt/py/bin/python", "args": ["-m", "envrec_mas", "--state-dir", str(tmp_path / "state"), "mcp", "--channel", "claude-desktop"]}
     assert res[1]["made"] is True and res[3] == {"ok": True, "other_entries": 1}  # the other entries are counted, never read out
     backups = list(cfg.parent.glob("claude_desktop_config.json.mas-backup-*"))
     assert len(backups) == 1 and backups[0].read_text() == original
@@ -289,8 +289,8 @@ def test_claude_code_is_connected_and_disconnected_with_its_own_documented_comma
     env = make_env(tmp_path, home, fake=fake)
     plan = C.build_plan("claude-code", env)
     claude = plan["steps"][0]["args"]["argv"][0]
-    assert plan["steps"][0]["args"]["argv"] == [claude, "mcp", "add", "--transport", "stdio", "--scope", "user", SERVER, "--", "/opt/py/bin/python", "-m", "envrec_harness.mcp_server", "--state-dir",
-                                                 str(tmp_path / "state"), "--channel", "terminal"]
+    assert plan["steps"][0]["args"]["argv"] == [claude, "mcp", "add", "--transport", "stdio", "--scope", "user", SERVER, "--", "/opt/py/bin/python", "-m", "envrec_mas", "--state-dir",
+                                                 str(tmp_path / "state"), "mcp", "--channel", "terminal"]
     assert plan["steps"][0]["undo"] == f"{claude} mcp remove {SERVER} --scope user" and plan["steps"][0]["writes"] == [str(home / ".claude.json")]
     run_all(plan, env)
     assert [c[1:3] for c in fake.calls] == [["mcp", "add"], ["mcp", "list"]]
@@ -321,7 +321,7 @@ def test_codex_gets_a_toml_table_appended_with_the_rest_of_the_file_untouched_an
     text = cfg.read_text()
     assert text.startswith(original) and "# my codex settings" in text  # comments and every other table survive
     doc = tomllib.loads(text)
-    assert doc["mcp_servers"][SERVER] == {"command": "/opt/py/bin/python", "args": ["-m", "envrec_harness.mcp_server", "--state-dir", str(tmp_path / "state"), "--channel", "terminal"]}
+    assert doc["mcp_servers"][SERVER] == {"command": "/opt/py/bin/python", "args": ["-m", "envrec_mas", "--state-dir", str(tmp_path / "state"), "mcp", "--channel", "terminal"]}
     assert doc["mcp_servers"]["context7"]["env"]["KEY"] == "SECRET-VALUE-123"
     cfg.write_text(text + '\n[other]\nx = 1\n')  # edited afterwards
     run_all(plan, env, "undo")
@@ -352,7 +352,7 @@ def test_opencode_gets_a_local_server_entry_under_mcp_in_its_documented_shape(tm
     plan = C.build_plan("opencode", env)
     run_all(plan, env)
     entry = json.loads(cfg.read_text())["mcp"][SERVER]
-    assert entry == {"type": "local", "command": ["/opt/py/bin/python", "-m", "envrec_harness.mcp_server", "--state-dir", str(tmp_path / "state"), "--channel", "terminal"], "enabled": True}
+    assert entry == {"type": "local", "command": ["/opt/py/bin/python", "-m", "envrec_mas", "--state-dir", str(tmp_path / "state"), "mcp", "--channel", "terminal"], "enabled": True}
     run_all(plan, env, "undo")
     assert cfg.read_text() == original
     plan = C.build_plan("opencode", env)  # no file: the documented $schema line comes with it
@@ -573,3 +573,123 @@ def test_the_plan_texts_show_the_detected_program_path_and_hold_no_angle_bracket
         validate(Intent(id="p", kind="show_data", run_id=None, actor="GUARD", sensitivity="internal", payload={"data_kind": "plan", "data": d}, text_fallback=text))
         with pytest.raises(IntentInvalid):
             validate(Intent(id="p", kind="show_data", run_id=None, actor="GUARD", sensitivity="internal", payload={"data_kind": "plan", "data": d}, text_fallback=text + "\nrm -rf <path>/x"))
+
+
+# ---- Claude Desktop points at the INSTALLED `mas`, and re-running replaces an earlier entry of ours safely -----------------------------------------------------------
+
+DEV_ENTRY = {"command": "/Users/x/dev/.venv/bin/python", "args": ["-m", "envrec_harness.mcp_server", "--state-dir", "/Users/x/mas-t2b-state"], "env": {"PYTHONPATH": "/Users/x/dev/src"}}
+
+
+def installed_env(tmp_path, home, monkeypatch, *, mark=True):
+    """A computer where the installer ran: MAS_HOME with a release, and the installer's own `mas` command in ~/.local/bin."""
+    mashome = tmp_path / "mashome"
+    py = mashome / "releases" / "node-preview-4" / ".venv" / "bin" / "python"
+    py.parent.mkdir(parents=True)
+    py.write_text("#!/bin/sh\n")
+    (mashome / "current").write_text("node-preview-4\n")
+    shim = home / ".local" / "bin" / "mas"
+    shim.parent.mkdir(parents=True)
+    shim.write_text("#!/bin/sh\n" + ("# written by the Multi Auto Setup installer\n" if mark else "") + "exec true\n")
+    monkeypatch.setenv("MAS_HOME", str(mashome))
+    env = make_env(tmp_path, home)
+    env = __import__("dataclasses").replace(env, py=str(py))
+    return env, shim
+
+
+def test_an_installed_mas_is_what_the_chat_is_pointed_at_no_python_path_and_no_release_folder_in_the_entry(tmp_path, home, monkeypatch):
+    env, shim = installed_env(tmp_path, home, monkeypatch)
+    assert C.find_launcher(env) == (str(shim),)
+    env = __import__("dataclasses").replace(env, launcher=C.find_launcher(env))
+    cfg = home / "Library/Application Support/Claude/claude_desktop_config.json"
+    cfg.parent.mkdir(parents=True)
+    plan = C.build_plan("claude-desktop", env)
+    run_all(plan, env)
+    entry = json.loads(cfg.read_text())["mcpServers"][SERVER]
+    assert entry == {"command": str(shim), "args": ["--state-dir", str(tmp_path / "state"), "mcp", "--channel", "claude-desktop"]}
+    assert "releases" not in json.dumps(entry) and "node-preview" not in json.dumps(entry) and "python" not in json.dumps(entry)  # `mas update` cannot strand it
+
+
+def test_a_mas_command_that_is_not_the_installers_is_not_used_and_a_source_checkout_uses_its_own_interpreter(tmp_path, home, monkeypatch):
+    env, _ = installed_env(tmp_path, home, monkeypatch, mark=False)
+    assert C.find_launcher(env) is None  # somebody else's `mas`: not ours to point a chat at
+    plain = make_env(tmp_path, home)  # not running from an install at all
+    assert C.find_launcher(plain) is None and plain.command() == ("/opt/py/bin/python", "-m", "envrec_mas")
+
+
+def test_running_it_again_replaces_an_older_entry_of_ours_and_the_undo_brings_the_file_back(tmp_path, home):
+    cfg = home / "Library/Application Support/Claude/claude_desktop_config.json"
+    cfg.parent.mkdir(parents=True)
+    cfg.write_text(json.dumps({"theme": "dark", "mcpServers": {"other": {"command": "npx", "args": ["x"]}, SERVER: DEV_ENTRY}}, indent=2) + "\n")
+    original = cfg.read_text()
+    env = make_env(tmp_path, home)
+    plan = C.build_plan("claude-desktop", env)
+    assert "replaced" in plan["steps"][1]["exact_command"] and "earlier entry of ours" in plan["steps"][1]["exact_command"]
+    run_all(plan, env)
+    doc = json.loads(cfg.read_text())
+    assert doc["mcpServers"][SERVER]["args"][:3] == ["-m", "envrec_mas", "--state-dir"] and "env" not in doc["mcpServers"][SERVER] and doc["mcpServers"]["other"] == {"command": "npx", "args": ["x"]}
+    assert len(list(cfg.parent.glob("*.mas-backup-*"))) == 1  # the copy is made before the entry is replaced
+    run_all(plan, env, "undo")
+    assert cfg.read_text() == original  # byte for byte, the old entry included
+
+
+def test_the_undo_after_the_owner_edited_the_file_puts_the_old_entry_back_not_a_hole(tmp_path, home):
+    cfg = home / "Library/Application Support/Claude/claude_desktop_config.json"
+    cfg.parent.mkdir(parents=True)
+    cfg.write_text(json.dumps({"mcpServers": {SERVER: DEV_ENTRY}}, indent=2) + "\n")
+    env = make_env(tmp_path, home)
+    plan = C.build_plan("claude-desktop", env)
+    run_all(plan, env)
+    doc = json.loads(cfg.read_text())
+    doc["mcpServers"]["added_later"] = {"command": "y"}  # the file changed after our edit: the copy would lose this
+    cfg.write_text(json.dumps(doc, indent=2) + "\n")
+    run_all(plan, env, "undo")
+    back = json.loads(cfg.read_text())["mcpServers"]
+    assert back[SERVER] == DEV_ENTRY and back["added_later"] == {"command": "y"}
+
+
+def test_an_entry_under_our_name_that_is_not_ours_is_never_touched(tmp_path, home):
+    cfg = home / "Library/Application Support/Claude/claude_desktop_config.json"
+    cfg.parent.mkdir(parents=True)
+    cfg.write_text(json.dumps({"mcpServers": {SERVER: {"command": "npx", "args": ["somebody-elses-server"]}}}, indent=2) + "\n")
+    before = cfg.read_text()
+    env = make_env(tmp_path, home)
+    with pytest.raises(C.ConnectRefused) as e:
+        C.build_plan("claude-desktop", env)
+    assert e.value.code == "entry_exists_different" and cfg.read_text() == before
+
+
+def test_mas_mcp_speaks_the_protocol_on_stdout_and_nothing_else(tmp_path):
+    """SIMULATED-LOCAL, real process: the command a chat host runs (`mas --state-dir DIR mcp --channel NAME`) answers an initialize handshake."""
+    import subprocess
+    import sys
+    msg = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-11-25", "capabilities": {}, "clientInfo": {"name": "t", "version": "1"}}}) + "\n"
+    proc = subprocess.Popen([sys.executable, "-m", "envrec_mas", "--state-dir", str(tmp_path / "s"), "mcp", "--channel", "claude-desktop"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    try:
+        proc.stdin.write(msg)  # a chat host keeps the pipe open and reads the answer
+        proc.stdin.flush()
+        first = proc.stdout.readline()
+    finally:
+        proc.stdin.close()
+        rest = proc.stdout.read()
+        proc.wait(timeout=20)
+    assert json.loads(first)["result"]["serverInfo"]["name"] == "multi-auto-setup" and rest.strip() == ""
+
+
+def test_held_out_the_same_replace_rule_works_for_another_host_and_another_settings_shape(tmp_path, home):
+    """Not the case it was written for: opencode keeps its servers under `mcp` with a different entry shape. An earlier entry of ours is replaced there too, and one that is not ours is refused."""
+    cfg = home / ".config/opencode/opencode.json"
+    cfg.parent.mkdir(parents=True)
+    old = {"type": "local", "command": ["/dev/.venv/bin/python", "-m", "envrec_harness.mcp_server", "--state-dir", "/dev/state"], "enabled": True}
+    cfg.write_text(json.dumps({"mcp": {SERVER: old, "other": {"type": "remote", "url": "https://example.test"}}}, indent=2) + "\n")
+    original = cfg.read_text()
+    env = make_env(tmp_path, home)
+    plan = C.build_plan("opencode", env)
+    run_all(plan, env)
+    now = json.loads(cfg.read_text())["mcp"]
+    assert now[SERVER]["command"][:3] == ["/opt/py/bin/python", "-m", "envrec_mas"] and now["other"] == {"type": "remote", "url": "https://example.test"}
+    run_all(plan, env, "undo")
+    assert cfg.read_text() == original
+    cfg.write_text(json.dumps({"mcp": {SERVER: {"type": "local", "command": ["somebody-elses-server"], "enabled": True}}}, indent=2) + "\n")
+    with pytest.raises(C.ConnectRefused) as e:
+        C.build_plan("opencode", env)
+    assert e.value.code == "entry_exists_different"

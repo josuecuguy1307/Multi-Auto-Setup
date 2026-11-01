@@ -4,16 +4,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
 
-CODE_GRADERS = frozenset({"sandbox_tests", "exact", "answer_line", "json", "lines"})  # closed set: each is a program deciding pass or fail
+CODE_GRADERS = frozenset({"sandbox_tests", "exact", "answer_line", "json", "lines", "text_checks"})  # closed set: each is a program deciding pass or fail
 WEAK_GRADERS = frozenset({"model", "human"})  # may exist, are labeled weaker and never count toward the pass mark (A1)
 LICENSES_OK = ("project license (pending)",)  # a task whose license is not named here (or verified by code) is not loaded
 DATA_ROOT = Path(__file__).resolve().parents[3] / "data" / "admission"
-TASK_TYPES = ("code", "text")
+TASK_TYPE = re.compile(r"^[a-z][a-z0-9-]{0,31}$")  # a type is a plain name; WHICH types exist is data: the `task_types` of the catalog and the suites under data/admission
 
 
 class SuiteRefused(ValueError):
@@ -72,8 +73,8 @@ def parse_suite(doc: dict) -> Suite:
     for key in ("suite_id", "task_type", "version", "tasks"):
         if key not in doc:
             raise SuiteRefused("suite_invalid", f"the suite has no `{key}`")
-    if doc["task_type"] not in TASK_TYPES:
-        raise SuiteRefused("suite_invalid", f"unknown task type {doc['task_type']!r}")
+    if not isinstance(doc["task_type"], str) or not TASK_TYPE.match(doc["task_type"]):
+        raise SuiteRefused("suite_invalid", f"task type {doc['task_type']!r} is not a plain name (lowercase letters, digits and hyphens)")
     tasks, seen = [], set()
     for raw in doc["tasks"]:
         tid = raw.get("id", "")
@@ -89,6 +90,8 @@ def parse_suite(doc: dict) -> Suite:
             raise SuiteRefused("license_unverified", f"{tid}: the license {lic!r} has not been verified, so the task is not loaded")
         if kind == "sandbox_tests" and not (raw.get("checks") and isinstance(grader.get("n_checks"), int) and grader["n_checks"] > 0):
             raise SuiteRefused("suite_invalid", f"{tid}: a sandbox task needs checks and n_checks")
+        if kind == "text_checks" and not any(k in grader for k in ("contains_all", "contains_none", "lines", "max_words")):
+            raise SuiteRefused("suite_invalid", f"{tid}: a text_checks grader needs at least one of contains_all, contains_none, lines, max_words")
         if not raw.get("prompt") or "reference" not in raw:
             raise SuiteRefused("suite_invalid", f"{tid}: prompt and reference are required")
         tasks.append(Task(id=tid, title=raw.get("title", tid), prompt=raw["prompt"], grader=grader, checks=raw.get("checks", ""), reference=str(raw["reference"]),

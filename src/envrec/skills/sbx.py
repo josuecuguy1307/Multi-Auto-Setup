@@ -191,3 +191,67 @@ def run_exam_code(solution: str, checks: str, n_checks: int, *, timeout_s: float
     if not isinstance(out, dict) or out.get("kind") not in EXAM_KINDS or not isinstance(out.get("ok"), bool) or (out["ok"] and out["kind"] != "passed"):
         return {"ok": False, "kind": "no_result", "checked": 0, "detail": "the sandbox result was not understood"}
     return {"ok": out["ok"], "kind": out["kind"], "checked": int(out.get("checked") or 0), "detail": str(out.get("detail", ""))[:120]}
+
+
+# ---- a project's tests (the router's `project_tests` grader) ---------------------------------------------------------------------------------------------------------------------
+# Several files (the project's, with the files a model returned laid over them, and the project's own tests) are written to a memory-only folder inside the same container as the exam, the tests are
+# discovered and run with `unittest`, and one JSON line is written after everything the code printed is discarded. Nothing is mounted; the files travel on stdin.
+PROJECT_WRAPPER = (
+    "import sys, json, io, os, signal, unittest\n"
+    "d = json.load(sys.stdin)\n"
+    "real = sys.stdout\n"
+    "signal.alarm(max(1, int(d.get('limit_s', 20))))\n"
+    "res = {'ok': False, 'kind': 'error', 'checked': 0, 'detail': ''}\n"
+    "root = '/tmp/w'\n"
+    "sys.stdout = sys.stderr = io.StringIO()\n"
+    "try:\n"
+    "    for rel, text in d['files'].items():\n"
+    "        p = os.path.join(root, rel)\n"
+    "        os.makedirs(os.path.dirname(p), exist_ok=True)\n"
+    "        open(p, 'w').write(text)\n"
+    "    sys.path.insert(0, root)\n"
+    "    suite = unittest.defaultTestLoader.discover(root, pattern=d['pattern'], top_level_dir=root)\n"
+    "    r = unittest.TextTestRunner(stream=io.StringIO(), verbosity=0).run(suite)\n"
+    "    ok = r.wasSuccessful() and r.testsRun >= int(d.get('min_tests', 1))\n"
+    "    res.update(ok=ok, kind='passed' if ok else ('wrong_answer' if r.testsRun else 'no_result'), checked=r.testsRun, detail='%d failures, %d errors' % (len(r.failures), len(r.errors)))\n"
+    "except SyntaxError as e:\n"
+    "    res.update(ok=False, kind='syntax_error', detail=str(e)[:80])\n"
+    "except BaseException as e:\n"
+    "    res.update(ok=False, kind='exception', detail=type(e).__name__ + ': ' + str(e)[:80])\n"
+    "sys.stdout = real\n"
+    "sys.stdout.write(json.dumps({'ok': bool(res['ok']), 'kind': res['kind'], 'checked': res['checked'], 'detail': res['detail']}))\n"
+)
+
+
+def project_argv(name: str, image: str = IMAGE) -> list[str]:
+    return ["docker", "run", "--rm", "-i", "--name", name, "--network", "none", "--read-only", "--tmpfs", "/tmp:rw,noexec,nosuid,size=16m", "--cap-drop", "ALL",
+            "--security-opt", "no-new-privileges", "--pids-limit", "48", "--memory", "384m", "--memory-swap", "384m", "--cpus", "1", "--user", "65534:65534",
+            image, "python", "-I", "-c", PROJECT_WRAPPER]
+
+
+def run_project_tests(files: dict[str, str], pattern: str = "test_*.py", *, min_tests: int = 1, timeout_s: float = 20.0, image: str = IMAGE) -> dict:
+    """Run a project's `unittest` tests over `files` (relative path -> text) in the sandbox. Returns {ok, kind, checked, detail}. Raises SandboxUnavailable (fail closed, before anything starts) when no
+    backend is ready: model-written code never runs without one. A path that is absolute or climbs out of the folder is refused."""
+    for rel in files:
+        if rel.startswith(("/", "\\")) or ".." in rel.replace("\\", "/").split("/") or not rel.endswith((".py", ".txt", ".csv", ".json", ".md")):
+            raise SandboxRefused(f"file path {rel!r} is not allowed")
+    if not docker_ready(image):
+        raise SandboxUnavailable("Docker (or the sandbox image) is not available: model-written code does not run without it")
+    body = json.dumps({"files": files, "pattern": pattern, "min_tests": min_tests, "limit_s": timeout_s}).encode()
+    if len(body) > MAX_INPUT:
+        raise SandboxRefused("input too large for the sandbox")
+    name = f"envrec-proj-{uuid.uuid4().hex[:10]}"
+    try:
+        done = subprocess.run(project_argv(name, image), input=body, capture_output=True, timeout=timeout_s + START_SLACK_S)
+    except subprocess.TimeoutExpired:
+        subprocess.run(["docker", "kill", name], capture_output=True, timeout=15)
+        return {"ok": False, "kind": "timeout", "checked": 0, "detail": f"over {timeout_s:g} s"}
+    if done.returncode in (142, -14):
+        return {"ok": False, "kind": "timeout", "checked": 0, "detail": f"over {timeout_s:g} s"}
+    try:
+        out = json.loads(done.stdout.decode("utf-8", "replace").strip().splitlines()[-1])
+    except (ValueError, IndexError):
+        return {"ok": False, "kind": "no_result", "checked": 0, "detail": "the code ended the process without the tests finishing"}
+    if not isinstance(out, dict) or out.get("kind") not in EXAM_KINDS or not isinstance(out.get("ok"), bool) or (out["ok"] and out["kind"] != "passed"):
+        return {"ok": False, "kind": "no_result", "checked": 0, "detail": "the sandbox result was not understood"}
+    return {"ok": out["ok"], "kind": out["kind"], "checked": int(out.get("checked") or 0), "detail": str(out.get("detail", ""))[:120]}

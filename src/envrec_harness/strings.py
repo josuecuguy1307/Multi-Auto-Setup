@@ -10,7 +10,7 @@ STR = {
         "plan": "Setup plan", "command": "Exact command", "writes": "Writes to", "undo": "How to undo", "size": "Size", "approve_panel": "Approved in the owner panel",
         "run": "Run", "actors": "Who decided", "last_seen": "last seen", "facts": "facts", "pick": "Pick", "status_pending": "pending", "status_approved": "approved",
         "status_running": "running", "status_done": "done", "status_failed": "failed", "status_undone": "undone", "verify": "Verification", "ok": "ok", "not_ok": "not verified",
-        "withheld": "Withheld: confidential", "cloud_note": "This chat is in the cloud: it only receives summaries", "pick_text": "Pick an option for this machine.",
+        "withheld": "Withheld: confidential", "secret_os_only": "A key is typed into the operating system's own window on your computer; no chat, form or card can take it.", "cloud_note": "This chat is in the cloud: it only receives summaries", "pick_text": "Pick an option for this machine.",
         "no_reco": "The options are not ordered by preference and nobody recommends one: the owner chooses.", "doing": "doing now", "idle": "idle", "actor": "acted",
         "install_note": "Installing only happens through Multi Auto Setup's setup flow with your approval; no other path installs anything for you.", "weak": "weaker confirmation: no Touch ID or Windows Hello",
         "strong": "verified with Touch ID or the account password", "expl": "the model's explanation, not verified", "memory": "Memory", "needs": "needs", "budget": "usable", "total": "total",
@@ -57,6 +57,26 @@ STR = {
 
 def t(lang: str, key: str) -> str:
     return STR.get(lang, STR["en"]).get(key) or STR["en"].get(key, key)
+
+
+STR["en"].update({
+    # ---- pairing and unpairing from a chat
+    "pr_none": "No computer is waiting to join. On the new computer, install Multi Auto Setup and run mas join: it shows up here by itself. Then ask me to pair it.",
+    "pr_list": "Computers waiting to join:\n{lines}\nTell me which one to pair and I will show its 6-digit code.",
+    "pr_code": "The pairing code for {name} is on your screen, in a dialog on this computer. It is not written here and I do not know it. Type it on {name} when it asks: it is valid for about {mins} minutes and for one try. After you typed it, ask me to continue: you will be asked to approve the computer in a system dialog.",
+    "pr_code_unavailable": "I could not open a dialog on this computer, so the code is not shown here (it is never put in this chat). Read it on the owner screen, or run mas pair in a terminal on this computer, and type it on {name}; it is valid for about {mins} minutes and one try.",
+    "pr_dialog_title": "Multi Auto Setup: pairing code",
+    "pr_dialog_body": "Pairing code for {name}: {code}\n\nType it on {name} when it asks. It is valid for about {mins} minutes and for one try. Do not share it.",
+    "pr_exchange": "The code was typed on {name} and the two computers are checking each other's keys. Ask again in a few seconds.",
+    "pr_confirm_summary": "Pair {name} ({os}, {arch}) with this network?", "pr_confirm_command": "Trust {name}'s key (fingerprint {fp}) from now on: it may then connect to this coordinator and receive the tasks you approve.",
+    "pr_confirm_undo": "Remove it with unpair {name}: the chat tool mas_unpair, or mas unpair {name} in a terminal.",
+    "pr_accepted": "{name} is paired.", "pr_refused": "The pairing was refused: nothing was stored.", "pr_failed": "The pairing failed ({reason}): nothing was stored. Ask me for a new code.",
+    "pr_expired": "The code expired before it was used: nothing was stored. Ask me for a new code.", "pr_rejected": "The pairing was not approved: nothing was stored.",
+    "pr_busy": "Another pairing is in progress: finish it or wait for it to expire (about 2 minutes) first.", "pr_not_waiting": "{ref} is not waiting to join. Ask me who is waiting, or run mas join on that computer.",
+    "pr_ambiguous": "More than one waiting computer is called {ref}: say which one by the number in the list.", "pr_unknown": "{ref} is not one of the paired computers.",
+    "un_summary": "Unpair {name} from this network?", "un_command": "Stop trusting {name}: its key is removed from this coordinator at once, so it is refused from now on. If it is connected it is told and forgets this coordinator.",
+    "un_undo": "Pair it again: run mas join on {name}, then ask me to pair a new computer.",
+})
 
 # Labels of the machine facts the cards show, by fact key. A key without a row is shown by its own name (we never invent a friendlier word for a fact we do not know).
 LABELS = {

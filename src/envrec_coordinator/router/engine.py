@@ -11,7 +11,7 @@ from typing import Any
 from envrec_coordinator.router import grading, strings
 from envrec_coordinator.router.catalog import build_candidates, knows_task_type
 from envrec_coordinator.router.facts import Facts, Policy
-from envrec_coordinator.router.model import GradeResult, Refusal, RouteDecision, Task, TaskHandle
+from envrec_coordinator.router.model import GradeResult, Refusal, Route, RouteDecision, Task, TaskHandle
 from envrec_coordinator.router.outputs import MemoryOutputs, Outputs
 from envrec_coordinator.router.rule import exclusion_step, run_rule, sensitivity_step
 from envrec_coordinator.router.sensitivity import creation_refusal, filter_outbound, highest
@@ -44,6 +44,12 @@ class Router:
         self._state[task.task_id] = st = {"task": task, "tried": [], "step": 0, "decision": None, "closed": False, "effective": eff, "unknown_inputs": unknown}
         return self._decide(st)
 
+    def explain(self, task: Task) -> RouteDecision | Refusal:
+        """What `route` would decide right now, with nothing recorded: no state, no event, no dispatch. The same code path on a throwaway copy, so the explanation can never differ from the decision."""
+        twin = Router(envs=self.envs, facts=self.facts, policy=self.policy, log=lambda t, p, a: None, outputs=self.outputs, instructions=self.instructions)
+        twin._state = {k: v for k, v in self._state.items() if k != task.task_id}  # the levels of earlier tasks, for `result-of` inputs
+        return twin.route(task)
+
     def _input_level(self, ref: str) -> tuple[str | None, bool]:
         """(level, known) of one input. A `result-of:<task>` input carries the level of its source task (what the router knows, else what the store recorded); an unknown source is treated as confidential."""
         if not ref.startswith(RESULT_OF):
@@ -73,7 +79,7 @@ class Router:
         return self._refuse_id(task.task_id, code, **details)
 
     def _refuse_id(self, task_id: str, code: str, **details: Any) -> Refusal:
-        r = Refusal(task_id=task_id, code=code, reason=strings.refusal_text(code), details=details)
+        r = Refusal(task_id=task_id, code=code, reason=strings.refusal_text(details.get("why", code)), details=details)  # `why` names a more exact typed reason for the same refusal code
         self._log_refusal(r)
         return r
 
@@ -85,13 +91,15 @@ class Router:
             self._log_refusal(bad)
             return bad
         if not knows_task_type(self.envs, task.task_type):
-            return self._refuse(task, "unknown_task_type")
-        cands, left_out = build_candidates(task, self.envs, self.facts, self.policy)
-        reasons = {k: strings.REASONS.get(v, v) for k, v in left_out.items()}
+            return self._refuse(task, "no_candidate", why="unknown_task_type", candidates=[], environments={})  # no environment declares this type: a refusal with zero candidates, nothing invented
+        detail: dict[str, dict] = {}
+        cands, left_out = build_candidates(task, self.envs, self.facts, self.policy, detail)
+        reasons = {k: strings.reason_text(v, detail.get(k)) for k, v in left_out.items()}
+        cand_keys = [c.route.key for c in cands]  # every refusal below carries them: the reasoning is candidates, then who was cut and why
         if not cands:
             present = set(left_out.values())  # the most actionable reason wins; the details still list every environment with its own
-            code = next((c for c in ("sandbox_missing", "automated_use_unreviewed") if c in present), "no_candidate")  # sandbox_missing: an environment got past every other check
-            return self._refuse(task, code, environments=reasons, codes=left_out)
+            code = next((c for c in ("machine_offline", "sandbox_missing", "automated_use_unreviewed") if c in present), "no_candidate")  # sandbox_missing: an environment got past every other check
+            return self._refuse(task, code, environments=reasons, codes=left_out, candidates=cand_keys)
         kept, dropped, first = sensitivity_step(cands, eff, self.facts, task.task_type, self.policy, set(st["tried"]))
         if st["unknown_inputs"]:
             first.note += f"; inputs of unknown source treated as confidential: {st['unknown_inputs']}"
@@ -105,7 +113,7 @@ class Router:
                 if st["step"] > 0:
                     return self._exhausted(st, left_out, {**dropped, **ex_dropped})
                 code = "no_local_candidate" if eff == "confidential" else "no_candidate"
-                return self._refuse(task, code, environments=reasons, dropped={k: strings.REASONS.get(v, v) for k, v in {**dropped, **ex_dropped}.items()}, excluded=sorted(ex_dropped))
+                return self._refuse(task, code, environments=reasons, dropped={k: strings.REASONS.get(v, v) for k, v in {**dropped, **ex_dropped}.items()}, excluded=sorted(ex_dropped), candidates=cand_keys)
         if not kept:
             if st["step"] > 0:
                 return self._exhausted(st, left_out, dropped)
@@ -113,13 +121,13 @@ class Router:
                 code = "provisional_only" if "provisional" in dropped.values() else "no_local_candidate"
             else:
                 code = "no_candidate"
-            return self._refuse(task, code, environments=reasons, dropped={k: strings.REASONS.get(v, v) for k, v in dropped.items()})
+            return self._refuse(task, code, environments=reasons, dropped={k: strings.REASONS.get(v, v) for k, v in dropped.items()}, candidates=cand_keys)
         chosen, trace, label = run_rule(kept, self.facts, task.task_type, self.policy)
         if chosen is None:
             if st["step"] > 0:
                 return self._exhausted(st, left_out, dropped)
-            return self._refuse(task, "no_candidate", environments=reasons, trace=[s.model_dump() for s in trace])
-        decision = RouteDecision(task_id=task.task_id, route=chosen.route, rule_trace=[first, *ex_trace, *trace], escalation_step=st["step"], evidence_label=label, effective_sensitivity=eff)  # type: ignore[arg-type]
+            return self._refuse(task, "no_candidate", environments=reasons, trace=[s.model_dump() for s in trace], candidates=cand_keys)
+        decision = RouteDecision(task_id=task.task_id, route=chosen.route, rule_trace=[first, *ex_trace, *trace], escalation_step=st["step"], evidence_label=label, provisional=label == strings.EVIDENCE_NONE, left_out=dict(reasons), effective_sensitivity=eff)  # type: ignore[arg-type]
         st["decision"] = decision
         st["tried"].append(chosen.route.key)
         self.log("route_decision", {**decision.model_dump(), "sensitivity": eff, "entry_chat": task.entry_chat.model_dump(), "left_out": left_out}, "ROUTER")
@@ -165,25 +173,48 @@ class Router:
             return self._refuse(task, "no_sender")
         entry = self.envs[decision.route.environment_id]
         machine = next((m for m in self.facts.machines() if m.machine_id == decision.route.machine_id), None)
-        mode = E.mode_of(entry, task.task_type)
+        mode = E.mode_of(entry, task.task_type, decision.route.access_id)
         if machine is None or mode is None or not machine.paired:
             return self._refuse(task, "no_candidate", machine=decision.route.machine_id)
+        if not machine.online:
+            return self._refuse(task, "machine_offline", machine=machine.machine_id)
         if mode["confinement"] in E.NEEDS_SANDBOX and not machine.sandbox_backends:
             return self._refuse(task, "sandbox_missing", environment=entry["id"], machine=machine.machine_id)
         text, level = self._read_inputs(task, decision.effective_sensitivity)
         if text is None:
             return self._refuse(task, "payload_missing", payload_ref=task.payload_ref)
-        if level == "confidential" and entry.get("cloud"):  # a confidential result can never be handed to a cloud environment, whatever path it took to get here
+        return self._send(task, decision.route, decision.escalation_step, text, level, mode)
+
+    def run_prompt(self, task: Task, route: Route, text: str) -> TaskHandle | Refusal:
+        """Send one prompt to exactly this combination, for a measurement (the admission exam). It is not a route decision: nothing is chosen, nothing escalates. The same guards as `dispatch`."""
+        if self.sender is None:
+            return self._refuse(task, "no_sender")
+        entry = self.envs.get(route.environment_id)
+        machine = next((m for m in self.facts.machines() if m.machine_id == route.machine_id), None)
+        mode = E.mode_of(entry, task.task_type, route.access_id) if entry is not None else None
+        if entry is None or machine is None or mode is None or not machine.paired:
+            return self._refuse(task, "no_candidate", machine=route.machine_id)
+        if not machine.online:
+            return self._refuse(task, "machine_offline", machine=route.machine_id)
+        if mode["confinement"] in E.NEEDS_SANDBOX and not machine.sandbox_backends:
+            return self._refuse(task, "sandbox_missing", environment=entry["id"], machine=machine.machine_id)
+        return self._send(task, route, 0, text, task.sensitivity or "public", mode)
+
+    def _send(self, task: Task, route: Route, step: int, text: str, level: str, mode: dict) -> TaskHandle | Refusal:
+        entry = self.envs[route.environment_id]
+        machine = next(m for m in self.facts.machines() if m.machine_id == route.machine_id)
+        if level == "confidential" and E.is_cloud(entry, route.access_id):  # a confidential result can never be handed to a cloud environment, whatever path it took to get here
             return self._refuse(task, "confidential_cloud_environment", environment=entry["id"])
-        needs_model = entry["subtype"] in ("local_model", "own_harness")
-        params = {"environment_id": entry["id"], "task_type": task.task_type, "sensitivity": level, "mode": mode["name"], "workspace_id": re.sub(r"[^a-z0-9-]", "-", f"{task.task_id}-{decision.escalation_step}".lower())[:48].strip("-") or "task",
-                  "recipe_sha256": E.recipe_sha256(entry), "input_text": text, "endpoint": machine.model_endpoint if needs_model else None, "model_id": machine.model_id if needs_model else None}
-        rec = self.sender.start_environment_run(machine.machine_id, task.task_id, entry, params, {"task_id": task.task_id, "step": decision.escalation_step, "route": decision.route.key})
-        self.log("dispatch", {"task_id": task.task_id, "route": decision.route.key, "node_task": rec.id, "state": rec.status, "reason": rec.reason, "workspace": params["workspace_id"]}, "GUARD")
+        local = E.uses_local_endpoint(entry, route.access_id)  # the node's loopback model server; an API access names its own address in the data
+        params = {"environment_id": entry["id"], "task_type": task.task_type, "sensitivity": level, "mode": mode["name"], "workspace_id": re.sub(r"[^a-z0-9-]", "-", f"{task.task_id}-{step}".lower())[:48].strip("-") or "task",
+                  "recipe_sha256": E.recipe_sha256(entry), "access_id": route.access_id, "input_text": text, "endpoint": machine.model_endpoint if local else None,
+                  "model_id": E.declared_model(entry, route.access_id) or (machine.model_id if local else None)}
+        rec = self.sender.start_environment_run(machine.machine_id, task.task_id, entry, params, {"task_id": task.task_id, "step": step, "route": route.key})
+        self.log("dispatch", {"task_id": task.task_id, "route": route.key, "node_task": rec.id, "state": rec.status, "reason": rec.reason, "workspace": params["workspace_id"]}, "GUARD")
         if rec.status == "rejected":
             code = rec.reason if rec.reason in strings.REFUSALS else "dispatch_rejected"
             return self._refuse(task, code, node_reason=rec.reason, machine=machine.machine_id)
-        return TaskHandle(task_id=task.task_id, machine_id=machine.machine_id, node_task_id=rec.id, task_state=rec.status, escalation_step=decision.escalation_step)
+        return TaskHandle(task_id=task.task_id, machine_id=machine.machine_id, node_task_id=rec.id, task_state=rec.status, escalation_step=step)
 
     def _read_inputs(self, task: Task, level: str) -> tuple[str | None, str]:
         """The task's input text (its reference, then the further inputs) and the level it is sent under: the highest of the decision's and the stored level of every `result-of` input. None when one is missing."""

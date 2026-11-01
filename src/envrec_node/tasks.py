@@ -15,7 +15,7 @@ import envrec_os
 from envrec_net import task as T
 from envrec_net.envrun import load_environments
 from envrec_os import probes
-from envrec_node import analysis, envrun, setup
+from envrec_node import analysis, credentials, envrun, setup
 from envrec_node.executors import EXECUTORS as STEP_FUNCTIONS
 
 MAX_CONCURRENT = 2
@@ -72,8 +72,20 @@ def _environment_run(params: T.EnvironmentRunParams, ctx: dict) -> tuple[dict, l
     return envrun.run_environment(params, entry, mode, ctx)
 
 
+def _credential_step(params: T.CredentialStepParams, ctx: dict) -> tuple[dict, list[dict]]:
+    T.check_credential_scope(ctx["token"], params)  # again, here: nothing below touches the store unless this passes, whoever called us
+    out = credentials.apply(params.action, params.name, params.value)
+    return out, [{"provider": "envrec_node.credentials", "tool": "credential store", "status": "tested", "limitations": ["the value is never part of a result or an event"]}]
+
+
+def _credential_presence(params: T.CredentialPresenceParams, ctx: dict) -> tuple[dict, list[dict]]:
+    return credentials.present(list(params.names)), [{"provider": "envrec_node.credentials", "tool": "credential presence", "status": "tested"}]
+
+
 ALLOWED: dict[str, Callable[[T.TaskParams, dict], tuple[dict, list[dict]]]] = {
     "setup_step": _setup_step,
+    "credential_step": _credential_step,
+    "credential_presence": _credential_presence,
     "environment_run": _environment_run,
     "node_report": _node_report,
     "machine_analysis": _machine_analysis,
@@ -91,7 +103,7 @@ Send = Callable[[str, dict], Awaitable[None]]
 class TaskRunner:
     def __init__(self, *, key_path, agent: str = "", max_concurrent: int = MAX_CONCURRENT, mono: Callable[[], float] = time.monotonic, mas_home=None, recipes=None, executors=None, envs=None) -> None:
         self.ctx = {"key_path": key_path, "agent": agent, "mas_home": mas_home, "recipes": setup.load_recipes() if recipes is None else recipes, "executors": STEP_FUNCTIONS if executors is None else executors,
-                    "envs": load_environments() if envs is None else envs}
+                    "envs": load_environments() if envs is None else envs, "secret": credentials.lookup}  # the credential of an environment run comes from this computer's own store, by name
         self.max_concurrent, self.mono = max_concurrent, mono
         self.checker: T.TokenChecker | None = None
         self._running: dict[str, dict] = {}
@@ -128,6 +140,8 @@ class TaskRunner:
             try:
                 if task_type == "environment_run":
                     envrun.authorize(params, token, self.ctx)
+                elif task_type == "credential_step":
+                    T.check_credential_scope(token, params)
                 else:
                     setup.authorize(params, token, self.ctx["recipes"])
             except T.TokenRejected as exc:
@@ -148,7 +162,7 @@ class TaskRunner:
                 result, evidence = await asyncio.to_thread(ALLOWED[task_type], params, {**self.ctx, "token": token})
                 res = T.TaskResult(task_id=task_id, status="done", result=result, evidence=evidence, duration_s=round(self.mono() - t0, 2))
             except Exception as exc:  # a failing task is reported, never fatal to the node
-                reason = exc.code if isinstance(exc, envrun.EnvFailed) else f"{type(exc).__name__}: {str(exc)[:120]}"
+                reason = exc.code if isinstance(exc, (envrun.EnvFailed, credentials.CredentialError)) else f"{type(exc).__name__}: {str(exc)[:120]}"
                 res = T.TaskResult(task_id=task_id, status="failed", reason=reason, duration_s=round(self.mono() - t0, 2))
             if state["cancelled"]:
                 return  # the coordinator cancelled it and was already told

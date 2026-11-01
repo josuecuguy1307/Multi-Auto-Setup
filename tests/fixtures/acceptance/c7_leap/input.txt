@@ -1,0 +1,30 @@
+test_dates.py has failing tests. Fix the bug in dates.py and return the whole file as a block starting with '# file: dates.py'.
+
+# file: dates.py
+def is_leap(year):
+    return year % 4 == 0
+
+
+def days_in_year(year):
+    return 366 if is_leap(year) else 365
+
+# file: test_dates.py
+import unittest
+from dates import is_leap, days_in_year
+
+
+class T(unittest.TestCase):
+    def test_2024(self):
+        self.assertTrue(is_leap(2024))
+    def test_2023(self):
+        self.assertFalse(is_leap(2023))
+    def test_1900(self):
+        self.assertFalse(is_leap(1900))
+    def test_2000(self):
+        self.assertTrue(is_leap(2000))
+    def test_2100(self):
+        self.assertEqual(days_in_year(2100), 365)
+    def test_2400(self):
+        self.assertEqual(days_in_year(2400), 366)
+    def test_1996(self):
+        self.assertTrue(is_leap(1996))

@@ -59,9 +59,11 @@ def evaluate_report(report: dict, skew_s: float | None = None, *, alert_skew_s: 
 class TaskDesk:
     def __init__(self, *, clock: Callable[[], float] = time.time, log: Callable[..., object], sessions: Callable[[str], object | None], max_per_node: int = MAX_PER_NODE,
                  approvals: Callable[[str, int, str], str | None] = lambda plan_hash, step, action: None,
-                 origins: Callable[..., str | None] = lambda task_id, task_type=None, sensitivity=None: None) -> None:
+                 origins: Callable[..., str | None] = lambda task_id, task_type=None, sensitivity=None: None,
+                 credential_approvals: Callable[[str, str, str], str | None] = lambda plan_hash, name, action: None) -> None:
         self.clock, self.log, self.sessions, self.max_per_node = clock, log, sessions, max_per_node
         self.approvals = approvals  # (plan hash, step, action) -> the hash of the OWNER event in the log that approved exactly that, or None. The default approves nothing.
+        self.credential_approvals = credential_approvals  # (plan hash, credential name, action) -> the hash of the OWNER event in the log that approved exactly that, or None. The default approves nothing.
         self.origins = origins  # (task id, type, level) -> the id of the OWNER event in the log that created or approved that task, or None. The default accepts nothing.
         self.tasks: dict[str, TaskRecord] = {}
         self.on_result: Callable[[TaskRecord], None] = lambda rec: None
@@ -163,6 +165,37 @@ class TaskDesk:
         asyncio.ensure_future(self._watch(rec, session, timeout))
         return rec
 
+    def start_credential_step(self, node_id: str, name: str, action: str, plan_hash: str, value: str | None = None, *, timeout_s: float | None = None) -> TaskRecord:
+        """Send one credential change to a node: store (`set`, the only task that carries a value), set aside (`remove`) or bring back (`restore`). Made by CODE (GUARD) and sent only when the log holds an
+        OWNER approval, given with a human gesture, of exactly this plan hash, name and action; without one the task ends `rejected` at once and nothing leaves this computer. The value goes only into the
+        sealed task and is never logged, kept or returned: this record holds no parameters."""
+        tid = secrets.token_hex(6)
+        rec = TaskRecord(tid, node_id, "credential_step", "GUARD", self.clock())
+        self.tasks[tid] = rec
+        self.on_change()
+        rec.guard = ProtocolGuard("protocol-task", lambda t, p: self.log(t, p), clock=self.clock, subject=tid)
+        self.log("task_created", {"task": tid, "node": node_id, "type": "credential_step", "credential": name, "action": action})
+        try:
+            T.validate_params("credential_step", {"name": name, "action": action, "plan_hash": plan_hash, "value": value})
+        except ValueError as exc:
+            self._end(rec, "rejected", str(exc), **{"task.rejected": True})
+            return rec
+        approval = self.credential_approvals(plan_hash, name, action)
+        if not approval:
+            self._end(rec, "rejected", "no_owner_approval", **{"task.rejected": True})
+            return rec
+        session = self.sessions(node_id)
+        if session is None:
+            self._end(rec, "failed", "node_offline", **{"task.result": "failed"})
+            return rec
+        timeout = timeout_s or T.TIMEOUTS_S["credential_step"]
+        token = T.issue_token(session.identity, task_id=tid, node_id=node_id, sid=session.sid, tools=["credential_step"], ttl_s=min(T.DEFAULT_TTL_S, timeout), scope=T.credential_scope(plan_hash, name, action, approval))
+        rec.guard.record("task.created", True)
+        self._move(rec, "sent", **{"task.sent": True})
+        asyncio.ensure_future(session.send("task", {"task_id": tid, "task_type": "credential_step", "params": {"name": name, "action": action, "plan_hash": plan_hash, **({"value": value} if value is not None else {})}, "token": token, "timeout_s": timeout}))
+        asyncio.ensure_future(self._watch(rec, session, timeout))
+        return rec
+
     def start_environment_run(self, node_id: str, task_id: str, entry: dict, params: dict, decision: dict, *, timeout_s: float | None = None) -> TaskRecord:
         """Hand a routed task to an environment on a node. Made by CODE (GUARD), and sent only when the log holds an OWNER event that created or approved THIS task (`origins`); with none, the task ends
         `rejected` at once and nothing leaves this computer. The origin's event hash, the environment, its recipe hash, the mode, the workspace and the endpoint are signed into the node's token."""
@@ -192,7 +225,7 @@ class TaskDesk:
             self._end(rec, "rejected", "busy", **{"task.rejected": True})
             return rec
         timeout = timeout_s or T.TIMEOUTS_S["environment_run"]
-        scope = ER.env_scope(entry=entry, task_type=parsed.task_type, sensitivity=parsed.sensitivity, workspace_id=parsed.workspace_id, endpoint=parsed.endpoint, origin_event=origin, decision=decision)
+        scope = ER.env_scope(entry=entry, task_type=parsed.task_type, sensitivity=parsed.sensitivity, workspace_id=parsed.workspace_id, endpoint=parsed.endpoint, origin_event=origin, decision=decision, access_id=parsed.access_id)
         token = T.issue_token(session.identity, task_id=tid, node_id=node_id, sid=session.sid, tools=["environment_run"], ttl_s=min(T.DEFAULT_TTL_S, timeout), scope=scope)
         rec.guard.record("task.created", True)
         self._move(rec, "sent", **{"task.sent": True})

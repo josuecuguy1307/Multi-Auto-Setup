@@ -15,6 +15,7 @@ Who may decide what (the rules the tests prove):
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import hmac
 import json
 import secrets
@@ -22,6 +23,7 @@ import time
 from dataclasses import dataclass, field
 
 import envrec_os.confirm as osconfirm
+import envrec_os.secret_prompt as ossecret
 from envrec_coordinator import agent as A
 from envrec_coordinator.runs import SHOWN, describe_event
 from envrec_harness import cards
@@ -97,9 +99,13 @@ def _drop(v):
 
 
 class HarnessCore:
-    def __init__(self, coord, *, native_confirm=None, lang: str = "en", clock=None) -> None:
+    def __init__(self, coord, *, native_confirm=None, native_notice=None, native_secret=None, lang: str = "en", clock=None) -> None:
         self.coord, self.lang, self.clock = coord, lang, clock or time.time
         self.native_confirm = native_confirm or osconfirm.native_confirm
+        self.native_notice = native_notice or osconfirm.native_notice  # information for the owner's own screen: the pairing code goes here, never into a tool result
+        self.native_secret = native_secret or ossecret.native_secret
+        self._code_notices: dict[str, object] = {}  # offer id -> the dialog that shows its code
+        self._secrets: dict[str, str] = {}  # a value typed into the hidden window, by ticket: held in memory until the one write task takes it, never logged, never put in an intent
         self.dir = coord.state / "harness"
         self.dir.mkdir(parents=True, exist_ok=True)
         coord.layer.protect_private(self.dir)
@@ -589,6 +595,105 @@ class HarnessCore:
         self._run_sens[view["id"]] = sensitivity
         return view
 
+    # ---- pairing and unpairing from a chat ------------------------------------------------------------------------------------------------------
+    # Two thin operations over what the coordinator already does for the terminal and the owner screen. The chat can ask for a code and read what is happening; it can never complete a pairing or an
+    # unpair: both end in a confirmation the owner answers with a gesture of their own (the system dialog, the host's own dialog, the panel), and only that answer runs the action.
+
+    def _text(self, key: str, text: str, sens: str = "internal") -> Intent:
+        return self._add(None, "text", "GUARD", sens, {"topic": "pairing"}, text, f"{key}:{self._seq + 1}")
+
+    def _waiting_named(self, ref: str) -> str:
+        """A chat says "the Lenovo", the waiting list says an id: accept either, and only when it is one computer."""
+        hits = [w for w in self.coord.waiting.list() if w.id == ref or w.name.lower() == ref.lower()]
+        if len(hits) != 1:
+            raise Refused(404 if not hits else 409, "not_waiting" if not hits else "ambiguous_machine", t(self.lang, "pr_not_waiting" if not hits else "pr_ambiguous").format(ref=ref[:60]))
+        return hits[0].id
+
+    def pairing(self, ch: Channel, machine: str | None = None) -> dict:
+        """With a machine: make a pairing code for that waiting computer and say it. Without one: say what is happening (who waits, the code in use, the computer asking for approval, the last outcome),
+        and when a computer has typed the code, raise the confirmation the owner answers. The code is shown to the owner; whoever types it must be at that computer."""
+        from envrec_coordinator.pairing import PairingBusy
+        from envrec_coordinator.server import WaitingGone
+        coord = self.coord
+        coord.desk.expire_due()
+        view = coord.owner.view()
+        live = view is not None and view["status"] in ("waiting", "exchange", "confirm", "deciding")
+        if machine and live:
+            raise Refused(409, "pairing_busy", t(self.lang, "pr_busy"))
+        if machine:
+            wid = self._waiting_named(machine)
+            try:
+                coord.offer_for_waiting(wid, via=f"chat:{ch.name}")
+            except WaitingGone:
+                raise Refused(404, "not_waiting", t(self.lang, "pr_not_waiting").format(ref=machine[:60])) from None
+            except PairingBusy:
+                raise Refused(409, "pairing_busy", t(self.lang, "pr_busy")) from None
+            view = coord.owner.view()
+        intents: list[Intent] = []
+        st = view["status"] if view else "idle"
+        name = (view or {}).get("target") or ""
+        if st != "waiting":
+            self._close_code_notices()  # the code is used up or gone: its dialog goes too
+        if st == "waiting":
+            shown, mins = self._show_code(view, name)
+            intents.append(self._text("pair_code", t(self.lang, "pr_code" if shown else "pr_code_unavailable").format(name=name or "the computer", mins=mins)))
+        elif st == "exchange":
+            intents.append(self._text("pair_exchange", t(self.lang, "pr_exchange").format(name=name or "the computer")))
+        elif st in ("confirm", "deciding"):
+            intents.append(self._pair_confirmation(view))
+        else:
+            done = t(self.lang, "pr_" + st).format(name=name or "the computer", reason=view.get("reason") or "") + "\n" if view else ""  # the last outcome, then who waits now
+            ws = coord.waiting.list()
+            lines = "\n".join(f"{n}. {w.name} ({w.os}, {w.arch})" for n, w in enumerate(ws, 1))
+            intents.append(self._text("pair_list", done + (t(self.lang, "pr_list").format(lines=lines) if ws else t(self.lang, "pr_none"))))
+        return {"state": st, "intents": [self.for_channel(i, ch) for i in intents]}
+
+    def _show_code(self, view: dict, name: str) -> tuple[bool, int]:
+        """Show the code to the owner in a dialog of this computer, once per offer (again only if they closed it). The code is NOT returned to the caller: what a chat's model reads says only that it is on
+        the screen. Returns (shown, minutes it stays valid)."""
+        left = max(10.0, (view.get("expires_at") or self.clock() + 120) - self.clock())
+        mins = max(1, round(left / 60))
+        cur = self._code_notices.get(view["offer"])
+        if cur is not None and cur.alive():
+            return True, mins
+        notice = self.native_notice(t(self.lang, "pr_dialog_title"), t(self.lang, "pr_dialog_body").format(name=name or "the computer", code=view["code"], mins=mins), timeout_s=left)
+        if notice is None:
+            return False, mins
+        self._code_notices[view["offer"]] = notice
+        return True, mins
+
+    def _close_code_notices(self) -> None:
+        for key in list(self._code_notices):
+            n = self._code_notices.pop(key, None)
+            if n is not None:
+                n.close()
+
+    def _pair_confirmation(self, view: dict) -> Intent:
+        cand = view.get("candidate") or {}
+        name, fp = cand.get("name") or "a computer", (cand.get("fingerprint") or "")[:16]
+        ph = "sha256:" + hashlib.sha256(json.dumps({"pair": view["offer"], **cand}, sort_keys=True).encode()).hexdigest()
+        kw = {"name": name, "os": cand.get("os", ""), "arch": cand.get("arch", ""), "fp": fp}
+        p = self.request_confirmation(None, summary=t(self.lang, "pr_confirm_summary").format(**kw), plan_hash=ph, command=t(self.lang, "pr_confirm_command").format(**kw),
+                                      undo=t(self.lang, "pr_confirm_undo").format(**kw))
+        offer = view["offer"]
+        p.intent.extra["on_decision"] = lambda approved, via: self.coord.decide_pairing(offer, approved, via)  # runs only from `_resolve`, after a confirmation with a gesture
+        p.intent.text_fallback = p.intent.text_fallback + "\n" + t(self.lang, "ap_ask_tool")
+        return p.intent
+
+    def unpair(self, ch: Channel, machine: str | None) -> dict:
+        """Ask the owner to unpair a computer. Nothing is removed here: the confirmation is the owner's, and only its approval removes the key."""
+        node = self._resolve_node(machine) if machine else None
+        rec = self.coord.registry.get(node) if node else None
+        if rec is None:
+            raise Refused(404, "unknown_node", t(self.lang, "pr_unknown").format(ref=(machine or "")[:60]))
+        kw = {"name": rec.name}
+        ph = "sha256:" + hashlib.sha256(json.dumps({"unpair": rec.node_id, "name": rec.name}, sort_keys=True).encode()).hexdigest()
+        p = self.request_confirmation(None, summary=t(self.lang, "un_summary").format(**kw), plan_hash=ph, command=t(self.lang, "un_command").format(**kw), undo=t(self.lang, "un_undo").format(**kw))
+        via_ = lambda approved, via: approved and asyncio.ensure_future(self.coord.unpair_node(rec.node_id, via=via))  # noqa: E731
+        p.intent.extra["on_decision"] = via_
+        p.intent.text_fallback = p.intent.text_fallback + "\n" + t(self.lang, "ap_ask_tool")
+        return {"intents": [self.for_channel(p.intent, ch)]}
+
     # ---- owner decisions ------------------------------------------------------------------------------------------------------------------------
 
     def _find(self, intent_id: str) -> Intent | None:
@@ -645,12 +750,35 @@ class HarnessCore:
         same = self._pending.get(key)
         if same is not None and same.intent.extra.get("state") == "pending":
             return same  # asking again for the same plan is the same question
+        if self._find(key) is not None:  # the same plan was asked before and answered (declined, or approved and done): a new question gets its own id
+            key = f"{key}:{self._seq + 1}"
         text = f"{summary}\n{t(self.lang, 'command')}: {command}\n{t(self.lang, 'undo')}: {undo}\nplan {plan_hash}"
         i = self._add(run_id, "confirm", actor, sensitivity, payload, text, key)
         i.extra["state"] = "pending"
         p = Pending(i)
         self._pending[i.id] = p
         return p
+
+    def request_secret_entry(self, run_id: str | None, *, summary: str, plan_hash: str, command: str, undo: str, credential: str, sensitivity: str = "internal", actor: str = "GUARD") -> Pending:
+        """Ask the owner to type a credential into the operating system's own hidden-field window. The confirmation is a `secret` one: the only mechanism that can answer it is the OS window, the typed value
+        is taken from the ticket by `take_secret` (once) and is in no intent, no event and no result."""
+        payload = {"writes": True, "secret": True, "credential": credential, "summary": summary, "plan_hash": plan_hash, "command": command, "undo": undo}
+        key = f"{run_id or '-'}:secret:{plan_hash[-12:]}:{self._seq + 1}"  # a new question each time: an earlier one that was declined or timed out is over
+        same = None
+        if same is not None and same.intent.extra.get("state") == "pending":
+            return same
+        i = self._add(run_id, "confirm", actor, sensitivity, payload, f"{summary}\n{t(self.lang, 'command')}: {command}\n{t(self.lang, 'undo')}: {undo}\nplan {plan_hash}", key)
+        i.extra["state"] = "pending"
+        p = Pending(i)
+        self._pending[i.id] = p
+        return p
+
+    def take_secret(self, intent_id: str) -> str | None:
+        """The value typed for this intent, once. A second call, or a call for an intent nobody answered, gets None."""
+        for tid, tk in self._tickets.items():
+            if tk.intent_id == intent_id and tid in self._secrets:
+                return self._secrets.pop(tid)
+        return None
 
     def change_plan(self, intent_id: str, new_hash: str) -> None:
         """The plan behind a pending confirmation changed: every ticket for the old hash is now stale."""
@@ -664,6 +792,8 @@ class HarnessCore:
             raise Refused(409, "nothing_to_confirm")
         if ch.cloud and i.sensitivity == "confidential":
             raise Refused(403, "withheld_from_cloud", t(self.lang, "withheld"))
+        if i.payload.get("secret") and mechanism != OS_DIALOG:  # a credential is typed into the OS window and nowhere else: a host form, a chat dialog or the panel would put the value where a model or a host can read it
+            raise Refused(409, "secret_needs_os_dialog", t(self.lang, "secret_os_only"))
         if mechanism not in self.mechanisms(ch):
             raise Refused(409, "mechanism_unavailable", f"{mechanism} is not available for {ch.name}; available: {self.mechanisms(ch)}")
         tk = Ticket(secrets.token_urlsafe(12), i.id, i.payload["plan_hash"], mechanism, ch.name, self.clock())
@@ -679,13 +809,31 @@ class HarnessCore:
         prompt = {"title": t(self.lang, "ap_title") if "targets" in i.payload else "Multi Auto Setup",
                   "message": f"{i.payload['summary']}\n\n{t(self.lang, 'ap_undoing') if undoing else t(self.lang, 'command')}:\n{i.payload['command']}{extra}" + ("" if undoing else f"\n\n{t(self.lang, 'undo')}: {i.payload['undo']}") + f"\n\nplan {tk.plan_hash}" + "".join("\n" + x for x in cards.legend_lines(f"{i.payload['command']}{extra}", self.lang))}
         self.coord.log.add("confirmation_started", {"channel": ch.name, "intent": i.id, "mechanism": mechanism, "plan_hash": tk.plan_hash})
-        if mechanism == OS_DIALOG:
+        if i.payload.get("secret"):
+            if self._os_busy:
+                tk.state, tk.reason = "rejected", "a native confirmation is already open"
+                raise Refused(409, "os_dialog_busy")
+            self._os_busy = True
+            asyncio.ensure_future(self._os_secret(tk, prompt))
+        elif mechanism == OS_DIALOG:
             if self._os_busy:
                 tk.state, tk.reason = "rejected", "a native confirmation is already open"
                 raise Refused(409, "os_dialog_busy")
             self._os_busy = True
             asyncio.ensure_future(self._os_confirm(tk, prompt))
         return {"ticket": tk.id, "plan_hash": tk.plan_hash, "mechanism": mechanism, "prompt": prompt, "state": tk.state}
+
+    async def _os_secret(self, tk: Ticket, prompt: dict) -> None:
+        try:
+            res = await asyncio.to_thread(self.native_secret, prompt["title"], prompt["message"], timeout_s=TICKET_TTL_S - 20)
+        except Exception as exc:  # a window that cannot be raised is not an approval
+            res = {"result": "unavailable", "reason": type(exc).__name__}
+        finally:
+            self._os_busy = False
+        if res.get("result") == "entered" and res.get("value"):
+            self._secrets[tk.id] = res["value"]
+        action = {"entered": "accept", "declined": "decline"}.get(res.get("result", ""), res.get("result", "unavailable"))
+        self._resolve(tk, action, tk.plan_hash, {"os_mechanism": res.get("mechanism"), "assurance": "typed_secret"})
 
     async def _os_confirm(self, tk: Ticket, prompt: dict) -> None:
         try:
@@ -749,6 +897,9 @@ class HarnessCore:
         p = self._pending.pop(i.id, None)
         if p is not None and not p.future.done():
             p.future.set_result(approved)
+        on_decision = i.extra.get("on_decision")
+        if on_decision is not None:  # an action that waited for exactly this confirmation (a pairing, an unpair): it runs here and nowhere else
+            on_decision(approved, f"{tk.channel}:{tk.mechanism}")
         if i.extra.get("answer"):  # a setup step: the run's own pending decision, answered WITH the gesture that made it (the coordinator refuses an approval without one)
             run_id, qid = i.extra["answer"]
             self.coord.answer_run(run_id, qid, "approve" if approved else "reject", "owner", tk.channel, tk.mechanism)
@@ -776,6 +927,13 @@ class HarnessCore:
                 for i in found if i.extra.get("state") == "pending"]
 
     # ---- cards ------------------------------------------------------------------------------------------------------------------------------------
+
+    def tool_specs(self, ch: Channel) -> dict:
+        return {"tools": self.coord.services.specs()}
+
+    def tool(self, ch: Channel, name: str, args: dict) -> dict:
+        """A tool of the services, called by a chat. The channel is the token's: whether the chat is a cloud one is its own property, never an argument."""
+        return self.coord.services.call(ch, name, args)
 
     def view_context(self, ch: Channel, context: dict) -> dict:
         """How the host displays our view (display mode, size, theme): booleans, short strings and numbers only, kept as evidence."""

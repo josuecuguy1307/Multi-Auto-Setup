@@ -54,15 +54,18 @@ def authorize(params: T.EnvironmentRunParams, token: dict, ctx: dict) -> tuple[d
     fam = _family(ctx)
     if fam not in entry.get("os", []):
         raise T.TokenRejected("unsupported_os")
-    mode = E.mode_of(entry, params.task_type)
+    mode = E.mode_of(entry, params.task_type, params.access_id)
     if mode is None or mode.get("name") != params.mode or mode.get("confinement") != token["scope"].get("confinement"):
         raise T.TokenRejected("bad_scope")
-    if entry.get("cloud") and params.sensitivity == "confidential":
+    if E.is_cloud(entry, params.access_id) and params.sensitivity == "confidential":
         raise T.TokenRejected("confidential_cloud")  # defense in depth: the router never sends this, the node refuses it anyway (R1)
-    adapter = entry["adapter"]
-    if params.endpoint or adapter.get("needs_model_endpoint") or adapter.get("kind") == "http_chat":
+    adapter = E.adapter_of(entry, params.access_id)
+    if adapter.get("base_url"):  # an API access names its own https address in the data; it takes no endpoint from the coordinator and no model server of ours
+        if params.endpoint:
+            raise T.TokenRejected("bad_parameters")
+    elif params.endpoint or E.uses_local_endpoint(entry, params.access_id):
         try:
-            E.parse_endpoint(params.endpoint or "")
+            E.parse_endpoint(params.endpoint or "")  # N5: the model server of this node is a loopback literal, whatever the coordinator says
         except ValueError:
             raise T.TokenRejected("not_loopback") from None
         if not params.model_id and adapter.get("kind") == "cli":
@@ -143,7 +146,7 @@ def _wrap_sandbox(backend: str, policy: dict, argv: list[str], env_extra: dict[s
 def run_environment(params: T.EnvironmentRunParams, entry: dict, mode: dict, ctx: dict) -> tuple[dict, list[dict]]:
     policy = ctx.get("policy") or E.load_policy()
     limits = policy["limits"]
-    fam, adapter = _family(ctx), entry["adapter"]
+    fam, adapter = _family(ctx), E.adapter_of(entry, params.access_id)
     home = Path(ctx["mas_home"]).resolve()
     root = home / "workspaces"
     root.mkdir(parents=True, exist_ok=True)
@@ -172,7 +175,10 @@ def run_environment(params: T.EnvironmentRunParams, entry: dict, mode: dict, ctx
                 import os
                 environ = os.environ
             env = {k: environ[k] for k in policy["env_base"] if k in environ}
-            env.update({k: environ[k] for k in adapter.get("env_pass", []) if k in environ})  # by NAME: the value is the node's own and is never logged
+            for k in adapter.get("env_pass", []):  # by NAME: the value is the node's own (its credential store, else its environment) and is never logged
+                v = _secret(ctx, k)
+                if v is not None:
+                    env[k] = v
             extra = {**adapter.get("env_set", {}), **mode.get("env_set", {})}
             env.update({k: E.expand(v, values) for k, v in extra.items()})
             prompt_arg = "Task:\n" + text  # a leading dash can never be read as a flag
@@ -211,16 +217,41 @@ def run_environment(params: T.EnvironmentRunParams, entry: dict, mode: dict, ctx
         shutil.rmtree(ws, ignore_errors=True)
 
 
+def _secret(ctx: dict, name: str) -> str | None:
+    """The value of a credential by NAME, for the process of one environment run only: the node's credential store (`ctx["secret"]`), else its own environment. Never logged, never returned."""
+    fn = ctx.get("secret")
+    if fn is not None:
+        got = fn(name)
+        if got is not None:
+            return got
+    environ = ctx.get("environ")
+    if environ is None:
+        import os
+        environ = os.environ
+    return environ.get(name)
+
+
 def _http_chat(params: T.EnvironmentRunParams, adapter: dict, ctx: dict) -> dict:
-    host, port = E.parse_endpoint(params.endpoint or "")
-    url = f"http://{'[' + host + ']' if ':' in host else host}:{port}{adapter['chat_path']}"
-    body = {"messages": [{"role": "user", "content": params.input_text}], "max_tokens": int(adapter["max_tokens"]), "temperature": 0, "stream": False}
+    headers: dict[str, str] = {}
+    if adapter.get("base_url"):  # an API: its https address and its credential are data (the credential by NAME)
+        url = str(adapter["base_url"]).rstrip("/") + adapter["chat_path"]
+        auth = adapter.get("auth") or {}
+        if auth:
+            value = _secret(ctx, auth["env_name"])
+            if value is None:
+                raise EnvFailed("access_missing", f"access missing: {auth['env_name']}")
+            headers[auth.get("header", "Authorization")] = f"{auth.get('scheme', 'Bearer')} {value}".strip()
+    else:
+        host, port = E.parse_endpoint(params.endpoint or "")
+        url = f"http://{'[' + host + ']' if ':' in host else host}:{port}{adapter['chat_path']}"
+    fields = {"max_tokens": int(adapter.get("max_tokens", 1024)), "temperature": 0, "stream": False}
+    body = {"messages": [{"role": "user", "content": params.input_text}], **{k: v for k, v in fields.items() if k in adapter.get("body_fields", list(fields))}}  # only the fields the data lists: an API's undocumented ones are not sent
     if params.model_id:
         body["model"] = params.model_id
     t0 = ctx.get("clock", time.monotonic)()
     try:
         with httpx.Client(timeout=float(adapter["timeout_s"]), transport=ctx.get("transport")) as c:
-            r = c.post(url, json=body)
+            r = c.post(url, json=body, headers=headers)
         if r.status_code != 200:
             raise EnvFailed("environment_failed", f"HTTP {r.status_code}")
         answer = str(r.json()["choices"][0]["message"]["content"]).strip()

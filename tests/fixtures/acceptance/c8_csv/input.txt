@@ -1,0 +1,40 @@
+Add --format csv to this CLI, with tests that pass; the old tests must still pass. Return whole changed files as blocks starting with '# file: <name>'.
+
+# file: cli.py
+import json, sys
+
+
+def rows():
+    return [{'name': 'a', 'qty': 1}, {'name': 'b', 'qty': 2}]
+
+
+def render(fmt='json'):
+    if fmt == 'json':
+        return json.dumps(rows())
+    raise ValueError(fmt)
+
+
+def main(argv=None):
+    argv = argv if argv is not None else sys.argv[1:]
+    fmt = 'json'
+    if '--format' in argv:
+        fmt = argv[argv.index('--format') + 1]
+    print(render(fmt))
+
+# file: test_old.py
+import unittest
+import cli
+
+
+class Old(unittest.TestCase):
+    def test_default_is_json(self):
+        self.assertEqual(cli.render(), '[{"name": "a", "qty": 1}, {"name": "b", "qty": 2}]')
+    def test_rows(self):
+        self.assertEqual(len(cli.rows()), 2)
+    def test_unknown_format(self):
+        with self.assertRaises(ValueError):
+            cli.render('xml')
+    def test_main_json(self):
+        cli.main([])
+    def test_main_format_json(self):
+        cli.main(['--format', 'json'])

@@ -1,0 +1,238 @@
+suite_id: extraction-v1
+task_type: extraction
+version: 1
+description: Ten invoice texts in different layouts to one JSON object each. A task passes only when every field equals the expected value.
+preamble: ''
+est_output_tokens: 80
+tasks:
+- id: extraction-01-tabular
+  title: 'invoice 1: fields as JSON'
+  prompt: |
+    Invoice text:
+    """
+    ACME Tools Ltd
+    Invoice No: INV-2041
+    Date: 14/03/2026
+    Subtotal 1,000.00
+    VAT 12% 120.00
+    Total due 1,120.00 USD
+    """
+    Reply with only a JSON object with the keys supplier (string), invoice_number (string), date (string, ISO YYYY-MM-DD), total (string with exactly two decimals and no thousands separator) and tax (string, same form).
+  grader:
+    kind: json
+    equals:
+      supplier: ACME Tools Ltd
+      invoice_number: INV-2041
+      date: '2026-03-14'
+      total: '1120.00'
+      tax: '120.00'
+  reference: '{"supplier": "ACME Tools Ltd", "invoice_number": "INV-2041", "date": "2026-03-14", "total": "1120.00", "tax": "120.00"}'
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: extraction-02-cafe
+  title: 'invoice 2: fields as JSON'
+  prompt: |
+    Invoice text:
+    """
+    Invoice #A-77/2026 from Blue Harbor Cafe, issued March 5, 2026. Items: coffee beans 3 x 18.50 = 55.50; filters 12.00. Sales tax (8%) 5.40. Amount payable: $72.90
+    """
+    Reply with only a JSON object with the keys supplier (string), invoice_number (string), date (string, ISO YYYY-MM-DD), total (string with exactly two decimals and no thousands separator) and tax (string, same form).
+  grader:
+    kind: json
+    equals:
+      supplier: Blue Harbor Cafe
+      invoice_number: A-77/2026
+      date: '2026-03-05'
+      total: '72.90'
+      tax: '5.40'
+  reference: '{"supplier": "Blue Harbor Cafe", "invoice_number": "A-77/2026", "date": "2026-03-05", "total": "72.90", "tax": "5.40"}'
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: extraction-03-european
+  title: 'invoice 3: fields as JSON'
+  prompt: |
+    Invoice text:
+    """
+    Delta Logistics GmbH
+    Rechnung Nr. 2026-0345
+    Datum: 2026-02-27
+    Netto 2.500,00 EUR
+    MwSt 19% 475,00 EUR
+    Brutto 2.975,00 EUR
+    """
+    Reply with only a JSON object with the keys supplier (string), invoice_number (string), date (string, ISO YYYY-MM-DD), total (string with exactly two decimals and no thousands separator) and tax (string, same form).
+  grader:
+    kind: json
+    equals:
+      supplier: Delta Logistics GmbH
+      invoice_number: 2026-0345
+      date: '2026-02-27'
+      total: '2975.00'
+      tax: '475.00'
+  reference: '{"supplier": "Delta Logistics GmbH", "invoice_number": "2026-0345", "date": "2026-02-27", "total": "2975.00", "tax": "475.00"}'
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: extraction-04-short
+  title: 'invoice 4: fields as JSON'
+  prompt: |
+    Invoice text:
+    """
+    Supplier: Orchid Print Co. Ref 88-1203. Date 3 Jan 2026. Total 214.20 including tax 14.20.
+    """
+    Reply with only a JSON object with the keys supplier (string), invoice_number (string), date (string, ISO YYYY-MM-DD), total (string with exactly two decimals and no thousands separator) and tax (string, same form).
+  grader:
+    kind: json
+    equals:
+      supplier: Orchid Print Co.
+      invoice_number: 88-1203
+      date: '2026-01-03'
+      total: '214.20'
+      tax: '14.20'
+  reference: '{"supplier": "Orchid Print Co.", "invoice_number": "88-1203", "date": "2026-01-03", "total": "214.20", "tax": "14.20"}'
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: extraction-05-exempt
+  title: 'invoice 5: fields as JSON'
+  prompt: |
+    Invoice text:
+    """
+    Greenfield Seeds, Inv. GF-2026-19, 21 April 2026, total 480.00, tax 0.00 (exempt)
+    """
+    Reply with only a JSON object with the keys supplier (string), invoice_number (string), date (string, ISO YYYY-MM-DD), total (string with exactly two decimals and no thousands separator) and tax (string, same form).
+  grader:
+    kind: json
+    equals:
+      supplier: Greenfield Seeds
+      invoice_number: GF-2026-19
+      date: '2026-04-21'
+      total: '480.00'
+      tax: '0.00'
+  reference: '{"supplier": "Greenfield Seeds", "invoice_number": "GF-2026-19", "date": "2026-04-21", "total": "480.00", "tax": "0.00"}'
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: extraction-06-letterhead
+  title: 'invoice 6: fields as JSON'
+  prompt: |
+    Invoice text:
+    """
+    INVOICE
+    No. 000451
+    Kite Software Inc.
+    Date: Dec 30, 2025
+    Subscription 1,200.00
+    Tax (10%) 120.00
+    Balance due $1,320.00
+    """
+    Reply with only a JSON object with the keys supplier (string), invoice_number (string), date (string, ISO YYYY-MM-DD), total (string with exactly two decimals and no thousands separator) and tax (string, same form).
+  grader:
+    kind: json
+    equals:
+      supplier: Kite Software Inc.
+      invoice_number: '000451'
+      date: '2025-12-30'
+      total: '1320.00'
+      tax: '120.00'
+  reference: '{"supplier": "Kite Software Inc.", "invoice_number": "000451", "date": "2025-12-30", "total": "1320.00", "tax": "120.00"}'
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: extraction-07-trade
+  title: 'invoice 7: fields as JSON'
+  prompt: |
+    Invoice text:
+    """
+    Tax invoice TI-5509 - Mountain View Plumbing - issued 9 September 2026 - labour 340.00, parts 85.50, GST 5% 21.28 (rounded), total 446.78
+    """
+    Reply with only a JSON object with the keys supplier (string), invoice_number (string), date (string, ISO YYYY-MM-DD), total (string with exactly two decimals and no thousands separator) and tax (string, same form).
+  grader:
+    kind: json
+    equals:
+      supplier: Mountain View Plumbing
+      invoice_number: TI-5509
+      date: '2026-09-09'
+      total: '446.78'
+      tax: '21.28'
+  reference: '{"supplier": "Mountain View Plumbing", "invoice_number": "TI-5509", "date": "2026-09-09", "total": "446.78", "tax": "21.28"}'
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: extraction-08-dots
+  title: 'invoice 8: fields as JSON'
+  prompt: |
+    Invoice text:
+    """
+    Bill from Sakura Stationery, number SK/2026/0078, dated 31.05.2026. Total (incl. 10% tax): 1,650.00. Tax included: 150.00.
+    """
+    Reply with only a JSON object with the keys supplier (string), invoice_number (string), date (string, ISO YYYY-MM-DD), total (string with exactly two decimals and no thousands separator) and tax (string, same form).
+  grader:
+    kind: json
+    equals:
+      supplier: Sakura Stationery
+      invoice_number: SK/2026/0078
+      date: '2026-05-31'
+      total: '1650.00'
+      tax: '150.00'
+  reference: '{"supplier": "Sakura Stationery", "invoice_number": "SK/2026/0078", "date": "2026-05-31", "total": "1650.00", "tax": "150.00"}'
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: extraction-09-usage
+  title: 'invoice 9: fields as JSON'
+  prompt: |
+    Invoice text:
+    """
+    Nimbus Cloud Services
+    Invoice INV-9000123
+    Billing date: 2026-07-01
+    Usage charges: 2,048.37
+    Tax: 204.84
+    Total: 2,253.21
+    """
+    Reply with only a JSON object with the keys supplier (string), invoice_number (string), date (string, ISO YYYY-MM-DD), total (string with exactly two decimals and no thousands separator) and tax (string, same form).
+  grader:
+    kind: json
+    equals:
+      supplier: Nimbus Cloud Services
+      invoice_number: INV-9000123
+      date: '2026-07-01'
+      total: '2253.21'
+      tax: '204.84'
+  reference: '{"supplier": "Nimbus Cloud Services", "invoice_number": "INV-9000123", "date": "2026-07-01", "total": "2253.21", "tax": "204.84"}'
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: extraction-10-prose
+  title: 'invoice 10: fields as JSON'
+  prompt: |
+    Invoice text:
+    """
+    From the desk of Hartley & Sons - Invoice Hs-12 - 18th of June 2026 - Services 750.00 plus VAT at 20% = 150.00 - please pay 900.00
+    """
+    Reply with only a JSON object with the keys supplier (string), invoice_number (string), date (string, ISO YYYY-MM-DD), total (string with exactly two decimals and no thousands separator) and tax (string, same form).
+  grader:
+    kind: json
+    equals:
+      supplier: Hartley & Sons
+      invoice_number: Hs-12
+      date: '2026-06-18'
+      total: '900.00'
+      tax: '150.00'
+  reference: '{"supplier": "Hartley & Sons", "invoice_number": "Hs-12", "date": "2026-06-18", "total": "900.00", "tax": "150.00"}'
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)

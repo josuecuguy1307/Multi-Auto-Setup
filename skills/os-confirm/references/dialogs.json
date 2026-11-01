@@ -34,6 +34,20 @@
      "next_note": "Next you will be asked for Touch ID or your account password. Nothing is approved without it."
     }
    }
+  ],
+  "notices": [
+   {
+    "id": "macos_notice",
+    "exe": "osascript",
+    "argv": [
+     "-e",
+     "on run argv\n  set t to item 1 of argv\n  set m to item 2 of argv\n  set secs to (item 3 of argv) as integer\n  try\n    display dialog m with title t buttons {\"OK\"} default button \"OK\" with icon note giving up after secs\n  end try\nend run",
+     "{title}",
+     "{message}",
+     "{timeout}"
+    ],
+    "env": {}
+   }
   ]
  },
  "windows": {
@@ -80,6 +94,22 @@
      "probe_ok": "available",
      "approved": "approved",
      "next_note": "Next you will be asked for Windows Hello (fingerprint, face or PIN). Nothing is approved without it."
+    }
+   }
+  ],
+  "notices": [
+   {
+    "id": "windows_notice",
+    "exe": "powershell",
+    "argv": [
+     "-NoProfile",
+     "-NonInteractive",
+     "-Command",
+     "Add-Type -AssemblyName PresentationFramework; [void][System.Windows.MessageBox]::Show($env:MAS_NOTICE_MESSAGE,$env:MAS_NOTICE_TITLE,'OK','Information')"
+    ],
+    "env": {
+     "MAS_NOTICE_TITLE": "{title}",
+     "MAS_NOTICE_MESSAGE": "{message}"
     }
    }
   ]
@@ -129,6 +159,34 @@
      "1": "declined"
     }
    }
+  ],
+  "notices": [
+   {
+    "id": "zenity_info",
+    "exe": "zenity",
+    "argv": [
+     "--info",
+     "--no-markup",
+     "--title",
+     "{title}",
+     "--text",
+     "{message}",
+     "--timeout",
+     "{timeout}"
+    ],
+    "env": {}
+   },
+   {
+    "id": "kdialog_msgbox",
+    "exe": "kdialog",
+    "argv": [
+     "--title",
+     "{title}",
+     "--msgbox",
+     "{message}"
+    ],
+    "env": {}
+   }
   ]
  },
  "classify": {
@@ -136,5 +194,6 @@
   "declined": "declined",
   "timeout": "timeout"
  },
- "weak_note": "This machine offers neither Touch ID nor Windows Hello: the confirmation is only a button and it is WEAKER (an agent that controls the screen could press it). Approve only if you are looking at it yourself."
+ "weak_note": "This machine offers neither Touch ID nor Windows Hello: the confirmation is only a button and it is WEAKER (an agent that controls the screen could press it). Approve only if you are looking at it yourself.",
+ "_notices_note": "Information the owner must read on their own screen and that must NOT go through a chat (a pairing code): a dialog with one OK button that stays up until it is dismissed, the timeout passes, or the program closes it. Same data shape as `tools`; shown without waiting for an answer."
 }

@@ -1,0 +1,301 @@
+suite_id: data-cleaning-v1
+task_type: data-cleaning
+version: 1
+description: Ten small messy CSV files with one stated cleaning rule each. A task passes only when the cleaned lines equal the expected ones exactly.
+preamble: ''
+est_output_tokens: 80
+tasks:
+- id: cleaning-01-trim
+  title: 'clean a CSV: trim'
+  prompt: "Messy CSV:\n\"\"\"\nname,city\n Ana , Quito\nLuis,  Lima \n\"\"\"\nRule: remove spaces around every value.\nReply with only the cleaned CSV, header first, one row per line, no code fence and no other text.\n"
+  grader:
+    kind: lines
+    expect:
+    - name,city
+    - Ana,Quito
+    - Luis,Lima
+    ordered: true
+    bullet: none
+    normalize: none
+  reference: |-
+    name,city
+    Ana,Quito
+    Luis,Lima
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: cleaning-02-duplicates
+  title: 'clean a CSV: duplicates'
+  prompt: |
+    Messy CSV:
+    """
+    id,item
+    1,pen
+    2,ink
+    1,pen
+    3,pad
+    2,ink
+    """
+    Rule: remove exact duplicate rows, keeping the first one and the original order.
+    Reply with only the cleaned CSV, header first, one row per line, no code fence and no other text.
+  grader:
+    kind: lines
+    expect:
+    - id,item
+    - 1,pen
+    - 2,ink
+    - 3,pad
+    ordered: true
+    bullet: none
+    normalize: none
+  reference: |-
+    id,item
+    1,pen
+    2,ink
+    3,pad
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: cleaning-03-dates
+  title: 'clean a CSV: dates'
+  prompt: |
+    Messy CSV:
+    """
+    id,date
+    1,14/03/2026
+    2,02/11/2025
+    """
+    Rule: dates are DD/MM/YYYY; write them as YYYY-MM-DD.
+    Reply with only the cleaned CSV, header first, one row per line, no code fence and no other text.
+  grader:
+    kind: lines
+    expect:
+    - id,date
+    - 1,2026-03-14
+    - 2,2025-11-02
+    ordered: true
+    bullet: none
+    normalize: none
+  reference: |-
+    id,date
+    1,2026-03-14
+    2,2025-11-02
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: cleaning-04-names
+  title: 'clean a CSV: names'
+  prompt: |
+    Messy CSV:
+    """
+    id,name
+    1,maria LOPEZ
+    2,JOSE de la cruz
+    """
+    Rule: write every name with the first letter of each word in capitals and the rest in lowercase.
+    Reply with only the cleaned CSV, header first, one row per line, no code fence and no other text.
+  grader:
+    kind: lines
+    expect:
+    - id,name
+    - 1,Maria Lopez
+    - 2,Jose De La Cruz
+    ordered: true
+    bullet: none
+    normalize: none
+  reference: |-
+    id,name
+    1,Maria Lopez
+    2,Jose De La Cruz
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: cleaning-05-amounts
+  title: 'clean a CSV: amounts'
+  prompt: |
+    Messy CSV:
+    """
+    id,amount
+    1,"1,234.50"
+    2,"12.00"
+    3,"987,654.10"
+    """
+    Rule: write amounts without thousands separators and without quotes.
+    Reply with only the cleaned CSV, header first, one row per line, no code fence and no other text.
+  grader:
+    kind: lines
+    expect:
+    - id,amount
+    - 1,1234.50
+    - 2,12.00
+    - 3,987654.10
+    ordered: true
+    bullet: none
+    normalize: none
+  reference: |-
+    id,amount
+    1,1234.50
+    2,12.00
+    3,987654.10
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: cleaning-06-empty
+  title: 'clean a CSV: empty'
+  prompt: |
+    Messy CSV:
+    """
+    id,email
+    1,a@x.com
+    2,
+    3,c@x.com
+    """
+    Rule: drop every row whose email is empty.
+    Reply with only the cleaned CSV, header first, one row per line, no code fence and no other text.
+  grader:
+    kind: lines
+    expect:
+    - id,email
+    - 1,a@x.com
+    - 3,c@x.com
+    ordered: true
+    bullet: none
+    normalize: none
+  reference: |-
+    id,email
+    1,a@x.com
+    3,c@x.com
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: cleaning-07-phones
+  title: 'clean a CSV: phones'
+  prompt: |
+    Messy CSV:
+    """
+    id,phone
+    1,(593) 99-123-4567
+    2,+1 415.555.0100
+    """
+    Rule: keep only the digits of every phone number.
+    Reply with only the cleaned CSV, header first, one row per line, no code fence and no other text.
+  grader:
+    kind: lines
+    expect:
+    - id,phone
+    - 1,593991234567
+    - 2,14155550100
+    ordered: true
+    bullet: none
+    normalize: none
+  reference: |-
+    id,phone
+    1,593991234567
+    2,14155550100
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: cleaning-08-codes
+  title: 'clean a CSV: codes'
+  prompt: |
+    Messy CSV:
+    """
+    id,country
+    1,EC
+    2,PE
+    3,CO
+    4,EC
+    """
+    Rule: replace each country code with its name using EC=Ecuador, PE=Peru, CO=Colombia.
+    Reply with only the cleaned CSV, header first, one row per line, no code fence and no other text.
+  grader:
+    kind: lines
+    expect:
+    - id,country
+    - 1,Ecuador
+    - 2,Peru
+    - 3,Colombia
+    - 4,Ecuador
+    ordered: true
+    bullet: none
+    normalize: none
+  reference: |-
+    id,country
+    1,Ecuador
+    2,Peru
+    3,Colombia
+    4,Ecuador
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: cleaning-09-combined
+  title: 'clean a CSV: combined'
+  prompt: |
+    Messy CSV:
+    """
+    email,joined
+    A@X.com,05/01/2026
+    b@y.com,20/02/2026
+    a@x.COM,07/03/2026
+    """
+    Rule: emails are lowercase, two rows with the same email are duplicates (keep the first), dates are DD/MM/YYYY and must be YYYY-MM-DD.
+    Reply with only the cleaned CSV, header first, one row per line, no code fence and no other text.
+  grader:
+    kind: lines
+    expect:
+    - email,joined
+    - a@x.com,2026-01-05
+    - b@y.com,2026-02-20
+    ordered: true
+    bullet: none
+    normalize: none
+  reference: |-
+    email,joined
+    a@x.com,2026-01-05
+    b@y.com,2026-02-20
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: cleaning-10-booleans
+  title: 'clean a CSV: booleans'
+  prompt: |
+    Messy CSV:
+    """
+    id,active
+    3,Y
+    1,no
+    2,TRUE
+    4,0
+    """
+    Rule: write yes/y/true/1 as true and no/n/false/0 as false (any case), then sort the rows by id ascending.
+    Reply with only the cleaned CSV, header first, one row per line, no code fence and no other text.
+  grader:
+    kind: lines
+    expect:
+    - id,active
+    - 1,false
+    - 2,true
+    - 3,true
+    - 4,false
+    ordered: true
+    bullet: none
+    normalize: none
+  reference: |-
+    id,active
+    1,false
+    2,true
+    3,true
+    4,false
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)

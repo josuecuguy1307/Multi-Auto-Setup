@@ -11,7 +11,7 @@ from collections.abc import Callable
 from typing import Any
 
 TEXT_KINDS = ("equals", "contains", "regex", "sha256")
-EXECUTING_KINDS = ("run_tests",)
+EXECUTING_KINDS = ("run_tests", "project_tests")
 WEAK_KINDS = ("model", "human")
 MAX_PATTERN = 500
 

@@ -29,11 +29,14 @@ REFUSALS: dict[str, str] = {
     "unknown_input": "An input of this task comes from a task this router does not know, so it is treated as confidential.",
     "confidential_cloud_environment": "This input is confidential, so it cannot be sent to a cloud environment. Nothing was sent.",
     "no_sender": "No way to send the task to a computer is connected, so it was not sent.",
+    "machine_offline": "The computer for this task is offline (machine offline), so nothing was sent. Nothing is retried on its own: create the task again when the computer is back.",
 }
 
 REASONS: dict[str, str] = {  # why an environment was left out on a machine (typed, shown in details)
     "not_installed": "not installed",
     "no_access": "no access (no key, no plan, no local model server)",
+    "machine_offline": "machine offline",
+    "server_not_running": "its local model server is not running",
     "not_signed_in": "not signed in",
     "unsupported_os": "does not run on this operating system",
     "closed_by_owner": "closed by the owner",
@@ -52,6 +55,17 @@ OWNER_NOTICE = "Task {task_id} could not be completed: it failed on {tried} envi
 REDACTED_LINE = "Task {task_id} is {state} on {machine}. Its content stays on your computers."
 EVIDENCE_MEASURED = "measured here {passed}/{of}"
 EVIDENCE_NONE = "no data"
+
+
+ACCESS_MISSING = "access missing: {names}"
+
+
+def reason_text(code: str, detail: dict | None = None) -> str:
+    """The owner-facing text of a left-out reason. An access that lacks variables names them (the NAMES, never a value)."""
+    names = (detail or {}).get("missing") or []
+    if code == "no_access" and names:
+        return ACCESS_MISSING.format(names=(" or " if detail.get("any") else ", ").join(names))
+    return REASONS.get(code, code)
 
 
 def refusal_text(code: str) -> str:

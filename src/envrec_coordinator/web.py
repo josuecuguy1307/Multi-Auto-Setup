@@ -33,6 +33,7 @@ STATIC = Path(__file__).parent / "web_static"
 SESSION_MAX_AGE_S = 8 * 3600
 MAX_SESSIONS = 8
 MAX_BODY = 4096
+MAX_TOOL_BODY = 1 << 20  # the harness tool door only (a chat sends a task's text through it: a document is not 4 KB); the owner's own screen keeps the small limit. Loopback only, bearer token needed to get any further.
 REQUEST_TIMEOUT_S = 10.0
 LOOP_TIMEOUT_S = 5.0
 REFUSAL_LOG_EVERY_S = 5.0
@@ -267,6 +268,11 @@ class WebScreen:
                 return _json(200, self._on_loop(core.declare, ch, body.get("declared") if isinstance(body.get("declared"), dict) else {}))
             if req.method == "POST" and path == "view":
                 return _json(200, self._on_loop(core.view_context, ch, body.get("context") if isinstance(body.get("context"), dict) else {}))
+            if req.method == "GET" and path == "tools":
+                return _json(200, self._on_loop(core.tool_specs, ch))
+            if req.method == "POST" and path.startswith("tools/"):
+                tool = path.split("/", 1)[1][:60]
+                return _json(200, self._on_loop(core.tool, ch, tool, body.get("arguments") if isinstance(body.get("arguments"), dict) else {}))
             if req.method == "GET" and path == "network":
                 return _json(200, self._on_loop(core.network_intent, ch))
             if req.method == "GET" and path == "activity":
@@ -282,6 +288,12 @@ class WebScreen:
                     if out["intents"] or out["run"]["finished"] or self.clock() >= deadline:
                         return _json(200, out)
                     time.sleep(0.25)
+            if req.method == "POST" and path == "pairing":
+                return _json(200, self._on_loop(core.pairing, ch, s("machine", 80)))
+            if req.method == "POST" and path == "unpair":
+                if not s("machine", 80):
+                    raise ValueError
+                return _json(200, self._on_loop(core.unpair, ch, s("machine", 80)))
             if req.method == "POST" and path == "decisions":
                 if not s("intent_id") or not s("option"):
                     raise ValueError
@@ -490,7 +502,7 @@ def make_handler(screen: WebScreen):
                     n = int(headers.get("content-length", "0"))
                 except ValueError:
                     return self._send(Response(400, b"", "text/plain; charset=utf-8"))
-                if n < 0 or n > MAX_BODY:
+                if n < 0 or n > (MAX_TOOL_BODY if parts.path.startswith("/harness/v1/tools/") else MAX_BODY):
                     return self._send(Response(413, b"", "text/plain; charset=utf-8"))
                 body = self.rfile.read(n) if n else b""
             try:

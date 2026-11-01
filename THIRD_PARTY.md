@@ -11,6 +11,13 @@ Role: dependency | transplanted | design-only | data | not evaluated. License is
 | cffi | https://github.com/python-cffi/cffi | MIT text in its LICENSE file (package metadata says MIT-0) | release 2.1.1 | dependency of cryptography | in use |
 | (standard library) `http.server`, `http.cookies`, `secrets`, `hmac` | Python standard library | PSF license (part of Python) | the interpreter's version | dependency | in use: the owner's web screen (Phase 1 step 1b) adds NO third-party package; the page is plain HTML, CSS and JS with system fonts, nothing from a CDN |
 | pycparser | https://github.com/eliben/pycparser | BSD-3-Clause (LICENSE read) | release 3.12 | dependency of cffi | in use |
+| keyring | https://github.com/jaraco/keyring | MIT (PyPI license expression, 25.7.0) | release 25.7.0 | dependency: the node's OS credential store (secret entry). Wheel `py3-none-any`, all targets | in use |
+| pywin32-ctypes | https://pypi.org/project/pywin32-ctypes/ | BSD-3-Clause (PyPI, 0.2.3) | release 0.2.3 | dependency of keyring on Windows (Credential Manager). Wheel `py3-none-any` | in use |
+| SecretStorage | https://pypi.org/project/SecretStorage/ | BSD-3-Clause (PyPI, 3.5.0) | release 3.5.0 | dependency of keyring on Linux (Secret Service over D-Bus). Wheel `py3-none-any`; needs `cryptography`, already a dependency | in use |
+| jeepney | https://pypi.org/project/jeepney/ | MIT (PyPI, 0.9.0) | release 0.9.0 | dependency of keyring and SecretStorage on Linux (D-Bus). Wheel `py3-none-any` | in use |
+| jaraco.classes, jaraco.functools, jaraco.context | https://pypi.org/project/jaraco.classes/ | MIT (PyPI: 3.4.0, 4.6.0, 6.1.2) | releases 3.4.0, 4.6.0, 6.1.2 | dependencies of keyring on every OS. Wheels `py3-none-any` | in use |
+| more-itertools | https://pypi.org/project/more-itertools/ | MIT (PyPI, 11.2.1) | release 11.2.1 | dependency of jaraco.classes and jaraco.functools. Wheel `py3-none-any` | in use |
+| importlib_metadata, zipp, backports.tarfile | https://pypi.org/project/importlib-metadata/ | Apache-2.0, MIT, MIT (PyPI) | 10.1.0, 4.1.2, 1.2.0 | pulled by keyring and jaraco.context only below Python 3.12 (this project requires 3.11 or later). Wheels `py3-none-any` | in use on 3.11 |
 | pytest | https://pypi.org/project/pytest/ | MIT (PyPI) | n/a | dependency | in use |
 | PyYAML | https://pypi.org/project/PyYAML/ | MIT (PyPI) | n/a | dependency | in use |
 | httpx | https://pypi.org/project/httpx/ | BSD-3-Clause (PyPI) | n/a | dependency | in use |
@@ -62,3 +69,12 @@ Public data files (usb.ids, OUI, Bluetooth SIG, mDNS) are listed in `DATA_SOURCE
 | Agent Skills specification | https://agentskills.io/specification | fetched on read | specification text, not copied | frontmatter rules implemented exactly in `src/envrec/skills/loader.py` |
 | MCP Apps SDK (`@modelcontextprotocol/ext-apps`) | https://github.com/modelcontextprotocol/ext-apps | MIT (npm registry, 2.0.4) | n/a | design-only | the `postMessage` protocol the cards speak in Claude Desktop was written by hand from the published specification (stable 2026-01-26); no code and no package is used |
 | Open WebUI | https://github.com/open-webui/open-webui | "Open WebUI License": BSD-3-Clause with a branding clause that binds deployments of 50 or more users (read in the repository LICENSE) | PyPI 0.12.5 | host, not a dependency | the owner installs it separately; nothing of it is bundled, copied or imported: the Pipe is a file the owner pastes into its Functions |
+
+## Credential store dependencies (phase4d, read from PyPI metadata on 2026-10-31)
+
+All new packages are pure Python (`py3-none-any`), so one wheel covers Windows (amd64, arm64), macOS (arm64, x86_64) and Linux (x86_64, arm64). Licenses are MIT or BSD-3-Clause, plus Apache-2.0 for `importlib_metadata` (Python 3.11 only). macOS needs no extra package: keyring reaches the Keychain with the system library. The compiled dependency of SecretStorage, `cryptography`, was already pinned per platform in `pyproject.toml`. Nothing was run on Windows or Linux (UNTESTED there).
+
+Known limits (documented, not hidden):
+- **No plaintext fallback, ever.** If keyring resolves to its fail or null backend (for example a headless Linux machine with no Secret Service running), secret entry refuses with the typed reason `credential_store_missing`.
+- **macOS Keychain prompt.** An item is tied to the program that created it. When the Python binary changes (a new virtual environment, a `uv` interpreter update, `mas update`), macOS can ask the owner to allow the new binary to read the item, or the read can fail until the owner allows it. Answer with the account password in the system dialog; the harness never sees it.
+- `typing-extensions` (PSF-2.0, via `cryptography`) is only pulled below Python 3.11, which this project does not support.

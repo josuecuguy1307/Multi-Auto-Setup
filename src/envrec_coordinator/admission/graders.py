@@ -71,6 +71,27 @@ def _num_equal(a, b, tol: float) -> bool:
     return abs(float(a) - float(b)) <= tol
 
 
+def _text_checks(g: dict, reply: str) -> Grade:
+    """Free text that cannot be compared whole (a summary): the strings it must carry as written, the strings it must not, the number of non-empty lines, the number of words. All data in the task."""
+    low = g.get("normalize") == "lower"
+    fold = (lambda s: str(s).lower()) if low else str
+    lines = [ln.strip() for ln in reply.strip().splitlines() if ln.strip()]
+    if g.get("bullets") == "strip":
+        lines = [BULLET.sub("", ln) for ln in lines]
+    body = fold("\n".join(lines))
+    want = g.get("lines")
+    if isinstance(want, dict) and not (int(want.get("min", 0)) <= len(lines) <= int(want.get("max", 10**6))):
+        return Grade(False, "text_checks", "wrong_lines", f"{len(lines)} lines")
+    if "max_words" in g and len(body.split()) > int(g["max_words"]):
+        return Grade(False, "text_checks", "too_long", f"{len(body.split())} words")
+    missing = [s for s in g.get("contains_all", []) if fold(s) not in body]
+    if missing:
+        return Grade(False, "text_checks", "missing_content", f"{len(missing)} missing")
+    if any(fold(s) in body for s in g.get("contains_none", [])):
+        return Grade(False, "text_checks", "forbidden_content")
+    return Grade(True, "text_checks", "passed")
+
+
 def grade(task: Task, reply: str, *, code_runner: CodeRunner | None = None) -> Grade:
     """Grade one reply. `code_runner` is injected by tests; the default is the sandbox gateway. Raises SandboxMissing before any model-written code runs without a sandbox."""
     kind, g = task.grader_kind, task.grader
@@ -106,6 +127,8 @@ def grade(task: Task, reply: str, *, code_runner: CodeRunner | None = None) -> G
     if kind == "exact":
         ok = reply.strip() == str(g["expect"])
         return Grade(ok, kind, "passed" if ok else "not_equal")
+    if kind == "text_checks":
+        return _text_checks(g, reply)
     got = _lines(reply, g.get("bullet", "none"), g.get("normalize", "none"))  # kind == "lines"
     want = [str(x).lower() if g.get("normalize") == "lower" else str(x) for x in g["expect"]]
     ok = got == want if g.get("ordered", True) else (set(got) == set(want) and len(got) == len(set(got)))

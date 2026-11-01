@@ -2,10 +2,9 @@
  "version": 1,
  "about": "How the owner's chats get connected to Multi Auto Setup, as data. Each host lists its steps per operating system; the code that runs a step is generic (src/envrec_coordinator/connect.py) and never knows a host by name. A cell that is not documented for an operating system refuses with a typed reason instead of guessing. Every path and flag below is quoted from the tool's own documentation (see `sources`).",
  "entry_args": [
-  "-m",
-  "envrec_harness.mcp_server",
   "--state-dir",
   "{state_dir}",
+  "mcp",
   "--channel",
   "{channel}"
  ],
@@ -52,7 +51,7 @@
      "title": "Add the multi-auto-setup entry to the settings file",
      "key": "mcpServers",
      "entry": {
-      "command": "{py}",
+      "command": "{mas}",
       "args": "@entry_args"
      }
     },
@@ -98,7 +97,7 @@
       "user",
       "multi-auto-setup",
       "--",
-      "{py}",
+      "{mas}",
       "@entry_args"
      ],
      "undo_argv": [
@@ -160,7 +159,7 @@
      "title": "Add the multi-auto-setup table to the settings file",
      "table": "mcp_servers",
      "entry": {
-      "command": "{py}",
+      "command": "{mas}",
       "args": "@entry_args"
      }
     },
@@ -213,7 +212,7 @@
      "entry": {
       "type": "local",
       "command": [
-       "{py}",
+       "{mas}",
        "@entry_args"
       ],
       "enabled": true
@@ -265,7 +264,7 @@
       "schema_version": 1
      },
      "entry": {
-      "command": "{py}",
+      "command": "{mas}",
       "args": "@entry_args"
      }
     },
@@ -370,5 +369,24 @@
    "verification": "the folder is found at its new name, is gone from its old place, and no server started from it is running",
    "plan_title": "Plan to remove the manual Open WebUI install from this computer"
   }
- }
+ },
+ "launcher": {
+  "_note": "How a chat host starts our MCP server. When this program runs from an install, the host is pointed at the installer's `mas` command (it follows `mas update`, so the entry never names a release folder); from a source checkout it is the running interpreter running the package. Paths are per operating system, as data.",
+  "shim": {
+   "macos": "~/.local/bin/mas",
+   "linux": "~/.local/bin/mas",
+   "windows": "{mas_home}/bin/mas.cmd"
+  },
+  "shim_mark": "written by the Multi Auto Setup installer",
+  "fallback": [
+   "{py}",
+   "-m",
+   "envrec_mas"
+  ]
+ },
+ "entry_markers": [
+  "envrec_harness.mcp_server",
+  "envrec_mas"
+ ],
+ "_entry_markers_note": "An entry under our name whose command or arguments contain one of these is an earlier version of OUR entry and is replaced (with the file copied first, and the old entry kept for the undo). Any other entry under our name is somebody else's and is never touched."
 }

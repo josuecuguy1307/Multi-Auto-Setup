@@ -5,6 +5,19 @@ Implements `docs/RECOMMENDATION_SPEC.md` section 8 against `docs/ROUTER_API.md` 
 ## Suites
 `code-v1` and `text-v1`: 10 project-written tasks each, graded by code only. Code tasks run model-written code in the sandbox gateway `envrec.skills.sbx.run_exam_code` (no network, read-only root, nothing mounted; the solution and the hidden checks travel on stdin). With no sandbox backend the exam aborts `sandbox_missing` before the environment is asked anything. The suite hash is the SHA-256 of the canonical JSON of the whole suite file. Every task has a `source.license`; only verified ones load. External benchmarks come later, after a code check reads their license.
 
+**Suites are data, one directory per task type** (`data/admission/<type>-v1/suite.yaml`): `code-v1`, `text-v1`, `summarize-v1`, `extraction-v1`, `data-cleaning-v1`, `numeric-analysis-v1`. A new type is a new suite file plus the type and its mode in the catalog; no list of types lives in code. A code-graded task uses one of these graders (the closed set `CODE_GRADERS`):
+
+| Grader | Passes when | Parameters |
+|---|---|---|
+| `exact` | the reply, trimmed, equals the text | `expect` |
+| `answer_line` | the last line is `ANSWER: <number>` within a tolerance | `expect`, `tolerance` |
+| `json` | the reply holds a JSON object equal to `equals` (types and values) | `equals` |
+| `lines` | the non-empty lines equal `expect` (ordered or as a set) | `expect`, `ordered`, `bullet`, `normalize` |
+| `text_checks` | free text that cannot be compared whole (a summary) satisfies every check given | `contains_all` (strings it must carry, as written), `contains_none` (strings it must not), `lines` `{min,max}` (non-empty lines), `max_words`, `bullets: strip`, `normalize: lower`; at least one check is required |
+| `sandbox_tests` | model-written code passes the hidden checks in the sandbox | `n_checks`, `checks` |
+
+`text_checks` names no task type: it is a vocabulary item for suite authors, with failing-fixture tests (`tests/test_admission_text_checks.py`). A grader that is a model or a person never counts toward the pass mark (A1).
+
 ## Rules in force
 * Pass mark 8/10 (`threshold`, configurable, printed in every label). Stop early when the first 3 tasks fail, or (on by default, `stop_unreachable`) as soon as the mark can no longer be reached; the label says which.
 * One run per task per measurement (`samples_per_task: 1`): a stochastic model's 9/10 is one measurement.

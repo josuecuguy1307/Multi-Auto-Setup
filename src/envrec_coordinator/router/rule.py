@@ -14,7 +14,7 @@ def measured(c: Candidate, facts: Facts, task_type: str, policy: Policy) -> tupl
     """(passed, of) when a valid admission fact exists and passes; 'not_admitted' when it exists, is valid and is below the threshold; None when there is none, it is not tested, not code-graded or
     stale (the model, environment, machine, suite or access changed since it was measured)."""
     fact = facts.admission(admission_key(task_type, c.route))
-    if not fact or fact.get("status") != "tested" or fact.get("graded_by") != "code" or facts.identity(c.route.key) != fact.get("identity", {}):
+    if not fact or fact.get("status") != "tested" or fact.get("graded_by") != "code" or facts.identity(c.route.key, task_type) != fact.get("identity", {}):
         return None
     passed, of = int(fact["passed"]), int(fact.get("of", policy.of))
     return (passed, of) if passed >= policy.threshold else "not_admitted"
@@ -60,7 +60,13 @@ def run_rule(cands: list[Candidate], facts: Facts, task_type: str, policy: Polic
     keys = lambda cs: [c.route.key for c in cs]  # noqa: E731
     meas = {c.route.key: measured(c, facts, task_type, policy) for c in cands}
     adm = [c for c in cands if meas[c.route.key] != "not_admitted"]  # a combination that failed the exam for this task type is not approved (spec 8.1)
-    trace.append(Step(step="admission_filter", candidates_in=keys(cands), candidates_out=keys(adm), values={k: v for k, v in meas.items() if v == "not_admitted"}, note="dropped: failed the admission exam"))
+    dropped = {k: v for k, v in meas.items() if v == "not_admitted"}
+    note = "dropped: failed the admission exam"
+    if policy.unmeasured == "measured_first" and any(isinstance(meas[c.route.key], tuple) for c in adm):
+        dropped.update({c.route.key: "unmeasured" for c in adm if not isinstance(meas[c.route.key], tuple)})  # a measured, admitted candidate exists: one with no measurement does not compete with it
+        adm = [c for c in adm if isinstance(meas[c.route.key], tuple)]
+        note += "; dropped: no measurement while another candidate is measured and admitted"
+    trace.append(Step(step="admission_filter", candidates_in=keys(cands), candidates_out=keys(adm), values=dropped, note=note))
     if not adm:
         return None, trace, ""  # type: ignore[return-value]
     rank = {name: i for i, name in enumerate(policy.cost_order)}

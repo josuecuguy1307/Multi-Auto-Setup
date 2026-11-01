@@ -54,6 +54,10 @@ class Board:
             b._apply(e)
         return b
 
+    def reading(self):
+        """The board's lock, for a reader on another thread: the writers (`post_task`, the grades, the leases) hold it, so what is read under it is one state, never half of a change."""
+        return self._lock
+
     def snapshot(self) -> dict:
         return {"tasks": self.tasks, "leases": self.leases, "cards": self.cards, "skills": self.skills}
 
@@ -323,11 +327,16 @@ class Board:
         return ls, self.tasks[ls["task_id"]]
 
     def max_sensitivity(self, task_ids: list[str] | None = None) -> str:
-        ts = [self.tasks[i] for i in task_ids] if task_ids is not None else list(self.tasks.values())
+        with self._lock:
+            ts = [self.tasks[i] for i in task_ids] if task_ids is not None else list(self.tasks.values())
         return highest(*(t["sensitivity"] for t in ts))
 
     def view(self) -> dict:
         """The compact board for `show_data`: one row per task, no inputs or outputs."""
+        with self._lock:
+            return self._view()
+
+    def _view(self) -> dict:
         now = self.clock()
         rows = []
         parents = {t["parent"] for t in self.tasks.values() if t["parent"]}

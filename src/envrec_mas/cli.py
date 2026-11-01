@@ -16,6 +16,7 @@ import uuid
 from pathlib import Path
 
 import envrec_os
+from envrec_mas import coordconfig
 
 EXIT_USAGE = 2
 
@@ -37,13 +38,30 @@ def _age(ts: float | None, now: float) -> str:
 
 # ---- coordinator -------------------------------------------------------------------------------------------------------------------------------
 
+def cmd_mcp(a) -> int:
+    """The MCP server of the Harness App, started the way a chat host starts it: `mas --state-dir DIR mcp --channel NAME`. The same server as `python -m envrec_harness.mcp_server`, reached through the
+    installed `mas` command so that a chat's settings name `mas`, never a release folder or a Python path. Nothing but the protocol goes to stdout."""
+    from envrec_harness import mcp_server
+    mcp_server.main(["--state-dir", str(_state(a)), "--channel", a.channel] + (["--operator"] if a.operator else []))
+    return 0
+
+
 def cmd_coordinator_start(a) -> int:
     from envrec_coordinator.server import BindRefused, Coordinator
     state = _state(a)
+    try:
+        cfg = coordconfig.resolve(coordconfig.from_namespace(a), state)
+    except coordconfig.ConfigRefused as exc:
+        print(f"refused: {exc.text} [{exc.reason}]", file=sys.stderr)
+        return EXIT_USAGE
+    if not cfg["bind"]:
+        print(f"refused: the coordinator needs an address to listen on: pass --bind ADDRESS, or put \"bind\" in {coordconfig.path_of(state)} [no_bind]", file=sys.stderr)
+        return EXIT_USAGE
 
     async def run() -> None:
-        coord = Coordinator(state, a.bind, a.port, idle_timeout_s=a.idle_timeout, web=a.web, web_port=a.web_port, name=a.name, model_profile=a.model_profile, models_file=Path(a.models_file) if a.models_file else None, include_virtual=a.include_virtual,
-                            discovery_port=None if a.no_discovery else a.discovery_port)
+        coord = Coordinator(state, cfg["bind"], cfg["port"], idle_timeout_s=cfg["idle_timeout"], web=cfg["web"], web_port=cfg["web_port"], name=cfg["name"], model_profile=cfg["model_profile"],
+                            models_file=Path(cfg["models_file"]).expanduser() if cfg["models_file"] else None, include_virtual=cfg["include_virtual"],
+                            discovery_port=None if cfg["no_discovery"] else cfg["discovery_port"], board_escalation_limit=cfg["board_escalation_limit"])
         await coord.start()
         print(f"coordinator listening on {coord.host}:{coord.port} (one port, TLS). fingerprint {coord.identity.fingerprint}", flush=True)
         st = coord.runs.model_status()
@@ -71,7 +89,7 @@ def cmd_coordinator_start(a) -> int:
         print(f"refused: {exc}", file=sys.stderr)
         return EXIT_USAGE
     except OSError as exc:
-        print(f"could not listen on {a.bind}:{a.port}" + (f" or on the web screen's port {a.web_port}" if a.web else "") + f": {exc.strerror or exc}", file=sys.stderr)
+        print(f"could not listen on {cfg['bind']}:{cfg['port']}" + (f" or on the web screen's port {cfg['web_port']}" if cfg["web"] else "") + f": {exc.strerror or exc}", file=sys.stderr)
         return 1
     except KeyboardInterrupt:
         pass
@@ -416,17 +434,7 @@ def main(argv: list[str] | None = None) -> int:
     ri = coord.add_parser("rotate-identity", help="make a new coordinator identity (every node must pair again)")
     ri.add_argument("--yes", action="store_true", help="answer yes to the question that was shown")
     ri.set_defaults(fn=lambda a: __import__("envrec_mas.lifecycle", fromlist=["x"]).cmd_rotate_identity(a))
-    c.add_argument("--bind", required=True, help="the address of the interface to listen on (loopback, private or link-local; never every interface)")
-    c.add_argument("--port", type=int, default=7443)
-    c.add_argument("--idle-timeout", type=float, default=30.0)
-    c.add_argument("--discovery-port", type=int, default=7444, help="the UDP port computers use to find this coordinator (default 7444)")
-    c.add_argument("--no-discovery", action="store_true", help="do not open the discovery UDP socket")
-    c.add_argument("--name", default=None, help="the name shown to computers that find this coordinator (default: the host name)")
-    c.add_argument("--include-virtual", action="store_true", help="also answer on VPN, container and virtual-machine interfaces")
-    c.add_argument("--model-profile", default=None, help="the model profile (from config/models.yaml and config/models.local.yaml) the coordinator's agent uses for machine analyses; without one the analysis is code-only and says so")
-    c.add_argument("--models-file", default=None, help="the models file (default config/models.yaml)")
-    c.add_argument("--web", action="store_true", help="also serve the owner's screen on this computer only (loopback; prints a one-time link). Off by default")
-    c.add_argument("--web-port", type=int, default=0, help="the loopback port of the web screen (default: any free one)")
+    coordconfig.add_flags(c)  # one flag per setting in skills/os-service/references/coordinator-config.json; the file <state>/coordinator.json supplies what is not given
     c.set_defaults(fn=cmd_coordinator_start)
     pr = sub.add_parser("pair", help="on the coordinator: show a code and confirm a node; on a node: `mas pair HOST:PORT`")
     pr.add_argument("address", nargs="?", default=None)
@@ -466,11 +474,14 @@ def main(argv: list[str] | None = None) -> int:
     n.add_argument("--discovery-port", type=int, default=7444)
     n.set_defaults(fn=cmd_node_run)
     from envrec_mas import lifecycle
+    mc = sub.add_parser("mcp", help="the Harness App's MCP server for a chat (stdio); a chat host runs this, you do not")
+    mc.add_argument("--channel", default="claude-desktop", help="the chat's name (claude-desktop, terminal, ...)")
+    mc.add_argument("--operator", action="store_true", help="a verification run driven by the assistant on the owner's behalf")
+    mc.set_defaults(fn=cmd_mcp)
     sv = sub.add_parser("service", help="start the node (or coordinator) by itself when you sign in; per user, no administrator")
     sv.add_argument("action", choices=["install", "status", "uninstall"])
     sv.add_argument("--role", choices=["node", "coordinator"], default="node")
-    sv.add_argument("--bind", default=None, help="coordinator only: the address of this computer on your network")
-    sv.add_argument("--port", type=int, default=None, help="coordinator only: the port (default 7443)")
+    coordconfig.add_flags(sv)  # coordinator only: the same settings as `mas coordinator start`, written to <state>/coordinator.json
     sv.add_argument("--yes", action="store_true", help="answer yes to the question that was shown")
     sv.set_defaults(fn=lifecycle.cmd_service)
     up = sub.add_parser("update", help="check the latest public release, show what changes, and replace this one safely")

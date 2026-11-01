@@ -5,6 +5,7 @@ options list (`option_lookup`)."""
 from __future__ import annotations
 
 import hashlib
+import re
 from collections.abc import Callable
 
 from envrec.skills import sbx
@@ -24,11 +25,32 @@ def sandbox_ready() -> bool:
     return sbx.docker_ready()
 
 
+FILE_BLOCK = re.compile(r"```[ \t]*(?:python|py)?[ \t]*\r?\n#\s*file:\s*(?P<path>[A-Za-z0-9_./-]+)[ \t]*\r?\n(?P<body>.*?)```", re.S | re.I)
+
+
+def extract_files(reply: str) -> dict[str, str]:
+    """The files a reply returns: each is a fenced block whose first line is `# file: <relative path>`. Nothing else in the reply is code."""
+    return {m.group("path"): m.group("body") for m in FILE_BLOCK.finditer(reply)}
+
+
 def sandbox_runner(rec, spec: dict) -> dict:
     """The router's `run_tests` runner: the stored output is the solution, `spec["value"]` the hidden checks, `spec["n_checks"]` how many must finish. Model-written code runs only through
     `sbx.run_exam_code`, which refuses before starting anything when no backend is ready."""
+    if spec.get("kind") == "project_tests":  # the files the reply returned laid over the project's own, then the project's tests, all inside the sandbox
+        returned = extract_files(rec.text)
+        if not returned:
+            return {"passed": False, "log_sha256": hashlib.sha256(b"no_files_returned").hexdigest()}
+        files = {**dict(spec["files"]), **returned}  # a returned file replaces the project's; the project's tests are laid back on top so the reply cannot weaken them
+        files.update({k: v for k, v in spec["files"].items() if k in spec.get("protected", [])})
+        try:
+            res = sbx.run_project_tests(files, spec.get("pattern", "test_*.py"), min_tests=int(spec.get("min_tests", 1)), timeout_s=float(spec.get("timeout_s", 20.0)))
+        except sbx.SandboxUnavailable as e:
+            raise SandboxGone(str(e)) from None
+        except sbx.SandboxRefused:
+            return {"passed": False, "log_sha256": hashlib.sha256(b"file_refused").hexdigest()}
+        return {"passed": bool(res["ok"]), "log_sha256": hashlib.sha256(f"{res['kind']}:{res['checked']}:{res['detail']}".encode()).hexdigest()}
     code = extract_code(rec.text)
-    n = spec.get("n_checks")
+    n = spec.get("n_checks") or str(spec.get("value", "")).count("check(")  # a check written as text counts its own `check(` calls
     if code is None or not isinstance(n, int) or n < 1:
         return {"passed": False, "log_sha256": hashlib.sha256(b"no_runnable_input").hexdigest()}
     try:
@@ -50,12 +72,12 @@ class RouterAdmissionFacts(DictFacts):
     def admission(self, key: str) -> dict | None:
         return self.store.current(key)
 
-    def identity(self, route_key: str) -> dict:
+    def identity(self, route_key: str, task_type: str | None = None) -> dict:
         env, model, access, machine = route_key.split("|")
         tail = f".{machine}.{env}.{model}.{access}"
         for e in reversed(self.store.log.events(FACT_EVENT)):
             k = str(e.payload.get("fact", ""))
-            if k.startswith("admission.") and k.endswith(tail):
+            if k.startswith("admission.") and k.endswith(tail) and (task_type is None or k == f"admission.{task_type}{tail}"):  # a fact is valid for ITS task type's suite: another type's newer fact says nothing about it
                 task_type = k[len("admission."):-len(tail)]
                 sha, version = self.current(route_key)
                 try:

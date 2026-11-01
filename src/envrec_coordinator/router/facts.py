@@ -13,6 +13,7 @@ from envrec_net import envrun as E
 class MachineFacts:
     machine_id: str
     os_family: str
+    online: bool = True  # the machine answers now (the registry's session); an offline machine is left out with the typed reason `machine_offline`, never retried silently
     paired: bool = True  # only the owner's paired computers are ever machines; a third-party machine is not representable here
     installed: set[str] = field(default_factory=set)  # environment ids found installed (presence only)
     signed_in: set[str] = field(default_factory=set)  # access ids whose session exists (presence and the tool's own status output; never a token)
@@ -20,6 +21,9 @@ class MachineFacts:
     sandbox_backends: list[str] = field(default_factory=list)
     model_endpoint: str | None = None  # the loopback server T3a installed: "127.0.0.1:port"
     model_id: str | None = None
+
+
+UNMEASURED = ("measured_first", "cost_first")
 
 
 @dataclass
@@ -35,19 +39,22 @@ class Policy:
     threshold: int = 8
     of: int = 10
     outbound: dict[str, Any] = field(default_factory=dict)
+    unmeasured: str = "measured_first"  # what an unmeasured candidate is worth against a measured one (policy.json): `measured_first` or `cost_first`
 
     @classmethod
     def defaults(cls, doc: dict | None = None) -> Policy:
         d = doc or E.load_policy()
         r, o = d["rule"], d["owner_policy_defaults"]
+        if r.get("unmeasured", "measured_first") not in UNMEASURED:
+            raise ValueError(f"policy.json rule.unmeasured must be one of {UNMEASURED}, not {r.get('unmeasured')!r}")
         return cls(set(o["open_subtypes"]), set(o["approved_providers_for_internal"]), set(o["automated_use_cleared"]), set(), float(r["tie_margin"]), tuple(r["cost_order"]), int(r["max_escalation"]),
-                   int(r["admission_threshold"]), int(r["admission_of"]), d.get("outbound", {}))
+                   int(r["admission_threshold"]), int(r["admission_of"]), d.get("outbound", {}), unmeasured=r.get("unmeasured", "measured_first"))
 
 
 class Facts(Protocol):
     def machines(self) -> list[MachineFacts]: ...
     def admission(self, key: str) -> dict | None: ...
-    def identity(self, route_key: str) -> dict: ...
+    def identity(self, route_key: str, task_type: str | None = None) -> dict: ...
     def time(self, route_key: str) -> float | None: ...
     def active_leases(self, machine_id: str) -> int: ...
     def quota(self, plan_group: str) -> int: ...
@@ -68,7 +75,7 @@ class DictFacts:
     def admission(self, key: str) -> dict | None:
         return self._adm.get(key)
 
-    def identity(self, route_key: str) -> dict:
+    def identity(self, route_key: str, task_type: str | None = None) -> dict:
         return self._id.get(route_key, {})
 
     def time(self, route_key: str) -> float | None:

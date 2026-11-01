@@ -19,6 +19,8 @@ dependencies = [
     "cryptography>=48,<49; sys_platform == 'darwin' and platform_machine == 'x86_64'",
     "cryptography>=46,<47; sys_platform == 'win32' and platform_machine == 'ARM64'",
     "spake2>=0.9,<1",
+    # the node's OS credential store (Windows Credential Manager, macOS Keychain, Linux Secret Service). Pure Python, one wheel for every target. No plaintext fallback is ever used (src/envrec_node/credentials.py).
+    "keyring>=25.7,<26",
 ]
 
 [project.optional-dependencies]

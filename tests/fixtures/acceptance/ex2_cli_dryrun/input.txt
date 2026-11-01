@@ -1,0 +1,150 @@
+Add a --dry-run flag to this CLI and make test_cli.py pass. Return the whole changed file as a block starting with '# file: tool.py'.
+
+# file: tool.py
+"""A small command-line tool."""
+import argparse
+import json
+import os
+
+
+def rename(path, new, dry_run=False):
+    if dry_run:
+        return new
+    os.rename(path, new)
+    return new
+
+
+def helper_0(x):
+    y = x + 0
+    return y * 2
+
+
+def helper_1(x):
+    y = x + 1
+    return y * 2
+
+
+def helper_2(x):
+    y = x + 2
+    return y * 2
+
+
+def helper_3(x):
+    y = x + 3
+    return y * 2
+
+
+def helper_4(x):
+    y = x + 4
+    return y * 2
+
+
+def helper_5(x):
+    y = x + 5
+    return y * 2
+
+
+def helper_6(x):
+    y = x + 6
+    return y * 2
+
+
+def helper_7(x):
+    y = x + 7
+    return y * 2
+
+
+def helper_8(x):
+    y = x + 8
+    return y * 2
+
+
+def helper_9(x):
+    y = x + 9
+    return y * 2
+
+
+def helper_10(x):
+    y = x + 10
+    return y * 2
+
+
+def helper_11(x):
+    y = x + 11
+    return y * 2
+
+
+def helper_12(x):
+    y = x + 12
+    return y * 2
+
+
+def helper_13(x):
+    y = x + 13
+    return y * 2
+
+
+def helper_14(x):
+    y = x + 14
+    return y * 2
+
+
+def helper_15(x):
+    y = x + 15
+    return y * 2
+
+
+def helper_16(x):
+    y = x + 16
+    return y * 2
+
+
+def helper_17(x):
+    y = x + 17
+    return y * 2
+
+
+def helper_18(x):
+    y = x + 18
+    return y * 2
+
+
+def helper_19(x):
+    y = x + 19
+    return y * 2
+
+
+def main(argv=None):
+    p = argparse.ArgumentParser()
+    p.add_argument('path')
+    p.add_argument('new')
+    a = p.parse_args(argv)
+    print(rename(a.path, a.new))
+
+
+if __name__ == '__main__':
+    main()
+
+# file: test_cli.py
+import os, tempfile, unittest
+import tool
+
+
+class T(unittest.TestCase):
+    def test_rename_moves(self):
+        d = tempfile.mkdtemp(); a = os.path.join(d, 'a'); b = os.path.join(d, 'b'); open(a, 'w').write('x')
+        tool.rename(a, b); self.assertTrue(os.path.exists(b))
+    def test_helper(self):
+        self.assertEqual(tool.helper_0(1), 2)
+    def test_helper_2(self):
+        self.assertEqual(tool.helper_2(1), 6)
+    def test_main_prints(self):
+        d = tempfile.mkdtemp(); a = os.path.join(d, 'a'); b = os.path.join(d, 'b'); open(a, 'w').write('x')
+        tool.main([a, b]); self.assertTrue(os.path.exists(b))
+    def test_rename_returns_new(self):
+        d = tempfile.mkdtemp(); a = os.path.join(d, 'a'); open(a, 'w').write('x')
+        self.assertEqual(tool.rename(a, os.path.join(d, 'c')), os.path.join(d, 'c'))
+    def test_dry_run_changes_nothing(self):
+        d = tempfile.mkdtemp(); a = os.path.join(d, 'a'); b = os.path.join(d, 'b'); open(a, 'w').write('x')
+        tool.main(['--dry-run', a, b])
+        self.assertTrue(os.path.exists(a)); self.assertFalse(os.path.exists(b))

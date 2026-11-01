@@ -7,10 +7,16 @@
    "api",
    "subscription"
   ],
+  "unmeasured": "measured_first",
+  "unmeasured_note": "measured_first: a candidate with a valid admitted measurement beats any candidate without one; with none measured the cheapest unmeasured one may win (public and internal only, flagged provisional). cost_first: cost class first, as before",
   "max_escalation": 2,
   "admission_threshold": 8,
   "admission_of": 10
  },
+ "os_family_aliases": {
+  "macos": "darwin"
+ },
+ "os_family_aliases_note": "the analysis names the family macos; the catalog and the node say darwin",
  "owner_policy_defaults": {
   "note": "used until the owner's draft (T3b) supplies the real values; the conservative option: nothing outside the local model is open",
   "open_subtypes": [

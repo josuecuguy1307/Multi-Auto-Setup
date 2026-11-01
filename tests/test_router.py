@@ -136,7 +136,7 @@ def test_a_combination_that_failed_the_admission_exam_is_not_approved_even_if_it
     adm = [admission("code", "llamacpp-local", passed=3), admission("code", "opencode", passed=9)]
     r, _ = router(adm=adm)
     d = r.route(task())
-    assert d.route.environment_id == "opencode" and d.rule_trace[1].values == {"llamacpp-local|qwen3-8b|local-hardware|mac": "not_admitted"}
+    assert d.route.environment_id == "opencode" and {k: v for k, v in d.rule_trace[1].values.items() if v == "not_admitted"} == {"llamacpp-local|qwen3-8b|local-hardware|mac": "not_admitted"}  # (measured_first also lists the unmeasured ones it dropped, as "unmeasured")
 
 
 def test_measured_time_then_fewer_tasks_then_the_shared_plan_quota_break_remaining_ties():
@@ -197,7 +197,8 @@ def test_pi_never_runs_without_a_sandbox_backend_and_an_unknown_task_type_is_ref
     m = machine(installed={"pi"}, sandbox_backends=[], model_endpoint="127.0.0.1:8080")
     r, _ = router(machines=[m], pol=policy(open_subtypes={"own_harness"}))
     assert r.route(task()).code == "sandbox_missing"
-    assert r.route(task("u", ttype="translate")).code == "unknown_task_type"
+    out = r.route(task("u", ttype="translate"))  # Example 7: a refusal with no candidate; the detail says no environment declares the type
+    assert (out.code, out.details["why"], out.details["candidates"], out.details["environments"]) == ("no_candidate", "unknown_task_type", [], {}) and "no environment set up for this kind of task" in out.reason
 
 
 def test_muse_code_has_two_accesses_a_plan_and_an_api_key_found_by_either_variable_name():
@@ -207,12 +208,14 @@ def test_muse_code_has_two_accesses_a_plan_and_an_api_key_found_by_either_variab
     assert muse["cloud"] is True and muse["automated_use"] == "to review"
     base = dict(model_endpoint=None, installed={"muse-code"}, signed_in=set())
     pol = policy(open_subtypes={"provider"})
-    r, _ = router(machines=[machine(env_names=set(), **base)], pol=pol)
-    out = r.route(task("m0"))
+    only_muse = {"muse-code": muse}  # the Meta Model API environment is enabled by the same variable; this test is about the CLI's accesses
+
+    def route_with(names, tid):
+        return Router(envs=only_muse, facts=DictFacts([machine(env_names=names, **base)]), policy=pol).route(task(tid))
+    out = route_with(set(), "m0")
     assert out.code == "no_candidate" and out.details["codes"]["muse-code@mac"] == "not_signed_in"  # presence only: no plan session and neither variable NAME exists
     for name in ("MODEL_API_KEY", "META_API_KEY"):
-        r, _ = router(machines=[machine(env_names={name}, **base)], pol=pol)
-        assert r.route(task("m-" + name)).route.access_id == "muse-code:api-key", name  # either name enables it (names only, never values)
+        assert route_with({name}, "m-" + name).route.access_id == "muse-code:api-key", name  # either name enables it (names only, never values)
 
 
 # ---- escalation ------------------------------------------------------------------------------------------------------------------------------------------------------------------

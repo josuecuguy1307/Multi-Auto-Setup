@@ -17,6 +17,20 @@ from envrec_harness import host as hosts
 from envrec_harness.strings import t
 from envrec_harness.client import CoreClient, CoreError
 
+BASE_INSTRUCTIONS = "Multi Auto Setup: the owner's private network of computers. The harness does the work; you relay what the owner asks and what the harness reports."
+CHAT_SKILL = "harness-app-chat"  # what the chat's model needs to know about these tools lives in this skill, not in this file
+
+
+def instructions() -> str:
+    """The server's instructions for the chat's model: one sentence, then the body of the chat skill (knowledge is a skill, read when the connection starts)."""
+    try:  # the skills folder next to the package (an adapter imports nothing from the coordinator or the OS layer: conformance HA1)
+        text = (Path(__file__).resolve().parents[2] / "skills" / CHAT_SKILL / "SKILL.md").read_text(encoding="utf-8")
+        body = text.split("---", 2)[2].strip() if text.startswith("---") else text
+        return BASE_INSTRUCTIONS + "\n\n" + body
+    except (OSError, IndexError):
+        return BASE_INSTRUCTIONS
+
+
 UI_URI = "ui://mas/cards"
 UI_MIME = "text/html;profile=mcp-app"
 SUPPORTED = ("2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05")
@@ -42,6 +56,12 @@ TOOLS = {  # name: (description, schema, shows cards)
                     "call mas_request_approval with the step's intent_id and follow with mas_status.", {"type": "object", "properties": {"host": {"type": "string"}}}, True),
     "mas_disconnect": ("Undo, in a new run, the connection of a chat that was made earlier (only what that connection wrote, newest step first). host is the chat's name, as for mas_connect.",
                        {"type": "object", "properties": {"host": {"type": "string"}}, "required": ["host"]}, True),
+    "mas_pair": ("Pair a new computer with this network. Without machine: say who is waiting to join, the pairing code in use, or the computer that typed the code and now needs the owner's approval. With machine "
+                 "(the name of a waiting computer, as listed): show its 6-digit code for the owner to type on THAT computer. You cannot complete a pairing: when a computer has typed the code this returns a "
+                 "confirmation; call mas_request_approval with its intent_id and the owner answers in a system dialog. wait_s waits for the state to change.",
+                 {"type": "object", "properties": {"machine": {"type": "string"}, "wait_s": {"type": "number", "minimum": 0, "maximum": 20}}}, True),
+    "mas_unpair": ("Ask the owner to unpair a paired computer (machine: its name). Nothing is removed by this call: it returns a confirmation; call mas_request_approval with its intent_id and the owner answers in a "
+                   "system dialog. Only that approval removes the computer's key.", {"type": "object", "properties": {"machine": {"type": "string"}}, "required": ["machine"]}, True),
     "mas_status": ("What happened in a run since the last call: progress, a question for the owner, the machine card, the options. Call it again until the run is finished or a question is waiting.",
                    {"type": "object", "properties": {"run_id": {"type": "string"}, "wait_s": {"type": "number", "minimum": 0, "maximum": 20}}, "required": ["run_id"]}, True),
     "mas_answer": ("Give the owner's answer to a closed question the harness asked: intent_id from the question, and option = the option's id or its number in the question's numbered list (both are printed in the question). "
@@ -67,6 +87,7 @@ class McpAdapter:
         self.declared: dict = {}
         self.cursor: dict[str, int] = {}
         self.activity_cursor = 0
+        self._specs: dict[str, dict] | None = None
 
     # ---- wire -----------------------------------------------------------------------------------------------------------------------------------
 
@@ -140,7 +161,7 @@ class McpAdapter:
                          "mcp_apps": "io.modelcontextprotocol/ui" in ext, "protocol": str(p.get("protocolVersion", ""))[:20]}
         version = p.get("protocolVersion") if p.get("protocolVersion") in SUPPORTED else SUPPORTED[0]
         return {"protocolVersion": version, "capabilities": {"tools": {}, "resources": {}}, "serverInfo": {"name": "multi-auto-setup", "version": "1"},
-                "instructions": "Multi Auto Setup: the owner's private network of computers. The harness does the work; you relay what the owner asks and what the harness reports."}
+                "instructions": instructions()}
 
     def _announce(self) -> None:
         """After `initialized`: tell the core what the live handshake declared, and keep that evidence on disk (names and booleans only)."""
@@ -154,10 +175,20 @@ class McpAdapter:
 
     # ---- tools -------------------------------------------------------------------------------------------------------------------------------------
 
+    def _core_tools(self) -> dict[str, dict]:
+        """The tools the core publishes (its services, as data): listed and called exactly as it says, the adapter adds nothing."""
+        if self._specs is None:
+            try:
+                self._specs = {t["name"]: t for t in self.core.tools()["tools"]}
+            except (CoreError, OSError, KeyError, AttributeError):  # no core to ask (or it is not up): the entry tools alone
+                return {}
+        return self._specs
+
     def tools_list(self, _p: dict) -> dict:
-        tools = [{"name": n, "description": d, "inputSchema": s, "_meta": APP_META if ui else {}, "annotations": {"readOnlyHint": n != "mas_request_approval", "openWorldHint": False}} for n, (d, s, ui) in TOOLS.items()]
+        extra = [{"name": n, "description": t["description"], "inputSchema": t["inputSchema"], "_meta": {}, "annotations": {"readOnlyHint": bool(t.get("readOnly")), "openWorldHint": False}} for n, t in self._core_tools().items()]
+        tools = [{"name": n, "description": d, "inputSchema": s, "_meta": APP_META if ui else {}, "annotations": {"readOnlyHint": n not in ("mas_request_approval", "mas_pair", "mas_unpair"), "openWorldHint": False}} for n, (d, s, ui) in TOOLS.items()]
         tools += [{"name": n, "description": d, "inputSchema": s, "_meta": {"ui": {"visibility": ["app"]}}, "annotations": {"readOnlyHint": True, "openWorldHint": False}} for n, (d, s) in APP_ONLY.items()]
-        return {"tools": tools}
+        return {"tools": tools + extra}
 
     def resources_list(self, _p: dict) -> dict:
         return {"resources": [{"uri": UI_URI, "name": "Multi Auto Setup cards", "mimeType": UI_MIME}]}
@@ -169,6 +200,12 @@ class McpAdapter:
 
     def tools_call(self, p: dict) -> dict:
         name, args = p.get("name"), p.get("arguments") or {}
+        if name in self._core_tools():
+            try:
+                out = self.core.tool(self._specs[name]["tool"], args if isinstance(args, dict) else {})
+            except CoreError as exc:
+                return {"content": [{"type": "text", "text": t("en", "mcp_rejected").format(error=exc.error, message=exc.message).strip()}], "isError": True}
+            return {"content": [{"type": "text", "text": out.get("text", "")}], "structuredContent": {k: v for k, v in out.items() if k != "text"}, "_meta": {"mas/cards": []}, **({} if out.get("ok", True) else {"isError": True})}
         if name not in TOOLS and name not in APP_ONLY:
             raise KeyError(name)
         try:
@@ -233,6 +270,21 @@ class McpAdapter:
         out = self._poll(run["id"], 6.0)
         return self._result(out["intents"], f"run_id: {run['id']}", live=not out["run"]["ended"], questions=out["questions"], run_id=run["id"], status=out["run"]["status"], waiting=out["waiting"])
 
+    def tool_pair(self, a: dict) -> dict:
+        machine = str(a["machine"]).strip()[:80] if isinstance(a.get("machine"), str) and a["machine"].strip() else None
+        out = self.core.pairing(machine)
+        end = time.monotonic() + min(max(float(a.get("wait_s") or 0), 0.0), 20.0)
+        while out["state"] in ("waiting", "exchange") and time.monotonic() < end:  # the owner is typing the code on the other computer: wait for the next state
+            time.sleep(1.0)
+            again = self.core.pairing(None)
+            if again["state"] != out["state"]:
+                out = again
+        return self._result(out["intents"], state=out["state"])
+
+    def tool_unpair(self, a: dict) -> dict:
+        out = self.core.unpair(str(a.get("machine", "")).strip()[:80])
+        return self._result(out["intents"])
+
     def tool_status(self, a: dict) -> dict:
         run_id = str(a.get("run_id", ""))
         out = self._poll(run_id, min(float(a.get("wait_s", 12) or 0), 20.0))
@@ -256,7 +308,10 @@ class McpAdapter:
             if mech == "host_elicitation" and not self.declared.get("elicitation_form"):
                 continue  # this host did not say it can show a form: the next mechanism the core lists
             if mech == "host_elicitation":
-                b = self.core.begin_confirmation(intent_id, mech)
+                try:
+                    b = self.core.begin_confirmation(intent_id, mech)
+                except CoreError:
+                    continue  # the core refused this way of asking for this question (a key is only typed into the operating system's window): the next way it lists
                 res = self.request("elicitation/create", {"message": b["prompt"]["message"], "requestedSchema": {"type": "object", "properties": {"approve": {"type": "boolean", "title": "Approve exactly this plan", "description": b["plan_hash"]}}, "required": ["approve"]}}, ELICIT_TIMEOUT_S)
                 r = (res or {}).get("result") or {}
                 action = "accept" if r.get("action") == "accept" and (r.get("content") or {}).get("approve") is True else "decline" if r.get("action") in ("accept", "decline") else "cancel"

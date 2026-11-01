@@ -1,0 +1,16 @@
+```python
+# file: invoices.py
+def total(invoices):
+    seen = []
+    s = 0
+    for inv in invoices:
+        if inv['id'] in seen:
+            continue
+        s += inv['amount']
+        seen.append(inv['id'])
+    return s
+
+
+def count(invoices):
+    return len(invoices)
+```

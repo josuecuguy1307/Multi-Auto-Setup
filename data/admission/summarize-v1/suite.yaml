@@ -1,0 +1,243 @@
+suite_id: summarize-v1
+task_type: summarize
+version: 1
+description: Ten summaries with a length or format limit. A task passes only when the figures it must carry are present as written, the strings it must not carry are absent and the limits hold. Code checks them; no model grades anything.
+preamble: ''
+est_output_tokens: 70
+tasks:
+- id: summarize-01-quarter
+  title: three bullets with the revenue figure
+  prompt: |
+    Text:
+    """
+    Northwind Foods reported third-quarter results on Tuesday. Revenue rose 12% to $4.2 billion, helped by strong demand for frozen products. Operating costs grew 7%, and the company said it expects fourth-quarter revenue between $4.4 billion and $4.6 billion. Its chief executive, Dana Reyes, said the company will open 15 new distribution centers by 2027.
+    """
+    Summarize the text in exactly 3 bullet points. Reply with the summary only.
+  grader:
+    kind: text_checks
+    contains_all:
+    - $4.2 billion
+    - 12%
+    lines:
+      min: 3
+      max: 3
+    bullets: strip
+  reference: |-
+    - Northwind Foods' third-quarter revenue rose 12% to $4.2 billion.
+    - Operating costs grew 7%.
+    - It expects higher fourth-quarter revenue and plans 15 new distribution centers by 2027.
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: summarize-02-minutes
+  title: one line with the owner and the date
+  prompt: |
+    Text:
+    """
+    The platform team met on 12 October. Marta Soto will lead the migration to the new billing system, with a target date of 2026-11-15. The team rejected a proposal to delay the launch. Budget approved: $85,000. Next meeting: 19 October.
+    """
+    Summarize the text in one line of at most 35 words. Reply with the summary only.
+  grader:
+    kind: text_checks
+    contains_all:
+    - Marta Soto
+    - '2026-11-15'
+    lines:
+      min: 1
+      max: 1
+    max_words: 35
+  reference: Marta Soto will lead the billing migration, due 2026-11-15, with an $85,000 budget; the team rejected a delay.
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: summarize-03-release
+  title: one short sentence with the version and the speed-up
+  prompt: |
+    Text:
+    """
+    Version 3.2 of Lumen Editor is out. It starts 40% faster, adds a dark theme, fixes 27 bugs, and drops support for Windows 7. The update is free for all current users.
+    """
+    Summarize the text in one sentence of at most 25 words. Reply with the summary only.
+  grader:
+    kind: text_checks
+    contains_all:
+    - '3.2'
+    - 40%
+    lines:
+      min: 1
+      max: 1
+    max_words: 25
+  reference: Lumen Editor 3.2 starts 40% faster, adds a dark theme and fixes 27 bugs, free for current users.
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: summarize-04-survey
+  title: three findings, one per line
+  prompt: |
+    Text:
+    """
+    We surveyed 1,200 adults about sleep. Participants who slept under six hours had a 31% higher rate of reported anxiety (p < 0.01). The effect was smaller in adults over 60. The study was funded by the Halden Foundation.
+    """
+    Summarize the text as exactly 3 lines, one finding per line. Reply with the summary only.
+  grader:
+    kind: text_checks
+    contains_all:
+    - 1,200
+    - 31%
+    - p < 0.01
+    lines:
+      min: 3
+      max: 3
+  reference: |-
+    1,200 adults were surveyed about sleep.
+    Under six hours of sleep went with 31% more reported anxiety (p < 0.01).
+    The effect was smaller in adults over 60.
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: summarize-05-email
+  title: one line, no invented day
+  prompt: |
+    Text:
+    """
+    Hi all, the budget review moved from Monday to Friday at 10:00 because Omar is travelling. Please send your numbers by Thursday noon. The review room is B-204.
+    """
+    Summarize the text in one line of at most 20 words: when is the review and what is due before it. Reply with the summary only.
+  grader:
+    kind: text_checks
+    contains_all:
+    - Friday
+    - Thursday
+    contains_none:
+    - Wednesday
+    lines:
+      min: 1
+      max: 1
+    max_words: 20
+  reference: The budget review is Friday at 10:00; send your numbers by Thursday noon.
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: summarize-06-notice
+  title: two bullets with the dates and the credit
+  prompt: |
+    Text:
+    """
+    The city will close Elm Street between 5th and 9th Avenue from March 3 to March 21 for repairs. Detour via Oak Street. Businesses may apply for a $250 parking credit until February 28.
+    """
+    Summarize the text in exactly 2 bullet points. Reply with the summary only.
+  grader:
+    kind: text_checks
+    contains_all:
+    - March 3
+    - $250
+    lines:
+      min: 2
+      max: 2
+    bullets: strip
+  reference: |-
+    - Elm Street is closed between 5th and 9th Avenue from March 3 to March 21; use Oak Street.
+    - Businesses can apply for a $250 parking credit until February 28.
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: summarize-07-incident
+  title: short incident summary with time and duration
+  prompt: |
+    Text:
+    """
+    At 14:32 the primary database stopped responding. Orders failed for 47 minutes until the replica was promoted at 15:19. No data was lost. A configuration change deployed at 14:20 is the suspected cause.
+    """
+    Summarize the text in at most 50 words. Reply with the summary only.
+  grader:
+    kind: text_checks
+    contains_all:
+    - '14:32'
+    - 47 minutes
+    max_words: 50
+  reference: The primary database stopped at 14:32 and orders failed for 47 minutes until the replica was promoted. No data was lost; a 14:20 configuration change is suspected.
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: summarize-08-policy
+  title: three bullets, no wrong number of days
+  prompt: |
+    Text:
+    """
+    Starting January 1, refunds must be requested within 30 days of purchase, down from 60 days. Digital goods are no longer refundable once downloaded. A restocking fee of 15% applies to opened physical items.
+    """
+    Summarize the text in exactly 3 bullet points. Reply with the summary only.
+  grader:
+    kind: text_checks
+    contains_all:
+    - 30 days
+    - 15%
+    contains_none:
+    - 45 days
+    lines:
+      min: 3
+      max: 3
+    bullets: strip
+  reference: |-
+    - From January 1, refunds must be requested within 30 days.
+    - Downloaded digital goods are not refundable.
+    - Opened physical items carry a 15% restocking fee.
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: summarize-09-reviews
+  title: one sentence with rating and count
+  prompt: |
+    Text:
+    """
+    Across 2,300 reviews the headphones average 4.6 out of 5. Buyers praise battery life (about 38 hours) and comfort. The most common complaint, in 9% of reviews, is the weak microphone.
+    """
+    Summarize the text in one sentence of at most 30 words. Reply with the summary only.
+  grader:
+    kind: text_checks
+    contains_all:
+    - '4.6'
+    - 2,300
+    lines:
+      min: 1
+      max: 1
+    max_words: 30
+  reference: The headphones average 4.6 out of 5 across 2,300 reviews, praised for battery and comfort, criticised for the microphone.
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: summarize-10-earnings
+  title: two lines, the right figures and no prior-year figure
+  prompt: |
+    Text:
+    """
+    Helio Energy's net profit reached $7.1 million this year, up 18% from last year's $6.0 million. Revenue was $52 million. Analysts had expected $6.5 million. The board declared a dividend of $0.12 per share.
+    """
+    Summarize the text as exactly 2 lines: line 1 the profit and its growth, line 2 the dividend. Reply with the summary only.
+  grader:
+    kind: text_checks
+    contains_all:
+    - $7.1 million
+    - 18%
+    - $0.12
+    contains_none:
+    - $9.4 million
+    lines:
+      min: 2
+      max: 2
+  reference: |-
+    Net profit was $7.1 million, up 18%.
+    The board declared a dividend of $0.12 per share.
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)

@@ -27,6 +27,7 @@ from envrec_coordinator.setup_agent import ConnectAdapter, SetupAdapter, UndoAda
 from envrec_net import task as T
 
 MAX_STEPS = 40
+DEFAULT_MODELS_FILE = Path(__file__).resolve().parents[2] / "config" / "models.yaml"  # this program's own file, not one relative to wherever the process was started (a service starts elsewhere)
 MAX_SECONDS = 900.0
 CODE_ONLY_ORDER = ("os_details", "memory_for_models", "gpus", "model_runtimes", "ai_clis", "installed_programs")
 LABEL_CODE_ONLY = S.LABEL_CODE_ONLY
@@ -128,7 +129,7 @@ SHOWN = {"owner_confirmation", "setup_plan", "setup_step", "run_requested", "act
 class AgentRuns:
     def __init__(self, coord, *, model_profile: str | None = None, models_file: Path | None = None) -> None:
         self.coord, self.model_profile = coord, model_profile
-        self.models_file = models_file or Path("config/models.yaml")
+        self.models_file = models_file or DEFAULT_MODELS_FILE
         self.runs: dict[str, AgentRun] = {}
         self.dir = Path(coord.state) / "runs"
         self.analyses = Path(coord.state) / "analyses"  # the finished analysis of each machine, one file per node: what the setup-options protocol reads

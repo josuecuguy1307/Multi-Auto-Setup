@@ -170,5 +170,5 @@ def test_the_mcp_view_refreshes_itself_while_a_run_is_active_and_asks_for_the_in
 def test_the_live_tool_is_the_views_own_and_the_model_is_not_offered_it():
     from envrec_harness.mcp_server import APP_ONLY, TOOLS, McpAdapter
     assert set(APP_ONLY) == {"mas_live", "mas_view"} and not set(APP_ONLY) & set(TOOLS)
-    tools = McpAdapter(None).tools_list({})["tools"]
+    tools = McpAdapter(None).tools_list({})["tools"]  # no core behind it: only the entry tools and the view's own
     assert [t["name"] for t in tools if t["_meta"].get("ui", {}).get("visibility") == ["app"]] == ["mas_live", "mas_view"]

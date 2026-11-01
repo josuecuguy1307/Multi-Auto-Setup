@@ -1,0 +1,20 @@
+{
+ "_note": "What a coordinator needs to run, as data. `mas coordinator start` reads <state>/coordinator.json (written by `mas service install --role coordinator`, or by hand) and any flag given on the command line wins over the file; the file wins over these defaults. Knowledge lives here, not in Python. `type` is one of str, int, float, bool; `null_ok` lets a key be null.",
+ "file": "coordinator.json",
+ "keys": {
+  "bind": {"type": "str", "default": null, "null_ok": true, "flag": "--bind", "required_to_start": true, "help": "the address of the interface to listen on (loopback, private or link-local; never every interface)"},
+  "port": {"type": "int", "default": 7443, "flag": "--port", "help": "the TCP port nodes connect to"},
+  "discovery_port": {"type": "int", "default": 7444, "flag": "--discovery-port", "help": "the UDP port computers use to find this coordinator"},
+  "no_discovery": {"type": "bool", "default": false, "flag": "--no-discovery", "help": "do not open the discovery UDP socket"},
+  "name": {"type": "str", "default": null, "null_ok": true, "flag": "--name", "help": "the name shown to computers that find this coordinator (default: the host name)"},
+  "web": {"type": "bool", "default": false, "flag": "--web", "negate": "--no-web", "help": "serve the owner's screen and the chat bridge on this computer only (loopback). A chat (Claude Desktop, Open WebUI) reaches this coordinator only while it is on"},
+  "web_port": {"type": "int", "default": 0, "flag": "--web-port", "help": "the loopback port of the web screen (0: any free one)"},
+  "model_profile": {"type": "str", "default": null, "null_ok": true, "flag": "--model-profile", "help": "the model profile the coordinator's agent uses (from the models file); without one analyses are code-only and say so"},
+  "models_file": {"type": "str", "default": null, "null_ok": true, "flag": "--models-file", "help": "the models file (default: config/models.yaml of this program; a sibling models.local.yaml adds and overrides profiles)"},
+  "include_virtual": {"type": "bool", "default": false, "flag": "--include-virtual", "help": "also answer on VPN, container and virtual-machine interfaces"},
+  "idle_timeout": {"type": "float", "default": 30.0, "flag": "--idle-timeout", "help": "seconds a connection may stay silent"},
+  "board_escalation_limit": {"type": "int", "default": 2, "flag": "--board-escalation-limit", "help": "how many escalation steps a board may take without asking you first. A value outside 0 to the router's maximum (2) is clamped into that range. It counts steps, not money: a step to an API route spends your credit and there is no spend limit"}
+ },
+ "service_defaults": {"web": true},
+ "_service_defaults_note": "values a NEW coordinator.json gets when `mas service install` writes it and the owner did not say: a service has no terminal, so the chat bridge is on by default for it"
+}

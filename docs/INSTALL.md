@@ -58,7 +58,7 @@ Shows what will be removed and asks. It removes the user services, the program f
 
 ```bash
 mas service install            # a paired node
-mas service install --role coordinator --bind 192.0.2.10
+mas service install --role coordinator --bind 192.0.2.10 --model-profile qwen-local --models-file ~/models.yaml
 mas service status
 mas service uninstall
 ```
@@ -71,6 +71,10 @@ It shows the file it will write, the command it runs and the undo, then asks. Th
 | Linux | `systemd --user` unit in `~/.config/systemd/user` | restarts on failure; starts at sign-in. Starting at boot without signing in needs an administrator to run `loginctl enable-linger` once; this program does not. |
 | Linux without systemd user | desktop autostart entry in `~/.config/autostart` | only with a desktop session; no automatic restart. Otherwise the typed refusal `no_user_service_manager`: run `mas node run` by hand. |
 | Windows | `HKCU\...\Run` value, windowless `pythonw.exe` | no administrator; no automatic restart. A Task Scheduler logon task was **not** chosen: whether a standard user may create one for their own logon could not be confirmed from the sources found ([schtasks create](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/schtasks-create) says only Administrators can schedule tasks for `/ru system`; the own-account case is not stated). |
+
+**The coordinator's settings are data.** The service runs only `mas coordinator start`; everything about how it runs is in `<state>/coordinator.json` (written by `mas service install`, shown to you first; edit it, or run the install again, to change it): `bind`, `port`, `discovery_port`, `no_discovery`, `name`, `web` (the owner's loopback screen and the chat bridge: a chat reaches the coordinator only while it is on; a new file turns it on, `--no-web` turns it off), `web_port`, `model_profile`, `models_file`, `include_virtual`, `idle_timeout`, `board_escalation_limit` (how many escalation steps a board may take without asking you: an integer, default 2, clamped to 0 up to the router's maximum; it counts steps, not money, and there is no spend limit). The keys, types and defaults are `skills/os-service/references/coordinator-config.json`. A flag on `mas coordinator start` wins over the file, the file over the defaults; an unknown key or a wrong type is refused, never ignored. `mas service uninstall` leaves the file. On macOS the LaunchAgent restarts the coordinator if it fails (`KeepAlive`, throttled to once per 30 s); on Windows the sign-in entry starts it and nothing restarts it.
+
+**A chat on the coordinator's computer.** `mas connect claude-desktop` (run from the installed `mas`) points Claude Desktop at the installed `mas` command and this state folder (`mas --state-dir <state> mcp --channel claude-desktop`): the entry names no Python path and no release folder, so `mas update` cannot strand it. Running it again replaces an earlier entry of ours (for example one made from a source checkout) after copying the file, and its undo puts the earlier entry back; an entry under our name that does not start our server is never touched.
 
 A node that the coordinator unpairs exits normally and is not restarted. A node that is not paired does not get a service. A coordinator service binds to the address you give: if your router gives the computer another address it will not start, so reserve a fixed one.
 

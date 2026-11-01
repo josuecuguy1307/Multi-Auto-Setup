@@ -7,7 +7,6 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 SENSITIVITIES = ("public", "internal", "confidential")
-TASK_TYPES = ("code", "text")
 SUBTYPES = ("provider", "own_harness", "embedded", "local_model")
 
 
@@ -66,6 +65,8 @@ class RouteDecision(BaseModel):
     rule_trace: list[Step]
     escalation_step: Literal[0, 1, 2]
     evidence_label: str
+    left_out: dict[str, str] = Field(default_factory=dict)  # every environment that was not a candidate on a machine, with the owner-facing reason (so the reasoning is whole: candidates, who was left out and why)
+    provisional: bool = False  # chosen with no valid admitted measurement (public and internal tasks only; a confidential task never gets one)
     effective_sensitivity: str = "public"  # the task's own level or the highest level among its inputs, whichever is higher
 
 

@@ -109,3 +109,59 @@ def test_the_text_travels_as_separate_arguments_never_through_a_shell():
 def test_the_table_is_data_the_layer_reads():
     d = json.loads(C.DIALOGS_FILE.read_text())
     assert d["darwin"]["tools"][0]["strong"]["id"] == "touch_id" and d["windows"]["tools"][0]["strong"]["id"] == "windows_hello" and "WEAKER" in d["weak_note"]
+
+
+# ---- notices: information for the owner's own screen (the pairing code) ---------------------------------------------------------------------------------------------
+
+class FakeProc:
+    def __init__(self):
+        self.done, self.terminated = False, False
+
+    def poll(self):
+        return 0 if self.done or self.terminated else None
+
+    def terminate(self):
+        self.terminated = True
+
+
+class Popper:
+    def __init__(self, missing=()):
+        self.calls, self.missing = [], set(missing)
+
+    def which(self, exe):
+        return None if exe in self.missing else f"/bin/{exe}"
+
+    def __call__(self, argv, env=None, **kw):
+        self.calls.append((argv, env, kw))
+        return FakeProc()
+
+
+def test_a_notice_is_shown_without_waiting_with_the_text_as_a_separate_argument_never_through_a_shell():
+    p = Popper()
+    n = C.native_notice("Pairing code", "Code: 482915", fam="darwin", popen=p, which=p.which)
+    argv, env, kw = p.calls[0]
+    assert n is not None and n.mechanism == "macos_notice" and n.alive() and argv[0] == "/bin/osascript"
+    assert "Pairing code" in argv and "Code: 482915" in argv and "shell" not in kw and kw["stdin"] is not None  # separate arguments; no shell
+    assert not any("482915" in a and a != "Code: 482915" for a in argv)  # the text is one argument, not pasted into the script
+    n.close()
+    assert not n.alive()
+
+
+def test_every_family_has_a_notice_in_the_data_and_windows_passes_the_text_by_environment_variable():
+    t = C.table()
+    for fam in ("darwin", "windows", "linux"):
+        assert t[fam]["notices"], fam
+    p = Popper()
+    C.native_notice("T", "Code: 111111", fam="windows", popen=p, which=p.which)
+    argv, env, _ = p.calls[0]
+    assert env["MAS_NOTICE_MESSAGE"] == "Code: 111111" and not any("111111" in a for a in argv)  # not in the command line another program could list
+
+
+def test_the_notice_tries_the_next_program_and_says_none_when_this_computer_has_no_way_to_show_one():
+    p = Popper(missing={"zenity"})
+    n = C.native_notice("T", "m", fam="linux", popen=p, which=p.which)
+    assert n is not None and n.mechanism == "kdialog_msgbox"
+    p2 = Popper(missing={"zenity", "kdialog"})
+    assert C.native_notice("T", "m", fam="linux", popen=p2, which=p2.which) is None and p2.calls == []  # no fallback to anything else
+    boom = lambda *a, **k: (_ for _ in ()).throw(OSError("no display"))  # noqa: E731
+    assert C.native_notice("T", "m", fam="darwin", popen=boom, which=p.which) is None

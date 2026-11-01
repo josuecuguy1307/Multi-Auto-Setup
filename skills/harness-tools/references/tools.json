@@ -1,0 +1,277 @@
+{
+ "note": "The tools the chats call through the harness core (services.py). The descriptions are short on purpose: when to use each one, and what not to do, is in SKILL.md.",
+ "tools": [
+  {
+   "name": "mas_create_task",
+   "tool": "create_task",
+   "readOnly": false,
+   "description": "Create a task from the owner's request. Nothing runs yet: you get the route the written rule picked, with the reasoning, and an intent_id; the owner approves that exact route in his own system dialog (call mas_request_approval), and the task then runs and is checked by code. A cloud chat cannot create a confidential task: say 'create it from a local chat or the owner panel'. Read the skill harness-tools first.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "text": {
+      "type": "string",
+      "description": "the task input, as the owner gave it (the text to summarize, the code to fix...)"
+     },
+     "task_type": {
+      "type": "string",
+      "description": "one of the task types the catalog serves, for example summarize, extraction, data-cleaning, numeric-analysis, text, code"
+     },
+     "sensitivity": {
+      "type": "string",
+      "enum": [
+       "public",
+       "internal",
+       "confidential"
+      ],
+      "description": "ask the owner if he has not said; never guess"
+     },
+     "check": {
+      "type": "object",
+      "description": "an optional check graded by code: {kind: equals|contains|regex|sha256, value} or {kind: project_tests, files: {path: text}, pattern}. Without one the result is shown but not graded."
+     }
+    },
+    "required": [
+     "text",
+     "task_type",
+     "sensitivity"
+    ]
+   }
+  },
+  {
+   "name": "mas_explain_route",
+   "tool": "explain_route",
+   "readOnly": true,
+   "description": "Explain which route a task takes and why, right now: the candidates, each environment that was left out with its reason, what each filter cut, and what the written rule chose. Give a task_id, or a task_type and sensitivity. It changes nothing.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "task_id": {
+      "type": "string"
+     },
+     "task_type": {
+      "type": "string"
+     },
+     "sensitivity": {
+      "type": "string",
+      "enum": [
+       "public",
+       "internal",
+       "confidential"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "name": "mas_run_admission",
+   "tool": "run_admission",
+   "readOnly": false,
+   "description": "Measure one environment on a task type's 10-task suite (graded by code, pass mark 8/10). It spends the owner's machine time, so you get an intent_id and the owner approves in his own system dialog (mas_request_approval). Name the environment and the task type; add machine or access if more than one combination fits.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "environment": {
+      "type": "string"
+     },
+     "task_type": {
+      "type": "string"
+     },
+     "machine": {
+      "type": "string"
+     },
+     "access": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "environment",
+     "task_type"
+    ]
+   }
+  },
+  {
+   "name": "mas_job",
+   "tool": "job_status",
+   "readOnly": true,
+   "description": "What happened to a task, an admission exam or an access change: its state, each attempt and its code check, the result (withheld from a cloud chat when it is confidential) and the step waiting for the owner. Call it again until it is finished.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "job_id": {
+      "type": "string",
+      "description": "the task id, admission id or job id a tool gave you"
+     }
+    },
+    "required": [
+     "job_id"
+    ]
+   }
+  },
+  {
+   "name": "mas_add_access",
+   "tool": "add_access",
+   "readOnly": false,
+   "description": "Add an access (an API key) on one machine. The owner types the key into a hidden window of the operating system; you never see it. You get a job_id; call mas_job for the intent_id, then mas_request_approval. Read the skill secret-entry first.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "node": {
+      "type": "string",
+      "description": "the machine's name"
+     },
+     "access": {
+      "type": "string",
+      "description": "the access id, for example meta-model-api:api-key"
+     },
+     "variable": {
+      "type": "string",
+      "description": "only when the access accepts more than one variable name"
+     }
+    },
+    "required": [
+     "node",
+     "access"
+    ]
+   }
+  },
+  {
+   "name": "mas_remove_access",
+   "tool": "remove_access",
+   "readOnly": false,
+   "description": "Remove an access from one machine: its key is set aside in that machine's credential store (not deleted, never shown). It goes through a plan and the owner's system dialog. With undo set to true it brings the key back.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "node": {
+      "type": "string"
+     },
+     "access": {
+      "type": "string"
+     },
+     "variable": {
+      "type": "string"
+     },
+     "undo": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "node",
+     "access"
+    ]
+   }
+  },
+  {
+   "name": "mas_board_start",
+   "tool": "board_start",
+   "readOnly": false,
+   "description": "Start a board for a goal that needs several steps (for example 'build a small CLI with tests'). A director breaks it into subtasks, the router routes each one, results are checked by code and verified on another machine. You then show the plan and the owner approves it once. A cloud chat cannot start a confidential board. Read the skill harness-tools first.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "goal": {
+      "type": "string"
+     },
+     "sensitivity": {
+      "type": "string",
+      "enum": [
+       "public",
+       "internal",
+       "confidential"
+      ],
+      "description": "ask the owner if he has not said; never guess"
+     }
+    },
+    "required": [
+     "goal",
+     "sensitivity"
+    ]
+   }
+  },
+  {
+   "name": "mas_board_show",
+   "tool": "board_show",
+   "readOnly": true,
+   "description": "Show a board: its subtasks, where each one runs and how it is checked, and what waits for the owner (the plan to approve, an escalation to confirm). Call it until the board has stopped or something waits for him.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "board_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "board_id"
+    ]
+   }
+  },
+  {
+   "name": "mas_board_approve",
+   "tool": "board_approve",
+   "readOnly": false,
+   "description": "Ask the owner to approve one pending decision of a board (the plan, or an escalation beyond what he allowed). You get an intent_id; the owner answers in his own system dialog (mas_request_approval). You cannot approve for him.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "board_id": {
+      "type": "string"
+     },
+     "decision_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "board_id",
+     "decision_id"
+    ]
+   }
+  },
+  {
+   "name": "mas_measurements",
+   "tool": "measurements",
+   "readOnly": true,
+   "description": "What has been measured for a task type: every combination's admission result (pass rate, median time, still fresh or not), the candidates with no measurement (listed, never ranked), and the recommendation, which comes from measured numbers only. Use it to compare models or environments the owner has had measured.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "task_type": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "task_type"
+    ]
+   }
+  },
+  {
+   "name": "mas_draft",
+   "tool": "draft",
+   "readOnly": false,
+   "description": "The draft of the whole network's setup: action 'start' makes the agent propose it from what it sees; 'correct' (with the owner's own words in text) makes it draft again from his correction; 'approve' asks him to approve the proposed draft in his own system dialog. Follow a draft run with mas_status and answer its questions with mas_answer.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "start",
+       "correct",
+       "approve"
+      ]
+     },
+     "text": {
+      "type": "string",
+      "description": "only for correct: the owner's words, as he said them"
+     },
+     "run_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "action"
+    ]
+   }
+  }
+ ]
+}

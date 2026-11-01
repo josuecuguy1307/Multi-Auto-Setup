@@ -8,6 +8,8 @@ temporary home and fake commands: nothing here is ever run against the owner's r
 
 from __future__ import annotations
 
+import dataclasses
+
 import hashlib
 import http.client
 import json
@@ -70,12 +72,21 @@ class Env:
     run: Callable[..., Any] = subprocess.run
     processes: Callable[[], list[dict]] | None = None  # (pid, created, argv) of what runs here: a test says what runs; None means ask the system
     clock: Callable[[], float] = time.time
+    launcher: tuple[str, ...] | None = None  # the command that starts `mas` (the installer's shim, or the interpreter running the package); None: work it out from `py` and the recipes' data
 
     @classmethod
     def system(cls, state_dir: Path) -> "Env":
         import os
         fam = {"darwin": "macos"}.get(envrec_os.family(), envrec_os.family())
-        return cls(home=Path.home(), os=fam, path=os.environ.get("PATH", ""), py=sys.executable, state_dir=Path(state_dir).resolve(), config_root=envrec_os.config_root(Path.home()))
+        env = cls(home=Path.home(), os=fam, path=os.environ.get("PATH", ""), py=sys.executable, state_dir=Path(state_dir).resolve(), config_root=envrec_os.config_root(Path.home()))
+        return dataclasses.replace(env, launcher=find_launcher(env))
+
+    def command(self) -> tuple[str, ...]:
+        """The command (and its leading arguments) a chat host runs to reach `mas`. Never named after a release folder when the program is installed."""
+        if self.launcher:
+            return tuple(self.launcher)
+        fb = load_recipes().get("launcher", {}).get("fallback", ["{py}", "-m", "envrec_mas"])
+        return tuple(x.replace("{py}", self.py) for x in fb)
 
     def fill(self, text: str, **extra: str) -> str:
         """A recipe's path or command with its placeholders written out for this computer."""
@@ -83,13 +94,34 @@ class Env:
         if s == "~" or s.startswith("~/"):
             s = str(self.home) + s[1:]
         s = s.replace("{config_root}", str(self.config_root or envrec_os.config_root(self.home, {})))
-        s = s.replace("{py}", self.py).replace("{state_dir}", str(self.state_dir))
+        s = s.replace("{mas}", self.command()[0]).replace("{py}", self.py).replace("{state_dir}", str(self.state_dir))
         for k, v in extra.items():
             s = s.replace("{" + k + "}", v)
         return s
 
     def which(self, binary: str) -> str | None:
         return shutil.which(binary, path=self.path)
+
+
+def find_launcher(env: "Env", recipes: dict | None = None) -> tuple[str, ...] | None:
+    """The installer's `mas` command when this program runs from an install and that command is there and is the installer's (it carries its mark); None otherwise (a source checkout). The paths are data
+    in the recipes (`launcher.shim`). Pointing a chat at the shim, not at a release folder, keeps the entry valid through `mas update`."""
+    from envrec_mas import release as rel
+    spec = (recipes or load_recipes()).get("launcher") or {}
+    home = rel.mas_home()
+    try:
+        installed = Path(env.py).resolve().is_relative_to((home / "releases").resolve())
+    except (OSError, ValueError):
+        installed = False
+    template = (spec.get("shim") or {}).get(env.os)
+    if not installed or not template:
+        return None
+    shim = Path(env.fill(template.replace("{mas_home}", str(home))))
+    try:
+        ok = shim.is_file() and spec.get("shim_mark", "\0") in shim.read_text(encoding="utf-8", errors="replace")[:400]
+    except OSError:
+        ok = False
+    return (str(shim),) if ok else None
 
 
 def load_recipes(path: Path = RECIPES_FILE) -> dict:
@@ -207,11 +239,23 @@ def _entry_names(cfg: Path) -> set[str]:
         return set()
 
 
+def _our_entry(cfg: Path, name: str) -> Any:
+    """Our own entry (by name) in a JSON settings file, and nothing else of the file."""
+    try:
+        doc = json.loads(cfg.read_text())
+    except (OSError, ValueError):
+        return None
+    for key in ("mcpServers", "mcp_servers", "mcp"):
+        if isinstance(doc.get(key), dict) and name in doc[key]:
+            return doc[key][name]
+    return None
+
+
 # ---- the plan --------------------------------------------------------------------------------------------------------------------------------------------
 
 def _entry(template: Any, r: dict, env: Env, channel: str) -> Any:
     """A recipe's entry with its placeholders filled; `@entry_args` stands for the argument list of our server."""
-    args = [env.fill(a, channel=channel) for a in r["entry_args"]]
+    args = list(env.command()[1:]) + [env.fill(a, channel=channel) for a in r["entry_args"]]
     if isinstance(template, dict):
         return {k: _entry(v, r, env, channel) for k, v in template.items()}
     if isinstance(template, list):
@@ -261,7 +305,13 @@ def build_plan(host: str, env: Env, recipes: dict | None = None) -> dict:
         if sib and Path(env.fill(sib)).exists():
             raise ConnectRefused("config_is_jsonc", f"{Path(env.fill(sib)).name} exists: it may hold comments, and a file with comments is not rewritten here. Add the entry by hand or remove the comments")
         if cfg.exists() and name in _entry_names(cfg):
-            raise ConnectRefused("already_connected", f"our entry is already in {cfg.name}")
+            spec = next((x for x in h["steps"] if x["op"] == "json_merge_entry"), None)  # a JSON settings file: our entry can be compared with the one this plan would write
+            have = _our_entry(cfg, name) if spec else None
+            if spec is None or have == _entry(spec["entry"], r, env, channel):
+                raise ConnectRefused("already_connected", f"our entry is already in {cfg.name}")
+            if not any(m in json.dumps(have) for m in (r.get("entry_markers") or [])):
+                raise ConnectRefused("entry_exists_different", f"an entry called {name} is already in {cfg.name}, it does not start our server, and it differs: it is not touched")
+            notes.append(f"An earlier entry of ours is in {cfg.name} (it starts our server another way, for example a source checkout): this plan replaces it. The file is copied first and the undo puts the earlier entry back.")
         t = time.localtime(env.clock())
         stamp = f"{t.tm_year:04d}{t.tm_mon:02d}{t.tm_mday:02d}-{t.tm_hour:02d}{t.tm_min:02d}{t.tm_sec:02d}"
         ctx["backup"] = str(cfg) + f".mas-backup-{stamp}"
@@ -309,10 +359,11 @@ def _b_backup(h, cell, spec, env, r, channel, ctx, cfg) -> dict:
 def _b_json_merge(h, cell, spec, env, r, channel, ctx, cfg) -> dict:
     entry = _entry(spec["entry"], r, env, channel)
     name = r["server_name"]
-    return {"exact_command": f"In {cfg}, under \"{spec['key']}\", add the entry {_pretty({name: entry})}. Every other entry is left exactly as it is. If the file does not exist it is created",
+    return {"exact_command": f"In {cfg}, under \"{spec['key']}\", add the entry {_pretty({name: entry})}. Every other entry is left exactly as it is. An earlier entry of ours (one that names our own server) is replaced and kept for the undo; one that is not ours is never touched. If the file does not exist it is created",
             "writes": [str(cfg)], "bytes": 0,
             "undo": f"Remove the entry {name} under \"{spec['key']}\" in {cfg}. If the file is otherwise unchanged since this step, put the copy back instead (or delete the file if this step created it)",
             "args": {"file": str(cfg), "key": spec["key"], "legacy_key": spec.get("legacy_key"), "name": name, "entry": entry, "new_file": spec.get("new_file") or {}, "backup": ctx["backup"],
+                     "ours": list(r.get("entry_markers") or []),
                      "jsonc_sibling": env.fill(cell["jsonc_sibling"]) if cell.get("jsonc_sibling") else None}}
 
 
@@ -339,7 +390,7 @@ def _fill_argv(argv: list, r: dict, env: Env, channel: str, binary: str) -> list
     out: list[str] = []
     for a in argv:
         if a == "@entry_args":
-            out += [env.fill(x, channel=channel) for x in r["entry_args"]]
+            out += list(env.command()[1:]) + [env.fill(x, channel=channel) for x in r["entry_args"]]
         else:
             out.append(env.fill(a, channel=channel, binary=binary))
     return out
@@ -533,9 +584,13 @@ def _x_json_merge(a, env, store, host, h, undo=False):
     if undo:
         def drop():
             doc = _load_json(f)
+            before = store.load().get("previous_entry")
             for key in (a["key"], a.get("legacy_key")):
                 if key and isinstance(doc.get(key), dict):
-                    doc[key].pop(a["name"], None)
+                    if before is not None and key == store.load().get("previous_key"):
+                        doc[key][a["name"]] = before  # an earlier entry of ours was replaced: it comes back, not a hole
+                    else:
+                        doc[key].pop(a["name"], None)
             _write_atomic(f, json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
         return _restore_or_remove(a, store, drop)
     if a.get("jsonc_sibling") and Path(a["jsonc_sibling"]).exists():
@@ -549,12 +604,17 @@ def _x_json_merge(a, env, store, host, h, undo=False):
     section = doc.setdefault(key, {})
     if not isinstance(section, dict):
         raise StepFailed("config_unexpected_shape", f"\"{key}\" in the settings file is not an object")
-    if a["name"] in section and section[a["name"]] != a["entry"]:
-        raise StepFailed("entry_exists_different", "an entry with our name is already there and differs: it was not touched")
+    previous = section.get(a["name"])
+    replaced = False
+    if previous is not None and previous != a["entry"]:
+        if not any(m in json.dumps(previous) for m in (a.get("ours") or [])):
+            raise StepFailed("entry_exists_different", "an entry with our name is already there, it is not one of ours, and differs: it was not touched")
+        replaced = True  # an earlier version of OUR entry (it names our server): it is replaced; the file was copied first and the old entry is kept for the undo
     section[a["name"]] = a["entry"]
     _write_atomic(f, json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
     st = store.load()
     st["sha_after"] = sha_of(f)
+    st["previous_entry"], st["previous_key"] = (previous, key) if replaced else (None, None)
     store.save(st)
     return {"written": True, "key": key}
 

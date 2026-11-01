@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 import envrec_harness
+from envrec_harness import mcp_server as M
 from envrec_coordinator import harness as H
 from envrec_coordinator.harness import CHANNELS
 from mas_world import coordinator
@@ -95,8 +96,10 @@ def test_the_handshake_is_read_from_the_host_and_reported_to_the_core_as_evidenc
             assert ev["handshake"]["client"]["name"] == "fake-claude-desktop" and ev["declared"]["elicitation"] is True
             tools = (await h.rpc("tools/list"))["result"]["tools"]
             seen_by_model = [t for t in tools if "visibility" not in t["_meta"].get("ui", {})]
-            assert sorted(t["name"] for t in seen_by_model) == ["mas_activity", "mas_answer", "mas_connect", "mas_disconnect", "mas_network", "mas_prepare", "mas_request_approval", "mas_start", "mas_status", "mas_undo"]  # ten entry tools: nothing to orchestrate
-            assert all(t["_meta"]["ui"]["resourceUri"] == "ui://mas/cards" for t in seen_by_model)
+            assert sorted(t["name"] for t in seen_by_model) == sorted(["mas_activity", "mas_answer", "mas_connect", "mas_disconnect", "mas_network", "mas_pair", "mas_prepare", "mas_request_approval", "mas_start", "mas_status", "mas_undo", "mas_unpair",
+                                                                         "mas_add_access", "mas_create_task", "mas_explain_route", "mas_job", "mas_remove_access", "mas_run_admission", "mas_board_start", "mas_board_show", "mas_board_approve", "mas_measurements", "mas_draft"])  # twelve entry tools (pair and unpair added ON PURPOSE, each ending in the owner's confirmation) and the eleven the core publishes (its services): nothing to orchestrate
+            assert all(t["_meta"]["ui"]["resourceUri"] == "ui://mas/cards" for t in seen_by_model if t["name"] in M.TOOLS)  # the entry tools show cards; the core's services return text that stands alone (cards never render in this host)
+            assert all(t["_meta"] == {} for t in seen_by_model if t["name"] not in M.TOOLS)
             assert sorted(t["name"] for t in tools if t["_meta"].get("ui", {}).get("visibility") == ["app"]) == ["mas_live", "mas_view"]  # the view's own tools are hidden from the model
             res = (await h.rpc("resources/read", {"uri": "ui://mas/cards"}))["result"]["contents"][0]
             assert res["mimeType"] == "text/html;profile=mcp-app" and "ui/initialize" in res["text"] and "default-src 'none'" in res["text"]

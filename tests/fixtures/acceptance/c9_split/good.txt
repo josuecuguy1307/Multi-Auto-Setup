@@ -1,0 +1,252 @@
+```python
+# file: part_a.py
+def op_0(x):
+    return x * 2 + 0
+
+
+def op_1(x):
+    return x * 3 + 1
+
+
+def op_2(x):
+    return x * 4 + 2
+
+
+def op_3(x):
+    return x * 5 + 3
+
+
+def op_4(x):
+    return x * 6 + 4
+
+
+def op_5(x):
+    return x * 7 + 5
+
+
+def op_6(x):
+    return x * 8 + 6
+
+
+def op_7(x):
+    return x * 9 + 7
+
+
+def op_8(x):
+    return x * 10 + 8
+
+
+def op_9(x):
+    return x * 11 + 9
+
+
+def op_10(x):
+    return x * 12 + 10
+
+
+def op_11(x):
+    return x * 13 + 11
+
+
+def op_12(x):
+    return x * 14 + 12
+
+
+def op_13(x):
+    return x * 15 + 13
+
+
+def op_14(x):
+    return x * 16 + 14
+
+
+def op_15(x):
+    return x * 17 + 15
+
+
+def op_16(x):
+    return x * 18 + 16
+
+
+def op_17(x):
+    return x * 19 + 17
+
+
+def op_18(x):
+    return x * 20 + 18
+
+
+def op_19(x):
+    return x * 21 + 19
+
+```
+```python
+# file: part_b.py
+def op_20(x):
+    return x * 22 + 20
+
+
+def op_21(x):
+    return x * 23 + 21
+
+
+def op_22(x):
+    return x * 24 + 22
+
+
+def op_23(x):
+    return x * 25 + 23
+
+
+def op_24(x):
+    return x * 26 + 24
+
+
+def op_25(x):
+    return x * 27 + 25
+
+
+def op_26(x):
+    return x * 28 + 26
+
+
+def op_27(x):
+    return x * 29 + 27
+
+
+def op_28(x):
+    return x * 30 + 28
+
+
+def op_29(x):
+    return x * 31 + 29
+
+
+def op_30(x):
+    return x * 32 + 30
+
+
+def op_31(x):
+    return x * 33 + 31
+
+
+def op_32(x):
+    return x * 34 + 32
+
+
+def op_33(x):
+    return x * 35 + 33
+
+
+def op_34(x):
+    return x * 36 + 34
+
+
+def op_35(x):
+    return x * 37 + 35
+
+
+def op_36(x):
+    return x * 38 + 36
+
+
+def op_37(x):
+    return x * 39 + 37
+
+
+def op_38(x):
+    return x * 40 + 38
+
+
+def op_39(x):
+    return x * 41 + 39
+
+```
+```python
+# file: part_c.py
+def op_40(x):
+    return x * 42 + 40
+
+
+def op_41(x):
+    return x * 43 + 41
+
+
+def op_42(x):
+    return x * 44 + 42
+
+
+def op_43(x):
+    return x * 45 + 43
+
+
+def op_44(x):
+    return x * 46 + 44
+
+
+def op_45(x):
+    return x * 47 + 45
+
+
+def op_46(x):
+    return x * 48 + 46
+
+
+def op_47(x):
+    return x * 49 + 47
+
+
+def op_48(x):
+    return x * 50 + 48
+
+
+def op_49(x):
+    return x * 51 + 49
+
+
+def op_50(x):
+    return x * 52 + 50
+
+
+def op_51(x):
+    return x * 53 + 51
+
+
+def op_52(x):
+    return x * 54 + 52
+
+
+def op_53(x):
+    return x * 55 + 53
+
+
+def op_54(x):
+    return x * 56 + 54
+
+
+def op_55(x):
+    return x * 57 + 55
+
+
+def op_56(x):
+    return x * 58 + 56
+
+
+def op_57(x):
+    return x * 59 + 57
+
+
+def op_58(x):
+    return x * 60 + 58
+
+
+def op_59(x):
+    return x * 61 + 59
+
+```
+```python
+# file: inventory.py
+from part_a import *
+from part_b import *
+from part_c import *
+```

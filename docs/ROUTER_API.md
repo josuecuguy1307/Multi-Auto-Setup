@@ -10,7 +10,7 @@ Where it lives: `src/envrec_coordinator/router/` (rule, sensitivity, outbound fi
 
 ```
 Sensitivity = "public" | "internal" | "confidential"      # highest of the inputs; only the owner lowers it
-TaskType    = "code" | "text"                             # "text" = summarize / extract. Others: unknown_task_type
+TaskType    = <a slug>                                    # data: the `task_types` of the catalog and the suites under data/admission. A type no environment declares: no_candidate (why: unknown_task_type)
 EntryChat   = {kind: "local" | "cloud", name: str}        # claude-desktop, meta-ai = cloud; open-webui+local model, owner panel = local
 Task        = {task_id, task_type, sensitivity, entry_chat, created_by, payload_ref, input_refs?: [ref], exclude?: {machine_ids?, environment_ids?}}
 ```
@@ -29,7 +29,7 @@ Step           = {step: "sensitivity" | "exclusion" | "admission_filter" | "cost
 Refusal        = {task_id, code, reason, details}
 ```
 
-`evidence_label` is `measured here x/10` (a valid admission fact) or `no data`. An unmeasured combination is provisional (it passed the hardware and access checks only; the router holds no public-evidence data yet), and a provisional route never receives `confidential` (R3).
+`evidence_label` is `measured here x/10` (a valid admission fact) or `no data`. An unmeasured combination is provisional (it passed the hardware and access checks only; the router holds no public-evidence data yet), and a provisional route never receives `confidential` (R3). `RouteDecision.provisional` is true when the chosen route has no valid admitted measurement; the label stays `no data`.
 
 ### Refusal codes (typed; `reason` is the owner-facing English text)
 
@@ -37,7 +37,7 @@ Refusal        = {task_id, code, reason, details}
 |---|---|
 | `confidential_from_cloud_chat` | task is `confidential`, `entry_chat.kind == cloud`. Owner text: "This task is confidential, so it can only be created from the owner panel or a local chat, not from a cloud chat." |
 | `sensitivity_missing` | no level on the task or on its payload reference (no default, no guess) |
-| `unknown_task_type` | no catalog entry / no admission suite for this type |
+| `no_candidate` with `details.why = "unknown_task_type"` | no environment declares this task type: zero candidates, nothing invented (the older code `unknown_task_type` is now the detail) |
 | `no_candidate` | the catalog, crossed with accesses, installed environments and OS support, is empty; `details` lists each environment with its typed reason (`not_installed`, `no_access`, `not_signed_in`, `unsupported_os`, `closed_by_owner`) |
 | `no_local_candidate` | `confidential`: candidates exist, none is local on a paired own machine |
 | `provisional_only` | `confidential`: only provisional / `no data` combinations exist (R3) |
@@ -72,7 +72,7 @@ Order, each step recorded in `rule_trace`:
 
 1. **Sensitivity filter.** `confidential`: local environments on paired own machines only (R1); provider = cloud (6.6); never third-party machines; never provisional (R3). `internal`: own machines + owner-approved providers per the owner policy (data; default as the owner set it). `public`: owner policy only.
 1b. **Exclusion** (only when the task carries `exclude`): machines and environments the task must not use are removed, recorded as a step `exclusion` in the trace. It runs after the sensitivity step, so it can only remove candidates; it is never relaxed, it travels with the task, and every escalation honors it. When it leaves nothing, the refusal is the normal one (`no_candidate`; `no_local_candidate` for a confidential task; `provisional_only` when sensitivity itself had left only unmeasured combinations).
-2. **Admission filter**: a combination with a valid measurement below the threshold is dropped (not approved, spec 8.1). Then **cost class**: local < API < subscription; keep the lowest class present.
+2. **Admission filter**: a combination with a valid measurement below the threshold is dropped (`not_admitted`, spec 8.1). Under the policy value `rule.unmeasured = measured_first` (default; the other value is `cost_first`) a combination with no valid measurement is also dropped (`unmeasured`) when another candidate is measured and admitted, whatever its cost class; with nothing measured the cheapest unmeasured one competes and the decision is flagged `provisional` (public and internal only). Then **cost class**: local < API < subscription; keep the lowest class present.
 3. **Admission rate** where a measured fact exists (section 4); `no data` ranks below any measured rate within the same class. Differences inside the **tie margin** count as equal. The margin is a visible config value (`rule.tie_margin` in `policy.json`, confirmed at STOP 1 as `0.1` of the pass rate, printed in every trace; it is not a recommendation).
 4. **Measured time** (median wall-clock of the last N graded tasks of this type on this combination, fact `route.time`). Not measured: ranks last, labeled.
 5. **Fewer tasks taken** on the machine (active leases), minus **shared quota**: environments of one plan share a counter kept by us (`quota.<access_id>`: tasks dispatched in the window). We never read provider usage.

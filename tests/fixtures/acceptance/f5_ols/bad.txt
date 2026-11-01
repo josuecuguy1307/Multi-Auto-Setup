@@ -1,0 +1,5 @@
+```python
+# file: ols.py
+def fit(price, ads, sales):
+    return {'coef': [0, 0, 0], 'r2': 0, 'price_significant_5pct': False}
+```

@@ -1,0 +1,1 @@
+A loan of $10,000 at 12% per year (1% per month), 24 equal monthly payments, French method. Reply with only JSON {"payment": <rounded to cents>, "final_balance": <after the last payment, rounded to cents>}.

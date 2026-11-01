@@ -1,0 +1,16 @@
+# Router acceptance: amendments
+
+`docs/ROUTER_ACCEPTANCE.md` is frozen (its hash is recorded and a test fails if it changes). This file holds what the owner decided after the first SIMULATED-LOCAL run (STOP 2, 2026-11-01). The examples above are read together with it. Nothing here edits an example to make it pass.
+
+1. **Example 1, variant 2.** The doc's world has a local OpenCode route (E3a) that would be chosen before the API. The run made E3a fail its exam too, so that only the API routes were left. This is a **fixture** chosen to make the variant meaningful; it is labeled as a fixture, not a real measurement.
+2. **Example 4 and task 9 (escalation).** The code is right: "2 escalations" means **3 tries** (step 0, 1 and 2), then the owner is warned. The doc's "E1, E2, stop" is read that way; the third try is the next route by the written rule.
+3. **Task 14.** The comparison and the recommendation are **computed by a read tool (`mas_measurements`) from measured admission facts**, not merged by a director model. Only measured numbers appear; combinations with no measurement are listed and never ranked.
+4. **Board verification.** The board excludes **by machine** (and by the producer's environment). A verification therefore runs on another paired computer. With a single computer it is not run on another environment of the same machine: it ends in the typed refusal `no_candidate` (the details name the exclusion), and the director sees "the router refused it" and may reject the result or ask the owner.
+
+## Known limitation: the sandbox wrapper trusts the code it runs
+
+The sandbox entries (`sbx.run_exam_code` and `sbx.run_project_tests`) run the model-written code and the project's checks in the same Python process inside a container with no network, a read-only root and no mounts. The result line is written by the wrapper after the code's own prints are discarded, but a deliberately malicious solution could write a forged result line straight to the process's output and flush it before exiting. The models here are not adversarial and a forged result needs that deliberate act, so this is a documented weakness, not a fixed one. Hardening it means running the checks in a second process whose result the code under test cannot reach.
+
+## Known limitation: step limit exists, spend limit does not
+
+The escalation limit counts steps (0 to the router's maximum of 2), not money. A step to an API route spends the owner's credit without a separate cap, and no spend is measured or shown. The limit's value is the coordinator setting `board_escalation_limit` (`<state>/coordinator.json` or `--board-escalation-limit`; an integer, default 2, clamped to 0 up to the router's maximum, a non-integer refused with `bad_type`), read into `Services.board_preapproved`.

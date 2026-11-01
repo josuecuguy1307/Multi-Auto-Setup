@@ -1,0 +1,15 @@
+From this 12-month table reply with only JSON {"net": [monthly inflow minus outflow], "negative_months": [month numbers whose net is below zero]}.
+
+month,inflow,outflow
+1,14486,14653
+2,13266,19806
+3,10155,17351
+4,9640,8901
+5,8742,14355
+6,12181,16658
+7,11818,19408
+8,18038,17094
+9,13739,18032
+10,13716,16428
+11,12839,11438
+12,16274,16291

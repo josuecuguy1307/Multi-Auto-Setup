@@ -1,0 +1,32 @@
+Extract supplier, date (ISO), total and tax (strings with two decimals) from each of the 15 invoice texts. Reply with only a JSON list in order.
+
+[1] Alba Tools
+Invoice number: INV-901
+Issued: 2026-04-10
+Net 4677.00; tax (12%) 561.24; amount due 5238.24
+[2] From Norte Print, invoice INV-902, dated 2026-09-19. Please pay 2460.64 (including 263.64 tax).
+[3] INVOICE Sol Foods / No. INV-903 / Date 19.09.2026 / Subtotal 3963.00 / Tax 12% 475.56 / TOTAL 4438.56
+[4] Lago Paper
+Invoice number: INV-904
+Issued: 2026-05-25
+Net 3968.00; tax (10%) 396.80; amount due 4364.80
+[5] From Ceiba Cafe, invoice INV-905, dated 2026-02-14. Please pay 2165.90 (including 196.90 tax).
+[6] INVOICE Faro Radio / No. INV-906 / Date 21.09.2026 / Subtotal 576.00 / Tax 10% 57.60 / TOTAL 633.60
+[7] Luna Bakery
+Invoice number: INV-907
+Issued: 2026-08-27
+Net 581.00; tax (12%) 69.72; amount due 650.72
+[8] From Mapa Studio, invoice INV-908, dated 2026-03-12. Please pay 4230.60 (including 384.60 tax).
+[9] INVOICE Sur Plants / No. INV-909 / Date 22.04.2026 / Subtotal 4688.00 / Tax 10% 468.80 / TOTAL 5156.80
+[10] Ruiz Clinic
+Invoice number: INV-910
+Issued: 2026-07-12
+Net 2128.00; tax (10%) 212.80; amount due 2340.80
+[11] From Ola Textiles, invoice INV-911, dated 2026-12-10. Please pay 3269.20 (including 297.20 tax).
+[12] INVOICE Nube Graphics / No. INV-912 / Date 19.02.2026 / Subtotal 4179.00 / Tax 5% 208.95 / TOTAL 4387.95
+[13] Delta Parts
+Invoice number: INV-913
+Issued: 2026-06-14
+Net 2133.00; tax (5%) 106.65; amount due 2239.65
+[14] From Roble Wood, invoice INV-914, dated 2026-10-17. Please pay 4709.25 (including 224.25 tax).
+[15] INVOICE Pampa Seeds / No. INV-915 / Date 21.10.2026 / Subtotal 4426.00 / Tax 10% 442.60 / TOTAL 4868.60

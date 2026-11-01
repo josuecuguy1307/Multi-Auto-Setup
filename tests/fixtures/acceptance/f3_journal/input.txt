@@ -1,0 +1,34 @@
+Turn these 20 transactions into double-entry journal entries. Reply with only a JSON list of {"id", "debit", "credit", "amount"} (account numbers from the chart), ordered by id.
+
+Chart: {"1000": "Cash", "1100": "Accounts receivable", "1200": "Inventory", "2000": "Accounts payable", "3000": "Owner equity", "4000": "Sales", "5000": "Cost of goods", "5100": "Rent", "5200": "Utilities"}
+Rules:
+- cash sale: debit 1000, credit 4000
+- sale on credit: debit 1100, credit 4000
+- buy inventory on credit: debit 1200, credit 2000
+- pay rent in cash: debit 5100, credit 1000
+- pay utilities in cash: debit 5200, credit 1000
+- collect a receivable: debit 1000, credit 1100
+- pay a supplier: debit 2000, credit 1000
+- owner invests cash: debit 1000, credit 3000
+
+Transactions:
+1. cash sale of 1358 (use the chart rule for 'cash sale')
+2. sale on credit of 988 (use the chart rule for 'sale on credit')
+3. buy inventory on credit of 214 (use the chart rule for 'buy inventory on credit')
+4. pay rent in cash of 1780 (use the chart rule for 'pay rent in cash')
+5. pay utilities in cash of 2396 (use the chart rule for 'pay utilities in cash')
+6. collect a receivable of 1317 (use the chart rule for 'collect a receivable')
+7. pay a supplier of 1052 (use the chart rule for 'pay a supplier')
+8. owner invests cash of 2702 (use the chart rule for 'owner invests cash')
+9. cash sale of 2245 (use the chart rule for 'cash sale')
+10. sale on credit of 1667 (use the chart rule for 'sale on credit')
+11. buy inventory on credit of 597 (use the chart rule for 'buy inventory on credit')
+12. pay rent in cash of 441 (use the chart rule for 'pay rent in cash')
+13. pay utilities in cash of 124 (use the chart rule for 'pay utilities in cash')
+14. collect a receivable of 2494 (use the chart rule for 'collect a receivable')
+15. pay a supplier of 2495 (use the chart rule for 'pay a supplier')
+16. owner invests cash of 2233 (use the chart rule for 'owner invests cash')
+17. cash sale of 1213 (use the chart rule for 'cash sale')
+18. sale on credit of 628 (use the chart rule for 'sale on credit')
+19. buy inventory on credit of 633 (use the chart rule for 'buy inventory on credit')
+20. pay rent in cash of 2953 (use the chart rule for 'pay rent in cash')

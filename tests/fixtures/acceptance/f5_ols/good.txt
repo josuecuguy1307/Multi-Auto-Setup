@@ -1,0 +1,23 @@
+```python
+# file: ols.py
+def fit(price, ads, sales):
+    n = len(sales)
+    X = [[1.0, p, a] for p, a in zip(price, ads)]
+    def mat_t_mul(A, B):
+        return [[sum(A[k][i] * B[k][j] for k in range(len(A))) for j in range(len(B[0]))] for i in range(len(A[0]))]
+    def inv(M):
+        m = len(M); A = [r[:] + [1.0 if i == j else 0.0 for j in range(m)] for i, r in enumerate(M)]
+        for c in range(m):
+            p = max(range(c, m), key=lambda r: abs(A[r][c])); A[c], A[p] = A[p], A[c]
+            d = A[c][c]; A[c] = [v / d for v in A[c]]
+            for r in range(m):
+                if r != c:
+                    f = A[r][c]; A[r] = [v - f * w for v, w in zip(A[r], A[c])]
+        return [r[m:] for r in A]
+    XtX = mat_t_mul(X, X); inv_ = inv(XtX); Xty = [sum(X[k][i] * sales[k] for k in range(n)) for i in range(3)]
+    beta = [sum(inv_[i][j] * Xty[j] for j in range(3)) for i in range(3)]
+    fitted = [sum(b * x for b, x in zip(beta, row)) for row in X]; my = sum(sales) / n
+    sse = sum((y - f) ** 2 for y, f in zip(sales, fitted)); sst = sum((y - my) ** 2 for y in sales)
+    s2 = sse / (n - 3); se = (s2 * inv_[1][1]) ** 0.5; t = beta[1] / se
+    return {'coef': beta, 'r2': 1 - sse / sst, 'price_significant_5pct': abs(t) > 2.0017}
+```

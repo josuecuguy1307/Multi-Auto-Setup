@@ -101,3 +101,17 @@ Windows: the executable names are data per family; `find_exe` uses the OS lookup
      Baseline-CPU (`-baseline`) and musl variants exist and are not pinned here; Intel Macs and older x64 CPUs may need the baseline build (the recipe chooses by measured facts). The binary's runtime requirements were not read.
    - **Pi 1.4.0**: npm package **`@earendil-works/pi-coding-agent`** (published 2026-10-21). The repo `badlogic/pi-mono` redirects to `earendil-works/pi`, and the older package name `@mariozechner/pi-coding-agent` stops at 0.73.1 and is not the current one. Tag `v1.4.0`, commit `4a080252f06caf63a525d7873c5d94d3c23887e0`; LICENSE re-read at that commit: MIT (the registry also says MIT). Integrity (registry `dist.integrity`): `sha512-Z41LpZ3yYHSC/UUps6Mr39UMFPwH8elhJBG9DY1P7kuzsE5qSK/6eMj2EHzO5evJRQWLbKSqUMw+4nCNtIyiQg==`, shasum `7f5dd2a4f7fa46ed252465ac4d341831896b1fc2`, tarball `https://registry.npmjs.org/@earendil-works/pi-coding-agent/-/pi-coding-agent-1.4.0.tgz`. It needs Node >= 22.19.0 and has 22 direct dependencies whose licenses (and the transitive tree) are **not checked yet**: the recipe is not accepted until they are.
 7. Conservative option for the remaining two questions: (a) the draft's open subtypes default to **closed** for every provider and own-harness environment until the owner opens them (the owner can open all); (b) OpenCode and Pi may be refused with a typed reason when a release asset, runtime or license does not fit; nothing is installed by this session.
+
+
+## 6. Meta Model API and OpenCode through it (phase4d, 2026-10-31)
+
+| | Meta Model API (`meta-model-api`) | OpenCode through the API (`opencode:meta-api`) |
+|---|---|---|
+| Subtype / cost class / leaves the network | provider / `api` / yes (`cloud: true` on the access) | own harness / `api` / yes (per access; `opencode:local` stays local) |
+| Address | `https://api.meta.ai/v1` + `/chat/completions` (POST) | the same, written into OpenCode's config as a provider block |
+| Credential | `MODEL_API_KEY`, `Authorization: Bearer`, read by NAME on the node | the same name, passed to the OpenCode process and referenced as `{env:MODEL_API_KEY}` |
+| Model | `muse-spark-1.3` (declared in the data) | `muse-spark-1.3` |
+| Read | https://dev.meta.ai/docs/getting-started/authentication and https://dev.meta.ai/docs/api-reference/chat-completions/create-chat-completion, 2026-10-31 | https://opencode.ai/docs/config/ (`{env:VARIABLE_NAME}`), 2026-10-31 |
+| UNTESTED | the response fields (the page does not show them; the adapter reads `choices[0].message.content`), `max_tokens`/`temperature`/`stream` (undocumented there, so not sent) | whether `{env:...}` is substituted inside `OPENCODE_CONFIG_CONTENT` (the docs do not say) |
+
+Both stay UNTESTED until a verification call with `MODEL_API_KEY` runs (never before the owner says the Lenovo or the key is free). Typed reasons added as data: `machine_offline` and `access missing: <NAMES>` (the variable NAMES an access lacks, never a value).

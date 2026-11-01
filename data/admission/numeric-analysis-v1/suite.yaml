@@ -1,0 +1,220 @@
+suite_id: numeric-analysis-v1
+task_type: numeric-analysis
+version: 1
+description: 'Ten finance and statistics tasks: bank reconciliation, double-entry journal entries, loan amortization and ordinary least squares. Six ask for a function checked in the sandbox, four for a number. A task passes only when every check holds.'
+preamble: ''
+est_output_tokens: 220
+tasks:
+- id: numeric-01-reconcile
+  title: 'bank reconciliation: unmatched references'
+  prompt: |
+    Define reconcile(bank, ledger) where each argument is a list of (reference, amount) tuples. Return the sorted list of references that appear in only one of the two lists, or whose amounts differ between them (a reference is listed once).
+    Reply with Python code only, in one block, using only the standard library.
+  grader:
+    kind: sandbox_tests
+    n_checks: 4
+  checks: |
+    check(reconcile([('a', 10.0), ('b', 5.5)], [('a', 10.0), ('b', 5.5)]), [])
+    check(reconcile([('a', 10.0), ('b', 5.5)], [('a', 10.0)]), ['b'])
+    check(reconcile([('a', 10.0)], [('a', 12.0), ('c', 1.0)]), ['a', 'c'])
+    check(reconcile([], []), [])
+  reference: |
+    def reconcile(bank, ledger):
+        b, l = dict(bank), dict(ledger)
+        return sorted(r for r in set(b) | set(l) if b.get(r) != l.get(r))
+  timeout_s: 10
+  source:
+    author: project
+    license: project license (pending)
+- id: numeric-02-balance
+  title: 'double entry: net by account'
+  prompt: |
+    Define net_by_account(entries) where entries is a list of (account, debit, credit) tuples of numbers. Return a dict from account to debit minus credit, rounded to 2 decimals. Define is_balanced(entries) returning True when total debits equal total credits within 0.005.
+    Reply with Python code only, in one block, using only the standard library.
+  grader:
+    kind: sandbox_tests
+    n_checks: 4
+  checks: |
+    E = [('cash', 100.0, 0.0), ('sales', 0.0, 100.0), ('cash', 0.0, 40.0), ('rent', 40.0, 0.0)]
+    check(net_by_account(E), {'cash': 60.0, 'sales': -100.0, 'rent': 40.0})
+    check(is_balanced(E), True)
+    check(is_balanced(E[:3]), False)
+    check(net_by_account([]), {})
+  reference: |
+    def net_by_account(entries):
+        out = {}
+        for a, d, c in entries:
+            out[a] = out.get(a, 0) + d - c
+        return {a: round(v, 2) for a, v in out.items()}
+
+
+    def is_balanced(entries):
+        return abs(sum(d for _, d, _ in entries) - sum(c for _, _, c in entries)) < 0.005
+  timeout_s: 10
+  source:
+    author: project
+    license: project license (pending)
+- id: numeric-03-payment
+  title: 'French loan: monthly payment'
+  prompt: |
+    Define monthly_payment(principal, annual_rate, months) for a loan with equal monthly payments (French method), where annual_rate is a fraction (0.12 is 12% per year, charged monthly at annual_rate/12). Return the payment rounded to 2 decimals. A rate of 0 means principal/months.
+    Reply with Python code only, in one block, using only the standard library.
+  grader:
+    kind: sandbox_tests
+    n_checks: 4
+  checks: |
+    check(monthly_payment(10000, 0.12, 24), 470.73)
+    check(monthly_payment(5000, 0.06, 12), 430.33)
+    check(monthly_payment(20000, 0.0, 10), 2000.0)
+    check(monthly_payment(1000, 0.24, 6), 178.53)
+  reference: |
+    def monthly_payment(principal, annual_rate, months):
+        i = annual_rate / 12
+        if i == 0:
+            return round(principal / months, 2)
+        return round(principal * i / (1 - (1 + i) ** -months), 2)
+  timeout_s: 10
+  source:
+    author: project
+    license: project license (pending)
+- id: numeric-04-remaining
+  title: 'French loan: balance after k payments'
+  prompt: |
+    Define balance_after(principal, annual_rate, months, k): the remaining balance after k equal monthly payments of the French method (annual_rate is a fraction charged monthly at annual_rate/12; the payment is not rounded), rounded to 2 decimals. After all payments the balance is 0.0.
+    Reply with Python code only, in one block, using only the standard library.
+  grader:
+    kind: sandbox_tests
+    n_checks: 4
+  checks: |
+    check(balance_after(10000, 0.12, 24, 0), 10000.0)
+    check(balance_after(10000, 0.12, 24, 1), 9629.27)
+    check(balance_after(10000, 0.12, 24, 12), 5298.16)
+    check(balance_after(10000, 0.12, 24, 24), 0.0)
+  reference: |
+    def balance_after(principal, annual_rate, months, k):
+        i = annual_rate / 12
+        pay = principal / months if i == 0 else principal * i / (1 - (1 + i) ** -months)
+        b = principal
+        for _ in range(k):
+            b = b * (1 + i) - pay
+        return round(b, 2) + 0.0
+  timeout_s: 10
+  source:
+    author: project
+    license: project license (pending)
+- id: numeric-05-ols
+  title: least squares line
+  prompt: |
+    Define ols_fit(xs, ys) returning (slope, intercept) of the ordinary least squares line y = intercept + slope * x, each rounded to 6 decimals.
+    Reply with Python code only, in one block, using only the standard library.
+  grader:
+    kind: sandbox_tests
+    n_checks: 4
+  checks: |
+    check(ols_fit([1, 2, 3], [2, 4, 6]), (2.0, 0.0))
+    check(ols_fit([1, 2, 3, 4, 5, 6], [2.1, 3.9, 6.2, 7.8, 10.1, 12.2]), (2.02, -0.02))
+    check(ols_fit([0, 1], [5, 3]), (-2.0, 5.0))
+    check(ols_fit([1, 2, 3, 4], [1, 1, 1, 1]), (0.0, 1.0))
+  reference: |
+    def ols_fit(xs, ys):
+        n = len(xs)
+        mx, my = sum(xs) / n, sum(ys) / n
+        sxx = sum((x - mx) ** 2 for x in xs)
+        sxy = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+        b = sxy / sxx
+        return (round(b, 6), round(my - b * mx, 6))
+  timeout_s: 10
+  source:
+    author: project
+    license: project license (pending)
+- id: numeric-06-r2
+  title: R squared of the line
+  prompt: |
+    Define r_squared(xs, ys): the coefficient of determination of the ordinary least squares line of ys on xs, rounded to 6 decimals.
+    Reply with Python code only, in one block, using only the standard library.
+  grader:
+    kind: sandbox_tests
+    n_checks: 4
+  checks: |
+    check(r_squared([1, 2, 3], [2, 4, 6]), 1.0)
+    check(r_squared([1, 2, 3, 4, 5, 6], [2.1, 3.9, 6.2, 7.8, 10.1, 12.2]), 0.998211)
+    check(r_squared([1, 2, 3, 4], [1, 3, 2, 4]), 0.64)
+    check(r_squared([1, 2, 3, 4, 5], [5, 4, 3, 2, 1]), 1.0)
+  reference: |
+    def r_squared(xs, ys):
+        n = len(xs)
+        mx, my = sum(xs) / n, sum(ys) / n
+        sxx = sum((x - mx) ** 2 for x in xs)
+        b = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sxx
+        a = my - b * mx
+        sst = sum((y - my) ** 2 for y in ys)
+        sse = sum((y - (a + b * x)) ** 2 for x, y in zip(xs, ys))
+        return round(1 - sse / sst, 6)
+  timeout_s: 10
+  source:
+    author: project
+    license: project license (pending)
+- id: numeric-07-adjusted-bank
+  title: 'bank reconciliation: adjusted bank balance'
+  prompt: |
+    A bank statement shows a balance of 15,420.50. Two checks are still outstanding (1,200.00 and 350.75), a deposit of 2,000.00 is in transit, and the bank charged a 25.00 fee that the company has not recorded yet. What is the adjusted bank balance (the bank side of the reconciliation)?
+    You may reason briefly. The last line of your reply must be exactly: ANSWER: <number>
+  grader:
+    kind: answer_line
+    expect: 15869.75
+    tolerance: 0.005
+  reference: |
+    15,420.50 - 1,550.75 + 2,000.00 = 15,869.75
+    ANSWER: 15869.75
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: numeric-08-principal-3
+  title: 'French loan: principal in the third payment'
+  prompt: |
+    A loan of 10,000 at 12% per year, charged monthly at 1%, is repaid in 24 equal monthly payments (French method). How much of the third payment is principal? Round to 2 decimals.
+    You may reason briefly. The last line of your reply must be exactly: ANSWER: <number>
+  grader:
+    kind: answer_line
+    expect: 378.19
+    tolerance: 0.005
+  reference: |
+    payment 470.7347; balance after 2 payments 9254.8232; interest 92.5482
+    ANSWER: 378.19
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: numeric-09-journal-debits
+  title: 'journal entries: total debits'
+  prompt: |
+    Four transactions are recorded as double-entry journal entries: a sale on credit of 900, a cash purchase of supplies of 120, a payment of an account payable of 300, and the owner investing 1,000 in cash. Each entry has equal debits and credits. What is the total of all the debits?
+    You may reason briefly. The last line of your reply must be exactly: ANSWER: <number>
+  grader:
+    kind: answer_line
+    expect: 2320
+    tolerance: 0.005
+  reference: |
+    900 + 120 + 300 + 1,000 = 2,320
+    ANSWER: 2320
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)
+- id: numeric-10-slope
+  title: least squares slope
+  prompt: |
+    Fit the ordinary least squares line to the points (1,2), (2,3), (3,5), (4,4), (5,6). What is its slope? Round to 2 decimals.
+    You may reason briefly. The last line of your reply must be exactly: ANSWER: <number>
+  grader:
+    kind: answer_line
+    expect: 0.9
+    tolerance: 0.005
+  reference: |
+    slope 0.9000
+    ANSWER: 0.9
+  timeout_s: 120
+  source:
+    author: project
+    license: project license (pending)

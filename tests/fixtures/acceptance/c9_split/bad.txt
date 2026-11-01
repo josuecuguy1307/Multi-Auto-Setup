@@ -1,0 +1,86 @@
+```python
+# file: part_a.py
+def op_0(x):
+    return x * 2 + 0
+
+
+def op_1(x):
+    return x * 3 + 1
+
+
+def op_2(x):
+    return x * 4 + 2
+
+
+def op_3(x):
+    return x * 5 + 3
+
+
+def op_4(x):
+    return x * 6 + 4
+
+
+def op_5(x):
+    return x * 7 + 5
+
+
+def op_6(x):
+    return x * 8 + 6
+
+
+def op_7(x):
+    return x * 9 + 7
+
+
+def op_8(x):
+    return x * 10 + 8
+
+
+def op_9(x):
+    return x * 11 + 9
+
+
+def op_10(x):
+    return x * 12 + 10
+
+
+def op_11(x):
+    return x * 13 + 11
+
+
+def op_12(x):
+    return x * 14 + 12
+
+
+def op_13(x):
+    return x * 15 + 13
+
+
+def op_14(x):
+    return x * 16 + 14
+
+
+def op_15(x):
+    return x * 17 + 15
+
+
+def op_16(x):
+    return x * 18 + 16
+
+
+def op_17(x):
+    return x * 19 + 17
+
+
+def op_18(x):
+    return x * 20 + 18
+
+
+def op_19(x):
+    return x * 21 + 19
+
+```
+```python
+# file: inventory.py
+from part_a import *
+```

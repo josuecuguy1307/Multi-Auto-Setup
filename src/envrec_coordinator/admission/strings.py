@@ -26,6 +26,7 @@ TASK_FAIL = {
     "wrong_answer": "the answer was wrong", "syntax_error": "the code did not parse", "exception": "the code raised an error", "timeout": "the answer took too long",
     "no_result": "the code stopped before the checks finished", "no_code": "the reply held no code", "no_json": "the reply held no JSON object", "not_equal": "the answer did not match",
     "no_answer_line": "the last line was not in the required form", "wrong_lines": "the lines did not match", "empty": "the reply was empty", "wrong_check_count": "the checks did not all run",
+    "too_long": "the reply was longer than allowed", "missing_content": "the reply left out something it had to carry", "forbidden_content": "the reply held something it must not",
 }
 
 APPROVE_QUESTION = "approve_admission"

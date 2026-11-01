@@ -9,7 +9,11 @@
    "cloud": false,
    "task_types": [
     "text",
-    "code"
+    "code",
+    "summarize",
+    "extraction",
+    "data-cleaning",
+    "numeric-analysis"
    ],
    "os": [
     "darwin",
@@ -66,6 +70,22 @@
      "code": {
       "name": "chat",
       "confinement": "none_needed"
+     },
+     "summarize": {
+      "name": "chat",
+      "confinement": "none_needed"
+     },
+     "extraction": {
+      "name": "chat",
+      "confinement": "none_needed"
+     },
+     "data-cleaning": {
+      "name": "chat",
+      "confinement": "none_needed"
+     },
+     "numeric-analysis": {
+      "name": "chat",
+      "confinement": "none_needed"
      }
     }
    }
@@ -77,7 +97,11 @@
    "cloud": true,
    "task_types": [
     "code",
-    "text"
+    "text",
+    "summarize",
+    "extraction",
+    "data-cleaning",
+    "numeric-analysis"
    ],
    "os": [
     "darwin",
@@ -186,6 +210,70 @@
        "--tools",
        ""
       ]
+     },
+     "summarize": {
+      "name": "no_tools",
+      "confinement": "tool_declared",
+      "argv": [
+       "-p",
+       "--output-format",
+       "json",
+       "--no-session-persistence",
+       "--max-turns",
+       "2",
+       "--permission-mode",
+       "dontAsk",
+       "--tools",
+       ""
+      ]
+     },
+     "extraction": {
+      "name": "no_tools",
+      "confinement": "tool_declared",
+      "argv": [
+       "-p",
+       "--output-format",
+       "json",
+       "--no-session-persistence",
+       "--max-turns",
+       "2",
+       "--permission-mode",
+       "dontAsk",
+       "--tools",
+       ""
+      ]
+     },
+     "data-cleaning": {
+      "name": "no_tools",
+      "confinement": "tool_declared",
+      "argv": [
+       "-p",
+       "--output-format",
+       "json",
+       "--no-session-persistence",
+       "--max-turns",
+       "2",
+       "--permission-mode",
+       "dontAsk",
+       "--tools",
+       ""
+      ]
+     },
+     "numeric-analysis": {
+      "name": "no_tools",
+      "confinement": "tool_declared",
+      "argv": [
+       "-p",
+       "--output-format",
+       "json",
+       "--no-session-persistence",
+       "--max-turns",
+       "2",
+       "--permission-mode",
+       "dontAsk",
+       "--tools",
+       ""
+      ]
      }
     }
    }
@@ -197,7 +285,11 @@
    "cloud": true,
    "task_types": [
     "code",
-    "text"
+    "text",
+    "summarize",
+    "extraction",
+    "data-cleaning",
+    "numeric-analysis"
    ],
    "os": [
     "darwin",
@@ -306,6 +398,70 @@
        "{workspace}/.last-message.txt",
        "-"
       ]
+     },
+     "summarize": {
+      "name": "read_only",
+      "confinement": "unverified",
+      "argv": [
+       "exec",
+       "--ephemeral",
+       "--skip-git-repo-check",
+       "-s",
+       "read-only",
+       "-C",
+       "{workspace}",
+       "-o",
+       "{workspace}/.last-message.txt",
+       "-"
+      ]
+     },
+     "extraction": {
+      "name": "read_only",
+      "confinement": "unverified",
+      "argv": [
+       "exec",
+       "--ephemeral",
+       "--skip-git-repo-check",
+       "-s",
+       "read-only",
+       "-C",
+       "{workspace}",
+       "-o",
+       "{workspace}/.last-message.txt",
+       "-"
+      ]
+     },
+     "data-cleaning": {
+      "name": "read_only",
+      "confinement": "unverified",
+      "argv": [
+       "exec",
+       "--ephemeral",
+       "--skip-git-repo-check",
+       "-s",
+       "read-only",
+       "-C",
+       "{workspace}",
+       "-o",
+       "{workspace}/.last-message.txt",
+       "-"
+      ]
+     },
+     "numeric-analysis": {
+      "name": "read_only",
+      "confinement": "unverified",
+      "argv": [
+       "exec",
+       "--ephemeral",
+       "--skip-git-repo-check",
+       "-s",
+       "read-only",
+       "-C",
+       "{workspace}",
+       "-o",
+       "{workspace}/.last-message.txt",
+       "-"
+      ]
      }
     }
    }
@@ -317,7 +473,11 @@
    "cloud": true,
    "task_types": [
     "code",
-    "text"
+    "text",
+    "summarize",
+    "extraction",
+    "data-cleaning",
+    "numeric-analysis"
    ],
    "os": [
     "darwin",
@@ -424,6 +584,38 @@
        "exec",
        "{prompt}"
       ]
+     },
+     "summarize": {
+      "name": "exec",
+      "confinement": "unverified",
+      "argv": [
+       "exec",
+       "{prompt}"
+      ]
+     },
+     "extraction": {
+      "name": "exec",
+      "confinement": "unverified",
+      "argv": [
+       "exec",
+       "{prompt}"
+      ]
+     },
+     "data-cleaning": {
+      "name": "exec",
+      "confinement": "unverified",
+      "argv": [
+       "exec",
+       "{prompt}"
+      ]
+     },
+     "numeric-analysis": {
+      "name": "exec",
+      "confinement": "unverified",
+      "argv": [
+       "exec",
+       "{prompt}"
+      ]
      }
     }
    }
@@ -435,7 +627,11 @@
    "cloud": false,
    "task_types": [
     "code",
-    "text"
+    "text",
+    "summarize",
+    "extraction",
+    "data-cleaning",
+    "numeric-analysis"
    ],
    "os": [
     "darwin",
@@ -519,6 +715,10 @@
     "pin": {
      "label": "verified by code",
      "source": "GitHub releases API, v1.19.5 asset digests; LICENSE re-read at the tag's commit 810c0eba"
+    },
+    "meta_api_access": {
+     "label": "UNTESTED",
+     "source": "OpenCode documents {env:VARIABLE_NAME} substitution in its config (https://opencode.ai/docs/config/); it does not say whether that applies to OPENCODE_CONFIG_CONTENT, so a run through this access is unverified until a verification call with MODEL_API_KEY. The provider block is the same @ai-sdk/openai-compatible shape used for the local llama.cpp backend"
     }
    },
    "accesses": [
@@ -528,6 +728,119 @@
      "cost_class": "local",
      "plan_group": null,
      "env_names": []
+    },
+    {
+     "id": "opencode:meta-api",
+     "kind": "api_key",
+     "cost_class": "api",
+     "plan_group": null,
+     "env_names": [
+      "MODEL_API_KEY"
+     ],
+     "cloud": true,
+     "model": "muse-spark-1.3",
+     "signed_in_check": null,
+     "adapter": {
+      "needs_model_endpoint": false,
+      "env_pass": [
+       "MODEL_API_KEY"
+      ],
+      "env_set": {
+       "OPENCODE_CONFIG_CONTENT": "{\"$schema\":\"https://opencode.ai/config.json\",\"provider\":{\"metaapi\":{\"npm\":\"@ai-sdk/openai-compatible\",\"name\":\"Meta Model API\",\"options\":{\"baseURL\":\"https://api.meta.ai/v1\",\"apiKey\":\"{env:MODEL_API_KEY}\"},\"models\":{\"{model}\":{\"name\":\"Muse Spark\"}}}}}"
+      },
+      "modes": {
+       "code": {
+        "name": "edit_no_bash",
+        "confinement": "tool_declared",
+        "argv": [
+         "run",
+         "--dir",
+         "{workspace}",
+         "--model",
+         "metaapi/{model}",
+         "{prompt}"
+        ],
+        "env_set": {
+         "OPENCODE_PERMISSION": "{\"bash\":\"deny\",\"webfetch\":\"deny\",\"external_directory\":\"deny\",\"edit\":\"allow\"}"
+        }
+       },
+       "text": {
+        "name": "no_edit_no_bash",
+        "confinement": "tool_declared",
+        "argv": [
+         "run",
+         "--dir",
+         "{workspace}",
+         "--model",
+         "metaapi/{model}",
+         "{prompt}"
+        ],
+        "env_set": {
+         "OPENCODE_PERMISSION": "{\"bash\":\"deny\",\"webfetch\":\"deny\",\"external_directory\":\"deny\",\"edit\":\"deny\"}"
+        }
+       },
+       "summarize": {
+        "name": "no_edit_no_bash",
+        "confinement": "tool_declared",
+        "argv": [
+         "run",
+         "--dir",
+         "{workspace}",
+         "--model",
+         "metaapi/{model}",
+         "{prompt}"
+        ],
+        "env_set": {
+         "OPENCODE_PERMISSION": "{\"bash\":\"deny\",\"webfetch\":\"deny\",\"external_directory\":\"deny\",\"edit\":\"deny\"}"
+        }
+       },
+       "extraction": {
+        "name": "no_edit_no_bash",
+        "confinement": "tool_declared",
+        "argv": [
+         "run",
+         "--dir",
+         "{workspace}",
+         "--model",
+         "metaapi/{model}",
+         "{prompt}"
+        ],
+        "env_set": {
+         "OPENCODE_PERMISSION": "{\"bash\":\"deny\",\"webfetch\":\"deny\",\"external_directory\":\"deny\",\"edit\":\"deny\"}"
+        }
+       },
+       "data-cleaning": {
+        "name": "no_edit_no_bash",
+        "confinement": "tool_declared",
+        "argv": [
+         "run",
+         "--dir",
+         "{workspace}",
+         "--model",
+         "metaapi/{model}",
+         "{prompt}"
+        ],
+        "env_set": {
+         "OPENCODE_PERMISSION": "{\"bash\":\"deny\",\"webfetch\":\"deny\",\"external_directory\":\"deny\",\"edit\":\"deny\"}"
+        }
+       },
+       "numeric-analysis": {
+        "name": "no_edit_no_bash",
+        "confinement": "tool_declared",
+        "argv": [
+         "run",
+         "--dir",
+         "{workspace}",
+         "--model",
+         "metaapi/{model}",
+         "{prompt}"
+        ],
+        "env_set": {
+         "OPENCODE_PERMISSION": "{\"bash\":\"deny\",\"webfetch\":\"deny\",\"external_directory\":\"deny\",\"edit\":\"deny\"}"
+        }
+       }
+      }
+     }
     }
    ],
    "adapter": {
@@ -577,8 +890,108 @@
       "env_set": {
        "OPENCODE_PERMISSION": "{\"bash\":\"deny\",\"webfetch\":\"deny\",\"external_directory\":\"deny\",\"edit\":\"deny\"}"
       }
+     },
+     "summarize": {
+      "name": "no_edit_no_bash",
+      "confinement": "tool_declared",
+      "argv": [
+       "run",
+       "--dir",
+       "{workspace}",
+       "--model",
+       "llamacpp/{model}",
+       "{prompt}"
+      ],
+      "env_set": {
+       "OPENCODE_PERMISSION": "{\"bash\":\"deny\",\"webfetch\":\"deny\",\"external_directory\":\"deny\",\"edit\":\"deny\"}"
+      }
+     },
+     "extraction": {
+      "name": "no_edit_no_bash",
+      "confinement": "tool_declared",
+      "argv": [
+       "run",
+       "--dir",
+       "{workspace}",
+       "--model",
+       "llamacpp/{model}",
+       "{prompt}"
+      ],
+      "env_set": {
+       "OPENCODE_PERMISSION": "{\"bash\":\"deny\",\"webfetch\":\"deny\",\"external_directory\":\"deny\",\"edit\":\"deny\"}"
+      }
+     },
+     "data-cleaning": {
+      "name": "no_edit_no_bash",
+      "confinement": "tool_declared",
+      "argv": [
+       "run",
+       "--dir",
+       "{workspace}",
+       "--model",
+       "llamacpp/{model}",
+       "{prompt}"
+      ],
+      "env_set": {
+       "OPENCODE_PERMISSION": "{\"bash\":\"deny\",\"webfetch\":\"deny\",\"external_directory\":\"deny\",\"edit\":\"deny\"}"
+      }
+     },
+     "numeric-analysis": {
+      "name": "no_edit_no_bash",
+      "confinement": "tool_declared",
+      "argv": [
+       "run",
+       "--dir",
+       "{workspace}",
+       "--model",
+       "llamacpp/{model}",
+       "{prompt}"
+      ],
+      "env_set": {
+       "OPENCODE_PERMISSION": "{\"bash\":\"deny\",\"webfetch\":\"deny\",\"external_directory\":\"deny\",\"edit\":\"deny\"}"
+      }
      }
     }
+   },
+   "install": {
+    "sequence": [
+     "fetch_check",
+     "unpack_archive",
+     "verify_program"
+    ],
+    "binary": {
+     "macos": "opencode",
+     "linux": "opencode",
+     "windows": "opencode.exe"
+    },
+    "asset_keys": {
+     "macos": {
+      "arm64": "darwin-arm64",
+      "x86_64": "darwin-x64"
+     },
+     "linux": {
+      "x86_64": "linux-x64",
+      "arm64": "linux-arm64"
+     },
+     "windows": {
+      "x86_64": "windows-x64",
+      "arm64": "windows-arm64"
+     }
+    },
+    "verify": {
+     "argv": [
+      "--version"
+     ],
+     "timeout_s": 30,
+     "expect_exit": 0,
+     "command": {
+      "macos": "{binary} --version",
+      "linux": "{binary} --version",
+      "windows": "{binary} --version"
+     },
+     "undo": "nothing to undo"
+    },
+    "status": "DATA ONLY: the pins (release v1.19.5, per-OS SHA-256 and size) and the steps are recorded; the plan builder for a tool install and the verify_program step are not built, so nothing installs OpenCode yet (UNTESTED)"
    }
   },
   {
@@ -588,7 +1001,11 @@
    "cloud": false,
    "task_types": [
     "code",
-    "text"
+    "text",
+    "summarize",
+    "extraction",
+    "data-cleaning",
+    "numeric-analysis"
    ],
    "os": [
     "darwin",
@@ -707,6 +1124,172 @@
        "--model",
        "{model}"
       ]
+     },
+     "summarize": {
+      "name": "no_tools_in_sandbox",
+      "confinement": "sandbox_required",
+      "argv": [
+       "-p",
+       "--no-session",
+       "--no-tools",
+       "--provider",
+       "llama-cpp",
+       "--model",
+       "{model}"
+      ]
+     },
+     "extraction": {
+      "name": "no_tools_in_sandbox",
+      "confinement": "sandbox_required",
+      "argv": [
+       "-p",
+       "--no-session",
+       "--no-tools",
+       "--provider",
+       "llama-cpp",
+       "--model",
+       "{model}"
+      ]
+     },
+     "data-cleaning": {
+      "name": "no_tools_in_sandbox",
+      "confinement": "sandbox_required",
+      "argv": [
+       "-p",
+       "--no-session",
+       "--no-tools",
+       "--provider",
+       "llama-cpp",
+       "--model",
+       "{model}"
+      ]
+     },
+     "numeric-analysis": {
+      "name": "no_tools_in_sandbox",
+      "confinement": "sandbox_required",
+      "argv": [
+       "-p",
+       "--no-session",
+       "--no-tools",
+       "--provider",
+       "llama-cpp",
+       "--model",
+       "{model}"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": "meta-model-api",
+   "title": "Meta Model API (muse-spark-1.3)",
+   "subtype": "provider",
+   "cloud": true,
+   "task_types": [
+    "text",
+    "code",
+    "summarize",
+    "extraction",
+    "data-cleaning",
+    "numeric-analysis"
+   ],
+   "os": [
+    "darwin",
+    "linux",
+    "windows"
+   ],
+   "needs": {
+    "sandbox": false,
+    "docker": false,
+    "gui": false
+   },
+   "license": {
+    "spdx": "n/a",
+    "note": "a hosted API; nothing is installed, bundled or copied"
+   },
+   "upstream": {
+    "kind": "vendor_page",
+    "url": "https://dev.meta.ai/docs"
+   },
+   "automated_use": "n/a",
+   "installed_by_us": false,
+   "needs_program": false,
+   "model": "muse-spark-1.3",
+   "labels": {
+    "base_url": {
+     "label": "declared by the project",
+     "source": "https://dev.meta.ai/docs: Model API base URL https://api.meta.ai/v1; models muse-spark-1.3, 1.2, 1.1 (the -contributor variants are not used)"
+    },
+    "auth": {
+     "label": "declared by the project",
+     "source": "https://dev.meta.ai/docs/getting-started/authentication: Bearer token in the Authorization header; the key variable is MODEL_API_KEY (read 2026-10-31)"
+    },
+    "chat_path": {
+     "label": "declared by the project",
+     "source": "https://dev.meta.ai/docs/api-reference/chat-completions/create-chat-completion: POST https://api.meta.ai/v1/chat/completions, headers Authorization: Bearer and Content-Type: application/json (read 2026-10-31)"
+    },
+    "body": {
+     "label": "declared by the project",
+     "source": "the page shows model and messages only; max_tokens, temperature and stream are not documented there, so the adapter does not send them (body_fields is empty)"
+    },
+    "response_shape": {
+     "label": "UNTESTED",
+     "source": "the page does not show the response fields; the adapter reads choices[0].message.content (the OpenAI-compatible default) until a verification call with MODEL_API_KEY confirms it"
+    },
+    "cloud": {
+     "label": "verified by code",
+     "source": "the address is an https host outside the network; check_catalog refuses a base_url on an access that is not cloud: true"
+    }
+   },
+   "accesses": [
+    {
+     "id": "meta-model-api:api-key",
+     "kind": "api_key",
+     "cost_class": "api",
+     "plan_group": null,
+     "env_names": [
+      "MODEL_API_KEY"
+     ],
+     "cloud": true,
+     "signed_in_check": null
+    }
+   ],
+   "adapter": {
+    "kind": "http_chat",
+    "base_url": "https://api.meta.ai/v1",
+    "chat_path": "/chat/completions",
+    "auth": {
+     "header": "Authorization",
+     "scheme": "Bearer",
+     "env_name": "MODEL_API_KEY"
+    },
+    "body_fields": [],
+    "max_tokens": 1024,
+    "timeout_s": 300,
+    "modes": {
+     "text": {
+      "name": "chat",
+      "confinement": "none_needed"
+     },
+     "code": {
+      "name": "chat",
+      "confinement": "none_needed"
+     },
+     "summarize": {
+      "name": "chat",
+      "confinement": "none_needed"
+     },
+     "extraction": {
+      "name": "chat",
+      "confinement": "none_needed"
+     },
+     "data-cleaning": {
+      "name": "chat",
+      "confinement": "none_needed"
+     },
+     "numeric-analysis": {
+      "name": "chat",
+      "confinement": "none_needed"
      }
     }
    }

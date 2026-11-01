@@ -1,6 +1,6 @@
 """The lifecycle commands: `mas service`, `mas update`, `mas unpair`, `mas forget`, `mas coordinator rotate-identity`.
 
-Owner-facing text is Spanish. Every command that changes the machine shows what it will do and how to undo it, then asks; `--yes` is the owner's answer given in advance for exactly what
+Owner-facing text is English. Every command that changes the machine shows what it will do and how to undo it, then asks; `--yes` is the owner's answer given in advance for exactly what
 was shown (it never widens anything). Where the machine is touched (services, programs) the per-OS layer and its skill data do it; this module only asks and reports."""
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from pathlib import Path
 
 import envrec_os
 from envrec_os import service as svc
+from envrec_mas import coordconfig
 from envrec_mas import release as rel
 
 EXIT_USAGE = 2
@@ -36,12 +37,11 @@ def ask_yes(question: str, *, yes: bool = False, input_fn: Callable[[str], str] 
 
 # ---- mas service -------------------------------------------------------------------------------------------------------------------------------
 
-def service_argv(role: str, state: Path, *, bind: str | None = None, port: int | None = None, python: str | None = None) -> list[str]:
+def service_argv(role: str, state: Path, *, python: str | None = None) -> list[str]:
+    """What the service runs. Nothing about HOW the coordinator runs is in the command: its settings (address, port, chat bridge, model profile...) are in <state>/coordinator.json, so changing
+    one is editing data (or `mas service install` again), never a new command line."""
     log = state / f"service-{role}.log"
-    argv = [python or svc.current_python(), "-m", "envrec_mas", "--state-dir", str(state), "--log-file", str(log)] + ROLE_COMMAND[role]
-    if role == "coordinator":
-        argv += ["--bind", str(bind)] + (["--port", str(port)] if port else [])
-    return argv
+    return [python or svc.current_python(), "-m", "envrec_mas", "--state-dir", str(state), "--log-file", str(log)] + ROLE_COMMAND[role]
 
 
 def _state(a) -> Path:
@@ -56,6 +56,15 @@ COORDINATOR_NOTE = ("A coordinator listens on ONE port of your network (7443 by 
                     "the network profile, the clock or the router. Also, --bind is this computer's address on your network: if the router gives it another one, the service will not start; it is best to reserve a fixed one for it.")
 
 
+def _coordinator_config(state: Path, given: dict) -> dict:
+    """The settings the coordinator service will start with: what is in the file now, plus what this command gave. A NEW file also gets the schema's `service_defaults` (a service has no terminal, so
+    the chat bridge is on unless the owner says --no-web). Refused before anything is written when a value does not have its type."""
+    schema = coordconfig.load_schema()
+    filed = coordconfig.read(state, schema)
+    base = filed if filed else dict(schema.get("service_defaults", {}))
+    return coordconfig.check({**base, **given}, schema)
+
+
 def cmd_service(a, *, runner: svc.Runner = svc.default_runner) -> int:
     state = _state(a)
     role = a.role
@@ -64,10 +73,17 @@ def cmd_service(a, *, runner: svc.Runner = svc.default_runner) -> int:
         if NodeState(state).pin() is None:
             print("This node is not paired yet, so a service would have nobody to call. Run `mas join` first. Nothing was changed.", file=sys.stderr)
             return 1
-    if role == "coordinator" and a.action == "install" and not a.bind:
-        print("A coordinator needs `--bind ADDRESS` (this computer's address on your network). Nothing was changed.", file=sys.stderr)
-        return EXIT_USAGE
-    argv = service_argv(role, state, bind=getattr(a, "bind", None), port=getattr(a, "port", None))
+    new_cfg: dict | None = None
+    if role == "coordinator" and a.action == "install":
+        try:
+            new_cfg = _coordinator_config(state, coordconfig.from_namespace(a))
+        except coordconfig.ConfigRefused as exc:
+            print(f"Cannot do that: {exc.text} [{exc.reason}]. Nothing was changed.", file=sys.stderr)
+            return EXIT_USAGE
+        if not new_cfg.get("bind"):
+            print("A coordinator needs `--bind ADDRESS` (this computer's address on your network). Nothing was changed.", file=sys.stderr)
+            return EXIT_USAGE
+    argv = service_argv(role, state)
     try:
         plan = svc.plan(role, argv, runner=runner)
     except svc.ServiceRefused as exc:
@@ -82,11 +98,16 @@ def cmd_service(a, *, runner: svc.Runner = svc.default_runner) -> int:
     if a.action == "install":
         print("This is what will be done on this computer:\n" + plan.describe())
         if role == "coordinator":
+            print(f"\nSettings it will start with, written to {coordconfig.path_of(state)} (edit that file, or run this command again, to change them; undo: delete the file):")
+            print(json.dumps(new_cfg, indent=1, sort_keys=True))
             print("\n" + COORDINATOR_NOTE)
         print(f"\nService log: {state / f'service-{role}.log'}")
         if not ask_yes("Install the service?", yes=a.yes):
             print("Nothing was changed.")
             return 1
+        if new_cfg is not None:
+            coordconfig.write(state, new_cfg)
+            print(f"  wrote {coordconfig.path_of(state)}")
         try:
             for line in svc.install(plan, runner=runner):
                 print("  " + line)
@@ -107,7 +128,7 @@ def cmd_service(a, *, runner: svc.Runner = svc.default_runner) -> int:
     for line in svc.uninstall(plan, runner=runner):
         print("  " + line)
     _forget_service(state, role)
-    print("Done. Your keys and pairing are untouched.")
+    print("Done. Your keys and pairing are untouched." + (f" The settings file {coordconfig.path_of(state)} stays; delete it if you want." if role == "coordinator" else ""))
     return 0
 
 
