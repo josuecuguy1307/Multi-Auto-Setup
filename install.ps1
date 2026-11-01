@@ -40,6 +40,8 @@ while ($i -lt $args.Count) {
         default { throw "Unknown option: $a" }
     }
 }
+# where this script file is (empty when it arrived through a pipe). Read here, at script level: inside a function the invocation info is the function's, which has no Path (an error under strict mode).
+$ScriptPath = if ($PSCommandPath) { [string]$PSCommandPath } else { '' }
 $AssumeYes = [bool]$Opt.Yes
 $MasHome = if ($Opt.Home) { $Opt.Home } elseif ($env:MAS_HOME) { $env:MAS_HOME } else { Join-Path $env:USERPROFILE '.mas' }
 $Base = if ($Opt.BaseUrl) { $Opt.BaseUrl } elseif ($env:MAS_RELEASE_BASE) { $env:MAS_RELEASE_BASE } else { $DefaultBase }
@@ -216,7 +218,7 @@ function Invoke-Install {
         if ($old -and $old -ne $tag) { Set-Content -LiteralPath (Join-Path $MasHome 'previous') -Value $old -Encoding ASCII }
         Set-Content -LiteralPath (Join-Path $MasHome 'uv') -Value $uv -Encoding ASCII
         # keep a copy of this installer next to the program, so the uninstaller exists even when this script arrived through a pipe
-        $mine = $MyInvocation.MyCommand.Path
+        $mine = $ScriptPath
         if (Test-Path (Join-Path $rel 'install.ps1')) { Copy-Item (Join-Path $rel 'install.ps1') (Join-Path $MasHome 'install.ps1') -Force }
         elseif ($mine -and (Test-Path $mine)) { Copy-Item $mine (Join-Path $MasHome 'install.ps1') -Force }
 

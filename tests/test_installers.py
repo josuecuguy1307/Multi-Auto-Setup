@@ -98,6 +98,57 @@ def test_install_ps1_has_a_bom_changes_only_the_user_path_and_asks_before_it():
     assert t.index("Add that folder to your user PATH?") < t.index("SetEnvironmentVariable('Path', $new, 'User')")
 
 
+def _functions(text: str) -> list[tuple[str, str]]:
+    """(name, body) of each top-level `function Name { ... }` of the script, by brace counting (the script keeps its braces out of strings)."""
+    out = []
+    for m in re.finditer(r"^function ([A-Za-z-]+)[^{]*\{", text, flags=re.M):
+        depth, i = 1, m.end()
+        while depth and i < len(text):
+            depth += {"{": 1, "}": -1}.get(text[i], 0)
+            i += 1
+        out.append((m.group(1), text[m.end():i]))
+    return out
+
+
+def test_install_ps1_never_reads_its_own_path_from_inside_a_function():
+    """Found on the first real Windows run: `$MyInvocation.MyCommand.Path` inside Invoke-Install is the FUNCTION's invocation, which has no Path property, so strict mode stopped the install with
+    "The property 'Path' cannot be found on this object" after the environment was built. The script's own path is read once, at script level, from $PSCommandPath (empty when it arrived through a pipe)."""
+    t = PS.read_bytes().decode("utf-8-sig")
+    assert "MyInvocation.MyCommand" not in t
+    first_function = re.search(r"^function ", t, flags=re.M).start()
+    assert t.index("$ScriptPath = ") < first_function and "$PSCommandPath" in t[:first_function] and "Set-StrictMode -Version 2" in t[:first_function]
+    inside = dict(_functions(t))
+    assert "$ScriptPath" in inside["Invoke-Install"] and "$PSCommandPath" not in inside["Invoke-Install"]
+    install = inside["Invoke-Install"]
+    assert re.search(r"elseif \(\$mine -and \(Test-Path \$mine\)\)", install)  # a pipe leaves it empty: then there is nothing to copy, and nothing fails
+
+
+def test_install_ps1_copes_with_a_user_path_that_does_not_exist_and_asks_before_creating_it():
+    """A user with no PATH variable of their own is normal on Windows (the value is absent, so the read gives $null). Reading it, testing for the folder and building the new value must all be
+    null-safe, the value is created only after the owner's yes, and only the user's variable is ever written."""
+    t = PS.read_bytes().decode("utf-8-sig")
+    funcs = dict(_functions(t))
+    assert "GetEnvironmentVariable('Path', 'User')" in funcs["Get-UserPath"] and ".Path" not in funcs["Get-UserPath"]
+    assert re.search(r"if \(-not \$p\) \{ return \$false \}", funcs["Test-OnUserPath"]) and funcs["Test-OnUserPath"].index("-not $p") < funcs["Test-OnUserPath"].index("$p.Split")
+    assert "$new = if ($p) { $p.TrimEnd(';') + ';' + $BinDir } else { $BinDir }" in t  # nothing to extend: the new value is the folder alone
+    assert t.count("SetEnvironmentVariable('Path'") == 2 and "'Machine'" not in t and "HKLM" not in t  # the install and the uninstall, both 'User'
+    assert all("'User')" in line for line in t.splitlines() if "SetEnvironmentVariable('Path'" in line)
+    assert t.index("Add that folder to your user PATH?") < t.index("SetEnvironmentVariable('Path', $new, 'User')")
+def test_the_uninstaller_touches_the_user_path_only_when_the_folder_is_on_it():
+    """`Test-OnUserPath` is null-safe (a missing user Path answers no), and the uninstaller writes the variable only inside `if (Test-OnUserPath ...)`: a missing user Path is left missing."""
+    undo = dict(_functions(PS.read_bytes().decode("utf-8-sig")))["Invoke-Uninstall"]
+    guard = re.search(r"if \(Test-OnUserPath \$BinDir\) \{.*?SetEnvironmentVariable\('Path', \(\$kept -join ';'\), 'User'\)", undo, flags=re.S)
+    assert guard and undo.count("SetEnvironmentVariable") == 1
+
+
+
+
+@pytest.mark.skipif(shutil.which("pwsh") is None, reason="needs PowerShell (pwsh); on Windows the script has never been run by this suite")
+def test_install_ps1_parses_with_the_powershell_parser():
+    code = f"$e=$null; [System.Management.Automation.Language.Parser]::ParseFile('{PS}', [ref]$null, [ref]$e) | Out-Null; if ($e) {{ $e | ForEach-Object {{ $_.Message }}; exit 1 }}"
+    assert subprocess.run(["pwsh", "-NoProfile", "-Command", code], capture_output=True, text=True).returncode == 0
+
+
 def test_pinning_rewrites_both_files_and_nothing_else(tmp_path):
     for f in (SH, PS):
         shutil.copy(f, tmp_path / f.name)
