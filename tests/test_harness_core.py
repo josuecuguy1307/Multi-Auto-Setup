@@ -258,8 +258,11 @@ def test_one_native_dialog_at_a_time_and_a_dialog_nobody_answers_approves_nothin
             p = ask_write(c)
             b = c.harness.begin_confirmation(CLAUDE, p.intent.id, "os_dialog")
             await asyncio.to_thread(dlg.opened.wait, 5)
+            again = c.harness.begin_confirmation(CLAUDE, p.intent.id, "os_dialog")  # the same question asked again joins the dialog that is open: it does not open a second one
+            assert again["ticket"] == b["ticket"] and len(dlg.calls) == 1
+            other = ask_write(c, plan_hash=OTHER)  # a DIFFERENT question cannot open a second native window while one is open
             with pytest.raises(Refused) as e:
-                c.harness.begin_confirmation(CLAUDE, p.intent.id, "os_dialog")
+                c.harness.begin_confirmation(CLAUDE, other.intent.id, "os_dialog")
             assert e.value.reason == "os_dialog_busy"
             dlg.release.set()
             await settle(lambda: c.harness.ticket(CLAUDE, b["ticket"])["state"] != "waiting")

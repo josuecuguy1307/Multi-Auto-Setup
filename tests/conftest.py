@@ -2,6 +2,8 @@
 
 import pytest
 
+pytest_plugins = ["real_dialog_guard"]  # every test, always: no real operating-system dialog can be opened (tests/real_dialog_guard.py)
+
 
 def pytest_addoption(parser):
     parser.addoption("--live-model", action="store_true", default=False,

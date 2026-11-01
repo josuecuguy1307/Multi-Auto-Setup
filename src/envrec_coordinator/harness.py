@@ -105,6 +105,7 @@ class HarnessCore:
         self.native_notice = native_notice or osconfirm.native_notice  # information for the owner's own screen: the pairing code goes here, never into a tool result
         self.native_secret = native_secret or ossecret.native_secret
         self._code_notices: dict[str, object] = {}  # offer id -> the dialog that shows its code
+        self.raise_dialogs = True  # the harness opens the owner's dialog by itself for what a chat started; a test world that plays the owner through the tools turns it off
         self._pair_chat: dict[str, Channel] = {}  # offer id -> the chat channel that asked for the code: only such an offer gets its confirmation raised by the harness
         self._secrets: dict[str, str] = {}  # a value typed into the hidden window, by ticket: held in memory until the one write task takes it, never logged, never put in an intent
         self.dir = coord.state / "harness"
@@ -777,7 +778,7 @@ class HarnessCore:
 
     # ---- confirmations of a write ---------------------------------------------------------------------------------------------------------------
 
-    def request_confirmation(self, run_id: str | None, *, summary: str, plan_hash: str, command: str, undo: str, sensitivity: str = "internal", actor: str = "GUARD") -> Pending:
+    def request_confirmation(self, run_id: str | None, *, summary: str, plan_hash: str, command: str, undo: str, sensitivity: str = "internal", actor: str = "GUARD", raise_for: Channel | None = None) -> Pending:
         """A protocol (T3a's setup) asks the owner to approve a write. The returned future resolves True/False once a valid confirmation arrives. Nothing is shown unless the intent validates."""
         payload = {"writes": True, "summary": summary, "plan_hash": plan_hash, "command": command, "undo": undo}
         key = f"{run_id or '-'}:confirm:{plan_hash[-12:]}"
@@ -791,9 +792,12 @@ class HarnessCore:
         i.extra["state"] = "pending"
         p = Pending(i)
         self._pending[i.id] = p
+        if raise_for is not None:
+            i.extra["raise_for"] = raise_for
+            self.raise_dialog(raise_for, i.id)
         return p
 
-    def request_secret_entry(self, run_id: str | None, *, summary: str, plan_hash: str, command: str, undo: str, credential: str, sensitivity: str = "internal", actor: str = "GUARD") -> Pending:
+    def request_secret_entry(self, run_id: str | None, *, summary: str, plan_hash: str, command: str, undo: str, credential: str, sensitivity: str = "internal", actor: str = "GUARD", raise_for: Channel | None = None) -> Pending:
         """Ask the owner to type a credential into the operating system's own hidden-field window. The confirmation is a `secret` one: the only mechanism that can answer it is the OS window, the typed value
         is taken from the ticket by `take_secret` (once) and is in no intent, no event and no result."""
         payload = {"writes": True, "secret": True, "credential": credential, "summary": summary, "plan_hash": plan_hash, "command": command, "undo": undo}
@@ -805,7 +809,43 @@ class HarnessCore:
         i.extra["state"] = "pending"
         p = Pending(i)
         self._pending[i.id] = p
+        if raise_for is not None:
+            i.extra["raise_for"] = raise_for
+            self.raise_dialog(raise_for, i.id)
         return p
+
+    def raise_dialog(self, ch: Channel, intent_id: str) -> bool:
+        """The harness itself opens the owner's confirmation in the operating system's own dialog (Touch ID where the system has it) for something a chat started: no model action and no id is needed. If another
+        native window is open it waits its turn (`autoraise`). When no dialog can be opened the confirmation stays pending for the other ways to answer it, and its text carries the id for them."""
+        i = self._find(intent_id)
+        if i is None or i.kind != "confirm" or i.extra.get("state") != "pending" or i.extra.get("raised"):
+            return False
+        if not self.raise_dialogs:
+            return False
+        if self._os_busy:
+            return False  # not yet: `autoraise` comes back for it when the open window closes
+        i.extra["raised"] = True
+        if OS_DIALOG not in self.mechanisms(ch):
+            self.coord.log.add("confirmation_dialog_not_raised", {"intent": i.id, "channel": ch.name, "reason": "os_dialog_unavailable", "tag": "GUARD"})
+            return False
+        try:
+            self.begin_confirmation(ch, i.id, OS_DIALOG)
+        except Refused as exc:
+            self.coord.log.add("confirmation_dialog_not_raised", {"intent": i.id, "channel": ch.name, "reason": exc.reason, "tag": "GUARD"})
+            return False
+        self.coord.log.add("confirmation_dialog_raised", {"intent": i.id, "channel": ch.name, "tag": "GUARD"})
+        return True
+
+    def autoraise(self) -> None:
+        """Called every second by the coordinator: raise the dialogs that had to wait for a free native window (an access change a chat started)."""
+        if not self.raise_dialogs:
+            return
+        for p in list(self._pending.values()):
+            i, ch = p.intent, p.intent.extra.get("raise_for")
+            if ch is not None and i.extra.get("state") == "pending" and not i.extra.get("raised"):
+                if self._os_busy:
+                    return  # one native window at a time: this one waits for the next second
+                self.raise_dialog(ch, i.id)
 
     def take_secret(self, intent_id: str) -> str | None:
         """The value typed for this intent, once. A second call, or a call for an intent nobody answered, gets None."""
@@ -835,9 +875,25 @@ class HarnessCore:
         self._tickets[tk.id] = tk
         return i, tk
 
+    def _ticket_of(self, ch: Channel, intent_id: str, mechanism: str) -> "Ticket | None":
+        """The operating system's ticket already made for this question on this channel: still open, or answered (the question is no longer pending)."""
+        i = self._find(intent_id)
+        if i is None or i.kind != "confirm" or mechanism != OS_DIALOG:
+            return None
+        mine = [tk for tk in self._tickets.values() if tk.intent_id == intent_id and tk.channel == ch.name and tk.mechanism == OS_DIALOG]
+        if not mine:
+            return None
+        last = mine[-1]
+        if last.state == "waiting" or i.extra.get("state") != "pending":
+            return last
+        return None
+
     def begin_confirmation(self, ch: Channel, intent_id: str, mechanism: str) -> dict:
         """Start a confirmation. The text the owner will read comes from the intent (the harness's), never from the caller. For a host-answered mechanism the adapter shows it and later calls
         `complete_confirmation`; for the OS dialog this coordinator raises the dialog itself and the answer arrives on the ticket."""
+        same = self._ticket_of(ch, intent_id, mechanism)
+        if same is not None:  # the harness already opened (or the owner already answered) this one: the chat's call joins it instead of opening a second dialog or failing
+            return {"ticket": same.id, "plan_hash": same.plan_hash, "mechanism": same.mechanism, "prompt": {}, "state": same.state}
         i, tk = self._ticket_for(ch, intent_id, mechanism)
         undoing = i.payload.get("action") == "undo"  # the "command" of an undo is what the undo does: it is not said twice
         extra = (f"\n{t(self.lang, 'ud_removes' if undoing else 'pl_writes')}: {', '.join(map(str, i.payload.get('targets') or [])) or t(self.lang, 'pl_nothing')} · {t(self.lang, 'ap_size')}: {cards.size_text(i.payload.get('bytes'), i.payload.get('size_kind'), self.lang)}" if "targets" in i.payload else "")
@@ -859,6 +915,14 @@ class HarnessCore:
         return {"ticket": tk.id, "plan_hash": tk.plan_hash, "mechanism": mechanism, "prompt": prompt, "state": tk.state}
 
     async def _os_secret(self, tk: Ticket, prompt: dict) -> None:
+        try:  # first the owner approves THIS plan in the system dialog (Touch ID where there is one); only then the hidden window for the key opens
+            ok = await asyncio.to_thread(self.native_confirm, prompt["title"], prompt["message"], timeout_s=TICKET_TTL_S - 20, reason=f"{prompt['title']}: plan {tk.plan_hash[:19]}…")
+        except Exception as exc:  # noqa: BLE001
+            ok = {"result": "unavailable", "reason": type(exc).__name__}
+        if ok.get("result") != "approved":
+            self._os_busy = False
+            self._resolve(tk, {"declined": "decline"}.get(ok.get("result", ""), ok.get("result", "unavailable")), tk.plan_hash, {"os_mechanism": ok.get("mechanism")})
+            return
         try:
             res = await asyncio.to_thread(self.native_secret, prompt["title"], prompt["message"], timeout_s=TICKET_TTL_S - 20)
         except Exception as exc:  # a window that cannot be raised is not an approval

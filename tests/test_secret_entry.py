@@ -52,6 +52,7 @@ def store():
 @pytest.fixture(autouse=True)
 def os_dialog_exists(monkeypatch):
     monkeypatch.setattr(H.osconfirm, "available", lambda *a, **k: {"available": True, "mechanism": "fake_dialog"})
+    monkeypatch.setattr(H.osconfirm, "native_confirm", lambda *a, **k: {"result": "approved", "mechanism": "fake_dialog", "strong": None, "assurance": "weak"})  # the owner approves the plan first, then the hidden window opens
 
 
 class Window:

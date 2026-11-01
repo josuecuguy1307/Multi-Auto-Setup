@@ -11,7 +11,7 @@ What you can do, and what you will see:
 
 | Goal | Tool | What comes back |
 |---|---|---|
-| Add an access (a key) on a machine | `mas_add_access` | the plan as text and an `intent_id`; then `mas_request_approval` raises the hidden-field window for the owner |
+| Add an access (a key) on a machine | `mas_add_access` | the plan as text; the harness itself opens the approval dialog (Touch ID) on the owner's screen and, right after he approves, the hidden-field window for the key. You call nothing; follow with `mas_job`. If no dialog could be opened, `mas_job` gives the `intent_id` for `mas_request_approval` |
 | Remove an access | `mas_remove_access` | the plan (what is set aside, how to undo it); the owner approves in the system dialog; with `undo: true` it brings the key back |
 | See whether a route is missing a key | `mas_explain_route` | `access missing: NAME` for the machine; the NAME of the variable, never a value |
 

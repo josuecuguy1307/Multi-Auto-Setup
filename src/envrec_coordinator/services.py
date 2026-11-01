@@ -519,10 +519,10 @@ class Services:
         plan_hash = T.credential_plan_hash(nid, access, name, action)
         self.coord.log.add("credential_plan", {"plan_hash": plan_hash, "node": nid, "access": access, "name": name, "action": action, "job": job_id, "tag": "GUARD"})
         self._job(job_id, "access", "checking", data={"node": nid, "access": access, "name": name, "action": action})
-        asyncio.ensure_future(self._access_flow(job_id, nid, label, access, name, action, plan_hash))
+        asyncio.ensure_future(self._access_flow(ch, job_id, nid, label, access, name, action, plan_hash))
         return self._out(True, f"Checking {label}. Call mas_job with job_id {job_id} for the approval step.", job_id=job_id)
 
-    async def _access_flow(self, job_id: str, nid: str, label: str, access: str, name: str, action: str, plan_hash: str) -> None:
+    async def _access_flow(self, ch, job_id: str, nid: str, label: str, access: str, name: str, action: str, plan_hash: str) -> None:
         job, h = self.jobs[job_id], self.coord.harness
         try:
             if action == "set":  # a key needs a real credential store on that machine, and the owner is told BEFORE the window opens, not after he typed
@@ -536,11 +536,11 @@ class Services:
                     job.data["reason"] = "credential_store_missing"
                     return
                 summary = S.ACCESS_ADD_SUMMARY.format(name=name, node=label, access=access)
-                pending = h.request_secret_entry(None, summary=summary, plan_hash=plan_hash, command=S.ACCESS_ADD_COMMAND.format(name=name, node=label), undo=S.ACCESS_UNDO_ADD, credential=name)
+                pending = h.request_secret_entry(None, summary=summary, plan_hash=plan_hash, command=S.ACCESS_ADD_COMMAND.format(name=name, node=label), undo=S.ACCESS_UNDO_ADD, credential=name, raise_for=ch)
             else:
                 summary = (S.ACCESS_REMOVE_SUMMARY if action == "remove" else S.ACCESS_RESTORE_SUMMARY).format(name=name, node=label, access=access)
                 pending = h.request_confirmation(None, summary=summary, plan_hash=plan_hash, command=(S.ACCESS_REMOVE_COMMAND if action == "remove" else S.ACCESS_RESTORE_COMMAND).format(name=name, node=label),
-                                                 undo=S.ACCESS_UNDO_REMOVE if action == "remove" else S.ACCESS_UNDO_RESTORE)
+                                                 undo=S.ACCESS_UNDO_REMOVE if action == "remove" else S.ACCESS_UNDO_RESTORE, raise_for=ch)
             job.intent_id, job.state, job.text = pending.intent.id, "awaiting_owner", S.ACCESS_PENDING.format(summary=summary, intent_id=pending.intent.id, job_id=job_id)
             ok = await asyncio.wait_for(pending.future, 600)
             if not ok:

@@ -18,17 +18,29 @@ from envrec_harness.strings import t
 from envrec_harness.client import CoreClient, CoreError
 
 BASE_INSTRUCTIONS = "Multi Auto Setup: the owner's private network of computers. The harness does the work; you relay what the owner asks and what the harness reports."
-CHAT_SKILL = "harness-app-chat"  # what the chat's model needs to know about these tools lives in this skill, not in this file
+CHAT_SKILL = "harness-app-chat"  # what the chat's model needs to know about these tools lives in skills, not in this file; the list of those skills is this skill's data
+SKILLS_ROOT = Path(__file__).resolve().parents[2] / "skills"
+
+
+def _body(name: str) -> str:
+    text = (SKILLS_ROOT / name / "SKILL.md").read_text(encoding="utf-8")
+    return text.split("---", 2)[2].strip() if text.startswith("---") else text
 
 
 def instructions() -> str:
-    """The server's instructions for the chat's model: one sentence, then the body of the chat skill (knowledge is a skill, read when the connection starts)."""
+    """The server's instructions for the chat's model: one sentence, then the body of each skill it needs. The host has no way to load a skill of ours by name (a model that tries gets "Failed"), so the
+    knowledge is delivered here, with the connection."""
     try:  # the skills folder next to the package (an adapter imports nothing from the coordinator or the OS layer: conformance HA1)
-        text = (Path(__file__).resolve().parents[2] / "skills" / CHAT_SKILL / "SKILL.md").read_text(encoding="utf-8")
-        body = text.split("---", 2)[2].strip() if text.startswith("---") else text
-        return BASE_INSTRUCTIONS + "\n\n" + body
-    except (OSError, IndexError):
-        return BASE_INSTRUCTIONS
+        names = json.loads((SKILLS_ROOT / CHAT_SKILL / "references" / "delivered.json").read_text(encoding="utf-8"))["skills"]
+    except (OSError, ValueError, KeyError):
+        names = [CHAT_SKILL]
+    parts = []
+    for name in names:
+        try:
+            parts.append(_body(name))
+        except (OSError, IndexError):
+            continue
+    return BASE_INSTRUCTIONS + ("\n\n" + "\n\n".join(parts) if parts else "")
 
 
 UI_URI = "ui://mas/cards"

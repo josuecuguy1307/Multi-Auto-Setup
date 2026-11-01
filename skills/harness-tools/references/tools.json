@@ -5,7 +5,7 @@
    "name": "mas_create_task",
    "tool": "create_task",
    "readOnly": false,
-   "description": "Create a task from the owner's request. Nothing runs yet: you get the route the written rule picked, with the reasoning, and an intent_id; the owner approves that exact route in his own system dialog (call mas_request_approval), and the task then runs and is checked by code. A cloud chat cannot create a confidential task: say 'create it from a local chat or the owner panel'. Read the skill harness-tools first.",
+   "description": "Create a task from the owner's request. Nothing runs yet: you get the route the written rule picked, with the reasoning, and an intent_id; the owner approves that exact route in his own system dialog (call mas_request_approval), and the task then runs and is checked by code. A cloud chat cannot create a confidential task: say 'create it from a local chat or the owner panel'.",
    "inputSchema": {
     "type": "object",
     "properties": {
@@ -112,7 +112,7 @@
    "name": "mas_add_access",
    "tool": "add_access",
    "readOnly": false,
-   "description": "Add an access (an API key) on one machine. The owner types the key into a hidden window of the operating system; you never see it. You get a job_id; call mas_job for the intent_id, then mas_request_approval. Read the skill secret-entry first.",
+   "description": "Add an access (an API key) on one machine. The owner types the key into a hidden window of the operating system; you never see it. You get a job_id; the owner's approval dialog and then the key window open on his screen by themselves. Follow with mas_job (it gives the intent_id for mas_request_approval only if no dialog could be opened).",
    "inputSchema": {
     "type": "object",
     "properties": {
@@ -166,7 +166,7 @@
    "name": "mas_board_start",
    "tool": "board_start",
    "readOnly": false,
-   "description": "Start a board for a goal that needs several steps (for example 'build a small CLI with tests'). A director breaks it into subtasks, the router routes each one, results are checked by code and verified on another machine. You then show the plan and the owner approves it once. A cloud chat cannot start a confidential board. Read the skill harness-tools first.",
+   "description": "Start a board for a goal that needs several steps (for example 'build a small CLI with tests'). A director breaks it into subtasks, the router routes each one, results are checked by code and verified on another machine. You then show the plan and the owner approves it once. A cloud chat cannot start a confidential board.",
    "inputSchema": {
     "type": "object",
     "properties": {

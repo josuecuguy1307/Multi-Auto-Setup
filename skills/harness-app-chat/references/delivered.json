@@ -1,0 +1,8 @@
+{
+ "_note": "The skills whose body the MCP server hands the chat's model with the connection (its instructions). The chat host has no way to load a skill of ours by name: whatever the model must know is here, or in a tool's description.",
+ "skills": [
+  "harness-app-chat",
+  "harness-tools",
+  "secret-entry"
+ ]
+}

@@ -16,8 +16,8 @@ The unit of work is a **task**: some text, a task type, a sensitivity. The harne
 | "Is the local model good enough for this?" | `mas_run_admission` | `mas_request_approval`, then `mas_job`. A measurement is what lets a route be "measured here". |
 | "Which model is best for this?" | `mas_measurements` | Read the ranking. It lists only what was MEASURED here, says when a measurement is stale, lists unmeasured candidates without ranking them. Never add a number that is not in it (no vendor or public figure). To measure another model, serve it, then `mas_run_admission`. |
 | "What happened to it?" | `mas_job` | Repeat until `finished`; if a step waits for him, say so. |
-| "Add my Meta key on the Lenovo" | `mas_add_access` (skill secret-entry) | `mas_job` for the `intent_id`, then `mas_request_approval`. He types the key into a system window. |
-| "Remove it" / "undo that" | `mas_remove_access` (`undo: true` to bring it back) | `mas_request_approval`. |
+| "Add my Meta key on the Lenovo" | `mas_add_access` (see "Secret entry" below) | Nothing: the approval dialog and then the key window open on his screen by themselves. Follow with `mas_job`. |
+| "Remove it" / "undo that" | `mas_remove_access` (`undo: true` to bring it back) | The approval dialog opens by itself. |
 
 ## Rules you keep
 

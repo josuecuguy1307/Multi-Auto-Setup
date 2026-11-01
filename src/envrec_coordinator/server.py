@@ -211,6 +211,10 @@ class Coordinator:
     async def _tick(self) -> None:
         while True:
             self.desk.expire_due()  # a code nobody used ends as expired for every front end, visitor or not
+            try:
+                self.harness.autoraise()  # a setup step that waits for the owner, or a dialog that waited for a free window, is shown without anyone polling
+            except Exception as exc:  # noqa: BLE001
+                self.log.add('autoraise_failed', {'error': type(exc).__name__})
             if self.responder is not None and self.clock() - self._last_disc_summary >= self.summary_every_s:
                 self._last_disc_summary = self.clock()
                 summary = self.responder.summary()

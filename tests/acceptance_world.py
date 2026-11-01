@@ -150,6 +150,7 @@ async def build(tmp: Path, *, key: bool = True, server: bool = True, web: bool =
         set_server(c, nid, up=True)
     c.harness.native_confirm = w.dialog.confirm
     c.harness.native_secret = w.dialog.secret
+    c.harness.raise_dialogs = False  # this world plays the owner through mas_request_approval; tests/test_harness_dialogs.py is where the harness opens the dialogs by itself
     c.services.envs = c.services.router.envs = c.services.facts.envs = envs  # the catalog this world runs on (the shipped one unless a test hands another)
     c.services.policy.open_subtypes = set(subtypes)
     from envrec_coordinator import harness as H

@@ -51,9 +51,8 @@ def test_the_harness_raises_the_dialog_by_itself_and_the_chat_cannot_complete_th
             with pytest.raises(Refused) as e1:  # the chat's model cannot answer it as a choice
                 c.harness.decide(CLAUDE, intent.id, "approve")
             assert e1.value.reason == "confirmation_required"
-            with pytest.raises(Refused) as e2:  # nor ask for a second dialog on top of the open one
-                c.harness.begin_confirmation(CLAUDE, intent.id, "os_dialog")
-            assert e2.value.reason == "os_dialog_busy"
+            joined = c.harness.begin_confirmation(CLAUDE, intent.id, "os_dialog")  # asking again only joins the open dialog: no second window, no answer from the chat
+            assert joined["state"] == "waiting" and len(dialog.calls) == 1
             tk = next(iter(c.harness._tickets.values()))
             with pytest.raises(Refused) as e3:  # nor complete the operating system's ticket as if a host had answered
                 c.harness.complete_confirmation(CLAUDE, tk.id, tk.plan_hash, "accept")
