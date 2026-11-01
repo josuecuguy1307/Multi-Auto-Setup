@@ -233,6 +233,9 @@ set /p MAS_T=<"$MasHome\current"
         Set-Content -LiteralPath (Join-Path $BinDir 'mas.cmd') -Value $shim -Encoding ASCII
         Say "Command installed: $(Join-Path $BinDir 'mas.cmd')"
 
+        $masCmd = Join-Path $BinDir 'mas.cmd'
+        # Is the command found by name in THIS window? This script runs in a child process, so a change of PATH made here reaches new windows only: until then the window that started the install needs the full path.
+        $inSession = [bool](@($env:Path -split ';' | Where-Object { $_ } | ForEach-Object { $_.TrimEnd('\') }) -contains $BinDir.TrimEnd('\'))
         if (-not (Test-OnUserPath $BinDir)) {
             Say ''
             Say "$BinDir is not on your user PATH, so 'mas' would not be found when you open another window."
@@ -243,9 +246,12 @@ set /p MAS_T=<"$MasHome\current"
                 $p = Get-UserPath
                 $new = if ($p) { $p.TrimEnd(';') + ';' + $BinDir } else { $BinDir }
                 [Environment]::SetEnvironmentVariable('Path', $new, 'User')
-                Say 'Done. Open a new PowerShell window.'
-            } else { Say "I did not add it. Meanwhile use the full path: $(Join-Path $BinDir 'mas.cmd')" }
+                if (-not $inSession) { $env:Path = $env:Path.TrimEnd(';') + ';' + $BinDir }  # this script's own session only (the user's variable above is the lasting change)
+                Say 'Done. A NEW PowerShell window will find the command `mas`. This window cannot: here, run it by its full path:'
+                Say "    & '$masCmd'"
+            } else { Say "I did not add it. Meanwhile use the full path: $masCmd" }
         }
+        $masName = if ($inSession) { 'mas' } else { "& '$masCmd'" }  # what to type in the window that started this install
 
         Say ''
         $role = $Opt.Role
@@ -259,28 +265,27 @@ set /p MAS_T=<"$MasHome\current"
             }
         }
         if ($role) { Set-Content -LiteralPath (Join-Path $MasHome 'role') -Value $role -Encoding ASCII }
-        $masCmd = Join-Path $BinDir 'mas.cmd'
         switch ($role) {
             'coordinator' {
                 Say 'This computer will be the COORDINATOR.'
                 Say 'A coordinator listens on ONE port of your network (TCP 7443 by default and, optionally, UDP 7444 so nodes can find it).'
                 Say 'Windows will ask whether you allow that access in the firewall: you decide. This installer does not change it. To start it:'
-                Say '    mas coordinator start --bind THIS_COMPUTERS_ADDRESS --web'
-                Say 'To start it by itself when you sign in:  mas service install --role coordinator --bind ADDRESS'
+                Say "    $masName coordinator start --bind THIS_COMPUTERS_ADDRESS --web"
+                Say "To start it by itself when you sign in:  $masName service install --role coordinator --bind ADDRESS"
             }
             'node' {
                 Say 'This computer will be a NODE: it listens on no port, it only calls the coordinator.'
-                if ($Opt.NoJoin) { Say 'When you want to join it:  mas join' }
+                if ($Opt.NoJoin) { Say "When you want to join it:  $masName join" }
                 elseif (Ask 'Look for a coordinator on your network and join this computer now (mas join)?') {
                     & $masCmd join
-                    if ($LASTEXITCODE -ne 0) { Say 'It did not get paired. You can repeat it whenever you want with:  mas join' }
-                } else { Say 'When you want to join it:  mas join' }
-                Say 'To start it by itself when you sign in (after pairing):  mas service install'
+                    if ($LASTEXITCODE -ne 0) { Say "It did not get paired. You can repeat it whenever you want with:  $masName join" }
+                } else { Say "When you want to join it:  $masName join" }
+                Say "To start it by itself when you sign in (after pairing):  $masName service install"
             }
-            default { Say "You did not choose a role. When you know: 'mas join' (node) or 'mas coordinator start' (coordinator)." }
+            default { Say "You did not choose a role. When you know: '$masName join' (node) or '$masName coordinator start' (coordinator)." }
         }
         Say ''
-        Say "Done. Installed version: $tag. To update later: mas update.  To remove everything: powershell -ExecutionPolicy Bypass -File `"$(Join-Path $MasHome 'install.ps1')`" -Uninstall"
+        Say "Done. Installed version: $tag. To update later: $masName update.  To remove everything: powershell -ExecutionPolicy Bypass -File `"$(Join-Path $MasHome 'install.ps1')`" -Uninstall"
     }
     finally { Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue }
 }

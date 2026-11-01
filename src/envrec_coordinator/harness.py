@@ -105,6 +105,7 @@ class HarnessCore:
         self.native_notice = native_notice or osconfirm.native_notice  # information for the owner's own screen: the pairing code goes here, never into a tool result
         self.native_secret = native_secret or ossecret.native_secret
         self._code_notices: dict[str, object] = {}  # offer id -> the dialog that shows its code
+        self._pair_chat: dict[str, Channel] = {}  # offer id -> the chat channel that asked for the code: only such an offer gets its confirmation raised by the harness
         self._secrets: dict[str, str] = {}  # a value typed into the hidden window, by ticket: held in memory until the one write task takes it, never logged, never put in an intent
         self.dir = coord.state / "harness"
         self.dir.mkdir(parents=True, exist_ok=True)
@@ -463,6 +464,8 @@ class HarnessCore:
         d["state"] = i.extra.get("state", "")
         if ch.name == "cli" and i.kind == "confirm" and d["text_fallback"].endswith(t(self.lang, "ap_ask_tool")):  # the owner's terminal asks for the typed yes itself: the line that tells a chat to call a tool is not for it
             d["text_fallback"] = d["text_fallback"][:-len(t(self.lang, "ap_ask_tool"))] + t(self.lang, "ap_ask_cli")
+        if ch.name != "cli" and i.kind == "confirm" and d["state"] == "pending" and f"intent_id for mas_request_approval: {i.id}" not in d["text_fallback"]:
+            d["text_fallback"] = d["text_fallback"] + "\n" + t(self.lang, "ap_intent_id").format(id=i.id)  # a chat is never asked to pass an id it was not shown
         if not ch.cloud:
             return d
         if i.sensitivity == "confidential":
@@ -629,6 +632,8 @@ class HarnessCore:
             except PairingBusy:
                 raise Refused(409, "pairing_busy", t(self.lang, "pr_busy")) from None
             view = coord.owner.view()
+            if view is not None:
+                self._pair_chat[view["offer"]] = ch
         intents: list[Intent] = []
         st = view["status"] if view else "idle"
         name = (view or {}).get("target") or ""
@@ -640,7 +645,12 @@ class HarnessCore:
         elif st == "exchange":
             intents.append(self._text("pair_exchange", t(self.lang, "pr_exchange").format(name=name or "the computer")))
         elif st in ("confirm", "deciding"):
-            intents.append(self._pair_confirmation(view))
+            conf = self._pair_confirmation(view)
+            if self._dialog_open_for(conf.id):  # the harness already raised it: nothing for the chat to call (calling would only find the dialog busy)
+                cand = view.get("candidate") or {}
+                intents.append(self._text("pair_dialog", t(self.lang, "pr_dialog_open").format(name=cand.get("name") or "the computer", fp=(cand.get("fingerprint") or "")[:16])))
+            else:
+                intents.append(conf)
         else:
             done = t(self.lang, "pr_" + st).format(name=name or "the computer", reason=view.get("reason") or "") + "\n" if view else ""  # the last outcome, then who waits now
             ws = coord.waiting.list()
@@ -677,8 +687,32 @@ class HarnessCore:
                                       undo=t(self.lang, "pr_confirm_undo").format(**kw))
         offer = view["offer"]
         p.intent.extra["on_decision"] = lambda approved, via: self.coord.decide_pairing(offer, approved, via)  # runs only from `_resolve`, after a confirmation with a gesture
-        p.intent.text_fallback = p.intent.text_fallback + "\n" + t(self.lang, "ap_ask_tool")
+        if not p.intent.text_fallback.endswith(t(self.lang, "ap_ask_tool")):
+            p.intent.text_fallback = p.intent.text_fallback + "\n" + t(self.lang, "ap_ask_tool")
         return p.intent
+
+    def _dialog_open_for(self, intent_id: str) -> bool:
+        return any(tk.intent_id == intent_id and tk.state == "waiting" and tk.mechanism == OS_DIALOG for tk in self._tickets.values())
+
+    def on_pairing_candidate(self, summary: dict) -> None:
+        """A node typed the right code and the owner is now asked about it (called by the owner desk, on the loop). When the offer was made through a chat, the HARNESS raises the owner's confirmation in the
+        operating system's own dialog, showing the computer's name and key fingerprint, exactly as for a setup step: the chat's model does nothing in this step and needs no id. Only the owner's answer in
+        that dialog pairs the computer (`on_decision`). If no such dialog can be raised, the confirmation stays pending for the other ways to answer it (`mas_pair` returns it with its id)."""
+        offer = str(summary.get("offer", ""))
+        ch = self._pair_chat.pop(offer, None)
+        view = self.coord.owner.view()
+        if ch is None or view is None or view.get("offer") != offer:
+            return
+        intent = self._pair_confirmation(view)
+        if OS_DIALOG not in self.mechanisms(ch):
+            self.coord.log.add("pairing_dialog_not_raised", {"offer": offer, "channel": ch.name, "reason": "os_dialog_unavailable", "tag": "GUARD"})
+            return
+        try:
+            self.begin_confirmation(ch, intent.id, OS_DIALOG)
+        except Refused as exc:
+            self.coord.log.add("pairing_dialog_not_raised", {"offer": offer, "channel": ch.name, "reason": exc.reason, "tag": "GUARD"})
+            return
+        self.coord.log.add("pairing_dialog_raised", {"offer": offer, "channel": ch.name, "intent": intent.id, "tag": "GUARD"})
 
     def unpair(self, ch: Channel, machine: str | None) -> dict:
         """Ask the owner to unpair a computer. Nothing is removed here: the confirmation is the owner's, and only its approval removes the key."""
@@ -789,7 +823,8 @@ class HarnessCore:
     def _ticket_for(self, ch: Channel, intent_id: str, mechanism: str) -> tuple[Intent, Ticket]:
         i = self._find(intent_id)
         if i is None or i.kind != "confirm" or i.extra.get("state") != "pending":
-            raise Refused(409, "nothing_to_confirm")
+            now = "; ".join(f"{p.intent.id}: {str(p.intent.payload.get('summary', ''))[:80]}" for p in self._pending.values() if p.intent.extra.get("state") == "pending") or t(self.lang, "ap_none_pending")
+            raise Refused(409, "nothing_to_confirm", t(self.lang, "ap_nothing_pending").format(pending=now))
         if ch.cloud and i.sensitivity == "confidential":
             raise Refused(403, "withheld_from_cloud", t(self.lang, "withheld"))
         if i.payload.get("secret") and mechanism != OS_DIALOG:  # a credential is typed into the OS window and nowhere else: a host form, a chat dialog or the panel would put the value where a model or a host can read it

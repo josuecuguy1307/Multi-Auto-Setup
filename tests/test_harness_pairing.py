@@ -45,6 +45,7 @@ def os_dialog_exists(monkeypatch):
         FakeNotice.shown.append(n)
         return n
     monkeypatch.setattr(H.osconfirm, "native_notice", notice)  # before the coordinator is built: the core takes it at start
+    monkeypatch.setattr(H.osconfirm, "native_confirm", lambda *a, **k: {"result": "unavailable", "reason": "no real dialog in a test"})  # the harness raises the approval dialog itself now: no test may open the real one
 
 
 def run(coro):

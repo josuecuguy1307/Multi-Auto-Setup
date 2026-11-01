@@ -134,6 +134,22 @@ def test_install_ps1_copes_with_a_user_path_that_does_not_exist_and_asks_before_
     assert t.count("SetEnvironmentVariable('Path'") == 2 and "'Machine'" not in t and "HKLM" not in t  # the install and the uninstall, both 'User'
     assert all("'User')" in line for line in t.splitlines() if "SetEnvironmentVariable('Path'" in line)
     assert t.index("Add that folder to your user PATH?") < t.index("SetEnvironmentVariable('Path', $new, 'User')")
+def test_install_ps1_tells_the_window_that_started_it_how_to_run_mas_before_a_new_window_exists():
+    """On the first real Windows run the installer added .mas\\bin to the user PATH and then told the owner to type `mas join` in the SAME window, which cannot find it (the script is a child process: its
+    PATH change reaches new windows only). The session PATH is set after the consent for the script's own later steps, and every hint the owner is given uses the full path unless the command is already found."""
+    t = PS.read_bytes().decode("utf-8-sig")
+    install = dict(_functions(t))["Invoke-Install"]
+    consent, user_write = install.index("Add that folder to your user PATH?"), install.index("SetEnvironmentVariable('Path', $new, 'User')")
+    session_write = install.index("$env:Path = $env:Path.TrimEnd(';') + ';' + $BinDir")
+    assert consent < user_write < session_write  # the session is touched only after the consent and the lasting change
+    assert "if (-not $inSession)" in install[session_write - 30:session_write] and "'Machine'" not in t
+    assert install.index("$inSession =") < consent  # asked BEFORE the PATH changes
+    assert "$masName = if ($inSession) { 'mas' } else { \"& '$masCmd'\" }" in install
+    hints = [line for line in install.splitlines() if "Say" in line and re.search(r"\bmas (join|service|update|coordinator)\b", line)]
+    assert hints == []  # no hint says a bare `mas ...`: they all go through $masName
+    assert install.count("$masName join") >= 2 and "$masName service install" in install and "$masName update" in install
+
+
 def test_the_uninstaller_touches_the_user_path_only_when_the_folder_is_on_it():
     """`Test-OnUserPath` is null-safe (a missing user Path answers no), and the uninstaller writes the variable only inside `if (Test-OnUserPath ...)`: a missing user Path is left missing."""
     undo = dict(_functions(PS.read_bytes().decode("utf-8-sig")))["Invoke-Uninstall"]

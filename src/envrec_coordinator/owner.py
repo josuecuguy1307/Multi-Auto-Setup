@@ -20,6 +20,7 @@ class OwnerDesk:
         self.clock = clock
         self._current: dict | None = None
         self._pending: dict[str, asyncio.Future[Decision]] = {}
+        self.on_confirm: Callable[[dict], None] | None = None  # told the moment a node has typed the right code and the owner is asked about it: the harness raises the owner's own dialog from here
 
     # ---- the protocol tells the desk what is happening ---------------------------------------------------------------------------------------
 
@@ -44,6 +45,11 @@ class OwnerDesk:
         cur = self._of(oid)
         if cur:
             cur.update(status="confirm", code=None, candidate={k: str(summary.get(k, "")) for k in CANDIDATE_FIELDS})
+        if self.on_confirm is not None:
+            try:
+                self.on_confirm(summary)
+            except Exception:  # noqa: BLE001  # a front end that cannot be told never stops the others from answering
+                pass
         try:
             return await fut
         finally:

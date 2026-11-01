@@ -112,6 +112,7 @@ class Coordinator:
         self._connect_env = None  # what the connection of a chat needs to know about this computer; a test gives it a temporary home and fake commands
         self.waiting = WaitingDesk(clock=self.clock, log=lambda t, p: self.log.add(t, p), on_change=self._publish_waiting)
         self.owner = OwnerDesk(self.clock)
+        self.owner.on_confirm = self.harness.on_pairing_candidate  # a node typed the right code: the harness itself raises the owner's confirmation dialog (no chat has to ask for it)
         self.desk = PairingDesk(identity=self.identity, registry=self.registry, log=self.log, ask_owner=self._ask_owner, on_paired=lambda der: tls.add_trusted(self.ctx, der),
                                 clock=self.clock, owner_ttl_s=self.owner_ttl_s, on_outcome=self._on_outcome, on_stage=lambda i, stage: self.owner.exchanging(i))
         self._server = await asyncio.start_server(self._on_connect, self.host, self.port, ssl=self.ctx)  # THE listening socket

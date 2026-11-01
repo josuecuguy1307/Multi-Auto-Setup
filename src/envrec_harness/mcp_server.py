@@ -57,8 +57,8 @@ TOOLS = {  # name: (description, schema, shows cards)
     "mas_disconnect": ("Undo, in a new run, the connection of a chat that was made earlier (only what that connection wrote, newest step first). host is the chat's name, as for mas_connect.",
                        {"type": "object", "properties": {"host": {"type": "string"}}, "required": ["host"]}, True),
     "mas_pair": ("Pair a new computer with this network. Without machine: say who is waiting to join, the pairing code in use, or the computer that typed the code and now needs the owner's approval. With machine "
-                 "(the name of a waiting computer, as listed): show its 6-digit code for the owner to type on THAT computer. You cannot complete a pairing: when a computer has typed the code this returns a "
-                 "confirmation; call mas_request_approval with its intent_id and the owner answers in a system dialog. wait_s waits for the state to change.",
+                 "(the name of a waiting computer, as listed): show its 6-digit code for the owner to type on THAT computer. You cannot complete a pairing: when a computer has typed the code, the harness itself opens a confirmation dialog on the owner's screen "
+                 "(name and key fingerprint); the owner answers there and you call nothing. Ask again for the outcome. If no dialog could be opened this returns the confirmation with its intent_id for mas_request_approval. wait_s waits for the state to change.",
                  {"type": "object", "properties": {"machine": {"type": "string"}, "wait_s": {"type": "number", "minimum": 0, "maximum": 20}}}, True),
     "mas_unpair": ("Ask the owner to unpair a paired computer (machine: its name). Nothing is removed by this call: it returns a confirmation; call mas_request_approval with its intent_id and the owner answers in a "
                    "system dialog. Only that approval removes the computer's key.", {"type": "object", "properties": {"machine": {"type": "string"}}, "required": ["machine"]}, True),
