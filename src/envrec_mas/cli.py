@@ -205,6 +205,71 @@ def cmd_task_list(a) -> int:
     return 0
 
 
+def connect_session(core, goal: str, host: str | None, *, read, write, wait: float = 8.0) -> int:
+    """`mas connect` / `mas disconnect` at the owner's terminal: start the run, show the plan as text, ask the closed question, and for every write show it and take the owner's typed `yes` as the answer. The typed answer
+    is the owner's gesture (the terminal is their own); a script cannot give it. Returns 0 when the run ended done or rolled back."""
+    run = core.start(goal, host or "")
+    rid, since, status = run["id"], 0, run.get("status")
+    while True:
+        out = core.intents(rid, since, wait)
+        status = out["run"]["status"]
+        for i in out["intents"]:
+            since = max(since, i["seq"])
+            kind = i["kind"]
+            if kind == "show_data" and i["payload"].get("data_kind") == "plan":
+                write(i["text_fallback"])
+            elif kind == "progress":
+                write(f"  [{i['actor']}] {i['text_fallback']}")
+            elif kind == "text":
+                write(i["text_fallback"])
+            elif kind == "ask_choice" and i.get("state") == "pending":
+                write(i["text_fallback"])
+                core.decide(i["id"], read("Your answer: ").strip())
+            elif kind == "confirm" and i.get("state") == "pending":
+                write(i["text_fallback"])
+                yes = read("Approve this step? Type yes to approve, anything else to decline: ").strip().lower() == "yes"
+                b = core.begin_confirmation(i["id"], "cli_typed")
+                core.complete_confirmation(b["ticket"], b["plan_hash"], "accept" if yes else "decline")
+        if out["run"]["finished"] and not out["waiting"]:
+            break
+    write(f"The run ended: {status}.")
+    return 0 if status in ("done", "rolled_back") else 1
+
+
+def cmd_connect(a) -> int:
+    """Connect a chat you already use (Open WebUI, Claude Desktop, a terminal agent) to Multi Auto Setup. The coordinator must be running (with --web); every write is approved here, by you typing yes."""
+    from envrec_harness.client import CoreClient, CoreError
+    disconnect = a.cmd == "disconnect"
+    if not sys.stdin.isatty():
+        print("This needs you at the terminal: every step asks for your yes, and a script cannot give it.", file=sys.stderr)
+        return EXIT_USAGE
+    hdir = _state(a) / "coordinator" / "harness"
+    try:
+        core = CoreClient(hdir, "cli", timeout=60.0)
+        core.declare({"event_call": True, "host": "terminal"})
+        code = connect_session(core, "disconnect_host" if disconnect else "connect_host", a.host, read=input, write=print)
+    except FileNotFoundError:
+        print("The coordinator is not running here with --web. Start it with `mas coordinator start --bind 127.0.0.1 --web`.", file=sys.stderr)
+        return 1
+    except CoreError as exc:
+        print(f"{exc.error}: {exc.message}".strip(": "), file=sys.stderr)
+        return 1
+    if code == 0 and not disconnect and a.host == "openwebui":  # the generated secret is never printed at the end of a run (a terminal is scrollback and gets pasted); it is shown only when asked for
+        print("\nOpen WebUI is at http://127.0.0.1:8080. To see its administrator account, run: mas openwebui-account")
+    return code
+
+
+def cmd_openwebui_account(a) -> int:
+    """Print the Open WebUI administrator account that `mas connect openwebui` made, from the file only you can read (at your own terminal: it is never sent to a chat)."""
+    from envrec_coordinator.connect import Env, read_admin_account
+    acct = read_admin_account(Env.system(_state(a)))
+    if not acct:
+        print("No Open WebUI account was made here by `mas connect openwebui`.", file=sys.stderr)
+        return 1
+    print(f"Open WebUI: http://127.0.0.1:8080\n  email    {acct['email']}\n  secret   {acct['password']}")
+    return 0
+
+
 def cmd_waiting(a) -> int:
     """Computers that found this coordinator and are waiting for the owner to pair them (written by the running coordinator; nothing listens for this command)."""
     from envrec_coordinator.control import control_dir, read_json
@@ -322,11 +387,35 @@ def cmd_node_run(a) -> int:
     return 0
 
 
+def _version_text() -> str:
+    from envrec_mas import release
+    info = release.running_release()
+    return "mas 0.1.0 (" + (f"release {info['tag']}" if info and info.get("tag") else "source checkout") + ")"
+
+
+def _redirect_output(path: Path, max_bytes: int = 5 * 1024 * 1024) -> None:
+    """A service has no terminal (and a windowless interpreter has no stdout at all): everything goes to one log file in the state folder, rotated once when it grows past the limit."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        if path.stat().st_size > max_bytes:
+            os.replace(path, path.with_suffix(path.suffix + ".1"))
+    except OSError:
+        pass
+    fh = open(path, "a", encoding="utf-8", buffering=1)
+    sys.stdout = sys.stderr = fh
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="mas", description="Multi Auto Setup")
     p.add_argument("--state-dir", default=None, help="where keys, pins and the log live (default: the operating system's usual place, from the os-state-paths skill)")
+    p.add_argument("--log-file", default=None, help="append everything this command prints to this file (what a service uses)")
+    p.add_argument("--version", action="version", version=_version_text())
     sub = p.add_subparsers(dest="cmd", required=True)
-    c = sub.add_parser("coordinator", help="the coordinator").add_subparsers(dest="sub", required=True).add_parser("start", help="listen on one port")
+    coord = sub.add_parser("coordinator", help="the coordinator").add_subparsers(dest="sub", required=True)
+    c = coord.add_parser("start", help="listen on one port")
+    ri = coord.add_parser("rotate-identity", help="make a new coordinator identity (every node must pair again)")
+    ri.add_argument("--yes", action="store_true", help="answer yes to the question that was shown")
+    ri.set_defaults(fn=lambda a: __import__("envrec_mas.lifecycle", fromlist=["x"]).cmd_rotate_identity(a))
     c.add_argument("--bind", required=True, help="the address of the interface to listen on (loopback, private or link-local; never every interface)")
     c.add_argument("--port", type=int, default=7443)
     c.add_argument("--idle-timeout", type=float, default=30.0)
@@ -347,6 +436,13 @@ def main(argv: list[str] | None = None) -> int:
     pr.add_argument("--name", default=None, help="the name this node shows the owner (default: its host name)")
     pr.set_defaults(fn=lambda a: cmd_pair_node(a) if (a.address or a.coordinator) else cmd_pair_coordinator(a))
     sub.add_parser("waiting", help="computers that found this coordinator and wait for the owner to pair them").set_defaults(fn=cmd_waiting)
+    cn = sub.add_parser("connect", help="connect a chat you already use (Open WebUI, Claude Desktop, a terminal agent); you see the plan and approve each step")
+    cn.add_argument("host", nargs="?", default=None, help="openwebui, claude-desktop, claude-code, codex, opencode or muse-code; without it you are asked which of the chats found here")
+    cn.set_defaults(fn=cmd_connect)
+    sub.add_parser("openwebui-account", help="show the Open WebUI administrator account made by `mas connect openwebui`").set_defaults(fn=cmd_openwebui_account)
+    dc = sub.add_parser("disconnect", help="undo the connection of a chat that was made earlier (only what it wrote)")
+    dc.add_argument("host", help="the chat's name, as for `mas connect`")
+    dc.set_defaults(fn=cmd_connect)
     j = sub.add_parser("join", help="on a node: find coordinators on this network, pick one, and pair without typing an address")
     j.add_argument("--coordinator", default=None, help="skip discovery: the coordinator's HOST:PORT")
     j.add_argument("--discovery-port", type=int, default=7444)
@@ -369,7 +465,28 @@ def main(argv: list[str] | None = None) -> int:
     n.add_argument("--no-discovery", action="store_true", help="never look for the coordinator again after its address changes")
     n.add_argument("--discovery-port", type=int, default=7444)
     n.set_defaults(fn=cmd_node_run)
+    from envrec_mas import lifecycle
+    sv = sub.add_parser("service", help="start the node (or coordinator) by itself when you sign in; per user, no administrator")
+    sv.add_argument("action", choices=["install", "status", "uninstall"])
+    sv.add_argument("--role", choices=["node", "coordinator"], default="node")
+    sv.add_argument("--bind", default=None, help="coordinator only: the address of this computer on your network")
+    sv.add_argument("--port", type=int, default=None, help="coordinator only: the port (default 7443)")
+    sv.add_argument("--yes", action="store_true", help="answer yes to the question that was shown")
+    sv.set_defaults(fn=lifecycle.cmd_service)
+    up = sub.add_parser("update", help="check the latest public release, show what changes, and replace this one safely")
+    up.add_argument("--check", action="store_true", help="only say whether there is a newer release and what would change")
+    up.add_argument("--yes", action="store_true", help="answer yes to the question that was shown")
+    up.set_defaults(fn=lifecycle.cmd_update)
+    un = sub.add_parser("unpair", help="on the coordinator: remove a paired node (it is refused from now on and forgets this coordinator)")
+    un.add_argument("node", help="name, id or id prefix (see `mas nodes`)")
+    un.add_argument("--yes", action="store_true", help="answer yes to the question that was shown")
+    un.set_defaults(fn=lifecycle.cmd_unpair)
+    fg = sub.add_parser("forget", help="on a node: forget the coordinator locally")
+    fg.add_argument("--yes", action="store_true", help="answer yes to the question that was shown")
+    fg.set_defaults(fn=lifecycle.cmd_forget)
     a = p.parse_args(argv)
+    if a.log_file:
+        _redirect_output(Path(a.log_file))
     return a.fn(a)
 
 

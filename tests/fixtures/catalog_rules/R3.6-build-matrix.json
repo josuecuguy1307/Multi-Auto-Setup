@@ -1,0 +1,326 @@
+{
+ "rule": "R3.6-build-matrix",
+ "kind": "build",
+ "says": "the build comes from the matrix of the machine's facts; a cell with no build refuses with a typed reason",
+ "cases": [
+  {
+   "name": "Apple silicon, unified memory: the Metal build",
+   "machine": {
+    "os": "macos",
+    "arch": "arm64",
+    "path": "unified",
+    "vendor": "Apple"
+   },
+   "expect": {
+    "cell": "macos-arm64-metal",
+    "ok": true,
+    "backend": "metal",
+    "memory": "unified",
+    "file": "~macos-arm64.tar.gz"
+   }
+  },
+  {
+   "name": "Apple silicon where models run on the CPU",
+   "machine": {
+    "os": "macos",
+    "arch": "arm64",
+    "path": "cpu"
+   },
+   "expect": {
+    "cell": "macos-arm64-cpu",
+    "ok": true,
+    "backend": "cpu",
+    "memory": "ram",
+    "file": "~macos-arm64.tar.gz"
+   }
+  },
+  {
+   "name": "Intel Mac, CPU",
+   "machine": {
+    "os": "macos",
+    "arch": "amd64",
+    "path": "cpu"
+   },
+   "expect": {
+    "cell": "macos-amd64-cpu",
+    "ok": true,
+    "backend": "cpu",
+    "memory": "ram",
+    "file": "~macos-x64.tar.gz"
+   }
+  },
+  {
+   "name": "Intel Mac with a separate graphics card: no GPU build exists",
+   "machine": {
+    "os": "macos",
+    "arch": "amd64",
+    "path": "gpu",
+    "vendor": "AMD"
+   },
+   "expect": {
+    "cell": "macos-amd64-gpu",
+    "ok": false,
+    "reason": "unsupported_cell"
+   }
+  },
+  {
+   "name": "shared memory on a machine that is not Apple silicon",
+   "machine": {
+    "os": "linux",
+    "arch": "amd64",
+    "path": "unified",
+    "vendor": "Apple"
+   },
+   "expect": {
+    "cell": "unified-memory-not-apple-silicon",
+    "ok": false,
+    "reason": "unsupported_cell"
+   }
+  },
+  {
+   "name": "Linux x86-64 with an NVIDIA card: CUDA",
+   "machine": {
+    "os": "linux",
+    "arch": "amd64",
+    "path": "gpu",
+    "vendor": "NVIDIA"
+   },
+   "expect": {
+    "cell": "linux-nvidia-cuda",
+    "ok": true,
+    "backend": "cuda",
+    "memory": "vram",
+    "file": "~cuda-12.8-x64"
+   }
+  },
+  {
+   "name": "Linux arm64 with an NVIDIA card: CUDA",
+   "machine": {
+    "os": "linux",
+    "arch": "arm64",
+    "path": "gpu",
+    "vendor": "NVIDIA"
+   },
+   "expect": {
+    "cell": "linux-nvidia-cuda",
+    "ok": true,
+    "backend": "cuda",
+    "file": "~cuda-13.4-arm64"
+   }
+  },
+  {
+   "name": "Linux with an AMD card: Vulkan (ROCm is not supported yet)",
+   "machine": {
+    "os": "linux",
+    "arch": "amd64",
+    "path": "gpu",
+    "vendor": "AMD"
+   },
+   "expect": {
+    "cell": "linux-amd-vulkan",
+    "ok": true,
+    "backend": "vulkan",
+    "file": "~ubuntu-vulkan-x64"
+   }
+  },
+  {
+   "name": "Linux with an Intel card: Vulkan",
+   "machine": {
+    "os": "linux",
+    "arch": "arm64",
+    "path": "gpu",
+    "vendor": "Intel"
+   },
+   "expect": {
+    "cell": "linux-intel-vulkan",
+    "ok": true,
+    "backend": "vulkan",
+    "file": "~ubuntu-vulkan-arm64"
+   }
+  },
+  {
+   "name": "Linux with a card from a maker without a build",
+   "machine": {
+    "os": "linux",
+    "arch": "amd64",
+    "path": "gpu",
+    "vendor": "Moore Threads"
+   },
+   "expect": {
+    "cell": "linux-other-gpu",
+    "ok": false,
+    "reason": "unsupported_cell"
+   }
+  },
+  {
+   "name": "Linux x86-64, CPU",
+   "machine": {
+    "os": "linux",
+    "arch": "amd64",
+    "path": "cpu"
+   },
+   "expect": {
+    "cell": "linux-cpu",
+    "ok": true,
+    "backend": "cpu",
+    "file": "~ubuntu-x64.tar.gz"
+   }
+  },
+  {
+   "name": "Linux arm64, CPU",
+   "machine": {
+    "os": "linux",
+    "arch": "arm64",
+    "path": "cpu"
+   },
+   "expect": {
+    "cell": "linux-cpu",
+    "ok": true,
+    "backend": "cpu",
+    "file": "~ubuntu-arm64.tar.gz"
+   }
+  },
+  {
+   "name": "Windows with an NVIDIA card: Vulkan",
+   "machine": {
+    "os": "windows",
+    "arch": "amd64",
+    "path": "gpu",
+    "vendor": "NVIDIA"
+   },
+   "expect": {
+    "cell": "windows-nvidia-vulkan",
+    "ok": true,
+    "backend": "vulkan",
+    "file": "~win-vulkan-x64.zip"
+   }
+  },
+  {
+   "name": "Windows with an AMD card: Vulkan",
+   "machine": {
+    "os": "windows",
+    "arch": "arm64",
+    "path": "gpu",
+    "vendor": "AMD"
+   },
+   "expect": {
+    "cell": "windows-amd-vulkan",
+    "ok": true,
+    "backend": "vulkan",
+    "file": "~win-vulkan-arm64.zip"
+   }
+  },
+  {
+   "name": "Windows with an Intel card: Vulkan",
+   "machine": {
+    "os": "windows",
+    "arch": "amd64",
+    "path": "gpu",
+    "vendor": "Intel"
+   },
+   "expect": {
+    "cell": "windows-intel-vulkan",
+    "ok": true,
+    "backend": "vulkan"
+   }
+  },
+  {
+   "name": "Windows with a card from a maker without a build",
+   "machine": {
+    "os": "windows",
+    "arch": "amd64",
+    "path": "gpu",
+    "vendor": "Moore Threads"
+   },
+   "expect": {
+    "cell": "windows-other-gpu",
+    "ok": false,
+    "reason": "unsupported_cell"
+   }
+  },
+  {
+   "name": "Windows x86-64, CPU (an integrated graphics chip that shares RAM)",
+   "machine": {
+    "os": "windows",
+    "arch": "amd64",
+    "path": "cpu",
+    "vendor": "Intel"
+   },
+   "expect": {
+    "cell": "windows-cpu",
+    "ok": true,
+    "backend": "cpu",
+    "memory": "ram",
+    "file": "~win-cpu-x64.zip"
+   }
+  },
+  {
+   "name": "Windows arm64, CPU",
+   "machine": {
+    "os": "windows",
+    "arch": "arm64",
+    "path": "cpu"
+   },
+   "expect": {
+    "cell": "windows-cpu",
+    "ok": true,
+    "backend": "cpu",
+    "file": "~win-cpu-arm64.zip"
+   }
+  },
+  {
+   "name": "an operating system with no row: no guess",
+   "machine": {
+    "os": "freebsd",
+    "arch": "amd64",
+    "path": "cpu"
+   },
+   "expect": {
+    "ok": false,
+    "reason": "no_cell_for_facts"
+   }
+  },
+  {
+   "name": "a cell the matrix supports but the catalog has no build for",
+   "machine": {
+    "os": "linux",
+    "arch": "amd64",
+    "path": "cpu"
+   },
+   "assets": [],
+   "expect": {
+    "ok": false,
+    "reason": "no_build_in_catalog",
+    "cell": "linux-cpu"
+   }
+  },
+  {
+   "name": "ROCm asked for: not supported yet, said with the reason",
+   "machine": {
+    "os": "linux",
+    "arch": "amd64",
+    "path": "gpu",
+    "vendor": "AMD"
+   },
+   "requested_backend": "rocm",
+   "expect": {
+    "ok": false,
+    "reason": "backend_not_supported",
+    "text": "~ROCm"
+   }
+  },
+  {
+   "name": "a backend that is supported but not this machine's",
+   "machine": {
+    "os": "linux",
+    "arch": "amd64",
+    "path": "cpu"
+   },
+   "requested_backend": "cuda",
+   "expect": {
+    "ok": false,
+    "reason": "backend_mismatch"
+   }
+  }
+ ]
+}

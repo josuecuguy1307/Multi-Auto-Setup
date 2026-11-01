@@ -1,0 +1,86 @@
+{
+ "freedom": {
+  "text": "How much freedom does the agent have to decide alone?",
+  "options": [
+   {
+    "id": "propose_only",
+    "label": "It only proposes",
+    "detail": "you decide every step"
+   },
+   {
+    "id": "routine_alone",
+    "label": "It does routine work alone",
+    "detail": "reading and repeated tasks; it asks about the rest"
+   },
+   {
+    "id": "alone_inside_limits",
+    "label": "It decides alone inside the limits",
+    "detail": "every write still asks for your permission"
+   }
+  ]
+ },
+ "rhythm": {
+  "text": "When does the agent work?",
+  "options": [
+   {
+    "id": "owner_present",
+    "label": "Only when I am present",
+    "detail": "nothing runs without you"
+   },
+   {
+    "id": "also_night",
+    "label": "Also at night",
+    "detail": "it may work while you are away"
+   }
+  ]
+ },
+ "topology": {
+  "text": "How are your computers organized?",
+  "options": [
+   {
+    "id": "single",
+    "label": "One works",
+    "detail": "the others stay unused"
+   },
+   {
+    "id": "director_workers",
+    "label": "One directs, the others execute",
+    "detail": "needs at least two machines"
+   },
+   {
+    "id": "peers",
+    "label": "All equal",
+    "detail": "needs at least two machines"
+   },
+   {
+    "id": "chain",
+    "label": "In a chain",
+    "detail": "the work passes from one to the next in order"
+   }
+  ]
+ },
+ "director_machine": {
+  "text": "Which of your computers directs?",
+  "dynamic": "machines"
+ },
+ "work_sensitivity": {
+  "text": "How sensitive is the work on this network?",
+  "options": [
+   {
+    "id": "public",
+    "label": "Public",
+    "detail": "nothing is private"
+   },
+   {
+    "id": "internal",
+    "label": "Internal",
+    "detail": "private but not secret"
+   },
+   {
+    "id": "confidential",
+    "label": "Confidential",
+    "detail": "does not leave your network: cloud accesses are removed"
+   }
+  ]
+ }
+}

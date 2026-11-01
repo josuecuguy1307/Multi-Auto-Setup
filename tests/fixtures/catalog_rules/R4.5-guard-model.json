@@ -1,0 +1,46 @@
+{
+ "rule": "R4.5-guard-model",
+ "kind": "file",
+ "says": "a safety classifier is not a chat model",
+ "cases": [
+  {
+   "name": "a guardian model",
+   "facts": {
+    "file.repo": "Org/granite-guardian-4.1-8b-GGUF",
+    "file.name": "granite-guardian-4.1-8b-Q4_K_M.gguf"
+   },
+   "expect": {
+    "kind": "guard",
+    "requires_task_keys": [
+     "moderation"
+    ]
+   }
+  },
+  {
+   "name": "a llama-guard repo",
+   "facts": {
+    "file.repo": "Org/Llama-Guard-3-8B-GGUF"
+   },
+   "expect": {
+    "kind": "guard",
+    "requires_task_keys": [
+     "moderation"
+    ]
+   }
+  },
+  {
+   "name": "a shield model that also carries a vision projector: still a guard",
+   "facts": {
+    "file.repo": "Org/Shieldstral-1.0-3B-GGUF",
+    "repo.has_companion_projector": true,
+    "hub.pipeline_tag": "image-text-to-text"
+   },
+   "expect": {
+    "kind": "guard",
+    "!requires_task_keys": [
+     "vision"
+    ]
+   }
+  }
+ ]
+}

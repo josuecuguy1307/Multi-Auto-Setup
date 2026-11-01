@@ -1,0 +1,150 @@
+{
+ "label": "REAL: typed results of the six-probe analysis of one real Windows 11 laptop (amd64), run through a paired node on 2026-10-30, qwen-local choosing the probes. Typed facts, NOT raw tool output: the node returns parsed results, so the raw PowerShell/CIM text was not captured. Redacted: no host name, no user name, no addresses (none are in these facts). The captured machine.os.version is the edition code 'Core' (a probe bug, fixed after this capture: it now reads '11 Home').",
+ "facts": {
+  "machine.ai_cli_count": {
+   "value": 1,
+   "status": "tested",
+   "probe": "node_ai_clis",
+   "limits": []
+  },
+  "machine.ai_clis": {
+   "value": [
+    {
+     "id": "claude",
+     "name": "Claude Code",
+     "kind": "subscription_cli",
+     "installed": true,
+     "set_up": true,
+     "note": "'set up' means its configuration folder or file exists; no login or token was read"
+    }
+   ],
+   "status": "tested",
+   "probe": "node_ai_clis",
+   "limits": []
+  },
+  "machine.api_key_variable_names": {
+   "value": [],
+   "status": "tested",
+   "probe": "node_ai_clis",
+   "limits": []
+  },
+  "machine.disk_free_gib": {
+   "value": 585.6,
+   "status": "tested",
+   "probe": "node_memory_fit",
+   "limits": [
+    "on a machine without a discrete GPU, models run on the CPU: slower, limited by RAM"
+   ]
+  },
+  "machine.gpu_count": {
+   "value": 1,
+   "status": "tested",
+   "probe": "node_gpu",
+   "limits": []
+  },
+  "machine.gpus": {
+   "value": [
+    {
+     "vendor": "Intel",
+     "name": "Intel(R) UHD Graphics",
+     "vram_gib": 1.0,
+     "vram_is_lower_bound": false,
+     "driver": "30.0.100.9864",
+     "memory": "shared",
+     "source": "Win32_VideoController"
+    }
+   ],
+   "status": "tested",
+   "probe": "node_gpu",
+   "limits": []
+  },
+  "machine.largest_model_limited_by": {
+   "value": "catalog_top",
+   "status": "tested",
+   "probe": "node_memory_fit",
+   "limits": [
+    "on a machine without a discrete GPU, models run on the CPU: slower, limited by RAM"
+   ]
+  },
+  "machine.largest_model_params_b": {
+   "value": 13.0,
+   "status": "tested",
+   "probe": "node_memory_fit",
+   "limits": [
+    "on a machine without a discrete GPU, models run on the CPU: slower, limited by RAM"
+   ]
+  },
+  "machine.model_path": {
+   "value": "cpu",
+   "status": "tested",
+   "probe": "node_memory_fit",
+   "limits": [
+    "on a machine without a discrete GPU, models run on the CPU: slower, limited by RAM"
+   ]
+  },
+  "machine.os.arch": {
+   "value": "amd64",
+   "status": "tested",
+   "probe": "node_os_details",
+   "limits": []
+  },
+  "machine.os.build": {
+   "value": "10.0.22621",
+   "status": "tested",
+   "probe": "node_os_details",
+   "limits": []
+  },
+  "machine.os.name": {
+   "value": "Windows 11",
+   "status": "tested",
+   "probe": "node_os_details",
+   "limits": []
+  },
+  "machine.os.version": {
+   "value": "Core",
+   "status": "tested",
+   "probe": "node_os_details",
+   "limits": []
+  },
+  "machine.ram_available_gib": {
+   "value": 8.2,
+   "status": "tested",
+   "probe": "node_memory_fit",
+   "limits": [
+    "on a machine without a discrete GPU, models run on the CPU: slower, limited by RAM"
+   ]
+  },
+  "machine.ram_total_gib": {
+   "value": 19.7,
+   "status": "tested",
+   "probe": "node_memory_fit",
+   "limits": [
+    "on a machine without a discrete GPU, models run on the CPU: slower, limited by RAM"
+   ]
+  },
+  "machine.runtime_count": {
+   "value": 0,
+   "status": "tested",
+   "probe": "node_runtimes",
+   "limits": [
+    "no local model runtime was found (none of the table's binaries, processes or default ports)"
+   ]
+  },
+  "machine.runtimes": {
+   "value": [],
+   "status": "tested",
+   "probe": "node_runtimes",
+   "limits": [
+    "no local model runtime was found (none of the table's binaries, processes or default ports)"
+   ]
+  },
+  "machine.vram_gib": {
+   "value": null,
+   "status": "tested",
+   "probe": "node_memory_fit",
+   "limits": [
+    "on a machine without a discrete GPU, models run on the CPU: slower, limited by RAM"
+   ]
+  }
+ }
+}

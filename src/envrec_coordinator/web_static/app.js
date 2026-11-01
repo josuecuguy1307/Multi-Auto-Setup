@@ -247,7 +247,7 @@ function renderRun(run) {
   head.className = "bar";
   const h = document.createElement("h2");
   h.id = "run-title";
-  h.textContent = run.kind === "lan" ? t("run.title.lan") : run.kind === "options" ? t("run.title.options", { node: run.node }) : t("run.title", { node: run.node });
+  h.textContent = run.kind === "lan" ? t("run.title.lan") : run.kind === "connect" ? t("run.title.connect") : run.kind === "options" ? t("run.title.options", { node: run.node }) : t("run.title", { node: run.node });
   const status = document.createElement("span");
   status.className = "badge " + (["done", "running", "starting"].includes(run.status) ? "online" : "offline");
   status.textContent = t("run.status." + run.status);
@@ -311,6 +311,24 @@ function followRun(id) {
   panel.dataset.key = "";
   clearTimeout(state.runTimer);
   pollRun();
+}
+
+async function showOpenWebuiAccount() {
+  try {
+    const a = await api("GET", "/api/openwebui/admin");
+    const box = $("owui-account");
+    box.textContent = t("chats.account_text", { email: a.email, secret: a.password });  // text only: nothing of it is ever put in as markup
+    box.hidden = false;
+  } catch (err) { fail(err); }
+}
+
+async function connectChat() {
+  notice("");
+  try {
+    const res = await api("POST", "/api/connect/start", {});
+    accept(res);
+    followRun(res.run.id);
+  } catch (err) { fail(err); }
 }
 
 async function askLanAgent() {
@@ -538,7 +556,92 @@ async function decide(acceptIt) {
 
 /* ---- state and routing ---- */
 
+let mapKey = "";
+let mapOpen = null;
+function fitMap(frame) {
+  try {
+    const h = frame.contentDocument.documentElement.scrollHeight;
+    if (h) frame.style.height = h + "px";  // a style PROPERTY, not an inline attribute: the policy allows it
+  } catch (e) { /* the frame is same-origin; if it cannot be read it keeps its minimum height */ }
+}
+function renderNetwork(data) {
+  const key = JSON.stringify(data.machines.map((m) => [m.id, m.status])) + JSON.stringify(data.runs.map((r) => [r.id, r.status])) + JSON.stringify(data.tasks.map((x) => [x.id, x.status]));
+  if (key === mapKey) return;  // redrawn only when something changed: an open machine card must not close under the owner's pointer
+  mapKey = key;
+  const frame = $("network-map");
+  frame.title = t("map.title");
+  if (!frame.dataset.wired) {
+    frame.dataset.wired = "1";
+    frame.addEventListener("load", () => {
+      const d = frame.contentDocument;
+      d.addEventListener("click", (e) => { const n = e.target.closest && e.target.closest("[data-node]"); if (n) mapOpen = n.getAttribute("data-node"); setTimeout(() => fitMap(frame), 0); });
+      if (mapOpen && frame.contentWindow.__mas_toggle) frame.contentWindow.__mas_toggle(mapOpen);
+      fitMap(frame);
+    });
+    if (typeof ResizeObserver === "function") new ResizeObserver(() => fitMap(frame)).observe(frame);
+  }
+  if (frame.contentWindow && frame.contentWindow.location.pathname === "/card/network" && frame.contentDocument.readyState === "complete") frame.contentWindow.location.reload();
+}
+
+function renderApprovals(data) {
+  const box = $("approvals");
+  const list = data.confirmations || [];
+  const key = JSON.stringify(list.map((c) => [c.intent, c.plan_hash]));  // one entry per question: the next step of the same plan is a new approval
+  if (box.dataset.key === key) return;
+  box.dataset.key = key;
+  box.hidden = list.length === 0;
+  const parts = [];
+  if (list.length) {
+    const h = document.createElement("h3"); h.id = "approvals-title"; h.textContent = t("approvals.title"); parts.push(h);
+    const hint = document.createElement("p"); hint.className = "muted"; hint.textContent = t("approvals.hint"); parts.push(hint);
+  }
+  list.forEach((c) => {
+    const q = document.createElement("div");
+    q.className = "panel confirm";
+    const sum = document.createElement("p"); sum.textContent = c.summary;
+    const undoing = c.action === "undo";  // an undo says what is undone, and what it removes: not "writes to"
+    const cmd = document.createElement("pre"); cmd.className = "mono"; cmd.textContent = t(undoing ? "approvals.undoing" : "approvals.command") + ":\n" + c.command + (c.targets && c.targets.length ? "\n" + t(undoing ? "approvals.removes" : "approvals.writes") + ": " + c.targets.join(", ") : "");
+    const undo = document.createElement("p"); undo.className = "muted"; undo.textContent = undoing ? "" : t("approvals.undo") + ": " + c.undo;
+    const hash = document.createElement("p"); hash.className = "mono muted"; hash.textContent = t("approvals.hash") + " " + c.plan_hash;
+    const actions = document.createElement("div"); actions.className = "actions";
+    [[true, "approvals.approve", "btn primary"], [false, "approvals.decline", "btn"]].forEach(([yes, k, cls]) => {
+      const b = document.createElement("button"); b.type = "button"; b.className = cls; b.textContent = t(k);
+      b.addEventListener("click", async () => {
+        b.disabled = true;
+        try { accept(await api("POST", "/api/confirm/decide", { intent: c.intent, plan_hash: c.plan_hash, accept: yes })); } catch (e) { fail(e); }  // the hash goes back with the click: the plan that was read is the plan that is approved
+      });
+      actions.append(b);
+    });
+    q.append(sum, cmd, undo, hash, actions);
+    parts.push(q);
+  });
+  box.replaceChildren(...parts);
+}
+
+function renderActivity(data) {
+  const box = $("activity");
+  const list = data.activity || [];
+  const key = JSON.stringify(list.map((x) => [x.ts, x.text]));
+  if (box.dataset.key === key) return;
+  box.dataset.key = key;
+  box.hidden = list.length === 0;
+  if (!list.length) { box.replaceChildren(); return; }
+  const h = document.createElement("h3"); h.id = "activity-title"; h.textContent = t("activity.title");
+  const ul = document.createElement("ul"); ul.className = "events";
+  list.slice().reverse().forEach((x) => {  // newest first; every word of a line is put in with textContent
+    const li = document.createElement("li");
+    const tag = document.createElement("span"); tag.className = "tag tag-" + (/^[A-Z-]+$/.test(x.actor) ? x.actor : "GUARD"); tag.textContent = x.actor;
+    li.append(tag, document.createTextNode(" " + x.text));
+    ul.append(li);
+  });
+  box.replaceChildren(h, ul);
+}
+
 function accept(data) {
+  renderNetwork(data);
+  renderApprovals(data);
+  renderActivity(data);
+  $("owui-admin").hidden = !data.openwebui_admin;
   state.data = data;
   state.csrf = data.csrf || state.csrf;
   state.skew = data.now - Date.now() / 1000;
@@ -574,6 +677,8 @@ async function main() {
   applyStrings();
   $("start-from-machines").addEventListener("click", startPairing);
   $("lan-agent").addEventListener("click", askLanAgent);
+  $("connect-chat").addEventListener("click", connectChat);
+  $("owui-admin").addEventListener("click", showOpenWebuiAccount);
   $("start-pair").addEventListener("click", startPairing);
   $("again").addEventListener("click", startPairing);
   $("approve").addEventListener("click", () => decide(true));

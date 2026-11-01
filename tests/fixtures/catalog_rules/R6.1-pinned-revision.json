@@ -1,0 +1,29 @@
+{
+ "rule": "R6.1-pinned-revision",
+ "kind": "file",
+ "says": "a revision and a SHA-256 must be pinned",
+ "cases": [
+  {
+   "name": "a branch name instead of a commit",
+   "facts": {
+    "file.revision": "main"
+   },
+   "expect": {
+    "excluded_rules": [
+     "R6.1-pinned-revision"
+    ]
+   }
+  },
+  {
+   "name": "a checksum that is not 64 hex digits",
+   "facts": {
+    "file.sha256": "abc"
+   },
+   "expect": {
+    "excluded_rules": [
+     "R6.1-pinned-revision"
+    ]
+   }
+  }
+ ]
+}

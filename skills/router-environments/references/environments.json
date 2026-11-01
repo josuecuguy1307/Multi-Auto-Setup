@@ -1,0 +1,715 @@
+{
+ "version": 1,
+ "note": "curated by the project; see SKILL.md. Read 2026-10-30.",
+ "environments": [
+  {
+   "id": "llamacpp-local",
+   "title": "Local model (llama.cpp loopback server)",
+   "subtype": "local_model",
+   "cloud": false,
+   "task_types": [
+    "text",
+    "code"
+   ],
+   "os": [
+    "darwin",
+    "linux",
+    "windows"
+   ],
+   "needs": {
+    "sandbox": false,
+    "docker": false,
+    "gui": false
+   },
+   "license": {
+    "spdx": "MIT",
+    "note": "the server is installed by T3a's recipe; its license was verified there"
+   },
+   "upstream": {
+    "kind": "installed_by_setup_recipe"
+   },
+   "automated_use": "n/a",
+   "installed_by_us": true,
+   "labels": {
+    "task_types": {
+     "label": "declared by the project",
+     "source": "project: prompt in, text out through the server's chat endpoint"
+    },
+    "license": {
+     "label": "verified by code",
+     "source": "T3a catalog lock"
+    },
+    "cloud": {
+     "label": "verified by code",
+     "source": "endpoint must be a loopback literal (N5)"
+    }
+   },
+   "accesses": [
+    {
+     "id": "local-hardware",
+     "kind": "local",
+     "cost_class": "local",
+     "plan_group": null,
+     "env_names": []
+    }
+   ],
+   "adapter": {
+    "kind": "http_chat",
+    "chat_path": "/v1/chat/completions",
+    "max_tokens": 1024,
+    "timeout_s": 300,
+    "modes": {
+     "text": {
+      "name": "chat",
+      "confinement": "none_needed"
+     },
+     "code": {
+      "name": "chat",
+      "confinement": "none_needed"
+     }
+    }
+   }
+  },
+  {
+   "id": "claude-code",
+   "title": "Claude Code CLI",
+   "subtype": "provider",
+   "cloud": true,
+   "task_types": [
+    "code",
+    "text"
+   ],
+   "os": [
+    "darwin",
+    "linux",
+    "windows"
+   ],
+   "needs": {
+    "sandbox": false,
+    "docker": false,
+    "gui": false
+   },
+   "license": {
+    "spdx": "proprietary",
+    "note": "closed, commercial; never installed, bundled or copied by us"
+   },
+   "upstream": {
+    "kind": "vendor_page",
+    "url": "https://code.claude.com/docs/en/cli-reference"
+   },
+   "automated_use": "to review",
+   "installed_by_us": false,
+   "labels": {
+    "license": {
+     "label": "declared by the project",
+     "source": "vendor: closed source; not MIT or Apache-2.0"
+    },
+    "non_interactive": {
+     "label": "declared by the project",
+     "source": "https://code.claude.com/docs/en/cli-reference"
+    },
+    "signed_in_check": {
+     "label": "declared by the project",
+     "source": "`claude auth status`: JSON, exit 0 logged in, 1 not; run on the Mac: loggedIn false"
+    },
+    "confinement": {
+     "label": "declared by the project",
+     "source": "--tools restricts built-in tools; --permission-mode dontAsk; writes outside the working directory are not approved. NOT verified by us"
+    },
+    "automated_use": {
+     "label": "declared by the project",
+     "source": "vendor terms not read: to review"
+    }
+   },
+   "accesses": [
+    {
+     "id": "claude-code:plan",
+     "kind": "plan",
+     "cost_class": "subscription",
+     "plan_group": "anthropic-plan",
+     "env_names": [],
+     "signed_in_check": {
+      "argv": [
+       "auth",
+       "status"
+      ],
+      "ok_exit": 0
+     }
+    }
+   ],
+   "adapter": {
+    "kind": "cli",
+    "exe": {
+     "darwin": "claude",
+     "linux": "claude",
+     "windows": "claude"
+    },
+    "prompt_via": "stdin",
+    "timeout_s": 600,
+    "env_pass": [],
+    "env_set": {},
+    "output": {
+     "kind": "json_field",
+     "field": "result"
+    },
+    "modes": {
+     "code": {
+      "name": "write_files_no_shell",
+      "confinement": "tool_declared",
+      "argv": [
+       "-p",
+       "--output-format",
+       "json",
+       "--no-session-persistence",
+       "--max-turns",
+       "8",
+       "--permission-mode",
+       "dontAsk",
+       "--tools",
+       "Read,Write,Edit",
+       "--disallowedTools",
+       "Bash"
+      ]
+     },
+     "text": {
+      "name": "no_tools",
+      "confinement": "tool_declared",
+      "argv": [
+       "-p",
+       "--output-format",
+       "json",
+       "--no-session-persistence",
+       "--max-turns",
+       "2",
+       "--permission-mode",
+       "dontAsk",
+       "--tools",
+       ""
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": "codex",
+   "title": "Codex CLI",
+   "subtype": "provider",
+   "cloud": true,
+   "task_types": [
+    "code",
+    "text"
+   ],
+   "os": [
+    "darwin",
+    "linux",
+    "windows"
+   ],
+   "needs": {
+    "sandbox": false,
+    "docker": false,
+    "gui": false
+   },
+   "license": {
+    "spdx": "Apache-2.0",
+    "note": "LICENSE read at the commit below; still a provider: we do not install it"
+   },
+   "upstream": {
+    "kind": "repo",
+    "url": "https://github.com/openai/codex",
+    "commit": "67f0994b532b8740f14b5b738af7b7b2a915b1d6",
+    "seen_release": "rust-v0.166.0"
+   },
+   "automated_use": "to review",
+   "installed_by_us": false,
+   "labels": {
+    "license": {
+     "label": "verified by code",
+     "source": "openai/codex LICENSE at 67f0994b: Apache License 2.0; GitHub SPDX Apache-2.0"
+    },
+    "non_interactive": {
+     "label": "verified by code",
+     "source": "`codex exec --help` of 0.159.0 on this Mac lists -s/--sandbox, -C/--cd, --skip-git-repo-check, --ephemeral, --json, -o/--output-last-message; docs https://learn.chatgpt.com/docs/developer-commands?surface=cli"
+    },
+    "signed_in_check": {
+     "label": "verified by code",
+     "source": "`codex login status` run on the Mac: 'Logged in using ChatGPT'"
+    },
+    "confinement": {
+     "label": "declared by the project",
+     "source": "its own OS sandbox (--sandbox read-only | workspace-write). No flag that removes its shell tool was found in the docs read or in `codex exec --help` (0.159.0). Owner decision (STOP 1, restated at STOP 2): zero execution outside OUR sandbox for every task type, so both modes are unverified and need our sandbox backend"
+    },
+    "automated_use": {
+     "label": "declared by the project",
+     "source": "vendor terms not read: to review"
+    }
+   },
+   "accesses": [
+    {
+     "id": "codex:plan",
+     "kind": "plan",
+     "cost_class": "subscription",
+     "plan_group": "openai-plan",
+     "env_names": [],
+     "signed_in_check": {
+      "argv": [
+       "login",
+       "status"
+      ],
+      "ok_exit": 0
+     }
+    }
+   ],
+   "adapter": {
+    "kind": "cli",
+    "exe": {
+     "darwin": "codex",
+     "linux": "codex",
+     "windows": "codex"
+    },
+    "prompt_via": "stdin",
+    "timeout_s": 600,
+    "env_pass": [],
+    "env_set": {},
+    "output": {
+     "kind": "file",
+     "name": ".last-message.txt"
+    },
+    "modes": {
+     "text": {
+      "name": "read_only",
+      "confinement": "unverified",
+      "argv": [
+       "exec",
+       "--ephemeral",
+       "--skip-git-repo-check",
+       "-s",
+       "read-only",
+       "-C",
+       "{workspace}",
+       "-o",
+       "{workspace}/.last-message.txt",
+       "-"
+      ]
+     },
+     "code": {
+      "name": "workspace_write",
+      "confinement": "unverified",
+      "argv": [
+       "exec",
+       "--ephemeral",
+       "--skip-git-repo-check",
+       "-s",
+       "workspace-write",
+       "-C",
+       "{workspace}",
+       "-o",
+       "{workspace}/.last-message.txt",
+       "-"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": "muse-code",
+   "title": "Muse Code (Meta)",
+   "subtype": "provider",
+   "cloud": true,
+   "task_types": [
+    "code",
+    "text"
+   ],
+   "os": [
+    "darwin",
+    "linux",
+    "windows"
+   ],
+   "needs": {
+    "sandbox": false,
+    "docker": false,
+    "gui": false
+   },
+   "license": {
+    "spdx": "unknown",
+    "note": "the CLI's license is not stated in the docs read: never installed by us"
+   },
+   "upstream": {
+    "kind": "vendor_page",
+    "url": "https://dev.meta.ai/docs/muse-code"
+   },
+   "automated_use": "to review",
+   "installed_by_us": false,
+   "labels": {
+    "license": {
+     "label": "declared by the project",
+     "source": "https://dev.meta.ai/docs/muse-code states no license"
+    },
+    "non_interactive": {
+     "label": "declared by the project",
+     "source": "https://dev.meta.ai/docs/muse-code: `muse exec \"<prompt>\"` runs one prompt to completion for scripts and CI. No flag is documented on the pages read"
+    },
+    "api_key_variable": {
+     "label": "declared by the project",
+     "source": "two official pages: the Meta Model API key is MODEL_API_KEY (https://dev.meta.ai/docs/getting-started/authentication; ai.developer.meta.com/docs redirects there); the Muse Code CLI in non-interactive environments reads META_API_KEY, checked first, then a stored key, then a stored browser session (https://dev.meta.ai/docs/muse-code/auth). The access is present when EITHER name exists (names only, never values). Whether the CLI accepts a key set only as MODEL_API_KEY is NOT documented"
+    },
+    "signed_in_check": {
+     "label": "declared by the project",
+     "source": "no status command is documented; the owner states it"
+    },
+    "confinement": {
+     "label": "declared by the project",
+     "source": "no flag to disable execution or confine writes is documented: unverified, so it only runs inside our sandbox backend"
+    },
+    "automated_use": {
+     "label": "declared by the project",
+     "source": "vendor terms not read: to review"
+    },
+    "missing": {
+     "label": "declared by the project",
+     "source": "not found in the docs read (https://dev.meta.ai/docs/muse-code, /auth): any `muse exec` flag (output format, working directory, model, permission or sandbox switches), a signed-in status command, the CLI's license, MCP configuration. Revisit when Meta testing starts"
+    }
+   },
+   "accesses": [
+    {
+     "id": "muse-code:plan",
+     "kind": "plan",
+     "cost_class": "subscription",
+     "plan_group": "meta-plan",
+     "env_names": [],
+     "signed_in_check": null
+    },
+    {
+     "id": "muse-code:api-key",
+     "kind": "api_key",
+     "cost_class": "api",
+     "plan_group": null,
+     "env_names": [],
+     "signed_in_check": null,
+     "env_names_any": [
+      "MODEL_API_KEY",
+      "META_API_KEY"
+     ]
+    }
+   ],
+   "adapter": {
+    "kind": "cli",
+    "exe": {
+     "darwin": "muse",
+     "linux": "muse",
+     "windows": "muse"
+    },
+    "prompt_via": "arg",
+    "timeout_s": 600,
+    "env_pass": [
+     "META_API_KEY",
+     "MODEL_API_KEY"
+    ],
+    "env_set": {},
+    "output": {
+     "kind": "stdout"
+    },
+    "modes": {
+     "code": {
+      "name": "exec",
+      "confinement": "unverified",
+      "argv": [
+       "exec",
+       "{prompt}"
+      ]
+     },
+     "text": {
+      "name": "exec",
+      "confinement": "unverified",
+      "argv": [
+       "exec",
+       "{prompt}"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": "opencode",
+   "title": "OpenCode",
+   "subtype": "own_harness",
+   "cloud": false,
+   "task_types": [
+    "code",
+    "text"
+   ],
+   "os": [
+    "darwin",
+    "linux",
+    "windows"
+   ],
+   "needs": {
+    "sandbox": false,
+    "docker": false,
+    "gui": false
+   },
+   "license": {
+    "spdx": "MIT",
+    "note": "LICENSE read at the commit below"
+   },
+   "upstream": {
+    "kind": "repo",
+    "url": "https://github.com/anomalyco/opencode",
+    "commit": "810c0eba1a7348036f8bdf61e6632d0c36c6876c",
+    "release": "v1.19.5",
+    "pin": "resolved",
+    "pin_note": "release v1.19.5 published 2026-10-28; commit is the tag's. Asset SHA-256 is the `digest` GitHub reports for each release asset (GET /repos/anomalyco/opencode/releases/tags/v1.19.5); we did NOT download or recompute it. The recipe step must check the downloaded bytes against it. Baseline (older CPU) and musl variants also exist and are not pinned here.",
+    "assets": {
+     "darwin-arm64": {
+      "name": "opencode-darwin-arm64.zip",
+      "sha256": "c1c9e62521192192ef4c3ed1355ada2144055bddb61682217e997b03c55203c1",
+      "bytes": 64278924,
+      "url": "https://github.com/anomalyco/opencode/releases/download/v1.19.5/opencode-darwin-arm64.zip"
+     },
+     "darwin-x64": {
+      "name": "opencode-darwin-x64.zip",
+      "sha256": "b0212efa6db347187225a17fa3a31c6b261bf4c9f1589a290b0ca902d720d250",
+      "bytes": 69100888,
+      "url": "https://github.com/anomalyco/opencode/releases/download/v1.19.5/opencode-darwin-x64.zip"
+     },
+     "linux-x64": {
+      "name": "opencode-linux-x64.tar.gz",
+      "sha256": "588310a336fa3b9df36b3f0225b26f679d453efaad0cf3d66c3651ef3ec1647a",
+      "bytes": 79651896,
+      "url": "https://github.com/anomalyco/opencode/releases/download/v1.19.5/opencode-linux-x64.tar.gz"
+     },
+     "linux-arm64": {
+      "name": "opencode-linux-arm64.tar.gz",
+      "sha256": "fae5be262d693b7c5e562856cc473e59e741772936db0c0600ac0d5ed5bd088b",
+      "bytes": 78513091,
+      "url": "https://github.com/anomalyco/opencode/releases/download/v1.19.5/opencode-linux-arm64.tar.gz"
+     },
+     "windows-x64": {
+      "name": "opencode-windows-x64.zip",
+      "sha256": "09a6e693157f0887e504f2cf4357a8cbddc5ead5d0dffb9a269dcc47c48640f5",
+      "bytes": 81738227,
+      "url": "https://github.com/anomalyco/opencode/releases/download/v1.19.5/opencode-windows-x64.zip"
+     },
+     "windows-arm64": {
+      "name": "opencode-windows-arm64.zip",
+      "sha256": "5d49139bd917511ff35a3c06065c9f47918346668f05ea020e778286f302fbb7",
+      "bytes": 75773358,
+      "url": "https://github.com/anomalyco/opencode/releases/download/v1.19.5/opencode-windows-arm64.zip"
+     }
+    }
+   },
+   "automated_use": "n/a",
+   "installed_by_us": true,
+   "labels": {
+    "license": {
+     "label": "verified by code",
+     "source": "anomalyco/opencode LICENSE at 173f6c6d: MIT License, Copyright (c) 2025 opencode; GitHub SPDX MIT"
+    },
+    "non_interactive": {
+     "label": "declared by the project",
+     "source": "https://opencode.ai/docs/cli/ : `opencode run [message..]`, --dir, --model, --format"
+    },
+    "provider_config": {
+     "label": "declared by the project",
+     "source": "https://opencode.ai/docs/providers/ : @ai-sdk/openai-compatible, options.baseURL; env OPENCODE_CONFIG_CONTENT (https://opencode.ai/docs/cli/)"
+    },
+    "confinement": {
+     "label": "declared by the project",
+     "source": "https://opencode.ai/docs/permissions/ : keys edit, bash, webfetch, external_directory with allow|ask|deny; OPENCODE_PERMISSION inline JSON. Not verified by us; `ask` is never used because the docs do not say what `run` does with it"
+    },
+    "pin": {
+     "label": "verified by code",
+     "source": "GitHub releases API, v1.19.5 asset digests; LICENSE re-read at the tag's commit 810c0eba"
+    }
+   },
+   "accesses": [
+    {
+     "id": "opencode:local",
+     "kind": "local",
+     "cost_class": "local",
+     "plan_group": null,
+     "env_names": []
+    }
+   ],
+   "adapter": {
+    "kind": "cli",
+    "exe": {
+     "darwin": "opencode",
+     "linux": "opencode",
+     "windows": "opencode"
+    },
+    "prompt_via": "arg",
+    "timeout_s": 900,
+    "needs_model_endpoint": true,
+    "env_pass": [],
+    "output": {
+     "kind": "stdout"
+    },
+    "env_set": {
+     "OPENCODE_CONFIG_CONTENT": "{\"$schema\":\"https://opencode.ai/config.json\",\"provider\":{\"llamacpp\":{\"npm\":\"@ai-sdk/openai-compatible\",\"name\":\"local\",\"options\":{\"baseURL\":\"http://{endpoint}/v1\"},\"models\":{\"{model}\":{\"name\":\"local\"}}}}}"
+    },
+    "modes": {
+     "code": {
+      "name": "edit_no_bash",
+      "confinement": "tool_declared",
+      "argv": [
+       "run",
+       "--dir",
+       "{workspace}",
+       "--model",
+       "llamacpp/{model}",
+       "{prompt}"
+      ],
+      "env_set": {
+       "OPENCODE_PERMISSION": "{\"bash\":\"deny\",\"webfetch\":\"deny\",\"external_directory\":\"deny\",\"edit\":\"allow\"}"
+      }
+     },
+     "text": {
+      "name": "no_edit_no_bash",
+      "confinement": "tool_declared",
+      "argv": [
+       "run",
+       "--dir",
+       "{workspace}",
+       "--model",
+       "llamacpp/{model}",
+       "{prompt}"
+      ],
+      "env_set": {
+       "OPENCODE_PERMISSION": "{\"bash\":\"deny\",\"webfetch\":\"deny\",\"external_directory\":\"deny\",\"edit\":\"deny\"}"
+      }
+     }
+    }
+   }
+  },
+  {
+   "id": "pi",
+   "title": "Pi (coding agent)",
+   "subtype": "own_harness",
+   "cloud": false,
+   "task_types": [
+    "code",
+    "text"
+   ],
+   "os": [
+    "darwin",
+    "linux",
+    "windows"
+   ],
+   "needs": {
+    "sandbox": true,
+    "docker": false,
+    "gui": false
+   },
+   "license": {
+    "spdx": "MIT",
+    "note": "LICENSE read at the commit below"
+   },
+   "upstream": {
+    "kind": "repo",
+    "url": "https://github.com/earendil-works/pi",
+    "commit": "4a080252f06caf63a525d7873c5d94d3c23887e0",
+    "release": "v1.4.0",
+    "pin": "resolved",
+    "pin_note": "npm package @earendil-works/pi-coding-agent 1.4.0 (published 2026-10-21), tag v1.4.0 of earendil-works/pi (the repo badlogic/pi-mono redirects to). The older name @mariozechner/pi-coding-agent stops at 0.73.1 and is NOT the current package. 22 direct dependencies; their licenses (and the transitive tree) are NOT checked yet and must be before the recipe is accepted. Needs Node >= 22.19.0.",
+    "npm": {
+     "package": "@earendil-works/pi-coding-agent",
+     "version": "1.4.0",
+     "integrity": "sha512-Z41LpZ3yYHSC/UUps6Mr39UMFPwH8elhJBG9DY1P7kuzsE5qSK/6eMj2EHzO5evJRQWLbKSqUMw+4nCNtIyiQg==",
+     "shasum": "7f5dd2a4f7fa46ed252465ac4d341831896b1fc2",
+     "tarball": "https://registry.npmjs.org/@earendil-works/pi-coding-agent/-/pi-coding-agent-1.4.0.tgz",
+     "node": ">=22.19.0",
+     "license_in_registry": "MIT",
+     "bin": "dist/bundle/cli.js"
+    }
+   },
+   "automated_use": "n/a",
+   "installed_by_us": true,
+   "labels": {
+    "license": {
+     "label": "verified by code",
+     "source": "badlogic/pi-mono LICENSE at 35dfa757: MIT License, Copyright (c) 2025 Mario Zechner; GitHub SPDX MIT"
+    },
+    "non_interactive": {
+     "label": "declared by the project",
+     "source": "packages/coding-agent/docs/cli.md at 35dfa757: -p/--print, --mode json, --no-session, --tools, --no-tools, --provider, --model"
+    },
+    "provider_config": {
+     "label": "declared by the project",
+     "source": "packages/coding-agent/docs/models.md at 35dfa757: models.json providers.<id>.{baseUrl, api: openai-completions, apiKey (a dummy lets the model appear), models[{id}]}. The agent directory's location (assumed ~/.pi/agent) and any variable that moves it were NOT found in the pinned docs: the adapter redirects HOME and USERPROFILE into the workspace instead. UNTESTED"
+    },
+    "confinement": {
+     "label": "declared by the project",
+     "source": "the project's README at 35dfa757 says it has no built-in permission system: sandbox_required"
+    },
+    "pin": {
+     "label": "verified by code",
+     "source": "npm registry metadata for @earendil-works/pi-coding-agent@1.4.0 (dist.integrity); LICENSE re-read at the tag's commit 4a080252"
+    }
+   },
+   "accesses": [
+    {
+     "id": "pi:local",
+     "kind": "local",
+     "cost_class": "local",
+     "plan_group": null,
+     "env_names": []
+    }
+   ],
+   "adapter": {
+    "kind": "cli",
+    "exe": {
+     "darwin": "pi",
+     "linux": "pi",
+     "windows": "pi"
+    },
+    "prompt_via": "stdin",
+    "timeout_s": 900,
+    "needs_model_endpoint": true,
+    "env_pass": [],
+    "output": {
+     "kind": "stdout"
+    },
+    "env_set": {
+     "HOME": "{workspace}/.home",
+     "USERPROFILE": "{workspace}/.home",
+     "PI_OFFLINE": "1"
+    },
+    "config_files": [
+     {
+      "name": ".home/.pi/agent/models.json",
+      "content": "{\"providers\":{\"llama-cpp\":{\"baseUrl\":\"http://{endpoint}/v1\",\"api\":\"openai-completions\",\"apiKey\":\"local\",\"models\":[{\"id\":\"{model}\"}]}}}"
+     }
+    ],
+    "modes": {
+     "code": {
+      "name": "edit_in_sandbox",
+      "confinement": "sandbox_required",
+      "argv": [
+       "-p",
+       "--no-session",
+       "--tools",
+       "read,edit,write",
+       "--provider",
+       "llama-cpp",
+       "--model",
+       "{model}"
+      ]
+     },
+     "text": {
+      "name": "no_tools_in_sandbox",
+      "confinement": "sandbox_required",
+      "argv": [
+       "-p",
+       "--no-session",
+       "--no-tools",
+       "--provider",
+       "llama-cpp",
+       "--model",
+       "{model}"
+      ]
+     }
+    }
+   }
+  }
+ ]
+}

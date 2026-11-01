@@ -1,0 +1,136 @@
+{
+  "provenance": "builtin",
+  "protocol": "connect_chats",
+  "tier": "observe",
+  "ring": 0,
+  "platforms": [
+    "any"
+  ],
+  "signature": {},
+  "states": {
+    "kinds": [
+      "chat_connect"
+    ],
+    "start": "prepare",
+    "states": {
+      "prepare": {
+        "goal": "Find which chats are on this computer (detect_hosts), put the owner's question about which to connect (ask_hosts), then build the plan (build_connect_plan: code makes it from the recipes and can refuse with a reason). You do not write the plan.",
+        "tags": [],
+        "tools": [
+          "detect_hosts",
+          "ask_hosts",
+          "build_connect_plan"
+        ],
+        "actions": [],
+        "skills": [],
+        "advance": [
+          {
+            "to": "run",
+            "needs": [
+              {
+                "fact": "plan.built",
+                "at_least": "tested",
+                "equals": true
+              }
+            ]
+          },
+          {
+            "to": "nothing_to_connect",
+            "needs": [
+              {
+                "fact": "setup.refused",
+                "at_least": "tested"
+              }
+            ]
+          }
+        ],
+        "close_on": [
+          "build_connect_plan"
+        ],
+        "terminal": false,
+        "reason": "",
+        "show": [
+          "connect.*",
+          "plan.*",
+          "setup.*"
+        ]
+      },
+      "run": {
+        "goal": "Run the plan one step at a time, in order. run_step N asks the owner to approve that step and then runs it. The last step reads the result back. undo_step N undoes the latest step that is done. finish_connect ends the run once the connection is verified or everything done was undone.",
+        "tags": [],
+        "tools": [
+          "run_step",
+          "undo_step",
+          "finish_connect"
+        ],
+        "actions": [],
+        "skills": [],
+        "advance": [
+          {
+            "to": "done",
+            "needs": [
+              {
+                "fact": "setup.verified",
+                "at_least": "tested",
+                "equals": true
+              }
+            ]
+          },
+          {
+            "to": "rolled_back",
+            "needs": [
+              {
+                "fact": "setup.undone_all",
+                "at_least": "tested",
+                "equals": true
+              }
+            ]
+          }
+        ],
+        "close_on": [
+          "finish_connect"
+        ],
+        "terminal": false,
+        "reason": "",
+        "show": [
+          "plan.*",
+          "setup.*",
+          "step.*"
+        ]
+      },
+      "rolled_back": {
+        "goal": "",
+        "tags": [],
+        "tools": [],
+        "actions": [],
+        "skills": [],
+        "advance": [],
+        "close_on": [],
+        "terminal": true,
+        "reason": "everything the connection wrote was undone"
+      },
+      "done": {
+        "goal": "",
+        "tags": [],
+        "tools": [],
+        "actions": [],
+        "skills": [],
+        "advance": [],
+        "close_on": [],
+        "terminal": true,
+        "reason": "the chat is connected and the entry was read back"
+      },
+      "nothing_to_connect": {
+        "goal": "",
+        "tags": [],
+        "tools": [],
+        "actions": [],
+        "skills": [],
+        "advance": [],
+        "close_on": [],
+        "terminal": true,
+        "reason": "no connection plan could be made; the reason is in the facts; nothing was changed"
+      }
+    }
+  }
+}

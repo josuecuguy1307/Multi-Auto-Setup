@@ -1,0 +1,25 @@
+{
+ "rule": "R6.4-license-class-not-offered",
+ "kind": "file",
+ "says": "a license class that is not offered keeps the model out",
+ "cases": [
+  {
+   "name": "a Llama license when only permissive licenses are offered",
+   "params": {
+    "license_classes_offered": [
+     "permissive"
+    ]
+   },
+   "facts": {
+    "gguf.general.license": "llama3.1",
+    "hub.card_license": "llama3.1"
+   },
+   "expect": {
+    "offer_by_default": false,
+    "not_default_reasons": [
+     "~class is not offered"
+    ]
+   }
+  }
+ ]
+}

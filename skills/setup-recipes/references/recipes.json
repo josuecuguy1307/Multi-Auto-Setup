@@ -1,0 +1,175 @@
+{
+ "label": "declared-by-project (closed recipes). Every address, size and SHA-256 a plan carries is read from catalog.lock.yaml at plan time (verified-by-code), never written here.",
+ "recipes": [
+  {
+   "id": "local-server",
+   "runtime_source": "llama.cpp",
+   "ops": {
+    "fetch_check": {
+     "writes": [
+      "<mas>/downloads/"
+     ],
+     "title": "Download a file and check its SHA-256"
+    },
+    "unpack_archive": {
+     "writes": [
+      "<mas>/runtime/"
+     ],
+     "title": "Unpack the runtime"
+    },
+    "write_server_config": {
+     "writes": [
+      "<mas>/config/"
+     ],
+     "title": "Write the server's settings"
+    },
+    "start_server": {
+     "writes": [
+      "<mas>/run/"
+     ],
+     "title": "Start the local server (loopback only)"
+    },
+    "minimal_call": {
+     "writes": [],
+     "title": "Ask the model one short question and time the answer"
+    }
+   },
+   "sequence": [
+    "fetch_check",
+    "unpack_archive",
+    "fetch_check",
+    "write_server_config",
+    "start_server",
+    "minimal_call"
+   ],
+   "repeat": [
+    "fetch_check"
+   ],
+   "archive_formats": {
+    ".tar.gz": "tar.gz",
+    ".zip": "zip"
+   },
+   "server": {
+    "binary": {
+     "macos": "llama-server",
+     "linux": "llama-server",
+     "windows": "llama-server.exe"
+    },
+    "host": "127.0.0.1",
+    "port": 8080,
+    "context": 4096,
+    "prompt": "Reply with the single word: ready",
+    "max_tokens": 8,
+    "argv": [
+     "-m",
+     "{model}",
+     "--host",
+     "{host}",
+     "--port",
+     "{port}",
+     "-c",
+     "{context}",
+     "-ngl",
+     "{ngl}"
+    ],
+    "argv_mmproj": [
+     "--mmproj",
+     "{mmproj}"
+    ],
+    "health_path": "/health",
+    "chat_path": "/v1/chat/completions",
+    "ready_timeout_s": 240,
+    "call_timeout_s": 120
+   },
+   "backend_args": {
+    "cpu": {
+     "ngl": 0
+    },
+    "metal": {
+     "ngl": 999
+    },
+    "cuda": {
+     "ngl": 999
+    },
+    "vulkan": {
+     "ngl": 999
+    }
+   },
+   "commands": {
+    "fetch_check": {
+     "macos": "curl -L --fail -o {dest} {url} && shasum -a 256 {dest}  (must print {sha256})",
+     "linux": "curl -L --fail -o {dest} {url} && sha256sum {dest}  (must print {sha256})",
+     "windows": "Invoke-WebRequest -Uri {url} -OutFile {dest}; (Get-FileHash -Algorithm SHA256 {dest}).Hash  (must be {sha256})"
+    },
+    "unpack_archive": {
+     "tar.gz": "tar -xzf {archive} -C {dest}",
+     "zip": "Expand-Archive -LiteralPath {archive} -DestinationPath {dest}"
+    },
+    "write_server_config": {
+     "macos": "write {path} (settings only; no secrets)",
+     "linux": "write {path} (settings only; no secrets)",
+     "windows": "write {path} (settings only; no secrets)"
+    },
+    "start_server": {
+     "macos": "{binary} {argv}  (in the background, started by the node)",
+     "linux": "{binary} {argv}  (in the background, started by the node)",
+     "windows": "{binary} {argv}  (in the background, started by the node)"
+    },
+    "minimal_call": {
+     "macos": "POST http://127.0.0.1:{port}/v1/chat/completions with one short prompt",
+     "linux": "POST http://127.0.0.1:{port}/v1/chat/completions with one short prompt",
+     "windows": "POST http://127.0.0.1:{port}/v1/chat/completions with one short prompt"
+    }
+   },
+   "undo": {
+    "fetch_check": {
+     "macos": "rm -rf {path}",
+     "linux": "rm -rf {path}",
+     "windows": "Remove-Item -LiteralPath {path} -Recurse -Force"
+    },
+    "unpack_archive": {
+     "macos": "rm -rf {path}",
+     "linux": "rm -rf {path}",
+     "windows": "Remove-Item -LiteralPath {path} -Recurse -Force"
+    },
+    "write_server_config": {
+     "macos": "rm -rf {path}",
+     "linux": "rm -rf {path}",
+     "windows": "Remove-Item -LiteralPath {path} -Recurse -Force"
+    },
+    "start_server": {
+     "macos": "stop the server the node started (its process id is in <mas>/run/) and delete <mas>/run/",
+     "linux": "stop the server the node started (its process id is in <mas>/run/) and delete <mas>/run/",
+     "windows": "stop the server the node started (its process id is in <mas>/run/) and delete <mas>/run/"
+    },
+    "minimal_call": {
+     "macos": "nothing to undo",
+     "linux": "nothing to undo",
+     "windows": "nothing to undo"
+    }
+   },
+   "download": {
+    "schemes": [
+     "https"
+    ],
+    "hosts": {
+     "github.com": [
+      ".githubusercontent.com",
+      "github.com"
+     ],
+     "huggingface.co": [
+      ".huggingface.co",
+      ".hf.co",
+      "huggingface.co"
+     ]
+    },
+    "max_redirects": 5,
+    "disk_margin": 1.05
+   },
+   "unpack": {
+    "max_unpacked_gib": 8,
+    "marker": ".mas-unpacked"
+   }
+  }
+ ]
+}

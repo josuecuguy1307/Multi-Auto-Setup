@@ -1,0 +1,18 @@
+{
+ "rule": "R3.1-available-memory",
+ "kind": "machine",
+ "says": "the budget is the memory that was FREE, less a margin",
+ "cases": [
+  {
+   "name": "19.7 GiB total, 8.2 free: 8.2 x 0.85",
+   "machine": {
+    "ram_total_gib": 19.7,
+    "ram_available_gib": 8.2
+   },
+   "expect": {
+    "budget_gib": 6.97,
+    "basis": "~available RAM"
+   }
+  }
+ ]
+}

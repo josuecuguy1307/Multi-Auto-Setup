@@ -1,0 +1,39 @@
+{
+ "rule": "R2.4-kv-cache",
+ "kind": "estimate",
+ "says": "the KV cache is counted for an explicit context",
+ "cases": [
+  {
+   "name": "32 layers x 8 kv heads x (128+128) x 4096 tokens x 2 bytes = 0.5 GiB",
+   "row": {
+    "dims": {
+     "layers": 32,
+     "kv_layers": 32,
+     "kv_heads": 8,
+     "key_length": 128,
+     "value_length": 128
+    }
+   },
+   "context": 4096,
+   "expect": {
+    "kv_gib": 0.5
+   }
+  },
+  {
+   "name": "doubling the context doubles it",
+   "row": {
+    "dims": {
+     "layers": 32,
+     "kv_layers": 32,
+     "kv_heads": 8,
+     "key_length": 128,
+     "value_length": 128
+    }
+   },
+   "context": 8192,
+   "expect": {
+    "kv_gib": 1.0
+   }
+  }
+ ]
+}

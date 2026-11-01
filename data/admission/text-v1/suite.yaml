@@ -1,0 +1,113 @@
+# Admission suite for task type "text". Written by the project. Graded by code only (exact or structured checks); no model grades anything.
+suite_id: text-v1
+task_type: text
+version: 1
+description: Ten extraction and instruction-following tasks. A task passes only when every check of its grader holds.
+preamble: ""
+est_output_tokens: 80
+tasks:
+  - id: text-01-json-fields
+    title: extract fields as JSON
+    prompt: |
+      Sentence: "Maria Lopez, 34, signed the lease for apartment 5B on 2026-03-14 paying 1250 dollars monthly."
+      Reply with only a JSON object with the keys name (string), age (integer), unit (string), date (string, exactly as written) and rent (integer).
+    grader: {kind: json, equals: {name: Maria Lopez, age: 34, unit: 5B, date: "2026-03-14", rent: 1250}}
+    reference: '{"name": "Maria Lopez", "age": 34, "unit": "5B", "date": "2026-03-14", "rent": 1250}'
+    timeout_s: 120
+    source: {author: project, license: project license (pending)}
+  - id: text-02-word-problem
+    title: arithmetic word problem
+    prompt: |
+      A shop sells pencils in boxes of 12. Ana buys 7 boxes, gives away 19 pencils, and then buys 3 more pencils. How many pencils does she have now?
+      You may reason briefly. The last line of your reply must be exactly: ANSWER: <integer>
+    grader: {kind: answer_line, expect: 68}
+    reference: |
+      7 * 12 = 84; 84 - 19 = 65; 65 + 3 = 68.
+      ANSWER: 68
+    timeout_s: 120
+    source: {author: project, license: project license (pending)}
+  - id: text-03-sentiment
+    title: classify five lines
+    prompt: |
+      Classify each line as positive, negative or neutral. Reply with exactly five lines, one label per line, in the order of the input, lowercase, and nothing else.
+      1. I love this phone, the battery lasts forever.
+      2. The package arrived crushed and late.
+      3. The meeting is at 3 pm on Tuesday.
+      4. Worst customer service I have ever had.
+      5. Great value for the price!
+    grader: {kind: lines, expect: [positive, negative, neutral, negative, positive], ordered: true, bullet: none, normalize: lower}
+    reference: "positive\nnegative\nneutral\nnegative\npositive"
+    timeout_s: 120
+    source: {author: project, license: project license (pending)}
+  - id: text-04-sorted-bullets
+    title: sorted bullet list
+    prompt: |
+      List the planets Mars, Venus, Earth, Mercury and Jupiter sorted alphabetically, one per line, each line starting with "- ". Reply with those five lines and nothing else.
+    grader: {kind: lines, expect: ["- Earth", "- Jupiter", "- Mars", "- Mercury", "- Venus"], ordered: true, bullet: none, normalize: none}
+    reference: "- Earth\n- Jupiter\n- Mars\n- Mercury\n- Venus"
+    timeout_s: 120
+    source: {author: project, license: project license (pending)}
+  - id: text-05-iso-dates
+    title: normalize dates
+    prompt: |
+      Convert each date to ISO format YYYY-MM-DD. Reply with exactly four lines in the order of the input and nothing else.
+      1. March 5, 2026
+      2. 12 Jan 2025
+      3. 7th of August 2024
+      4. 01.02.2023 (day.month.year)
+    grader: {kind: lines, expect: ["2026-03-05", "2025-01-12", "2024-08-07", "2023-02-01"], ordered: true, bullet: none, normalize: none}
+    reference: "2026-03-05\n2025-01-12\n2024-08-07\n2023-02-01"
+    timeout_s: 120
+    source: {author: project, license: project license (pending)}
+  - id: text-06-conversion
+    title: unit conversion
+    prompt: |
+      Convert 72 degrees Fahrenheit to Celsius, rounded to one decimal place.
+      You may reason briefly. The last line of your reply must be exactly: ANSWER: <number>
+    grader: {kind: answer_line, expect: 22.2, tolerance: 0.05}
+    reference: "ANSWER: 22.2"
+    timeout_s: 120
+    source: {author: project, license: project license (pending)}
+  - id: text-07-emails
+    title: extract email addresses
+    prompt: |
+      Text: "Contact ana@example.org or bob.smith@mail.example.com. Do not use admin@@bad or carlos at example.net. Cc: d_e-f@sub.example.co.uk, ana@example.org."
+      List every valid email address in the text, once each, one per line, and nothing else.
+    grader: {kind: lines, expect: [ana@example.org, bob.smith@mail.example.com, d_e-f@sub.example.co.uk], ordered: false, bullet: none, normalize: none}
+    reference: "ana@example.org\nbob.smith@mail.example.com\nd_e-f@sub.example.co.uk"
+    timeout_s: 120
+    source: {author: project, license: project license (pending)}
+  - id: text-08-strict-output
+    title: follow a strict output instruction
+    prompt: |
+      Reply with the word STRESSED written backwards, in lowercase, and nothing else.
+    grader: {kind: lines, expect: [desserts], ordered: true, bullet: none, normalize: none}
+    reference: desserts
+    timeout_s: 120
+    source: {author: project, license: project license (pending)}
+  - id: text-09-csv-sum
+    title: sum from a table
+    prompt: |
+      region,item,qty
+      north,pen,12
+      south,pen,7
+      north,ink,5
+      east,pen,9
+      north,pad,20
+      south,ink,4
+      What is the total qty of the rows whose region is north?
+      The last line of your reply must be exactly: ANSWER: <integer>
+    grader: {kind: answer_line, expect: 37}
+    reference: "12 + 5 + 20 = 37\nANSWER: 37"
+    timeout_s: 120
+    source: {author: project, license: project license (pending)}
+  - id: text-10-function-call
+    title: form a function call
+    prompt: |
+      Available function: get_weather(city: string, unit: "c" or "f").
+      User request: "What's the weather in Quito right now? Use Celsius."
+      Reply with only a JSON object {"name": <function name>, "arguments": {<argument name>: <value>}}.
+    grader: {kind: json, equals: {name: get_weather, arguments: {city: Quito, unit: c}}}
+    reference: '{"name": "get_weather", "arguments": {"city": "Quito", "unit": "c"}}'
+    timeout_s: 120
+    source: {author: project, license: project license (pending)}

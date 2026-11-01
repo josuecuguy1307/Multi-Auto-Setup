@@ -1,0 +1,20 @@
+{
+ "rule": "R7.1-verified-wins",
+ "kind": "file",
+ "says": "the verified value wins over the declared one and the conflict is recorded",
+ "cases": [
+  {
+   "name": "a name said 5.0B, the tensors add up to 0.494B",
+   "facts": {
+    "file.declared_params_b": 5.0,
+    "gguf.param_count": 494032768
+   },
+   "expect": {
+    "params_b": 0.49,
+    "conflict_fields": [
+     "params_b"
+    ]
+   }
+  }
+ ]
+}

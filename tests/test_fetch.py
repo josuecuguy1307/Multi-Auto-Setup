@@ -57,7 +57,24 @@ class Origin:
         return f"http://127.0.0.1:{self.srv.server_port}{path}"
 
     def stop(self):
-        self.srv.shutdown()
+        if self.srv is not None:  # shutdown ends the loop; server_close gives the listening socket back (without it every test leaves one open for the whole run)
+            srv, self.srv = self.srv, None
+            srv.shutdown()
+            srv.server_close()
+
+
+@pytest.fixture
+def local_origin():
+    """Starts local origins and stops every one of them when the test ends, whatever the test did."""
+    made: list[Origin] = []
+
+    def start(files, truncate=None):
+        o = Origin(files, truncate)
+        made.append(o)
+        return o
+    yield start
+    for o in made:
+        o.stop()
 
 
 @pytest.fixture
@@ -81,12 +98,11 @@ def make(store, tmp_path, registry, answers=("approve",), free=100 * GIB, reserv
 DATA = b"model-bytes-" * 5000
 
 
-def test_a_fetch_asks_with_url_size_and_checksum_then_caches_a_verified_file(store, tmp_path):
-    o = Origin({"/m.gguf": DATA})
+def test_a_fetch_asks_with_url_size_and_checksum_then_caches_a_verified_file(store, tmp_path, local_origin):
+    o = local_origin({"/m.gguf": DATA})
     a = art(o, "/m.gguf", DATA)
     f, shown = make(store, tmp_path, {a.id: a})
     path = f.fetch(a.id)
-    o.stop()
     assert hashlib.sha256(path.read_bytes()).hexdigest() == a.sha256 and path.parent.name == a.sha256
     prompt = shown[0]
     assert o.url("/m.gguf") in prompt and a.sha256 in prompt and "MB" in prompt and "recipe:  fetch_artifact" in prompt
@@ -94,92 +110,84 @@ def test_a_fetch_asks_with_url_size_and_checksum_then_caches_a_verified_file(sto
     assert not list((tmp_path / "cache").rglob("*.partial"))
 
 
-def test_a_cache_hit_needs_no_network_and_no_approval(store, tmp_path):
-    o = Origin({"/m.gguf": DATA})
+def test_a_cache_hit_needs_no_network_and_no_approval(store, tmp_path, local_origin):
+    o = local_origin({"/m.gguf": DATA})
     a = art(o, "/m.gguf", DATA)
     f, shown = make(store, tmp_path, {a.id: a}, answers=("approve",))
     p1 = f.fetch(a.id)
     p2 = f.fetch(a.id)
-    o.stop()
     assert p1 == p2 and f.network_calls == 1 and len(o.hits) == 1 and len(shown) == 1
 
 
-def test_a_corrupted_cache_entry_is_not_trusted_and_is_fetched_again(store, tmp_path):
-    o = Origin({"/m.gguf": DATA})
+def test_a_corrupted_cache_entry_is_not_trusted_and_is_fetched_again(store, tmp_path, local_origin):
+    o = local_origin({"/m.gguf": DATA})
     a = art(o, "/m.gguf", DATA)
     f, _ = make(store, tmp_path, {a.id: a}, answers=("approve", "approve"))
     p = f.fetch(a.id)
     p.write_bytes(b"corrupted")
     again = f.fetch(a.id)
-    o.stop()
     assert again.read_bytes() == DATA and f.network_calls == 2
 
 
-def test_nothing_outside_the_manifest_is_ever_fetched(store, tmp_path):
-    o = Origin({"/m.gguf": DATA, "/evil.bin": b"x" * 100})
+def test_nothing_outside_the_manifest_is_ever_fetched(store, tmp_path, local_origin):
+    o = local_origin({"/m.gguf": DATA, "/evil.bin": b"x" * 100})
     a = art(o, "/m.gguf", DATA)
     f, shown = make(store, tmp_path, {a.id: a})
     for wanted in ("evil.bin", o.url("/evil.bin"), "also install llama-xyz", "../../etc/passwd"):  # a model or the mission text asking
         with pytest.raises(ArtifactNotInManifest):
             f.fetch(wanted)
-    o.stop()
     assert o.hits == [] and shown == [] and f.network_calls == 0
     assert not hasattr(f, "fetch_url")  # there is no fetch-by-URL entry point to misuse
 
 
-def test_a_checksum_mismatch_aborts_and_leaves_nothing_in_the_cache(store, tmp_path):
+def test_a_checksum_mismatch_aborts_and_leaves_nothing_in_the_cache(store, tmp_path, local_origin):
     tampered = DATA[:-1] + b"X"
-    o = Origin({"/m.gguf": tampered})
+    o = local_origin({"/m.gguf": tampered})
     a = art(o, "/m.gguf", DATA)  # the manifest has the hash of the good bytes
     f, _ = make(store, tmp_path, {a.id: a})
     with pytest.raises(ChecksumMismatch, match="does not match"):
         f.fetch(a.id)
-    o.stop()
     assert [p for p in (tmp_path / "cache").rglob("*") if p.is_file()] == []
 
 
-def test_a_download_larger_than_declared_is_aborted(store, tmp_path):
+def test_a_download_larger_than_declared_is_aborted(store, tmp_path, local_origin):
     big = b"y" * (10 * 1024 * 1024)
-    o = Origin({"/m.gguf": big})
+    o = local_origin({"/m.gguf": big})
     a = Artifact("m", "model", "m.gguf", o.url("/m.gguf"), hashlib.sha256(big).hexdigest(), 1000, "apache-2.0", "", "test")  # declared 1 KB
     f, _ = make(store, tmp_path, {a.id: a})
     with pytest.raises(ChecksumMismatch, match="larger than declared"):
         f.fetch("m")
-    o.stop()
     assert [p for p in (tmp_path / "cache").rglob("*") if p.is_file()] == []
 
 
-def test_a_truncated_download_never_survives_as_a_cached_file(store, tmp_path):
-    o = Origin({"/m.gguf": DATA}, truncate={"/m.gguf": len(DATA) // 2})
+def test_a_truncated_download_never_survives_as_a_cached_file(store, tmp_path, local_origin):
+    o = local_origin({"/m.gguf": DATA}, truncate={"/m.gguf": len(DATA) // 2})
     a = art(o, "/m.gguf", DATA)
     f, _ = make(store, tmp_path, {a.id: a})
     with pytest.raises(Exception):  # httpx reports the short body, or the hash will not match
         f.fetch(a.id)
-    o.stop()
     assert [p for p in (tmp_path / "cache").rglob("*") if p.is_file()] == []
 
 
-def test_a_download_that_would_breach_the_disk_reserve_is_refused_before_it_starts(store, tmp_path):
-    o = Origin({"/m.gguf": DATA})
+def test_a_download_that_would_breach_the_disk_reserve_is_refused_before_it_starts(store, tmp_path, local_origin):
+    o = local_origin({"/m.gguf": DATA})
     a = Artifact("m", "model", "m.gguf", o.url("/m.gguf"), hashlib.sha256(DATA).hexdigest(), 2 * GIB, "apache-2.0", "", "test")
     f, shown = make(store, tmp_path, {"m": a}, free=5 * GIB, reserve=4.0)  # 5 GiB free, 2 GiB wanted, 4 GiB reserve
     with pytest.raises(DiskReserveBreach, match="below the 4.0 GiB reserve"):
         f.fetch("m")
-    o.stop()
     assert o.hits == [] and shown == [] and f.network_calls == 0  # not even the question was asked
 
 
-def test_exactly_enough_room_is_allowed(store, tmp_path):
-    o = Origin({"/m.gguf": DATA})
+def test_exactly_enough_room_is_allowed(store, tmp_path, local_origin):
+    o = local_origin({"/m.gguf": DATA})
     a = art(o, "/m.gguf", DATA)
     f, _ = make(store, tmp_path, {a.id: a}, free=4 * GIB + len(DATA), reserve=4.0)
     assert f.fetch(a.id).is_file()
-    o.stop()
 
 
-def test_the_reserve_is_also_enforced_while_the_download_runs(store, tmp_path):
+def test_the_reserve_is_also_enforced_while_the_download_runs(store, tmp_path, local_origin):
     big = b"z" * (6 * 1024 * 1024)
-    o = Origin({"/m.gguf": big})
+    o = local_origin({"/m.gguf": big})
     a = art(o, "/m.gguf", big)
     state = {"free": 4 * GIB + len(big) + 8 * 1024 * 1024}  # fine at the start, then the disk fills up from elsewhere
 
@@ -190,17 +198,15 @@ def test_the_reserve_is_also_enforced_while_the_download_runs(store, tmp_path):
     f, _ = make(store, tmp_path, {a.id: a}, free=free)
     with pytest.raises(DiskReserveBreach, match="aborted"):
         f.fetch(a.id)
-    o.stop()
     assert [p for p in (tmp_path / "cache").rglob("*") if p.is_file()] == []
 
 
-def test_a_denied_approval_downloads_nothing(store, tmp_path):
-    o = Origin({"/m.gguf": DATA})
+def test_a_denied_approval_downloads_nothing(store, tmp_path, local_origin):
+    o = local_origin({"/m.gguf": DATA})
     a = art(o, "/m.gguf", DATA)
     f, _ = make(store, tmp_path, {a.id: a}, answers=("no",))
     with pytest.raises(FetchDenied):
         f.fetch(a.id)
-    o.stop()
     assert o.hits == [] and f.network_calls == 0
 
 

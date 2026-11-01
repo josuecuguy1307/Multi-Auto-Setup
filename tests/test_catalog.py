@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 import yaml
 
-from catalog_fixtures import FakeMeta, manifest_raw, write_manifest
+from catalog_fixtures import FakeMeta, H, manifest_raw, write_manifest
 from envrec.catalog import Catalog, generate, write
 from envrec.catalog.model import parse_params_b, parse_quant
 from envrec.runtime.manifest import Manifest, NotApproved
@@ -53,15 +53,37 @@ def test_model_filters_each_have_a_reason(gen):
     kept = {m.id for m in g.lock.model_files}
     assert kept == {"Qwen/Qwen2.5-0.5B-Instruct-GGUF/qwen2.5-0.5b-instruct-q4_k_m.gguf",
                     "Qwen/Qwen2.5-0.5B-Instruct-GGUF/qwen2.5-0.5b-instruct-q8_0.gguf",
-                    "Qwen/Qwen2.5-1.5B-Instruct-GGUF/qwen2.5-1.5b-instruct-q4_k_m.gguf"}
+                    "Qwen/Qwen2.5-1.5B-Instruct-GGUF/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+                    "Qwen/Qwen2.5-1.5B-Instruct-GGUF/huge-1.5b-q8_0.gguf",  # 3.5 GB: a model has no size cap any more; whether it fits is decided per machine
+                    "Qwen/Big-32B-GGUF/big-32b-q4_k_m.gguf"}  # a number in a name no longer excludes: the file's header sets the real count, and the manifest's cap is applied to that
     r = reasons(g)
     assert "allowlist" in r["Qwen/Research-3B-GGUF"]
     assert "no license" in r["Qwen/NoLicense-1B-GGUF"]
     assert "no checksum" in r["Qwen/Qwen2.5-1.5B-Instruct-GGUF/qwen2.5-1.5b-instruct-q8_0.gguf"]
-    assert "artifact cap" in r["Qwen/Qwen2.5-1.5B-Instruct-GGUF/huge-1.5b-q8_0.gguf"]
-    assert "sharded" in r["Qwen/Big-32B-GGUF/big-32b-q4_k_m-00001-of-00004.gguf"]
-    assert "cap" in r["Qwen/Big-32B-GGUF/big-32b-q4_k_m.gguf"]  # 32B > 8B
+    assert "incomplete" in r["Qwen/Big-32B-GGUF/big-32b-q4_k_m-00001-of-00004.gguf"]  # one shard of four is not a model
     assert not any("q2_k" in k for k in kept)  # quantization not in the manifest: silently ignored, not an exclusion
+    assert not any("cap" in v for k, v in r.items() if "/" in k)  # no model is excluded by a cap
+
+
+def test_a_complete_set_of_shards_is_one_entry_with_every_shard_listed(tmp_path):
+    class Split(FakeMeta):
+        def model_repos(self, author):
+            return [{"repo": "Qwen/Split-7B-GGUF", "license": "apache-2.0"}, {"repo": "Qwen/Gone-7B-GGUF", "license": "apache-2.0"}]
+
+        def repo_files(self, repo):
+            if repo.startswith("Qwen/Split"):
+                return {"revision": "w" * 40, "files": [{"path": f"split-7b-q4_k_m-0000{i}-of-00003.gguf", "bytes": 2_000_000_000 + i, "sha256": H(str(i))} for i in (1, 2, 3)]}
+            return {"revision": "x" * 40, "files": [{"path": f"gone-7b-q4_k_m-0000{i}-of-00003.gguf", "bytes": 1_000_000_000, "sha256": H("a")} for i in (1, 3)]}
+    g = generate(Manifest.load(write_manifest(tmp_path)), Split())
+    [m] = g.lock.model_files
+    assert m.id == "Qwen/Split-7B-GGUF/split-7b-q4_k_m-00001-of-00003.gguf" and m.bytes == 6_000_000_006 and m.params_b == 7.0
+    assert [(s["file"][-19:], s["bytes"], s["sha256"]) for s in m.shards] == [(f"0000{i}-of-00003.gguf", 2_000_000_000 + i, H(str(i))) for i in (1, 2, 3)]
+    assert sum(1 for e in g.lock.excluded if "incomplete" in e["reason"]) == 2  # the two shards of a set with one missing
+    write(g, tmp_path / "l.yaml", tmp_path / "e.md")
+    arts = Catalog.load(tmp_path / "l.yaml").artifacts()
+    shard_arts = {k: a for k, a in arts.items() if "#shard" in k}
+    assert sorted(shard_arts) == [f"{m.id}#shard{i}" for i in (1, 2, 3)] and m.id not in arts  # one downloadable artifact per shard, each with its own checksum and size
+    assert [a.sha256 for _, a in sorted(shard_arts.items())] == [H(str(i)) for i in (1, 2, 3)]
 
 
 def test_off_and_excluded_sources_are_listed(gen):
@@ -73,9 +95,9 @@ def test_off_and_excluded_sources_are_listed(gen):
 
 def test_combinations_are_computed_from_the_matrix(gen):
     g, _, _ = gen
-    # llama.cpp arm64 reads gguf -> all 3 model files; rustlm (gguf, safetensors) -> same 3; nothing is hand listed.
-    assert len(g.lock.pairs) == 2 * 3
-    assert g.lock.counts == {"runtime_assets": 2, "model_files": 3, "combinations": 6, "excluded": len(g.lock.excluded)}
+    # llama.cpp arm64 reads gguf -> all 5 model files; rustlm (gguf, safetensors) -> same 5; nothing is hand listed.
+    assert len(g.lock.pairs) == 2 * 5
+    assert g.lock.counts == {"runtime_assets": 2, "model_files": 5, "combinations": 10, "excluded": len(g.lock.excluded)}
 
 
 def test_unreadable_format_pairs_not_made(tmp_path):
@@ -90,7 +112,7 @@ def test_lockfile_round_trip_and_artifacts(gen, tmp_path):
     g, _, _ = gen
     write(g, tmp_path / "catalog.lock.yaml", tmp_path / "catalog.excluded.md")
     cat = Catalog.load(tmp_path / "catalog.lock.yaml")
-    assert len(cat) == 6
+    assert len(cat) == 10
     e = next(iter(cat.entries()))
     assert e.min_disk_gb > (e.runtime.bytes + e.model.bytes) / 1e9
     arts = cat.artifacts()
@@ -187,3 +209,37 @@ def test_live_client_parses_github_and_hf_shapes():
     f = lm.repo_files("Qwen/M")
     assert f["revision"] == "s" * 40 and f["files"][0] == {"path": "m-q4_k_m.gguf", "bytes": 10, "sha256": "c" * 64}
     assert f["files"][1]["sha256"] is None
+
+
+def test_a_rate_limit_is_waited_out_and_a_cached_answer_is_not_asked_again(tmp_path, monkeypatch):
+    import httpx
+    from envrec.catalog import live
+    from envrec.catalog.live import LiveMetadata
+    monkeypatch.setattr(live.time, "sleep", lambda s: None)
+    calls = []
+
+    def handler(req):
+        calls.append(str(req.url))
+        return httpx.Response(429, headers={"retry-after": "1"}) if len(calls) == 1 else httpx.Response(200, json={"sha": "a" * 40})
+    lm = LiveMetadata(httpx.Client(transport=httpx.MockTransport(handler)), cache_dir=tmp_path / "c", pace_s=0.1)
+    assert lm._get("https://huggingface.co/api/models/o/r") == {"sha": "a" * 40} and len(calls) == 2  # one 429, then the answer
+    assert lm._get("https://huggingface.co/api/models/o/r") == {"sha": "a" * 40} and len(calls) == 2  # from the cache: nothing asked
+    flaky = iter([504, 200])
+    lm2 = LiveMetadata(httpx.Client(transport=httpx.MockTransport(lambda r: (lambda c: httpx.Response(c, json={"ok": 1}))(next(flaky)))))
+    assert lm2._get("https://api.github.com/repos/o/r/releases") == {"ok": 1}  # a gateway timeout is waited out too
+    always = LiveMetadata(httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(429))), max_retries=2)
+    with pytest.raises(httpx.HTTPStatusError):
+        always._get("https://huggingface.co/api/models/o/r2")  # it gives up after the retries and says why, never returns nothing
+
+
+def test_a_quantization_published_both_as_one_file_and_as_shards_is_listed_once(tmp_path):
+    class Both(FakeMeta):
+        def model_repos(self, author):
+            return [{"repo": "Qwen/Both-7B-GGUF", "license": "apache-2.0"}]
+
+        def repo_files(self, repo):
+            return {"revision": "y" * 40, "files": [{"path": "both-7b-q4_k_m.gguf", "bytes": 4_000_000_000, "sha256": H("1")}] + [{"path": f"both-7b-q4_k_m-0000{i}-of-00002.gguf", "bytes": 2_000_000_000, "sha256": H(str(i + 1))} for i in (1, 2)]
+                    + [{"path": "both-7b-q8_0-00001-of-00002.gguf", "bytes": 4_000_000_000, "sha256": H("5")}, {"path": "both-7b-q8_0-00002-of-00002.gguf", "bytes": 4_000_000_000, "sha256": H("6")}]}
+    g = generate(Manifest.load(write_manifest(tmp_path)), Both())
+    assert [(m.file, bool(m.shards)) for m in g.lock.model_files] == [("both-7b-q4_k_m.gguf", False), ("both-7b-q8_0-00001-of-00002.gguf", True)]  # the Q8_0 exists only split: kept, as one entry
+    assert any("also published as a single file" in e["reason"] for e in g.lock.excluded)

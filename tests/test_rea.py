@@ -224,10 +224,12 @@ def test_the_loop_analyzes_the_fixture_program_through_the_rea_adapter(store):
     report = score_target(store, t.id, load_ground_truth(ROOT / "ground_truth" / "software-hello.yaml"))
     assert {r.outcome for r in report.rows} == {"correct"}
     assert "app.functions" in " ".join(u for u in [model.calls[-1][1]])  # the open unknown reached the model's view
-    # a33d50a0... is the binary's own sha256, a fact the tool produced: the model may see it, but only as the view's budgeted, quoted value (60 chars), and never the raw REA payload
+    # a33d50a0... is the binary's own sha256, a fact the tool produced. It is an identifier, so the view shows it whole (never cut: an id the model cannot read in full is an id it cannot use), as the
+    # view's quoted value; what the model never sees is the raw REA payload or its evidence ids
     full_hash = "a33d50a0cb8ec8c6c960ab955c37483ad22bafff33373f15d2f689f761177f14"
-    assert all(full_hash not in p[1] and "evidence_id" not in p[1] and "ev_db89d170" not in p[1] for p in model.calls)
-    assert any('app.sha256 = "a33d50a0' in p[1] for p in model.calls)
+    assert all("evidence_id" not in p[1] and "ev_db89d170" not in p[1] for p in model.calls)
+    assert any(f'app.sha256 = "{full_hash}"' in p[1] for p in model.calls)
+    assert all(full_hash not in p[1] or f'"{full_hash}"' in p[1] for p in model.calls)  # only ever as the quoted fact value, never loose inside raw payload text
 
 
 def test_the_loop_analyzes_the_fixture_app_and_closes_its_ring(store):

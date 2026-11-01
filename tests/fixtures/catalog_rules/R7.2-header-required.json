@@ -1,0 +1,24 @@
+{
+ "rule": "R7.2-header-required",
+ "kind": "file",
+ "says": "nothing is offered by default until its header was read",
+ "cases": [
+  {
+   "name": "no header facts at all",
+   "facts": {
+    "gguf.general.architecture": null,
+    "gguf.general.type": null,
+    "gguf.general.license": null,
+    "gguf.tensor_count": null,
+    "gguf.param_count": null,
+    "gguf.has_chat_template": null
+   },
+   "expect": {
+    "offer_by_default": false,
+    "labels": [
+     "header not read"
+    ]
+   }
+  }
+ ]
+}

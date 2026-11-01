@@ -42,13 +42,13 @@ PROBE_TOOLS = {
 
 # the fact keys each probe's node result carries (a test compares these with what the probes really return): the view uses them to name the tool that produces a key an exit lacks
 PROBE_PRODUCES = {
-    "node_os_details": ["machine.os.name", "machine.os.version", "machine.os.build", "machine.os.arch"],
+    "node_os_details": ["machine.os.name", "machine.os.family", "machine.os.version", "machine.os.build", "machine.os.arch"],
     "node_programs": ["machine.programs_count", "machine.programs"],
     "node_gpu": ["machine.gpu_count", "machine.gpus"],
     "node_runtimes": ["machine.runtime_count", "machine.runtimes"],
     "node_ai_clis": ["machine.ai_cli_count", "machine.ai_clis", "machine.api_key_variable_names"],
     "node_memory_fit": ["machine.ram_total_gib", "machine.ram_available_gib", "machine.vram_gib", "machine.model_path", "machine.disk_free_gib", "machine.largest_model_params_b",
-                        "machine.largest_model_limited_by"],
+                        "machine.largest_model_limited_by", "machine.usable_memory_gib", "machine.memory_margin_pct", "machine.largest_model_by_total_ram_params_b"],
 }
 
 
@@ -62,8 +62,9 @@ def _schema(**props) -> dict:
 
 
 def _spec(name: str, line: str, *, kinds: list[TargetKind], produces: list[str] | None = None, schema: dict | None = None, tier: Tier = Tier.observe, requires: list[str] | None = None,
-          repeatable: bool = False) -> ToolSpec:
-    return ToolSpec(name=name, ring=0, tier=tier, target_kinds=kinds, one_line=line, source="coordinator", produces=produces or [], requires=requires or [], input_model=schema or {}, repeatable=repeatable)
+          repeatable: bool = False, asks_owner: bool = False) -> ToolSpec:
+    return ToolSpec(name=name, ring=0, tier=tier, target_kinds=kinds, one_line=line, source="coordinator", produces=produces or [], requires=requires or [], input_model=schema or {}, repeatable=repeatable,
+                    asks_owner=asks_owner)
 
 
 def _fact(target_id: str, key: str, value: Any, tool: str, provider: str, *, status: FactStatus = FactStatus.tested, created_by: CreatedBy = CreatedBy.probe, event_id: str | None = None,
@@ -80,9 +81,11 @@ class Pending:
     future: asyncio.Future = field(default_factory=lambda: asyncio.get_running_loop().create_future())
     asked_at: float = field(default_factory=time.time)
     answered_by: str = "owner"  # "owner", or "claude-code" when the operator answered for the owner (authorized in chat): recorded, and never counted as the owner
+    data: dict = field(default_factory=dict)  # a decision that carries structure (the setup's step approval: plan hash, step, action, command, writes, undo) for a screen that draws more than text
+    answered_channel: str | None = None  # the chat channel the answer came through (Harness App), when it did
 
     def view(self) -> dict:
-        return {"question": self.qid, "text": self.text, "options": self.options, "asked_at": self.asked_at}
+        return {"question": self.qid, "text": self.text, "options": self.options, "asked_at": self.asked_at, **({"data": self.data} if self.data else {})}
 
 
 class BaseAdapter(Adapter):
@@ -97,15 +100,15 @@ class BaseAdapter(Adapter):
     def _owner(self, store, type: str, payload: dict) -> None:
         self._owner_event(store, type, payload, self.run_id)
 
-    async def _ask(self, ctx: ToolContext, qid: str, text: str, options: list[dict]) -> str | None:
+    async def _ask(self, ctx: ToolContext, qid: str, text: str, options: list[dict], data: dict | None = None) -> str | None:
         """Put one closed question to the OWNER and wait for the answer (the owner's time is not the run's time). None: nobody answered in time."""
-        self.pending = Pending(qid, text, options)
+        self.pending = Pending(qid, text, options, data=data or {})
         self.last_answered_by = "owner"
         pend = self.pending
         t0 = time.monotonic()
         try:
             answer = await asyncio.wait_for(pend.future, OWNER_WAIT_S)
-            self.last_answered_by = pend.answered_by
+            self.last_answered_by, self.last_answered_channel = pend.answered_by, pend.answered_channel
             return answer
         except TimeoutError:
             return None
@@ -113,11 +116,11 @@ class BaseAdapter(Adapter):
             self.owner_wait_s += time.monotonic() - t0
             self.pending = None
 
-    def answer(self, qid: str, option: str, by: str = "owner") -> bool:
+    def answer(self, qid: str, option: str, by: str = "owner", channel: str | None = None) -> bool:
         p = self.pending
         if p is None or p.qid != qid or option not in {o["id"] for o in p.options} or p.future.done():
             return False
-        p.answered_by = by
+        p.answered_by, p.answered_channel = by, channel
         p.future.set_result(option)
         return True
 
@@ -218,7 +221,7 @@ class OptionsAdapter(BaseAdapter):
         k = [TargetKind.setup]
         by = {
             "load_analysis": _spec("load_analysis", "Read the stored analysis of this machine (nothing is probed again).", kinds=k, produces=["analysis.loaded"]),
-            "ask_owner": _spec("ask_owner", "Ask the owner one closed question.", kinds=k, schema=_schema(question="one of: " + ", ".join(sorted(questions())))),
+            "ask_owner": _spec("ask_owner", "Ask the owner one closed question.", kinds=k, schema=_schema(question="one of: " + ", ".join(sorted(questions()))), asks_owner=True),
             "catalog_lookup": _spec("catalog_lookup", "Look up what the catalog offers.", kinds=k),
             "evidence_lookup": _spec("evidence_lookup", "Look up public evidence on a topic.", kinds=k, schema=_schema(topic="a runtime or model name")),
             "build_options": _spec("build_options", "Build the setup options from the stored analysis and the owner's answers.", kinds=k, repeatable=True, requires=["analysis.loaded"], produces=["option.set", "option.none"]),
@@ -273,8 +276,8 @@ class OptionsAdapter(BaseAdapter):
         answer = await self._ask(ctx, qid, q["text"], options)
         if answer is None:
             return ProbeResult(ok=False, error="the owner did not answer in time")
-        by = self.last_answered_by
-        self._owner(ctx.store, "owner_answer", {"question": qid, "option": answer, **({"by": by} if by != "owner" else {})})
+        by, channel = self.last_answered_by, getattr(self, "last_answered_channel", None)
+        self._owner(ctx.store, "owner_answer", {"question": qid, "option": answer, **({"by": by} if by != "owner" else {}), **({"channel": channel} if channel else {})})
         f = Fact(target_id=ctx.target.id, key=f"{ANSWER_PREFIX}{qid}", value=answer, status=FactStatus.tested, created_by=CreatedBy.human,
                  evidence=[Evidence(provider="human" if by == "owner" else "operator (claude-code) for the owner", probe="ask_owner", event_id=ctx.event_id, confidence=1.0,
                                     limitations=[] if by == "owner" else ["the operator answered on the owner's behalf in a simulated-local verification; the owner authorized it in chat and did not answer himself"])])
@@ -310,7 +313,7 @@ class OptionsAdapter(BaseAdapter):
         return ProbeResult(ok=True, facts=out)
 
     async def _explain(self, args: dict, ctx: ToolContext) -> ProbeResult:
-        oid, text = str(args.get("option", "")), " ".join(str(args.get("text", "")).split())[:400]
+        oid, text = str(args.get("option", "")), " ".join(str(args.get("text", "")).split())[:700]
         ids = [o["id"] for o in self.options_built]
         if oid not in ids:
             return ProbeResult(ok=False, error=f"no such option; the options are {ids}")
@@ -334,7 +337,7 @@ class LanAdapter(BaseAdapter):
     def tool_specs(self) -> list[ToolSpec]:
         k = [TargetKind.lan]
         return [_spec("lan_discover_nodes", "List the computers waiting to be paired.", kinds=k, repeatable=True), _spec("nodes_list", "List the paired computers.", kinds=k, repeatable=True),
-                _spec("ask_owner", "Ask the owner which waiting computer to pair.", kinds=k, schema=_schema(question="pick_waiting_machine")),
+                _spec("ask_owner", "Ask the owner which waiting computer to pair.", kinds=k, schema=_schema(question="pick_waiting_machine"), asks_owner=True),
                 _spec("pair_offer_start", "Make the pairing code for the picked computer.", kinds=k, schema=_schema(machine="the waiting id the owner picked"))]
 
     async def run(self, tool: str, args: dict[str, Any], ctx: ToolContext) -> ProbeResult:

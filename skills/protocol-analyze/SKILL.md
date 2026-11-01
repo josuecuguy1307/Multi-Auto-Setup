@@ -13,3 +13,6 @@ Read-only: nothing is installed or changed. Never ask for or repeat a secret val
 `survey` has one exit, `done`, and the spec of the protocol (`skill.meta.json`) says what it needs, because the next protocol reads it: the system and its architecture (`machine.os.name`, `machine.os.arch`), the memory for models (`machine.model_path`, `machine.ram_total_gib`, `machine.vram_gib`, `machine.disk_free_gib`), the graphics cards (`machine.gpus`), the local model runtimes and servers (`machine.runtimes`), the official AI command-line tools with whether a sign-in exists (`machine.ai_clis`; never a token), the NAMES of API-key variables (`machine.api_key_variable_names`), and `analysis.finished`. The order is yours.
 
 `finish_analysis` says what is known, what is unknown and why (stored as `analysis.summary`, your reading, a hypothesis); it is offered once the rest of the exit's evidence is in. When it succeeds the guard closes the analysis (`analysis.finished` is the guard's record that it accepted it) and the coordinator stores it. Which AI to set up on the machine is NOT decided here: that is the separate protocol `setup-options`, which reads the stored analysis.
+
+## Language
+The owner reads English. Write every sentence meant for the owner (an explanation, a finding, a reason) in English, in plain words. Names, ids and numbers stay as they are.

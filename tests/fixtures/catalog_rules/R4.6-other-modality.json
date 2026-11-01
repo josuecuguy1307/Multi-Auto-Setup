@@ -1,0 +1,31 @@
+{
+ "rule": "R4.6-other-modality",
+ "kind": "file",
+ "says": "a model for images, video or 3D is not a language model",
+ "cases": [
+  {
+   "name": "an image generator that is also named base",
+   "facts": {
+    "hub.pipeline_tag": "image-to-image",
+    "file.name": "FLUX-klein-base-9B-Q4_K_M.gguf",
+    "gguf.has_chat_template": false
+   },
+   "expect": {
+    "kind": "other-modality",
+    "requires_task_keys": [
+     "other_modality"
+    ]
+   }
+  },
+  {
+   "name": "text to video",
+   "facts": {
+    "hub.pipeline_tag": "text-to-video",
+    "repo.has_companion_projector": true
+   },
+   "expect": {
+    "kind": "other-modality"
+   }
+  }
+ ]
+}

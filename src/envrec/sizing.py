@@ -18,6 +18,17 @@ GB_PER_B_PARAMS = float(_TABLE["gb_per_b_params"])  # q4 weights
 RUNTIME_OVERHEAD_GB = float(_TABLE["runtime_overhead_gb"])
 
 
+AVAILABLE_MARGIN = 0.15  # what is left out of the memory that was FREE when it was measured (other programs start, the file cache shrinks); the options and the analysis use the same one
+MEMORY_SHARE = 0.7  # of the memory a model may use when only the TOTAL is known (a model must leave room for the system)
+
+
+def usable_memory_gib(ram_available_gib: float | None, ram_total_gib: float | None = None) -> float:
+    """What a model may use: the RAM that was FREE when measured, less the margin; only when that figure is missing, the share of the total."""
+    if ram_available_gib is not None:
+        return round(float(ram_available_gib) * (1 - AVAILABLE_MARGIN), 2)
+    return round(float(ram_total_gib or 0.0) * MEMORY_SHARE, 2)
+
+
 @dataclass(frozen=True)
 class ModelChoice:
     params_b: float  # 0.0 means: no model fits

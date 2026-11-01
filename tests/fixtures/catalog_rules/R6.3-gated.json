@@ -1,0 +1,28 @@
+{
+ "rule": "R6.3-gated",
+ "kind": "file",
+ "says": "a gated repository is not offered: we never handle tokens",
+ "cases": [
+  {
+   "name": "gated automatically",
+   "facts": {
+    "hub.gated": "auto"
+   },
+   "expect": {
+    "offer_by_default": false,
+    "labels": [
+     "~gated"
+    ]
+   }
+  },
+  {
+   "name": "gated by hand",
+   "facts": {
+    "hub.gated": "manual"
+   },
+   "expect": {
+    "offer_by_default": false
+   }
+  }
+ ]
+}

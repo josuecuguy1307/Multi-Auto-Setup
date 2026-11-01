@@ -1,0 +1,20 @@
+{
+ "rule": "R6.4-license-unknown",
+ "kind": "file",
+ "says": "a license not on the table of known licenses keeps the model out by default",
+ "cases": [
+  {
+   "name": "a license the table does not know",
+   "facts": {
+    "gguf.general.license": "acme-noncommercial-1",
+    "hub.card_license": "acme-noncommercial-1"
+   },
+   "expect": {
+    "offer_by_default": false,
+    "labels": [
+     "license unknown"
+    ]
+   }
+  }
+ ]
+}

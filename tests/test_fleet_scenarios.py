@@ -22,6 +22,7 @@ from envrec.scoring import GroundTruth, GTField, score_target
 from envrec.store import Store
 from envrec.verify import ExecClient, verify_server
 from runtime_fixtures import fake_plan
+from test_fetch import local_origin  # noqa: F401  (the fixture: it stops the origin when the test ends)
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 FLEET = yaml.safe_load((ROOT_DIR / "ground_truth" / "fleet.yaml").read_text())["devices"]
@@ -153,13 +154,13 @@ def test_one_box_going_down_does_not_hide_the_rest_of_the_inventory(store, relea
         assert [r.ok for r in rows] == [True, True, False] and "PreflightError" in rows[2].note
 
 
-def test_one_download_is_pushed_to_several_devices_from_the_controllers_cache(store, release, tmp_path):
+def test_one_download_is_pushed_to_several_devices_from_the_controllers_cache(store, release, tmp_path, local_origin):
     """R2: nothing is re-downloaded per device; an air-gapped box gets its files from the controller only."""
     import dataclasses
-    from test_fetch import Origin, art
+    from test_fetch import art
     from runtime_fixtures import make_model, make_runtime_archive
     arc, mod = make_runtime_archive(tmp_path / "src"), make_model(tmp_path / "src")
-    origin = Origin({"/rt.tar.gz": arc.read_bytes(), "/model.gguf": mod.read_bytes()})
+    origin = local_origin({"/rt.tar.gz": arc.read_bytes(), "/model.gguf": mod.read_bytes()})
     rt_art, md_art = art(origin, "/rt.tar.gz", arc.read_bytes(), id="rt"), art(origin, "/model.gguf", mod.read_bytes(), id="md")
     with fleet(["lap-a", "small-1"]) as names:
         p, asked = make(store, release, names)
@@ -171,4 +172,3 @@ def test_one_download_is_pushed_to_several_devices_from_the_controllers_cache(st
         assert origin.hits == ["/rt.tar.gz", "/model.gguf"]  # each artifact crossed the network once, for two devices
         for i in ("lap-a", "small-1"):
             assert p.undo(i, Transport.docker_exec)[0]
-    origin.stop()

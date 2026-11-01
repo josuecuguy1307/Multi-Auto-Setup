@@ -294,19 +294,31 @@ def test_the_shipped_library_loads_without_errors_and_every_skill_obeys_the_rule
     lib = Library().load()
     assert lib.errors == [], lib.errors
     names = set(lib.skills)
-    # 17 protocols: the 15 before, plus protocol-pair and protocol-node-connect, added ON PURPOSE for the network layer (docs/NETWORK_CONTRACT.md); the count is not loosened, it follows the library
-    assert len([s for s in lib.runnable() if s.meta.provenance == "builtin"]) == 30 and len(lib.protocols()) == 22
+    # 26 protocols: 17 (the 15 before, plus protocol-pair and protocol-node-connect, added ON PURPOSE for the network layer, docs/NETWORK_CONTRACT.md), then the setup, undo and connect protocols, and protocol-draft (added ON PURPOSE for the network draft); the count is not loosened, it follows the library
+    assert len([s for s in lib.runnable() if s.meta.provenance == "builtin"]) == 30 and len(lib.protocols()) == 26
     for s in lib.skills.values():
         assert s.description.startswith("Use when") and len(s.body.splitlines()) <= MAX_BODY_LINES and s.name == s.path.name
         assert not validate(s)
     assert {"os-info", "usb-devices", "serial-probe", "net-mdns", "protocol-generic", "connect-route"} <= names
 
 
+_RUNNABLE = [s.name for s in Library().load().runnable()]
+
+
 @needs_docker
-def test_every_shipped_skill_passes_its_own_recorded_tests():
-    lib = Library().load()
-    failures = [(s.name, r.case, r.problems[:1]) for s in lib.runnable() for r in run_cases(s) if not r.passed]
+@pytest.mark.parametrize("skill_name", _RUNNABLE)
+def test_every_shipped_skill_passes_its_own_recorded_tests(skill_name):
+    """One test per skill (it used to be one test for all of them: 93 recorded cases, each a `docker run`, one after another, about 120 s, the hang limit). Same cases, same checks."""
+    s = Library().load().get(skill_name)
+    failures = [(s.name, r.case, r.problems[:1]) for r in run_cases(s) if not r.passed]
     assert failures == []
+
+
+def test_the_per_skill_recorded_tests_cover_every_runnable_skill_and_every_recorded_case():
+    lib = Library().load()
+    assert sorted(_RUNNABLE) == sorted(s.name for s in lib.runnable()) and len(_RUNNABLE) >= 30
+    cases = sum(len([d for d in (s.path / "tests").iterdir() if d.is_dir() and (d / "expect.json").is_file()]) for s in lib.runnable() if (s.path / "tests").is_dir())
+    assert cases >= 90  # the cases that used to run in the one slow test
 
 
 def test_the_assets_copied_into_skills_are_the_human_owned_tables_in_data():

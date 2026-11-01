@@ -1,0 +1,19 @@
+{
+ "rule": "R6.2-publisher",
+ "kind": "file",
+ "says": "only approved publishers; the publisher is recorded",
+ "cases": [
+  {
+   "name": "a re-upload by someone else",
+   "facts": {
+    "hub.author": "randomuser"
+   },
+   "expect": {
+    "excluded_rules": [
+     "R6.2-publisher"
+    ],
+    "publisher": "randomuser"
+   }
+  }
+ ]
+}

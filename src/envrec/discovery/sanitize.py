@@ -37,6 +37,28 @@ def quoted(value: object, cap: int = DEFAULT_CAP) -> str:
     return f'"{s}"'
 
 
+ATOMIC_CAP = 400  # an identifier is never cut below this length, and one that is longer says how much was lost
+_ATOMIC = re.compile(r"^(?:\S+|(?:[A-Za-z]:\\|\\\\|/|~/).*|[a-z][a-z0-9_.\-]*:\s.*)$", re.S)  # one token (an id, an enum value, a hash, a typed code), a path, or "typed_code: reason"
+
+
+def is_atomic(s: str) -> bool:
+    """A string whose every character matters if the model is to use it: a single token without spaces (identifier, enum value, typed refusal code, hash, URL), a path, or a `typed_code: reason`.
+    Decided by SHAPE only; no key, protocol or vendor is named."""
+    return bool(_ATOMIC.match(s))
+
+
+def quoted_counted(value: object, cap: int = DEFAULT_CAP, atomic_cap: int = ATOMIC_CAP) -> str:
+    """`quoted`, without the silent cut. Atomic strings (see `is_atomic`) are shown whole up to `atomic_cap`; any other string is cut at `cap`. Whatever is cut says how much was lost, outside the
+    quotes: `"first part…" (+57 chars)`."""
+    s = clean_text(value, 10**9).replace("\\", "\\\\").replace('"', '\\"')
+    raw = clean_text(value, 10**9)
+    limit = max(cap, atomic_cap) if is_atomic(raw) else cap
+    if len(raw) <= limit:
+        return f'"{s}"'
+    shown = clean_text(raw[: limit - 1], 10**9).replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{shown}…" (+{len(raw) - (limit - 1)} chars)'
+
+
 def clean_attrs(attrs: dict, cap: int = DEFAULT_CAP) -> dict:
     out: dict = {}
     for k, v in attrs.items():

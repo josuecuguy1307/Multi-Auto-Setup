@@ -1,0 +1,18 @@
+{
+ "rule": "R6.1-checksum-matches-listing",
+ "kind": "file",
+ "says": "the SHA-256 is the one the hub lists at the pinned revision",
+ "cases": [
+  {
+   "name": "the listing says another checksum",
+   "facts": {
+    "hub.listing_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   },
+   "expect": {
+    "excluded_rules": [
+     "R6.1-checksum-matches-listing"
+    ]
+   }
+  }
+ ]
+}

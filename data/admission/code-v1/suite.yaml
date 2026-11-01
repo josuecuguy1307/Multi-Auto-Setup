@@ -1,0 +1,266 @@
+# Admission suite for task type "code". Written by the project. Graded by code only: every answer runs in the sandbox against hidden checks.
+# The suite hash covers every field of this file (prompts, checks, references); changing a character makes old results stale.
+suite_id: code-v1
+task_type: code
+version: 1
+description: Ten small pure-Python functions. A task passes only when every hidden check passes.
+preamble: |
+  Write a Python 3 function or class as specified. Use only the standard library. Reply with exactly one ```python code block that contains the complete code and nothing that prints or reads input.
+est_output_tokens: 250
+tasks:
+  - id: code-01-roman
+    title: roman numerals
+    prompt: |
+      Define roman_to_int(s: str) -> int that converts a Roman numeral (I V X L C D M, subtractive forms such as IV, IX, XL, XC, CD, CM) in the range 1..3999 to an integer.
+    grader: {kind: sandbox_tests, n_checks: 7}
+    checks: |
+      check(roman_to_int('III'), 3)
+      check(roman_to_int('IV'), 4)
+      check(roman_to_int('IX'), 9)
+      check(roman_to_int('LVIII'), 58)
+      check(roman_to_int('XLII'), 42)
+      check(roman_to_int('MCMXCIV'), 1994)
+      check(roman_to_int('MMMCMXCIX'), 3999)
+    reference: |
+      def roman_to_int(s):
+          v = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}
+          t = 0
+          for i, c in enumerate(s):
+              if i + 1 < len(s) and v[c] < v[s[i + 1]]:
+                  t -= v[c]
+              else:
+                  t += v[c]
+          return t
+    timeout_s: 10
+    source: {author: project, license: project license (pending)}
+  - id: code-02-brackets
+    title: balanced brackets
+    prompt: |
+      Define is_balanced(s: str) -> bool that returns True when the round, square and curly brackets in s are balanced and correctly nested. Characters that are not brackets are ignored. The empty string is balanced.
+    grader: {kind: sandbox_tests, n_checks: 8}
+    checks: |
+      check(is_balanced(''), True)
+      check(is_balanced('()[]{}'), True)
+      check(is_balanced('([{}])'), True)
+      check(is_balanced('(]'), False)
+      check(is_balanced('([)]'), False)
+      check(is_balanced('(('), False)
+      check(is_balanced('a(b)c'), True)
+      check(is_balanced(')('), False)
+    reference: |
+      def is_balanced(s):
+          pairs = {')': '(', ']': '[', '}': '{'}
+          stack = []
+          for c in s:
+              if c in '([{':
+                  stack.append(c)
+              elif c in pairs:
+                  if not stack or stack.pop() != pairs[c]:
+                      return False
+          return not stack
+    timeout_s: 10
+    source: {author: project, license: project license (pending)}
+  - id: code-03-intervals
+    title: merge intervals
+    prompt: |
+      Define merge_intervals(intervals: list[tuple[int, int]]) -> list[tuple[int, int]] that merges overlapping or touching intervals (touching means the end of one equals the start of the next). The input may be unsorted. Return a list of tuples sorted by start.
+    grader: {kind: sandbox_tests, n_checks: 5}
+    checks: |
+      check(merge_intervals([]), [])
+      check(merge_intervals([(1, 3), (2, 6), (8, 10), (15, 18)]), [(1, 6), (8, 10), (15, 18)])
+      check(merge_intervals([(1, 4), (4, 5)]), [(1, 5)])
+      check(merge_intervals([(5, 7), (1, 2)]), [(1, 2), (5, 7)])
+      check(merge_intervals([(1, 10), (2, 3)]), [(1, 10)])
+    reference: |
+      def merge_intervals(intervals):
+          out = []
+          for a, b in sorted(intervals):
+              if out and a <= out[-1][1]:
+                  out[-1] = (out[-1][0], max(out[-1][1], b))
+              else:
+                  out.append((a, b))
+          return out
+    timeout_s: 10
+    source: {author: project, license: project license (pending)}
+  - id: code-04-topwords
+    title: most frequent words
+    prompt: |
+      Define top_k_words(text: str, k: int) -> list[str]. A word is a maximal run of the letters a-z after lowercasing the text; everything else separates words. Return the k most frequent words, ordered by count descending and then alphabetically. If there are fewer than k distinct words, return all of them.
+    grader: {kind: sandbox_tests, n_checks: 6}
+    checks: |
+      check(top_k_words('the cat and the hat and the bat', 2), ['the', 'and'])
+      check(top_k_words('b a b a c', 2), ['a', 'b'])
+      check(top_k_words('A a A', 1), ['a'])
+      check(top_k_words('', 3), [])
+      check(top_k_words('x y', 5), ['x', 'y'])
+      check(top_k_words("Don't stop", 3), ['don', 'stop', 't'])
+    reference: |
+      import re
+      from collections import Counter
+      def top_k_words(text, k):
+          c = Counter(re.findall('[a-z]+', text.lower()))
+          return [w for w, _ in sorted(c.items(), key=lambda p: (-p[1], p[0]))][:k]
+    timeout_s: 10
+    source: {author: project, license: project license (pending)}
+  - id: code-05-duration
+    title: parse a duration
+    prompt: |
+      Define parse_duration(s: str) -> int that converts text such as "1h30m15s" to seconds. The units are h, m and s, each preceded by a non-negative integer; any subset may appear but only in the order h, m, s and each at most once. Raise ValueError for the empty string, for a number without a unit, for an unknown unit, for units out of order and for a repeated unit.
+    grader: {kind: sandbox_tests, n_checks: 9}
+    checks: |
+      check(parse_duration('1h30m15s'), 5415)
+      check(parse_duration('45s'), 45)
+      check(parse_duration('2h'), 7200)
+      check(parse_duration('90m'), 5400)
+      raises(ValueError, parse_duration, '')
+      raises(ValueError, parse_duration, '5')
+      raises(ValueError, parse_duration, '1x')
+      raises(ValueError, parse_duration, '30m1h')
+      raises(ValueError, parse_duration, '1h1h')
+    reference: |
+      import re
+      def parse_duration(s):
+          m = re.fullmatch(r'(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?', s)
+          if not s or m is None:
+              raise ValueError(s)
+          h, mi, se = (int(x) if x else 0 for x in m.groups())
+          return h * 3600 + mi * 60 + se
+    timeout_s: 10
+    source: {author: project, license: project license (pending)}
+  - id: code-06-flatten
+    title: flatten nested sequences
+    prompt: |
+      Define flatten(x) -> list that flattens arbitrarily nested lists and tuples into one list, keeping the order. Strings are values, not sequences: do not split them.
+    grader: {kind: sandbox_tests, n_checks: 5}
+    checks: |
+      check(flatten([1, [2, [3, [4]]], 5]), [1, 2, 3, 4, 5])
+      check(flatten([]), [])
+      check(flatten(['ab', ['c']]), ['ab', 'c'])
+      check(flatten([[], [[]]]), [])
+      check(flatten((1, (2, 3))), [1, 2, 3])
+    reference: |
+      def flatten(x):
+          out = []
+          for i in x:
+              if isinstance(i, (list, tuple)):
+                  out.extend(flatten(i))
+              else:
+                  out.append(i)
+          return out
+    timeout_s: 10
+    source: {author: project, license: project license (pending)}
+  - id: code-07-lru
+    title: LRU cache
+    prompt: |
+      Define a class LRUCache with __init__(self, capacity: int), get(self, key) -> value or -1 when the key is absent, and put(self, key, value) -> None. When a put would exceed the capacity, the least recently used key is evicted. Both get (of a present key) and put count as a use; putting an existing key updates its value.
+    grader: {kind: sandbox_tests, n_checks: 7}
+    checks: |
+      c = LRUCache(2)
+      c.put(1, 1)
+      c.put(2, 2)
+      check(c.get(1), 1)
+      c.put(3, 3)
+      check(c.get(2), -1)
+      c.put(4, 4)
+      check(c.get(1), -1)
+      check(c.get(3), 3)
+      check(c.get(4), 4)
+      d = LRUCache(2)
+      d.put(1, 1)
+      d.put(2, 2)
+      d.put(1, 10)
+      d.put(3, 3)
+      check(d.get(1), 10)
+      check(d.get(2), -1)
+    reference: |
+      from collections import OrderedDict
+      class LRUCache:
+          def __init__(self, capacity):
+              self.cap, self.d = capacity, OrderedDict()
+          def get(self, key):
+              if key not in self.d:
+                  return -1
+              self.d.move_to_end(key)
+              return self.d[key]
+          def put(self, key, value):
+              self.d[key] = value
+              self.d.move_to_end(key)
+              if len(self.d) > self.cap:
+                  self.d.popitem(last=False)
+    timeout_s: 10
+    source: {author: project, license: project license (pending)}
+  - id: code-08-dedupe
+    title: stable de-duplication
+    prompt: |
+      Define dedupe(seq, key=None) -> list that returns the items of seq without duplicates, keeping the first occurrence and the original order. When key is given, two items are duplicates when key(item) is equal; key results are hashable. seq may be any iterable, including a string.
+    grader: {kind: sandbox_tests, n_checks: 5}
+    checks: |
+      check(dedupe([3, 1, 3, 2, 1]), [3, 1, 2])
+      check(dedupe([]), [])
+      check(dedupe(['a', 'A', 'b'], key=str.lower), ['a', 'b'])
+      check(dedupe([[1], [1], [2]], key=tuple), [[1], [2]])
+      check(dedupe('abca'), ['a', 'b', 'c'])
+    reference: |
+      def dedupe(seq, key=None):
+          seen, out = set(), []
+          for x in seq:
+              k = key(x) if key else x
+              if k not in seen:
+                  seen.add(k)
+                  out.append(x)
+          return out
+    timeout_s: 10
+    source: {author: project, license: project license (pending)}
+  - id: code-09-rotate
+    title: rotate a matrix
+    prompt: |
+      Define rotate90(m: list[list[int]]) -> list[list[int]] that returns a new matrix rotated 90 degrees clockwise. The matrix may be non-square. An empty matrix returns an empty list.
+    grader: {kind: sandbox_tests, n_checks: 5}
+    checks: |
+      check(rotate90([]), [])
+      check(rotate90([[1]]), [[1]])
+      check(rotate90([[1, 2], [3, 4]]), [[3, 1], [4, 2]])
+      check(rotate90([[1, 2, 3], [4, 5, 6]]), [[4, 1], [5, 2], [6, 3]])
+      check(rotate90([[1, 2, 3]]), [[1], [2], [3]])
+    reference: |
+      def rotate90(m):
+          return [list(r) for r in zip(*m[::-1])]
+    timeout_s: 10
+    source: {author: project, license: project license (pending)}
+  - id: code-10-csv
+    title: split a CSV line
+    prompt: |
+      Define split_csv_line(line: str) -> list[str] that splits one CSV line on commas. A field may be wrapped in double quotes; inside quotes a comma is part of the field and two double quotes in a row mean one literal quote. The wrapping quotes are removed. An empty line gives [''] and consecutive commas give empty fields.
+    grader: {kind: sandbox_tests, n_checks: 6}
+    checks: |
+      check(split_csv_line('a,b,c'), ['a', 'b', 'c'])
+      check(split_csv_line('a,"b,c",d'), ['a', 'b,c', 'd'])
+      check(split_csv_line('"he said ""hi""",x'), ['he said "hi"', 'x'])
+      check(split_csv_line(''), [''])
+      check(split_csv_line('a,,b'), ['a', '', 'b'])
+      check(split_csv_line(','), ['', ''])
+    reference: |
+      def split_csv_line(line):
+          out, cur, i, q = [], '', 0, False
+          while i < len(line):
+              c = line[i]
+              if q:
+                  if c == '"' and line[i + 1:i + 2] == '"':
+                      cur += '"'
+                      i += 1
+                  elif c == '"':
+                      q = False
+                  else:
+                      cur += c
+              elif c == '"':
+                  q = True
+              elif c == ',':
+                  out.append(cur)
+                  cur = ''
+              else:
+                  cur += c
+              i += 1
+          out.append(cur)
+          return out
+    timeout_s: 10
+    source: {author: project, license: project license (pending)}

@@ -12,8 +12,8 @@ SRC = ROOT / "src"
 FIX = ROOT / "conformance" / "netfixtures"
 NODE_ROOTS = [SRC / "envrec_node", SRC / "envrec_worker"]  # envrec_worker is the legacy device-side code and counts as node code
 COORDINATOR_ROOT = SRC / "envrec_coordinator"
-GATEWAYS = [(SRC / "envrec" / "skills" / "sbx.py", "run_script")]  # the only place a skill script (model-written code) is started
-GATEWAY_INTERNALS = ["docker_argv"]  # names that start the sandbox container; used outside sbx.py they would be a way round the gateway
+GATEWAYS = [(SRC / "envrec" / "skills" / "sbx.py", "run_script"), (SRC / "envrec" / "skills" / "sbx.py", "run_exam_code")]  # the only places model-written code (a skill script, an admission answer) is started
+GATEWAY_INTERNALS = ["docker_argv", "exam_argv"]  # names that start the sandbox container; used outside sbx.py they would be a way round the gateway
 
 
 # ---- N1: a node opens no listening socket ------------------------------------------------------------------------------------------------------
@@ -262,35 +262,91 @@ def test_N5_passes_loopback_literals_and_a_cli_route():
     assert netrules.config_endpoint_sites(FIX / "endpoint_ok" / "profile.yaml") == []
 
 
-@pytest.mark.skip(reason="N5-runtime placeholder: needs the Phase 1 node agent; then start a stand-in inference server bound to a non-loopback address and expect the node to warn and refuse to use it, and bound to 127.0.0.1 and expect it to be used")
-def test_N5_runtime_a_third_party_inference_server_bound_beyond_loopback_is_refused():
-    raise AssertionError("not implemented until Phase 1")
+def test_N5_runtime_a_third_party_inference_server_bound_beyond_loopback_is_refused_and_one_on_loopback_is_used(tmp_path):
+    """SIMULATED-LOCAL: a stand-in inference server (the real server's flags and endpoints) started by the node's own operation. Bound to a non-loopback address it is stopped and the step fails; on 127.0.0.1 it is used.
+    The static half: the operation checks the address it was given AND, after the start, the sockets the process really listens on."""
+    import json
+    import os
+    import sys
+    sys.path.insert(0, str(ROOT / "tests"))
+    import test_executors as TE
+    from envrec_os import procs
+    if TE.envrec_os.family() == "windows" or procs.listening(os.getpid()) is None:
+        pytest.skip("needs a POSIX stand-in program and a system that lets a process list its own sockets (UNTESTED elsewhere)")
+    src = (SRC / "envrec_node" / "executors.py").read_text()
+    assert "procs.listening(pid)" in src and "server_not_loopback" in src and "_loopback(str(args[\"host\"]))" in src
+    import copy
+    recipe = copy.deepcopy(TE.REAL)
+    home = tmp_path / "mas"
+    home.mkdir()
+    world = type("W", (), {"home": home, "ctx": {"recipe": recipe, "mas_home": home, "ready_timeout_s": 20}, "scope": staticmethod(lambda *d: TE.WriteScope(home, list(d)))})
+    try:
+        with pytest.raises(TE.X.StepFailed) as e:
+            TE.run_server(world, "wide")
+        assert e.value.code == "server_not_loopback"
+        d = json.loads((home / "run" / "server.json").read_text())
+        assert not procs.is_ours(d["pid"], d["created"])
+        TE.X.undo_start_server({}, world.scope("<mas>/run/"), world.ctx)
+        out, args = TE.run_server(world, "normal")
+        assert all(a.startswith("127.0.0.1:") for a in out[0]["listening"]) and TE.X.minimal_call({"host": "127.0.0.1", "port": args["port"], "prompt": "hi", "max_tokens": 4}, world.scope(), world.ctx)[0]["ok"]
+    finally:
+        TE.X.undo_start_server({}, world.scope("<mas>/run/"), world.ctx)
 
 
 # ---- R1-R3, A1: placeholders until the router and the admission exam exist -----------------------------------------------------------------------
 
-@pytest.mark.skip(reason="R1 placeholder: no router yet. Then: for every confidential task and every candidate set, the chosen combination is never cloud, never a commercial harness, never a machine outside the owner's paired nodes; a fixture router that routes one there must fail")
+import routerrules  # noqa: E402
+
+
 def test_R1_a_confidential_task_is_never_routed_to_cloud_a_commercial_harness_or_a_third_party_machine():
-    raise AssertionError("not implemented until the router exists")
+    assert routerrules.r1_violations() == []
 
 
-@pytest.mark.skip(reason="R2 placeholder: no router yet. Then: a run of failures escalates at most 2 steps and then stops with a board notification; a fixture router that escalates a third time must fail")
+def test_R1_fails_on_a_router_that_routes_a_confidential_task_to_a_provider_or_creates_it_from_a_cloud_chat(monkeypatch):
+    from envrec_coordinator.router import engine
+    from envrec_coordinator.router.model import Step
+    monkeypatch.setattr(engine, "sensitivity_step", lambda cands, sens, facts, tt, pol, tried: ([c for c in cands if c.route.key not in tried], {}, Step(step="sensitivity", candidates_in=[], candidates_out=[])))
+    monkeypatch.setattr(engine, "creation_refusal", lambda task, effective=None: None)
+    hits = " ".join(routerrules.r1_violations())
+    assert "created from a cloud chat" in hits and ("routed to claude-code" in hits or "routed to codex" in hits or "routed to muse-code" in hits or "stranger=True" in hits), hits
+
+
 def test_R2_escalation_never_exceeds_two_steps():
-    raise AssertionError("not implemented until the router exists")
+    assert routerrules.r2_violations() == []
 
 
-@pytest.mark.skip(reason="R3 placeholder: no router and no provisional labels yet. Then: a combination labeled provisional never receives a confidential task, even when it is the only candidate; a fixture router that does must fail")
-def test_R3_a_provisional_combination_never_receives_a_confidential_task():
-    raise AssertionError("not implemented until the router exists")
+def test_R2_fails_on_a_router_that_escalates_a_third_time():
+    hits = routerrules.r2_violations(lambda m, a, **kw: routerrules._router(m, a, max_escalation=4))
+    assert any("beyond the cap" in h or "escalation reached step" in h for h in hits), hits
 
 
-@pytest.mark.skip(reason="A1 placeholder: no admission exam yet. Then: a suite where 8 tasks are model-graded and 2 are code-graded cannot reach the threshold; a fixture grader that counts a model-graded task must fail")
-def test_A1_only_code_graded_tasks_count_toward_the_admission_threshold():
-    raise AssertionError("not implemented until the admission exam exists")
+def test_R3_a_combination_labeled_provisional_never_receives_a_confidential_task():
+    assert routerrules.r3_violations() == []
+
+
+def test_R3_fails_on_a_router_that_treats_an_unmeasured_combination_as_measured(monkeypatch):
+    from envrec_coordinator.router import rule
+    monkeypatch.setattr(rule, "measured", lambda c, facts, tt, pol: (9, 10))
+    assert any("unmeasured combination" in h for h in routerrules.r3_violations())
+
+
+def test_R4_the_router_never_asks_a_model_it_imports_nothing_that_drives_one():
+    assert routerrules.router_import_violations(SRC / "envrec_coordinator" / "router") == []
+    assert len(routerrules.router_import_violations(FIX / "router_bad")) == 2 and routerrules.router_import_violations(FIX / "router_ok") == []
+
+
+def test_L1_owner_facing_strings_of_the_router_and_the_task_rejections_are_english_ascii_text():
+    from envrec_net import task as T
+    from envrec_coordinator.router import strings
+    texts = [*strings.REFUSALS.values(), *strings.REASONS.values(), strings.OWNER_NOTICE, strings.REDACTED_LINE, *T.REJECTIONS.values()]
+    assert [t for t in texts if not t.isascii()] == []
+
+
+# A1 is real now: conformance/test_admission.py
 
 
 # ---- P1: no OS-specific imports or calls outside the per-OS layer; H1: no OS- or tool-specific knowledge outside skills and that layer -------------------
-NETWORK_ROOTS = [SRC / d for d in ("envrec_net", "envrec_node", "envrec_coordinator", "envrec_mas")]  # the per-OS layer (src/envrec_os) is the one place allowed to; the legacy `envrec` and `envrec_worker` packages predate the rule and are exempt until they are migrated
+NETWORK_ROOTS = [SRC / d for d in ("envrec_net", "envrec_node", "envrec_coordinator", "envrec_mas", "envrec_harness")]  # the per-OS layer (src/envrec_os) is the one place allowed to; the legacy `envrec` and `envrec_worker` packages predate the rule and are exempt until they are migrated
 
 
 def test_P1_no_os_specific_import_or_call_exists_outside_the_per_os_layer():
@@ -419,11 +475,11 @@ def test_T1_the_nodes_task_dispatcher_has_no_shell_no_dynamic_lookup_and_one_all
     assert netrules.task_dispatch_violations(SRC / "envrec_node" / "tasks.py") == []
 
 
-def test_T1_the_allowlist_is_read_only_by_name():
+def test_T1_the_allowlist_is_eight_read_only_names_and_the_two_named_write_tasks():
     import ast
     tree = ast.parse((SRC / "envrec_node" / "tasks.py").read_text())
     allowed = next(n for n in tree.body if isinstance(n, ast.AnnAssign) and getattr(n.target, "id", "") == "ALLOWED")
-    assert [k.value for k in allowed.value.keys] == ["node_report", "machine_analysis", "os_details", "installed_programs", "gpus", "model_runtimes", "ai_clis", "memory_for_models"]
+    assert [k.value for k in allowed.value.keys] == ["setup_step", "environment_run", "node_report", "machine_analysis", "os_details", "installed_programs", "gpus", "model_runtimes", "ai_clis", "memory_for_models"]  # the two write types, named, first (setup_step, and environment_run from the T4a amendment); the rest only read
 
 
 def test_T1_fails_on_a_dispatcher_that_runs_a_shell_command_from_a_task_or_dispatches_by_name():
@@ -485,3 +541,141 @@ def test_the_pick_check_fails_when_the_offer_comes_first_or_the_check_is_missing
 
 def test_the_pick_check_passes_the_correct_shape():
     assert netrules.owner_pick_violations(FIX / "pick_ok" / "agent.py") == []
+
+
+# ---- W1-W4: the one task that writes ------------------------------------------------------------------------------------------------------------------------------------------
+
+def test_W1_the_coordinator_sends_a_write_only_after_it_found_the_owners_approval_and_the_generic_start_refuses_writes():
+    assert netrules.write_send_violations(SRC / "envrec_coordinator" / "tasks.py") == []
+
+
+def test_W1_fails_on_a_coordinator_that_sends_a_write_without_the_approval_lookup_or_lets_the_generic_start_send_it():
+    hits = " ".join(netrules.write_send_violations(FIX / "w1_bad" / "tasks.py"))
+    assert "without looking for the owner's approval" in hits and "generic start does not refuse the write types" in hits, hits
+    assert netrules.write_send_violations(FIX / "w1_bad" / "tasks.py", func="start_other") and "sends before" not in " ".join(netrules.write_send_violations(FIX / "w1_ok" / "tasks.py"))
+
+
+def test_W1_passes_a_coordinator_that_looks_up_the_approval_first_and_returns_when_there_is_none():
+    assert netrules.write_send_violations(FIX / "w1_ok" / "tasks.py") == []
+
+
+def test_W2_the_node_authorizes_a_write_before_it_accepts_it_and_before_it_runs_it():
+    assert netrules.node_write_violations(SRC / "envrec_node" / "tasks.py") == []
+
+
+def test_W2_fails_on_a_node_that_runs_or_accepts_a_write_without_authorizing_it():
+    hits = " ".join(netrules.node_write_violations(FIX / "w2_bad" / "tasks.py"))
+    assert "runs a step without authorizing it first" in hits and "does not authorize a write before it accepts it" in hits, hits
+
+
+def test_W3_fails_when_a_read_only_handler_reaches_the_setup_module_and_passes_when_none_does():
+    assert any("read-only handler _os_details reaches the setup module" in h for h in netrules.node_write_violations(FIX / "w2_bad" / "tasks.py"))
+    assert any("_os_details runs a setup step: only _setup_step may" in h for h in netrules.node_write_violations(FIX / "w2_bad" / "tasks.py"))
+    assert netrules.node_write_violations(FIX / "w2_ok" / "tasks.py") == []
+
+
+def test_W3_a_read_only_type_cannot_even_carry_what_a_write_needs():
+    from envrec_net import task as T
+    needs = {"plan", "step", "action", "writes", "scope", "approval", "command", "path"}
+    assert [t for t, m in T.PARAMS.items() if t not in T.WRITE_TYPES and needs & set(m.model_fields)] == []
+
+
+def test_W4_only_an_event_tagged_owner_that_matches_the_plan_step_and_action_counts_as_the_owners_approval():
+    assert netrules.approval_source_violations(SRC / "envrec_coordinator" / "server.py") == []
+    hits = " ".join(netrules.approval_source_violations(FIX / "w4_bad" / "server.py"))
+    assert "does not require the OWNER tag" in hits and "does not match the step" in hits and "does not match the action" in hits, hits
+    assert netrules.approval_source_violations(FIX / "w4_ok" / "server.py") == []
+
+
+# ---- W-env: the environment run (amends 3.9): the second task that writes -------------------------------------------------------------------------------------------------------
+
+def test_Wenv_the_coordinator_sends_an_environment_run_only_after_it_found_the_owners_origin_of_that_task():
+    assert netrules.write_send_violations(SRC / "envrec_coordinator" / "tasks.py", func="start_environment_run", lookup="origins") == []
+    assert "environment_run" in __import__("envrec_net.task", fromlist=["WRITE_TYPES"]).WRITE_TYPES  # so the generic start refuses it (W1)
+
+
+def test_Wenv_fails_on_a_coordinator_that_sends_without_the_origin_lookup_or_sends_before_it():
+    hits = " ".join(netrules.write_send_violations(FIX / "w1env_bad" / "tasks.py", func="start_environment_run", lookup="origins"))
+    assert "without looking for the owner's approval" in hits, hits
+    assert "sends before" in " ".join(netrules.write_send_violations(FIX / "w1env_bad" / "tasks.py", func="start_other", lookup="origins"))
+    assert netrules.write_send_violations(FIX / "w1env_ok" / "tasks.py", func="start_environment_run", lookup="origins") == []
+
+
+def test_Wenv_the_node_authorizes_an_environment_run_before_it_accepts_it_and_before_it_runs_it():
+    assert netrules.node_env_violations(SRC / "envrec_node" / "tasks.py") == []
+    assert netrules.node_write_violations(SRC / "envrec_node" / "tasks.py") == []  # and the setup checks still hold with the second write type in the allowlist
+
+
+def test_Wenv_fails_on_a_node_that_runs_or_accepts_an_environment_without_authorizing_it():
+    hits = " ".join(netrules.node_env_violations(FIX / "w2env_bad" / "tasks.py"))
+    assert "runs an environment without authorizing it first" in hits and "_os_details runs an environment: only _environment_run may" in hits and "does not authorize an environment run before it accepts it" in hits, hits
+    assert netrules.node_env_violations(FIX / "w2env_ok" / "tasks.py") == []
+
+
+def test_Wenv_only_an_event_tagged_owner_that_names_the_task_counts_as_the_owners_origin():
+    assert netrules.origin_source_violations(SRC / "envrec_coordinator" / "server.py") == []
+    hits = " ".join(netrules.origin_source_violations(FIX / "w4env_bad" / "server.py"))
+    assert "does not require the OWNER tag" in hits and "reads another kind of event" in hits and "does not match the task" in hits, hits
+    assert netrules.origin_source_violations(FIX / "w4env_ok" / "server.py") == []
+
+
+def test_Wenv_a_subtask_has_an_origin_only_through_a_recorded_decomposition_rechecked_from_the_owners_decision_and_matched_by_id():
+    assert netrules.decomposition_source_violations(SRC / "envrec_coordinator" / "server.py") == []
+    hits = " ".join(netrules.decomposition_source_violations(FIX / "w5env_bad" / "server.py"))
+    for why in ("reads another kind of record", "does not re-check the owner's decision", "does not match the subtask by its id", "lets a second task hold", "does not compare the task's type", "does not compare the task's level"):
+        assert why in hits, hits
+    assert netrules.decomposition_source_violations(FIX / "w5env_ok" / "server.py") == []
+
+
+def test_Wenv_the_owners_decision_is_an_owner_tagged_event_from_a_human_gesture_for_exactly_that_decomposition():
+    assert netrules.owner_decision_violations(SRC / "envrec_coordinator" / "server.py") == []
+    hits = " ".join(netrules.owner_decision_violations(FIX / "w6env_bad" / "server.py"))
+    for why in ("reads another kind of event", "does not require the OWNER tag", "does not require a human gesture", "does not compare the recorded decomposition"):
+        assert why in hits, hits
+    assert netrules.owner_decision_violations(FIX / "w6env_ok" / "server.py") == []
+
+
+# ---- U1: an unpaired node is refused ---------------------------------------------------------------------------------------------------------------------------------
+
+def test_U1_the_real_coordinator_removes_an_unpaired_node_first_and_refuses_unknown_certificates():
+    assert netrules.unpair_violations(SRC / "envrec_coordinator" / "server.py") == []
+
+
+def test_U1_fails_on_a_coordinator_that_removes_late_or_accepts_unknown_certificates():
+    hits = netrules.unpair_violations(FIX / "unpair_bad" / "server.py")
+    assert any("awaits" in h for h in hits) and any("does not refuse" in h for h in hits)
+
+
+def test_U1_passes_the_correct_shape():
+    assert netrules.unpair_violations(FIX / "unpair_ok" / "server.py") == []
+
+
+def test_U1_runtime_a_node_unpaired_by_the_real_code_is_refused_and_one_unpaired_by_a_coordinator_that_does_not_remove_is_not(tmp_path, monkeypatch):
+    """The failing fixture, at runtime: with `Registry.remove` neutered, the same sequence leaves the node CONNECTED, so the check below would catch a coordinator that forgot to remove."""
+    import asyncio
+    import sys
+    sys.path.insert(0, str(ROOT / "tests"))
+    from envrec_coordinator.registry import Registry
+    from envrec_node.agent import NodeAgent
+    from mas_world import coordinator, offer, pair_node
+
+    async def scenario(root):
+        async with coordinator(root) as c:
+            offer(c, "482915")
+            await pair_node(c, root, "482915")
+            nid = c.registry.all()[0].node_id
+            await c.unpair_node(nid)
+            agent = NodeAgent(root / "node1", interval_s=0.2, clock=c.clock, base_delay_s=0.05)
+            task = asyncio.create_task(agent.run())
+            for _ in range(100):
+                if c.log.events("node_connected") or c.log.events("connection_refused"):
+                    break
+                await asyncio.sleep(0.05)
+            connected = bool(c.log.events("node_connected"))
+            agent.stop_event.set()
+            await asyncio.wait_for(task, 5)
+            return connected
+
+    assert asyncio.run(scenario(tmp_path / "real")) is False
+    monkeypatch.setattr(Registry, "remove", lambda self, node_id: False)
+    assert asyncio.run(scenario(tmp_path / "broken")) is True

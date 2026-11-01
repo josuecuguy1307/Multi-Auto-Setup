@@ -1,0 +1,33 @@
+{
+ "rule": "R1.2-adapter",
+ "kind": "file",
+ "says": "a LoRA adapter needs a base model",
+ "cases": [
+  {
+   "name": "general.type is adapter",
+   "facts": {
+    "gguf.general.type": "adapter",
+    "gguf.has_chat_template": false
+   },
+   "expect": {
+    "kind": "adapter",
+    "excluded_rules": [
+     "R1.2-adapter"
+    ]
+   }
+  },
+  {
+   "name": "LoRA tensors without a type",
+   "facts": {
+    "gguf.general.type": null,
+    "gguf.has_lora_tensors": true,
+    "gguf.has_chat_template": false
+   },
+   "expect": {
+    "excluded_rules": [
+     "R1.2-adapter"
+    ]
+   }
+  }
+ ]
+}

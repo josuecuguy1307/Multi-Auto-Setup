@@ -59,7 +59,12 @@ def _arg_lines(spec: ToolSpec) -> list[str]:
     lines = []
     for name, p in props.items():
         where = {"capture": "a capture id from CAPTURES", "fact": "a fact key from FACTS"}.get(p.get("x-ref", ""), p.get("type", "value"))
+        closed = p.get("enum") or (p.get("items") or {}).get("enum")  # a closed set of values: the model picks from it, it does not invent one
+        if closed:
+            where = ("one of" if p.get("enum") else "a list of values from") + " the values below"
         lines.append(f"      {name} ({'required' if name in required else 'optional'}, {where}): {str(p.get('description', ''))[:240]}")
+        if closed:
+            lines.append("        values: " + " | ".join(str(x) for x in closed))
     return lines
 
 

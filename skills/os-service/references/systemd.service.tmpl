@@ -1,0 +1,12 @@
+[Unit]
+Description=Multi Auto Setup ({role})
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart={command}
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=default.target

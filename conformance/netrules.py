@@ -394,3 +394,204 @@ def owner_pick_violations(path: Path, func: str = "_offer") -> list[str]:
     if not (isinstance(guard, ast.If) and any(isinstance(n, ast.Return) for n in ast.walk(guard))):
         return [f"{path.name}:{fn.body[pick].lineno}: the owner-pick check is not followed by an early return"]
     return []
+
+
+# ---- W1-W4: the one task that writes (docs/NETWORK_CONTRACT.md 3.9) ------------------------------------------------------------------------------------------------------
+def _wfn(tree: ast.AST, name: str):
+    return next((n for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == name), None)
+
+
+def _wcalls(node: ast.AST, attr: str | None = None, name: str | None = None) -> list[ast.Call]:
+    out = []
+    for n in ast.walk(node):
+        if isinstance(n, ast.Call):
+            if attr is not None and isinstance(n.func, ast.Attribute) and n.func.attr == attr:
+                out.append(n)
+            if name is not None and isinstance(n.func, ast.Name) and n.func.id == name:
+                out.append(n)
+    return out
+
+
+def write_send_violations(path: Path, func: str = "start_setup_step", lookup: str = "approvals") -> list[str]:
+    """W1: the coordinator's only way to send a write. In `func`, the lookup of the owner's approval (`self.approvals(...)`) comes BEFORE anything is sent (`.send(`), and it is followed at once by an
+    `if` that returns when there is none; and the generic `start` refuses the write types (it names WRITE_TYPES before it sends anything)."""
+    path = Path(path)
+    tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"), filename=str(path))
+    out = []
+    fn = _wfn(tree, func)
+    if fn is None:
+        return [f"{path.name}: function {func} not found"]
+    stmts = fn.body
+    first = lambda attr: next((i for i, s in enumerate(stmts) if _wcalls(s, attr=attr)), None)  # noqa: E731
+    look, send = first(lookup), first("send")
+    if send is None:
+        out.append(f"{path.name}:{fn.lineno}: {func} never sends (nothing to guard: the check is looking at the wrong function)")
+    elif look is None:
+        out.append(f"{path.name}:{stmts[send].lineno}: {func} sends a write without looking for the owner's approval")
+    elif look >= send:
+        out.append(f"{path.name}:{stmts[send].lineno}: {func} sends before it looks for the owner's approval")
+    else:
+        guard = stmts[look + 1] if look + 1 < len(stmts) else None
+        if not (isinstance(guard, ast.If) and any(isinstance(n, ast.Return) for n in ast.walk(guard))):
+            out.append(f"{path.name}:{stmts[look].lineno}: the approval lookup is not followed by an early return when there is none")
+    start = _wfn(tree, "start")
+    if start is not None:
+        names = [n for s in start.body[:6] for n in ast.walk(s) if isinstance(n, ast.Attribute) and n.attr == "WRITE_TYPES"]
+        if not names:
+            out.append(f"{path.name}:{start.lineno}: the generic start does not refuse the write types before it sends")
+    return out
+
+
+def origin_source_violations(path: Path, func: str = "_owner_origin") -> list[str]:
+    """W4 for `environment_run`: what counts as the owner having created or approved a task. `func` reads only the `environment_task_origin` events whose tag is OWNER and that name this task."""
+    path = Path(path)
+    tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"), filename=str(path))
+    fn = _wfn(tree, func)
+    if fn is None:
+        return [f"{path.name}: function {func} not found"]
+    text = ast.unparse(fn)
+    out = []
+    for need, why in (("'environment_task_origin'", "reads another kind of event"), ("effective_tag == 'OWNER'", "does not require the OWNER tag (the operator's and the code's events would count)"), ("'task'", "does not match the task")):
+        if need not in text:
+            out.append(f"{path.name}:{fn.lineno}: {func} {why}")
+    return out
+
+
+def node_write_violations(path: Path) -> list[str]:
+    """W2 and W3 on the node's task module: `_setup_step` calls `authorize` before `run_step`; `run_step` is called nowhere else; `on_task` authorizes the write types before it accepts; and no
+    other handler of the allowlist reaches the setup module at all (the read-only types stay read-only)."""
+    path = Path(path)
+    tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"), filename=str(path))
+    out = []
+    h = _wfn(tree, "_setup_step")
+    if h is None:
+        return [f"{path.name}: _setup_step not found"]
+    auth = next((i for i, s in enumerate(h.body) if _wcalls(s, attr="authorize")), None)
+    run = next((i for i, s in enumerate(h.body) if _wcalls(s, attr="run_step")), None)
+    if run is None:
+        out.append(f"{path.name}:{h.lineno}: _setup_step never runs a step (the check is looking at the wrong function)")
+    elif auth is None or auth >= run:
+        out.append(f"{path.name}:{h.body[run].lineno}: _setup_step runs a step without authorizing it first")
+    allowed = next((n for n in tree.body if isinstance(n, (ast.Assign, ast.AnnAssign)) and any(isinstance(t, ast.Name) and t.id == "ALLOWED" for t in (n.targets if isinstance(n, ast.Assign) else [n.target]))), None)
+    read_only = {v.id for k, v in zip(allowed.value.keys, allowed.value.values) if isinstance(v, ast.Name) and v.id != "_setup_step"} if allowed is not None and isinstance(allowed.value, ast.Dict) else set()
+    for fn in [n for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n is not h]:
+        if _wcalls(fn, attr="run_step"):
+            out.append(f"{path.name}:{fn.lineno}: {fn.name} runs a setup step: only _setup_step may")
+        if fn.name in read_only and any(isinstance(n, ast.Name) and n.id == "setup" for n in ast.walk(fn)):
+            out.append(f"{path.name}:{fn.lineno}: the read-only handler {fn.name} reaches the setup module")
+    on_task = _wfn(tree, "on_task")
+    if on_task is not None:
+        acc = next((i for i, s in enumerate(ast.walk(on_task)) if isinstance(s, ast.Constant) and s.value == "accepted"), None)
+        pre = _wcalls(on_task, attr="authorize")
+        if not pre or acc is None or min(c.lineno for c in pre) > next(n.lineno for n in ast.walk(on_task) if isinstance(n, ast.Constant) and n.value == "accepted"):
+            out.append(f"{path.name}:{on_task.lineno}: on_task does not authorize a write before it accepts it")
+    return out
+
+
+def decomposition_source_violations(path: Path, func: str = "_decomposition_origin") -> list[str]:
+    """What counts as the owner's approval of a subtask: `func` reads only `decomposition_approved` records, re-checks the OWNER decision behind them (`_owner_decision`), matches the subtask by the id on the owner's list,
+    lets one task hold an id, and compares the task being sent with the listed type and level."""
+    path = Path(path)
+    tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"), filename=str(path))
+    fn = _wfn(tree, func)
+    if fn is None:
+        return [f"{path.name}: function {func} not found"]
+    text = ast.unparse(fn)
+    out = []
+    for need, why in (("'decomposition_approved'", "reads another kind of record"), ("self._owner_decision(", "does not re-check the owner's decision from the store"), ("'subtask_id'", "does not match the subtask by its id on the owner's list"),
+                      ("first.payload.get('task') != task_id", "lets a second task hold the same subtask id"), ("listed['type']", "does not compare the task's type with the listed one"),
+                      ("listed['sensitivity']", "does not compare the task's level with the listed one")):
+        if need not in text:
+            out.append(f"{path.name}:{fn.lineno}: {func} {why}")
+    return out
+
+
+def owner_decision_violations(path: Path, func: str = "_owner_decision") -> list[str]:
+    """What counts as the owner's decision on a decomposition: `func` reads only `decomposition_decision` events, requires the OWNER tag (never the operator's or the code's), a gesture from HUMAN_GESTURES, and the
+    decomposition it records equal to the one being approved. The authority is the recorded event, not the caller."""
+    path = Path(path)
+    tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"), filename=str(path))
+    fn = _wfn(tree, func)
+    if fn is None:
+        return [f"{path.name}: function {func} not found"]
+    text = ast.unparse(fn)
+    out = []
+    for need, why in (("'decomposition_decision'", "reads another kind of event"), ("effective_tag != 'OWNER'", "does not require the OWNER tag (the operator's and the code's events would count)"),
+                      ("HUMAN_GESTURES", "does not require a human gesture"), ("decomposition_canon", "does not compare the recorded decomposition with the one being approved")):
+        if need not in text:
+            out.append(f"{path.name}:{fn.lineno}: {func} {why}")
+    return out
+
+
+def node_env_violations(path: Path) -> list[str]:
+    """W2 for `environment_run`: `_environment_run` calls `authorize` before `run_environment`; `run_environment` is called nowhere else; `on_task` authorizes an environment run before it accepts it."""
+    path = Path(path)
+    tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"), filename=str(path))
+    out = []
+    h = _wfn(tree, "_environment_run")
+    if h is None:
+        return [f"{path.name}: _environment_run not found"]
+    auth = next((i for i, s in enumerate(h.body) if _wcalls(s, attr="authorize")), None)
+    run = next((i for i, s in enumerate(h.body) if _wcalls(s, attr="run_environment")), None)
+    if run is None:
+        out.append(f"{path.name}:{h.lineno}: _environment_run never runs an environment (the check is looking at the wrong function)")
+    elif auth is None or auth >= run:
+        out.append(f"{path.name}:{h.body[run].lineno}: _environment_run runs an environment without authorizing it first")
+    for fn in [n for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n is not h]:
+        if _wcalls(fn, attr="run_environment"):
+            out.append(f"{path.name}:{fn.lineno}: {fn.name} runs an environment: only _environment_run may")
+    on_task = _wfn(tree, "on_task")
+    if on_task is not None:
+        pre = [c.lineno for c in _wcalls(on_task, attr="authorize") if isinstance(c.func.value, ast.Name) and c.func.value.id == "envrun"]
+        acc = [n.lineno for n in ast.walk(on_task) if isinstance(n, ast.Constant) and n.value == "accepted"]
+        if not pre or not acc or min(pre) > min(acc):
+            out.append(f"{path.name}:{on_task.lineno}: on_task does not authorize an environment run before it accepts it")
+    return out
+
+
+def approval_source_violations(path: Path, func: str = "_owner_approval") -> list[str]:
+    """W4: what counts as the owner's approval. `func` reads only the `setup_step_approved` events whose tag is OWNER (`effective_tag == "OWNER"`) and matches the plan hash, step and action."""
+    path = Path(path)
+    src = path.read_text(encoding="utf-8", errors="replace")
+    tree = ast.parse(src, filename=str(path))
+    fn = _wfn(tree, func)
+    if fn is None:
+        return [f"{path.name}: function {func} not found"]
+    text = ast.unparse(fn)
+    out = []
+    for need, why in (("'setup_step_approved'", "reads another kind of event"), ("effective_tag == 'OWNER'", "does not require the OWNER tag (the operator's and the code's events would count)"),
+                      ("plan_hash", "does not match the plan hash"), ("'step'", "does not match the step"), ("'action'", "does not match the action")):
+        if need not in text:
+            out.append(f"{path.name}:{fn.lineno}: {func} {why}")
+    return out
+
+
+# ---- U1: an unpaired node is refused ----------------------------------------------------------------------------------------------------------------------------------
+def unpair_violations(path: Path) -> list[str]:
+    """The coordinator's `unpair_node` must remove the node from the registry BEFORE its first `await` (so refusal starts at once, not after a network round trip that may hang), and `_node_session`
+    must refuse a certificate the registry does not know (`by_cert` gives None -> `_reject(..., "unknown_node", ...)` and return). Static; the runtime half is in test_network_contract.py."""
+    path = Path(path)
+    tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"), filename=str(path))
+    fns = {n.name: n for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+    out = []
+    un = fns.get("unpair_node")
+    if un is None:
+        out.append(f"{path.name}: unpair_node not found")
+    else:
+        awaits = sorted(n.lineno for n in ast.walk(un) if isinstance(n, ast.Await))
+        removes = sorted(n.lineno for n in ast.walk(un) if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == "remove")
+        if not removes:
+            out.append(f"{path.name}:{un.lineno}: unpair_node never removes the node from the registry")
+        elif awaits and removes[0] > awaits[0]:
+            out.append(f"{path.name}:{removes[0]}: unpair_node awaits (line {awaits[0]}) before it removes the node: the refusal waits on the network")
+    ns = fns.get("_node_session")
+    if ns is None:
+        out.append(f"{path.name}: _node_session not found")
+    else:
+        gate = next((s for s in ns.body if isinstance(s, ast.If) and isinstance(s.test, ast.Compare) and isinstance(s.test.left, ast.Name) and s.test.left.id == "rec"
+                     and any(isinstance(c, ast.Constant) and c.value is None for c in s.test.comparators)), None)
+        looks_up = any(isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == "by_cert" for s in ns.body[:2] for n in ast.walk(s))
+        refuses = gate is not None and any(isinstance(n, ast.Constant) and n.value == "unknown_node" for n in ast.walk(gate)) and any(isinstance(n, ast.Return) for n in ast.walk(gate))
+        if not looks_up or not refuses:
+            out.append(f"{path.name}:{ns.lineno}: _node_session does not refuse, first thing, a certificate the registry does not know")
+    return out

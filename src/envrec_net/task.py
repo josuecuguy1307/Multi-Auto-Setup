@@ -1,4 +1,4 @@
-"""Signed read-only tasks from the coordinator to a node (docs/NETWORK_CONTRACT.md 3.7).
+"""Signed tasks from the coordinator to a node (docs/NETWORK_CONTRACT.md 3.7 read-only, 3.9 the one write task).
 
 A task travels inside a session envelope, and carries a CAPABILITY TOKEN signed by the coordinator's identity key. The token names: the task, the one node it is for, the one session it is
 valid in, the tools it allows, that it is single-use, and a time to live that the node measures on its own monotonic clock from the moment it received the task (so it depends on nobody's
@@ -32,7 +32,25 @@ REJECTIONS = {  # typed reasons a node (or the coordinator) gives for not runnin
     "token_tool_mismatch": "The task's permission token does not allow this task.",
     "busy": "This computer is already running as many tasks as it is allowed to.",
     "node_offline": "The computer is not connected, so the task was not sent (tasks are not queued).",
-    "write_refused": "A task that changes this computer needs the owner's approval on that computer, which this version does not offer; nothing was run.",
+    "write_refused": "A task that changes this computer needs the owner's approval of the exact plan; without it, and for any type but the one setup task, nothing was run.",
+    "bad_plan": "The setup plan was not a well-formed plan, so nothing was run.",
+    "bad_scope": "The setup step's permission token is not scoped to a recipe and a plan, so nothing was run.",
+    "plan_altered": "The plan that arrived is not the plan the owner approved (its hash is different), so nothing was run.",
+    "no_owner_approval": "The owner's approval of this exact plan and step is missing, so nothing was run.",
+    "unknown_recipe": "This computer has no recipe with that name, so nothing was run.",
+    "stale_recipe": "This computer's copy of the recipe is not the one the plan was made from, so nothing was run.",
+    "plan_not_from_recipe": "The plan's steps are not the recipe's operations in the recipe's order, so nothing was run.",
+    "outside_declared_writes": "The step would write outside what its recipe declares, so nothing was run.",
+    "no_executor": "This computer has no function for that setup operation, so nothing was run.",
+    "no_owner_origin": "The owner did not create or approve this task, so nothing was run.",
+    "unknown_environment": "This computer has no environment with that name, so nothing was run.",
+    "unsupported_os": "That environment does not run on this computer's operating system, so nothing was run.",
+    "not_installed": "That environment is not installed on this computer, so nothing was run.",
+    "sandbox_missing": "That environment may only run inside a sandbox and this computer has none ready, so nothing was run.",
+    "not_loopback": "The model endpoint is not a loopback address (127.0.0.1 or ::1), so nothing was run.",
+    "outside_workspace": "The environment tried to write outside its task workspace; what it wrote was removed.",
+    "environment_failed": "The environment ended with an error.",
+    "confidential_cloud": "A confidential task cannot run in a cloud environment, so nothing was run.",
 }
 
 
@@ -57,10 +75,33 @@ class ProgramsParams(TaskParams):
     limit: int = Field(default=200, ge=1, le=500)
 
 
-PARAMS: dict[str, type[TaskParams]] = {"node_report": NodeReportParams, "machine_analysis": MachineAnalysisParams, "os_details": NoParams, "installed_programs": ProgramsParams, "gpus": NoParams,
+class SetupStepParams(TaskParams):
+    """The one task that writes. The plan travels whole; the node recomputes its hash and checks it against the signed token, the owner's approval named in it and the node's own copy of the recipe."""
+    plan: dict[str, Any]
+    step: int = Field(ge=1, le=40)
+    action: Literal["run", "undo"] = "run"
+
+
+class EnvironmentRunParams(TaskParams):
+    """The second task that writes (docs/NETWORK_CONTRACT.md 3.9, amended). The environment is named, never described: its executable, arguments and confinement come from the node's own copy of the
+    catalog (data), and the hash of that recipe must match the signed token. The input travels as text; the workspace is a plain id under the node's own folder."""
+    environment_id: str = Field(min_length=1, max_length=48, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    task_type: Literal["code", "text"]
+    sensitivity: Literal["public", "internal", "confidential"]
+    mode: str = Field(min_length=1, max_length=48)
+    workspace_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{0,47}$")
+    recipe_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    input_text: str = Field(max_length=100_000)
+    endpoint: str | None = Field(default=None, max_length=64)
+    model_id: str | None = Field(default=None, max_length=120, pattern=r"^[A-Za-z0-9._:/-]+$")
+
+
+WRITE_TYPES = ("setup_step", "environment_run")  # every other task type is read-only; this is the only one the coordinator sends with a scoped token and the node runs after the checks of `envrec_node.setup`
+
+PARAMS: dict[str, type[TaskParams]] = {"setup_step": SetupStepParams, "environment_run": EnvironmentRunParams, "node_report": NodeReportParams, "machine_analysis": MachineAnalysisParams, "os_details": NoParams, "installed_programs": ProgramsParams, "gpus": NoParams,
                                         "model_runtimes": NoParams, "ai_clis": NoParams, "memory_for_models": NoParams}
 PROBES = ("os_details", "installed_programs", "gpus", "model_runtimes", "ai_clis", "memory_for_models")  # the read-only probes a model can pick, one by one
-TIMEOUTS_S = {"node_report": 30.0, "machine_analysis": 240.0, "os_details": 20.0, "installed_programs": 60.0, "gpus": 30.0, "model_runtimes": 30.0, "ai_clis": 20.0, "memory_for_models": 30.0}
+TIMEOUTS_S = {"setup_step": 1800.0, "environment_run": 1200.0, "node_report": 30.0, "machine_analysis": 240.0, "os_details": 20.0, "installed_programs": 60.0, "gpus": 30.0, "model_runtimes": 30.0, "ai_clis": 20.0, "memory_for_models": 30.0}
 
 
 class TaskResult(BaseModel):
@@ -88,8 +129,10 @@ def _canon(token: dict) -> bytes:
     return json.dumps({k: v for k, v in token.items() if k != "sig"}, sort_keys=True, separators=(",", ":")).encode()
 
 
-def issue_token(identity: Identity, *, task_id: str, node_id: str, sid: str, tools: list[str], ttl_s: float = DEFAULT_TTL_S) -> dict:
+def issue_token(identity: Identity, *, task_id: str, node_id: str, sid: str, tools: list[str], ttl_s: float = DEFAULT_TTL_S, scope: dict | None = None) -> dict:
     t = {"v": TOKEN_VERSION, "jti": secrets.token_hex(12), "task": task_id, "node": node_id, "sid": sid, "tools": sorted(tools), "single_use": True, "ttl_s": float(ttl_s)}
+    if scope is not None:  # a write task only: one recipe, one plan hash, one step, the paths it may write, and the owner's approval of exactly that (signed with the rest)
+        t["scope"] = scope
     t["sig"] = base64.b64encode(identity.sign(_canon(t))).decode()
     return t
 
@@ -128,6 +171,26 @@ class TokenChecker:
             raise TokenRejected("token_reused")
         self.seen.add(jti)
         return token
+
+
+def write_scope(plan_hash: str, recipe: str, step: int, action: str, writes: list[str], approval_event: str) -> dict:
+    """The scope the coordinator signs into a write task's token. `approval` names the OWNER event (its hash in the coordinator's log) that approved exactly this plan, step and action."""
+    return {"recipe": recipe, "plan_hash": plan_hash, "step": int(step), "action": action, "writes": sorted(writes),
+            "approval": {"actor": "OWNER", "event": approval_event, "plan_hash": plan_hash, "step": int(step), "action": action}}
+
+
+def check_write_scope(token: dict, *, plan_hash: str, plan_declared_hash: str, recipe: str, step: int, action: str, writes: list[str]) -> None:
+    """The node's checks of a write task's token against what it recomputed from the plan it received. Raises TokenRejected with the typed reason; nothing is run before this passes."""
+    sc = token.get("scope")
+    if not isinstance(sc, dict):
+        raise TokenRejected("bad_scope")
+    if plan_declared_hash != plan_hash or sc.get("plan_hash") != plan_hash:
+        raise TokenRejected("plan_altered")  # the plan carries a hash that is not its own, or the token was signed for another plan
+    ap = sc.get("approval")
+    if not (isinstance(ap, dict) and ap.get("actor") == "OWNER" and ap.get("event") and ap.get("plan_hash") == plan_hash and ap.get("step") == step and ap.get("action") == action):
+        raise TokenRejected("no_owner_approval")
+    if sc.get("recipe") != recipe or sc.get("step") != step or sc.get("action") != action or sc.get("writes") != sorted(writes):
+        raise TokenRejected("bad_scope")
 
 
 def coordinator_id(public: bytes) -> str:

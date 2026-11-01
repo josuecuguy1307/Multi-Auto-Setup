@@ -1,0 +1,31 @@
+{
+ "rule": "R6.5-no-vendor-numbers",
+ "kind": "evidence",
+ "says": "vendor numbers and vote rankings are not evidence",
+ "cases": [
+  {
+   "name": "a vendor's own benchmark",
+   "entry": {
+    "source_kind": "vendor",
+    "tier": 2
+   },
+   "expect": {
+    "rejected": [
+     "~vendor"
+    ]
+   }
+  },
+  {
+   "name": "a tier outside 1-3",
+   "entry": {
+    "source_kind": "benchmark",
+    "tier": 9
+   },
+   "expect": {
+    "rejected": [
+     "~tiers 1 to 3"
+    ]
+   }
+  }
+ ]
+}

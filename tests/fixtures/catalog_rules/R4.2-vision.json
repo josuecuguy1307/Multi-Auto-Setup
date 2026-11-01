@@ -1,0 +1,35 @@
+{
+ "rule": "R4.2-vision",
+ "kind": "file",
+ "says": "a vision model is offered, labeled 'includes vision'",
+ "cases": [
+  {
+   "name": "image-text-to-text on the hub",
+   "facts": {
+    "hub.pipeline_tag": "image-text-to-text"
+   },
+   "expect": {
+    "kind": "vision-language",
+    "labels": [
+     "~includes vision"
+    ],
+    "offer_by_default": true,
+    "!requires_task_keys": [
+     "vision"
+    ]
+   }
+  },
+  {
+   "name": "its repository carries a projector",
+   "facts": {
+    "repo.has_companion_projector": true
+   },
+   "expect": {
+    "kind": "vision-language",
+    "labels": [
+     "~includes vision"
+    ]
+   }
+  }
+ ]
+}

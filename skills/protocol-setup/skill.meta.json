@@ -1,0 +1,139 @@
+{
+ "provenance": "builtin",
+ "protocol": "setup",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": [
+  "any"
+ ],
+ "signature": {},
+ "states": {
+  "kinds": [
+   "install"
+  ],
+  "start": "prepare",
+  "states": {
+   "prepare": {
+    "goal": "Get ready to set up the option the owner picked. Read the stored analysis and the pick (load_context), ask the machine for its memory now and see whether the pick still fits (recheck_fit), then build the plan (build_plan: code makes it from the closed recipe; it can refuse with a reason). You do not write the plan.",
+    "tags": [],
+    "tools": [
+     "load_context",
+     "recheck_fit",
+     "build_plan"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "run",
+      "needs": [
+       {
+        "fact": "plan.built",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "cannot_install",
+      "needs": [
+       {
+        "fact": "setup.refused",
+        "at_least": "tested"
+       }
+      ]
+     }
+    ],
+    "close_on": [
+     "build_plan"
+    ],
+    "terminal": false,
+    "reason": "",
+    "show": [
+     "context.loaded",
+     "fit.rechecked",
+     "machine.model_path",
+     "machine.ram_available_gib",
+     "plan.*",
+     "setup.*"
+    ]
+   },
+   "run": {
+    "goal": "Run the plan one step at a time, in order. run_step N asks the owner to approve that step (the owner sees the exact command and how to undo it) and then the machine runs it. The last step is the minimal call that proves the server answers. undo_step N undoes the latest step that is done. finish_setup ends the run once the setup is verified or everything done was undone.",
+    "tags": [],
+    "tools": [
+     "run_step",
+     "undo_step",
+     "finish_setup"
+    ],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {
+      "to": "done",
+      "needs": [
+       {
+        "fact": "setup.verified",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     },
+     {
+      "to": "rolled_back",
+      "needs": [
+       {
+        "fact": "setup.undone_all",
+        "at_least": "tested",
+        "equals": true
+       }
+      ]
+     }
+    ],
+    "close_on": [
+     "finish_setup"
+    ],
+    "terminal": false,
+    "reason": "",
+    "show": [
+     "plan.*",
+     "setup.*",
+     "step.*"
+    ]
+   },
+   "done": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "close_on": [],
+    "terminal": true,
+    "reason": "the option is set up and the minimal call to the local server answered; its time is a tested fact"
+   },
+   "rolled_back": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "close_on": [],
+    "terminal": true,
+    "reason": "everything the setup did was undone and nothing was left behind"
+   },
+   "cannot_install": {
+    "goal": "",
+    "tags": [],
+    "tools": [],
+    "actions": [],
+    "skills": [],
+    "advance": [],
+    "close_on": [],
+    "terminal": true,
+    "reason": "the plan could not be made for this machine; the reason is in the facts; nothing was changed"
+   }
+  }
+ }
+}

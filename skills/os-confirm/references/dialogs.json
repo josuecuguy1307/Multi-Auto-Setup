@@ -1,0 +1,140 @@
+{
+ "darwin": {
+  "tools": [
+   {
+    "id": "macos_dialog",
+    "exe": "osascript",
+    "argv": [
+     "-e",
+     "on run argv\n  set t to item 1 of argv\n  set m to item 2 of argv\n  set secs to (item 3 of argv) as integer\n  try\n    set r to display dialog m with title t buttons {\"Cancel\", \"Approve\"} default button \"Cancel\" cancel button \"Cancel\" with icon caution giving up after secs\n    if gave up of r then return \"timeout\"\n    return \"approved\"\n  on error\n    return \"declined\"\n  end try\nend run",
+     "{title}",
+     "{message}",
+     "{timeout}"
+    ],
+    "env": {},
+    "strong": {
+     "id": "touch_id",
+     "exe": "swift",
+     "probe": {
+      "argv": [
+       "{ref}/localauth.swift",
+       "--probe"
+      ],
+      "env": {}
+     },
+     "ask": {
+      "argv": [
+       "{ref}/localauth.swift",
+       "{reason}"
+      ],
+      "env": {}
+     },
+     "probe_ok": "available",
+     "approved": "approved",
+     "next_note": "Next you will be asked for Touch ID or your account password. Nothing is approved without it."
+    }
+   }
+  ]
+ },
+ "windows": {
+  "tools": [
+   {
+    "id": "windows_messagebox",
+    "exe": "powershell",
+    "argv": [
+     "-NoProfile",
+     "-NonInteractive",
+     "-Command",
+     "Add-Type -AssemblyName PresentationFramework; $r=[System.Windows.MessageBox]::Show($env:MAS_CONFIRM_MESSAGE,$env:MAS_CONFIRM_TITLE,'YesNo','Warning','No'); if($r -eq 'Yes'){'approved'}else{'declined'}"
+    ],
+    "env": {
+     "MAS_CONFIRM_TITLE": "{title}",
+     "MAS_CONFIRM_MESSAGE": "{message}"
+    },
+    "strong": {
+     "id": "windows_hello",
+     "exe": "powershell",
+     "probe": {
+      "argv": [
+       "-NoProfile",
+       "-NonInteractive",
+       "-Command",
+       "$ErrorActionPreference='Stop'; Add-Type -AssemblyName System.Runtime.WindowsRuntime; $null=[Windows.Security.Credentials.UI.UserConsentVerifier,Windows.Security.Credentials.UI,ContentType=WindowsRuntime]; $asTask=([System.WindowsRuntimeSystemExtensions].GetMethods()|Where-Object{$_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1'})[0]; function Await($op,$type){$t=$asTask.MakeGenericMethod($type).Invoke($null,@($op));$t.Wait(-1)|Out-Null;$t.Result}; $avail=Await ([Windows.Security.Credentials.UI.UserConsentVerifier]::CheckAvailabilityAsync()) ([Windows.Security.Credentials.UI.UserConsentVerifierAvailability]); if($env:MAS_STRONG_MODE -eq 'probe'){if($avail -eq 'Available'){'available'}else{'unavailable'};exit}; if($avail -ne 'Available'){'unavailable';exit}; $r=Await ([Windows.Security.Credentials.UI.UserConsentVerifier]::RequestVerificationAsync($env:MAS_CONFIRM_REASON)) ([Windows.Security.Credentials.UI.UserConsentVerificationResult]); if($r -eq 'Verified'){'approved'}else{'declined'}"
+      ],
+      "env": {
+       "MAS_STRONG_MODE": "probe"
+      }
+     },
+     "ask": {
+      "argv": [
+       "-NoProfile",
+       "-NonInteractive",
+       "-Command",
+       "$ErrorActionPreference='Stop'; Add-Type -AssemblyName System.Runtime.WindowsRuntime; $null=[Windows.Security.Credentials.UI.UserConsentVerifier,Windows.Security.Credentials.UI,ContentType=WindowsRuntime]; $asTask=([System.WindowsRuntimeSystemExtensions].GetMethods()|Where-Object{$_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1'})[0]; function Await($op,$type){$t=$asTask.MakeGenericMethod($type).Invoke($null,@($op));$t.Wait(-1)|Out-Null;$t.Result}; $avail=Await ([Windows.Security.Credentials.UI.UserConsentVerifier]::CheckAvailabilityAsync()) ([Windows.Security.Credentials.UI.UserConsentVerifierAvailability]); if($env:MAS_STRONG_MODE -eq 'probe'){if($avail -eq 'Available'){'available'}else{'unavailable'};exit}; if($avail -ne 'Available'){'unavailable';exit}; $r=Await ([Windows.Security.Credentials.UI.UserConsentVerifier]::RequestVerificationAsync($env:MAS_CONFIRM_REASON)) ([Windows.Security.Credentials.UI.UserConsentVerificationResult]); if($r -eq 'Verified'){'approved'}else{'declined'}"
+      ],
+      "env": {
+       "MAS_STRONG_MODE": "ask",
+       "MAS_CONFIRM_REASON": "{reason}"
+      }
+     },
+     "probe_ok": "available",
+     "approved": "approved",
+     "next_note": "Next you will be asked for Windows Hello (fingerprint, face or PIN). Nothing is approved without it."
+    }
+   }
+  ]
+ },
+ "linux": {
+  "tools": [
+   {
+    "id": "zenity_question",
+    "exe": "zenity",
+    "argv": [
+     "--question",
+     "--no-markup",
+     "--title",
+     "{title}",
+     "--text",
+     "{message}",
+     "--ok-label",
+     "Approve",
+     "--cancel-label",
+     "Cancel",
+     "--timeout",
+     "{timeout}"
+    ],
+    "env": {},
+    "rc": {
+     "0": "approved",
+     "1": "declined",
+     "5": "timeout"
+    }
+   },
+   {
+    "id": "kdialog_yesno",
+    "exe": "kdialog",
+    "argv": [
+     "--title",
+     "{title}",
+     "--yesno",
+     "{message}",
+     "--yes-label",
+     "Approve",
+     "--no-label",
+     "Cancel"
+    ],
+    "env": {},
+    "rc": {
+     "0": "approved",
+     "1": "declined"
+    }
+   }
+  ]
+ },
+ "classify": {
+  "approved": "approved",
+  "declined": "declined",
+  "timeout": "timeout"
+ },
+ "weak_note": "This machine offers neither Touch ID nor Windows Hello: the confirmation is only a button and it is WEAKER (an agent that controls the screen could press it). Approve only if you are looking at it yourself."
+}

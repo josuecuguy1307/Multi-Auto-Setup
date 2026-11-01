@@ -318,3 +318,44 @@ def test_a_fact_the_human_stated_is_shown_first_and_is_never_pushed_out_by_the_v
     ranked = rank_facts(facts + [answer])
     assert ranked[0].key == "owner.answer.which_ai"  # inside any budget of one or more
     assert [f.key for f in rank_facts(facts)] == sorted(f.key for f in facts)  # and without a human fact the order is unchanged
+
+
+def test_the_facts_the_exit_is_made_of_are_always_shown_outside_the_view_budget(tmp_path):
+    from envrec.loop.view import build_view
+    with Store(tmp_path / "s") as store:
+        t = store.put_target(Target(kind=TargetKind.host, ring=0, handle="h"))
+        ev = [Evidence(provider="p", probe="p", confidence=1.0)]
+        for k in ("hw.a", "hw.b", "hw.c", "hw.d", "os.name", "os.arch"):
+            store.write_fact(Fact(target_id=t.id, key=k, value=k, status=FactStatus.tested, evidence=ev))
+        prof = scripted_profile(view_budget_facts=2)
+        plain = build_view(store, t, prof, [], "x", {})
+        pinned = build_view(store, t, prof, [], "x", {}, pinned=["os.name", "os.arch"])
+        assert "os.name" not in plain and "(+4 more facts" in plain  # the bug: alphabetical order and a budget hid the OS
+        assert "os.name = " in pinned and "os.arch = " in pinned and "hw.a = " in pinned and "hw.b = " in pinned and "(+2 more facts" in pinned
+
+
+def test_the_analysis_view_shows_every_fact_its_exit_needs_when_the_model_writes_its_conclusion(tmp_path):
+    store, target, adapter, model, loop, asked = make(tmp_path, [act(t) for t in ALL_PROBES] + ["x", "x", "x"])
+    go(loop, target)
+    last = view_of(model, 5)
+    facts = last[last.index("FACTS"):last.index("LAST RESULT")]
+    need = [n["fact"] for n in [sk for sk in LIB.protocols() if sk.meta.protocol == "analyze"][0].meta.states.states["survey"].advance[0].needs if n["fact"] != "analysis.finished"]
+    assert all(f"  {k} = " in facts for k in need), [k for k in need if f"  {k} = " not in facts]
+
+
+def test_the_options_view_always_shows_the_model_path_and_the_memory_the_spec_lists_so_an_explanation_can_rest_on_them(tmp_path):
+    from envrec.contracts import CreatedBy
+    from envrec.loop.view import build_view
+    store = Store(tmp_path / "s")
+    t = A.new_target(store, TargetKind.setup, "n")
+    ev = [Evidence(provider="p", probe="p", confidence=1.0)]
+    for k, v in (("machine.disk_free_gib", 1), ("machine.gpu_count", 1), ("machine.ai_cli_count", 1), ("machine.ram_total_gib", 19.7), ("machine.os.arch", "amd64"), ("machine.os.build", "b"),
+                 ("machine.runtime_count", 0), ("machine.vram_gib", None), ("machine.ram_available_gib", 8.2), ("machine.model_path", "cpu")):
+        store.write_fact(Fact(target_id=t.id, key=k, value=v, status=FactStatus.tested, evidence=ev))
+    store.write_fact(Fact(target_id=t.id, key="owner.answer.which_ai", value="local", status=FactStatus.tested, created_by=CreatedBy.human, evidence=ev))
+    spec = [sk for sk in LIB.protocols() if sk.meta.protocol == "setup-options"][0]
+    from envrec.protocols import ProtocolRun
+    run = ProtocolRun(spec)
+    assert run.shown_keys() == ["option.explained", "machine.model_path", "machine.ram_available_gib", "machine.gpus", "owner.answer.*"]
+    view = build_view(store, t, scripted_profile(view_budget_facts=3), [], "x", {}, pinned=run.shown_keys())
+    assert 'machine.model_path = "cpu"' in view and "machine.ram_available_gib = 8.2" in view and 'owner.answer.which_ai = "local"' in view

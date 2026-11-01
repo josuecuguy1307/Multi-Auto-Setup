@@ -11,6 +11,7 @@ from pathlib import Path
 
 import yaml
 
+from envrec.catalog import rules as R
 from envrec_os import SKILLS_DIR
 
 REF = SKILLS_DIR / "setup-options" / "references"
@@ -19,10 +20,8 @@ COST_RANK = {"free_local": 0, "subscription": 1, "metered_api": 2}
 WRITTEN_ORDER = {"installed_runtime": 0, "catalog_runtime": 1, "installed_cli": 2, "api_key": 3}
 ORDER_TEXT = ("cost class (free and local, then subscription, then metered API); then measured pass rate and measured time when they exist (none are measured yet, so they are skipped); then the written "
               "order (an installed runtime before a download, an installed command-line tool, an API key), one that is already set up or whose key variable was found before one that is not; then the larger model that fits; then the name")
-MEMORY_SHARE = 0.7  # of the memory a model may use (a model must leave room for the system)
 PROVISIONAL = "provisional, not measured here"
 MAX_SHOWN = 3
-OS_NAMES = {"macOS": "macos", "Darwin": "macos", "Windows": "windows", "Linux": "linux"}
 ARCHES = {"x86_64": "amd64", "amd64": "amd64", "arm64": "arm64", "aarch64": "arm64"}
 
 
@@ -39,11 +38,26 @@ def load_evidence() -> dict:
     return json.loads((REF / "evidence.json").read_text())
 
 
+RECIPES_FILE = SKILLS_DIR / "setup-recipes" / "references" / "recipes.json"
+
+
+def recipe_coverage() -> dict[str, set[str]]:
+    """What the closed recipes can set up: the runtimes they download (`catalog`) and the runtimes already on a machine that they take over (`installed`, a recipe's `handles_installed`). Nothing else has a recipe."""
+    recipes = json.loads(RECIPES_FILE.read_text())["recipes"] if RECIPES_FILE.is_file() else []
+    return {"catalog": {r["runtime_source"] for r in recipes}, "installed": {i for r in recipes for i in r.get("handles_installed", [])}}
+
+
+def load_rules() -> R.Rules:
+    return R.Rules.load()
+
+
 def catalog_summary(catalog: dict) -> dict:
     """What `catalog_lookup` shows the model: counts and the sources, not the rows."""
     rt = catalog.get("runtime_assets", [])
-    return {"label": "verified-by-code (licenses and checksums read by the catalog generator)", "runtime_builds": len(rt), "runtimes": sorted({r["source"] for r in rt}),
-            "model_files": len(catalog.get("model_files", [])), "licenses": sorted({m["license"] for m in catalog.get("model_files", [])})}
+    rows = catalog.get("model_files", [])
+    return {"label": "verified-by-code (licenses and checksums read by the catalog generator; sizes, kinds and parameter counts checked against each file's header)", "runtime_builds": len(rt),
+            "runtimes": sorted({r["source"] for r in rt}), "model_files": len(rows), "licenses": sorted({m["license"] for m in rows}), "checked": (catalog.get("verified") or {}).get("checked"),
+            "kinds": {k: sum(1 for m in rows if m.get("kind", "chat") == k) for k in sorted({m.get("kind", "chat") for m in rows})}}
 
 
 def evidence_for(evidence: dict, topic: str) -> dict:
@@ -52,46 +66,80 @@ def evidence_for(evidence: dict, topic: str) -> dict:
 
 
 def _norm(facts: dict) -> dict:
-    name = str(facts.get("machine.os.name", ""))
-    os_ = next((v for k, v in OS_NAMES.items() if name.startswith(k)), "")
+    os_ = str(facts.get("machine.os.family") or "") or load_rules().os_family(facts.get("machine.os.name"))  # the machine says its family itself; a name is read only for an analysis stored before that
     return {"os": os_, "arch": ARCHES.get(str(facts.get("machine.os.arch", "")).lower(), ""), "path": facts.get("machine.model_path"), "vram": facts.get("machine.vram_gib"),
-            "ram": float(facts.get("machine.ram_total_gib") or 0), "disk": float(facts.get("machine.disk_free_gib") or 0), "gpus": facts.get("machine.gpus") or [],
+            "ram": float(facts.get("machine.ram_total_gib") or 0), "ram_free": facts.get("machine.ram_available_gib"), "disk": float(facts.get("machine.disk_free_gib") or 0), "gpus": facts.get("machine.gpus") or [],
             "runtimes": facts.get("machine.runtimes") or [], "clis": facts.get("machine.ai_clis") or [], "keys": facts.get("machine.api_key_variable_names") or []}
 
 
-def _backend(n: dict) -> str:
-    vendors = {g.get("vendor") for g in n["gpus"]}
-    if n["os"] == "linux" and "NVIDIA" in vendors:
-        return "cuda"
-    if n["os"] in ("windows", "linux") and vendors & {"NVIDIA", "AMD", "Intel"}:
-        return "vulkan"
-    return "cpu"
+def _vendor(n: dict) -> str | None:
+    """The graphics maker that matters for the build: the one models run on (a separate card with its own memory, or the Apple GPU that shares the memory)."""
+    if n["path"] == "unified":
+        return next((g.get("vendor") for g in n["gpus"] if g.get("memory") == "unified"), None)
+    ded = [g for g in n["gpus"] if g.get("memory") == "dedicated"]
+    return max(ded, key=lambda g: g.get("vram_gib") or 0).get("vendor") if ded else None
 
 
-def _memory_budget(n: dict) -> tuple[float, str]:
-    if n["path"] == "gpu" and n["vram"]:
-        return round(n["vram"] * MEMORY_SHARE, 2), "VRAM"
-    return round(n["ram"] * MEMORY_SHARE, 2), "RAM"
+def _machine(n: dict) -> dict:
+    return {"os": n["os"], "arch": n["arch"], "path": n["path"], "vendor": _vendor(n), "model_path": n["path"], "vram_gib": n["vram"], "ram_total_gib": n["ram"], "ram_available_gib": n["ram_free"]}
 
 
-def candidates(facts: dict, catalog: dict, harnesses: dict) -> list[dict]:
+def local_build(facts: dict, catalog: dict, rules: R.Rules | None = None) -> dict:
+    """Which runtime build this machine gets, from the matrix of the rules (R3.6): {ok, cell, backend, memory, asset} or a typed refusal."""
+    return R.select_build(_machine(_norm(facts)), catalog.get("runtime_assets", []), rules or load_rules())
+
+
+def _memory_budget(n: dict, rules: R.Rules | None = None) -> tuple[float, str]:
+    return R.memory_budget(_machine(n), rules or load_rules())
+
+
+def _fit(o: dict, budget: float, mem_name: str, n: dict, path) -> dict:
+    """The numbers an owner compares: which model, quantization, size, what it needs, what may be used and whether it fits. Notes are codes: the words are in the Harness App's strings."""
+    base = {"budget_gib": budget, "budget_basis": mem_name, "available_gib": n["ram_free"], "total_gib": n["ram"]}
+    if o["kind"] != "local":
+        return {**base, "model": None, "quantization": None, "size_gib": None, "needed_gib": None, "fits": None, "note": "cloud_not_applicable"}
+    if o["origin"] == "installed_runtime":
+        rows = o.get("models") or []
+        return {**base, "models": rows, "model": ", ".join(r["name"] for r in rows) or None, "fits": any(r["fits"] for r in rows) if rows else False, "note": "size_is_lower_bound"}
+    return {**base, "model": o["model"].split("/")[-1], "quantization": o.get("quantization"), "size_gib": round(o["model_bytes"] / 2 ** 30, 2), "needed_gib": o["memory_needed_gib"],
+            "fits": o["memory_needed_gib"] <= budget}
+
+
+def candidates(facts: dict, catalog: dict, harnesses: dict, *, rules: R.Rules | None = None, runtime_arches: dict | None = None, task_needs: tuple[str, ...] | None = None) -> list[dict]:
+    rules = rules or load_rules()
+    arches = runtime_arches if runtime_arches is not None else R.load_runtime_arches()
+    needs = tuple(task_needs or rules.data["tasks"]["default"])
     n = _norm(facts)
     out: list[dict] = []
-    budget, mem_name = _memory_budget(n)
     for rt in n["runtimes"]:  # a runtime already on the machine: no download
-        models = rt.get("models", [])
-        out.append({"id": f"use-{rt['id']}", "kind": "local", "origin": "installed_runtime", "title": f"Use the {rt['name']} already on this machine", "cost_class": "free_local", "cloud": False,
+        budget_here, _basis = _memory_budget(n, rules)
+        models = [{"name": m["name"], "size_gib": m.get("size_gib"), "quantization": m.get("quantization"), "parameter_size": m.get("parameter_size"),
+                   "fits": (m["size_gib"] <= budget_here) if m.get("size_gib") is not None else None} for m in rt.get("models", [])]  # the file size is a lower bound of the memory a model needs
+        out.append({"id": f"use-{rt['id']}", "runtime_id": rt["id"], "models": models, "kind": "local", "origin": "installed_runtime", "title": f"Use the {rt['name']} already on this machine", "cost_class": "free_local", "cloud": False,
                     "runtime": rt["name"], "models_present": [m["name"] for m in models], "license": "see the runtime's own license", "label": "verified-by-code (found on this machine by a probe)",
                     "memory_needed_gib": None, "disk_needed_gib": 0.0, "needs_download": False, "limits": ([] if models else ["it has no models yet"]) + (["it is reachable from the network: bind it to loopback"] if rt.get("exposed_beyond_loopback") else []),
                     "params_b": max([0.0] + [float(m["name"].split(":")[1].rstrip("b")) if ":" in m["name"] and m["name"].split(":")[1].rstrip("b").replace(".", "").isdigit() else 0.0 for m in models])})
-    asset = next((a for a in catalog.get("runtime_assets", []) if a["os"] == n["os"] and a["arch"] == n["arch"] and a["backend"] == _backend(n) and a.get("runnable")), None) \
-        or next((a for a in catalog.get("runtime_assets", []) if a["os"] == n["os"] and a["arch"] == n["arch"] and a["backend"] == "cpu" and a.get("runnable")), None)
+    sel = R.select_build(_machine(n), catalog.get("runtime_assets", []), rules)
+    asset = sel["asset"] if sel["ok"] else None
     if asset is not None:
         for m in catalog.get("model_files", []):
-            out.append({"id": f"catalog-{m['params_b']}b-{m['repo'].split('/')[-1][:30]}", "kind": "local", "origin": "catalog_runtime", "title": f"{asset['source']} ({asset['backend']}) with {m['repo'].split('/')[-1]} {m['quantization']}",
-                        "cost_class": "free_local", "cloud": False, "runtime": f"{asset['source']} {asset['tag']} ({asset['backend']})", "model": m["repo"], "params_b": float(m["params_b"]), "license": m["license"],
-                        "runtime_license": asset["license"], "label": "verified-by-code (license and checksum read from the source)", "source": m["license_source"], "memory_needed_gib": float(m["min_ram_gib"]),
-                        "disk_needed_gib": round((m["bytes"] + asset["bytes"]) / 2 ** 30, 2), "needs_download": True, "limits": []})
+            est = R.estimate_memory(m, rules, measured=m.get("measured"))
+            supports = R.runtime_supports(m.get("architecture"), asset["source"], asset.get("tag", ""), arches, rules)
+            labels = list(m.get("labels", []))
+            if supports is not False and not (m.get("measured") or {}).get("loaded") and rules.on("runtime_architecture"):
+                labels.append(next(e["label"] for e in next(r for r in rules.rules if r["id"] == "R5.1-runtime-architecture")["effects"] if e["action"] == "label"))
+            companions = m.get("companions", [])  # a vision model comes with its projector: counted in memory and disk, downloaded with it
+            if m.get("kind") == "vision-language" and not companions:
+                labels.append("vision model whose projector is not in the catalog: it is used as a text model")
+            out.append({"id": f"catalog-{m['params_b']}b-{m['repo'].split('/')[-1][:30]}-{str(m.get('quantization', '')).lower()}", "kind": "local", "origin": "catalog_runtime", "title": f"{asset['source']} ({asset['backend']}) with {m['repo'].split('/')[-1]} {m['quantization']}",
+                        "cost_class": "free_local", "cloud": False, "runtime_source": asset["source"], "runtime": f"{asset['source']} {asset['tag']} ({asset['backend']})", "model": m["repo"], "params_b": float(m["params_b"]), "license": m["license"],
+                        "runtime_license": asset["license"], "license_name": m.get("license_name"), "license_class": m.get("license_class"), "license_label": m.get("license_label"), "license_basis": m.get("license_basis"),
+                        "label": "verified-by-code (license and checksum read from the source)", "source": m["license_source"], "memory_needed_gib": est["total_gib"],
+                        "memory_estimate": est, "disk_needed_gib": R.disk_need_gib({**m, "companions": companions}, asset["bytes"], rules, with_companions=True), "needs_download": True, "limits": [],
+                        "build": {"cell": sel["cell"], "backend": sel["backend"], "memory": sel["memory"], "asset_id": asset.get("id"), "file": asset.get("file"), "sha256": asset.get("sha256"), "bytes": asset["bytes"]},
+                        "model_id": m.get("id"), "model_kind": m.get("kind", R.KIND_CHAT), "model_file": m.get("file"), "model_revision": m.get("revision"), "model_sha256": m.get("sha256"), "model_bytes": m.get("bytes"),
+                        "quantization": m.get("quantization"), "params_active_b": m.get("params_active_b"), "architecture": m.get("architecture"), "labels": labels, "requires_task": dict(m.get("requires_task", {})),
+                        "unverified": not m.get("verified"), "not_default": list(m.get("not_default_reasons", [])), "runtime_supports_architecture": supports, "companions": companions, "conflicts": list(m.get("conflicts", []))})
     for cli in n["clis"]:
         h = next((c for c in harnesses["cli"] if c["id"] == cli["id"]), {})
         out.append({"id": f"cli-{cli['id']}", "kind": "cli", "origin": "installed_cli", "title": f"{cli['name']} (already installed)", "cost_class": "subscription", "cloud": True, "runtime": cli["name"],
@@ -106,24 +154,46 @@ def candidates(facts: dict, catalog: dict, harnesses: dict) -> list[dict]:
     return out
 
 
-def apply_filters(options: list[dict], facts: dict, choice: str, sensitivity: str, *, licenses_allowed: list[str]) -> tuple[list[dict], list[dict]]:
-    """(kept, removed with the reason). Every removal names its rule."""
+def apply_filters(options: list[dict], facts: dict, choice: str, sensitivity: str, *, rules: R.Rules | None = None, task_needs: tuple[str, ...] | None = None,
+                  catalog: dict | None = None) -> tuple[list[dict], list[dict]]:
+    """(kept, removed with the reason). Every removal names its rule or its numbers."""
+    rules = rules or load_rules()
+    needs = tuple(task_needs or rules.data["tasks"]["default"])
     n = _norm(facts)
-    budget, mem_name = _memory_budget(n)
+    budget, mem_name = _memory_budget(n, rules)
+    rows = [r for r in (catalog or {}).get("model_files", []) if r.get("verified")]
+    unverified_reason = next((e["reason"] for r in rules.rules if r["id"] == "R7.2-header-required" for e in r["effects"] if e["action"] == "not_default"), "unverified")
     kept, removed = [], []
+    coverage = recipe_coverage()
     for o in options:
-        why = None
+        why, variants = None, []
         if choice != "mix" and o["kind"] != choice:
             why = f"not the kind you chose ({choice})"
         elif o["cloud"] and sensitivity == "confidential":
             why = "sends data to a provider: not allowed for confidential work"
+        elif o["origin"] == "installed_runtime" and o.get("runtime_id") not in coverage["installed"]:
+            why = f"no_recipe_yet: using the {o['runtime']} already on this machine cannot be set up by this version (there is no recipe for it yet)"  # offered only what can be set up: a typed reason instead
+        elif o["origin"] == "catalog_runtime" and o.get("runtime_source") not in coverage["catalog"]:
+            why = f"no_recipe_yet: there is no setup recipe for {o.get('runtime_source')} yet"
+        elif o.get("unverified") and rules.has("R7.2-header-required"):
+            why = unverified_reason
+        elif any(t not in needs for t in o.get("requires_task", {})):
+            t = next(t for t in o["requires_task"] if t not in needs)
+            why = f"{o['requires_task'][t]} (this task needs: {', '.join(needs)})"
+        elif o.get("not_default"):
+            why = "; ".join(o["not_default"])
+        elif o.get("runtime_supports_architecture") is False:
+            why = f"the pinned runtime ({o['runtime']}) cannot load the architecture {o.get('architecture')!r}"
         elif o["kind"] == "local" and o.get("memory_needed_gib") is not None and o["memory_needed_gib"] > budget:
-            why = f"needs {o['memory_needed_gib']} GiB and only {budget} GiB of {mem_name} may be used for a model"
+            why = f"needs {o['memory_needed_gib']} GiB and only {budget} GiB of {mem_name} may be used for a model"  # mem_name carries the measured value
+            row = next((r for r in rows if r["id"] == o.get("model_id")), None)
+            if row:
+                variants = [v for v in R.fitting_variants(row, [r for r in rows if all(t in needs for t in r.get("requires_task", {}))], budget, rules)]
         elif o["kind"] == "local" and o.get("disk_needed_gib", 0) > n["disk"]:
             why = f"needs {o['disk_needed_gib']} GiB of disk and only {n['disk']} GiB is free"
-        elif o["kind"] == "local" and o.get("license") and o["origin"] == "catalog_runtime" and str(o["license"]).lower() not in licenses_allowed:
-            why = f"its license ({o['license']}) is not on the allowed list"
-        (removed if why else kept).append({**o, "removed_by": why} if why else o)
+        elif o["kind"] == "local" and o.get("license") and o["origin"] == "catalog_runtime" and not rules.license_offered(o["license"]):
+            why = f"its license ({o['license']}) is not a known license whose class is offered"
+        (removed if why else kept).append({**o, "removed_by": why, **({"fit_variants": variants} if variants else {})} if why else o)
     return kept, removed
 
 
@@ -135,17 +205,42 @@ def order_options(options: list[dict]) -> list[dict]:
     return sorted(options, key=key)
 
 
+def relabel_measured(options: list[dict], lookup) -> list[dict]:
+    """Measured wins (spec 6): where `lookup(option)` returns an admission view (envrec_coordinator.admission.facts), a fresh measurement fills the `measured` slot that `order_options` reads
+    and the option says so; a stale one is shown as stale and does not rank. `lookup` returns None for an option that has no combination to look up."""
+    from envrec_coordinator.admission.facts import measured_of
+    for o in options:
+        view = lookup(o)
+        if view is None or view.state == "none":
+            continue
+        o["admission_label"], o["admission_state"] = view.label, view.state
+        m = measured_of(view)
+        if m:
+            o["measured"] = m
+    return options
+
+
 def build_options(facts: dict, *, choice: str, sensitivity: str = "internal", chosen_cli: str | None = None, chosen_provider: str | None = None, catalog: dict | None = None,
-                  harnesses: dict | None = None, evidence: dict | None = None) -> dict:
+                  harnesses: dict | None = None, evidence: dict | None = None, rules: R.Rules | None = None, runtime_arches: dict | None = None, task_needs: tuple[str, ...] | None = None,
+                  admission_lookup=None) -> dict:
     catalog = catalog if catalog is not None else load_catalog()
     harnesses = harnesses or load_harnesses()
     evidence = evidence if evidence is not None else load_evidence()
-    all_ = candidates(facts, catalog, harnesses)
+    rules = rules or load_rules()
+    needs = tuple(task_needs or rules.data["tasks"]["default"])
+    all_ = candidates(facts, catalog, harnesses, rules=rules, runtime_arches=runtime_arches, task_needs=needs)
     if chosen_cli:
         all_ = [o for o in all_ if o["kind"] != "cli" or o["id"] == f"cli-{chosen_cli}"]
     if chosen_provider:
         all_ = [o for o in all_ if o["kind"] != "api" or o["id"] == f"api-{chosen_provider}"]
-    kept, removed = apply_filters(all_, facts, choice, sensitivity, licenses_allowed=harnesses["licenses_allowed"])
+    kept, removed = apply_filters(all_, facts, choice, sensitivity, rules=rules, task_needs=needs, catalog=catalog)
+    sel = local_build(facts, catalog, rules)
+    refused = [] if sel["ok"] or choice not in ("local", "mix") else [{"id": "local-runtime", "reason": f"{sel['reason']}: {sel['text']}"}]  # no build for this machine: said, never an empty list nobody explains
+    if admission_lookup is not None:
+        kept = relabel_measured(kept, admission_lookup)  # before the written order, so a measured pass rate ranks inside its cost class
+        failed = [o for o in kept if o.get("admission_state") == "not_admitted"]  # measured below the mark here: not approved (spec 8.1), said in `removed`
+        kept = [o for o in kept if o not in failed]
+        removed = removed + [{**o, "removed_by": f"not admitted: {o['admission_label']}"} for o in failed]
     ordered = order_options(kept)
     if choice == "mix":  # one of each kind that applies, in the written order
         seen, picked = set(), []
@@ -155,7 +250,16 @@ def build_options(facts: dict, *, choice: str, sensitivity: str = "internal", ch
                 picked.append(o)
         ordered = picked
     shown = ordered[:MAX_SHOWN]
+    nn = _norm(facts)
+    budget, mem_name = _memory_budget(nn, rules)
+    path = facts.get("machine.model_path")
     for o in shown:
-        o["status"] = PROVISIONAL if not o.get("measured") else "measured"
+        o["fit"] = _fit(o, budget, mem_name, nn, path)
+        if o["kind"] == "local" and o.get("memory_needed_gib") is not None:
+            e = o.get("memory_estimate", {})
+            o["memory_basis"] = (f"needs {o['memory_needed_gib']} GiB ({e.get('label', 'estimate')}: weights {e.get('weights_gib')} + KV cache {e.get('kv_gib')} for a context of {e.get('context')} + runtime allowance {e.get('overhead_gib')}); "
+                                 f"budget {budget} GiB from {mem_name}; the analysis says models run on: {path or 'not measured'}") if e else f"needs {o['memory_needed_gib']} GiB; budget {budget} GiB from {mem_name}; the analysis says models run on: {path or 'not measured'}"
+        o["status"] = o.get("admission_label", "measured") if o.get("measured") else (f"{PROVISIONAL}; {o['admission_label']}" if o.get("admission_state") == "stale" else PROVISIONAL)
         o["evidence"] = evidence_for(evidence, o.get("runtime", ""))["note"] or "public evidence exists (see entries)"
-    return {"choice": choice, "sensitivity": sensitivity, "options": shown, "considered": len(all_), "kept": len(kept), "removed": [{"id": o["id"], "reason": o["removed_by"]} for o in removed][:40], "rule": ORDER_TEXT}
+    return {"choice": choice, "sensitivity": sensitivity, "task_needs": list(needs), "options": shown, "considered": len(all_), "kept": len(kept),
+            "removed": refused + [{"id": o["id"], "reason": o["removed_by"], **({"fit_variants": o["fit_variants"]} if o.get("fit_variants") else {})} for o in removed][:60], "rule": ORDER_TEXT}

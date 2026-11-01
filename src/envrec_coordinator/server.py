@@ -15,6 +15,7 @@ from pathlib import Path
 import envrec_os
 from envrec_coordinator.control import ControlWatcher, write_json
 from envrec_coordinator.discovery import DiscoveryResponder, open_responder
+from envrec_coordinator.harness import HarnessCore
 from envrec_coordinator.owner import OwnerDesk
 from envrec_coordinator.pairing import HELLO_TIMEOUT_S, Decision, PairingBusy, PairingDesk
 from envrec_coordinator.registry import Registry
@@ -22,6 +23,7 @@ from envrec_coordinator.runs import AgentRuns
 from envrec_coordinator.tasks import ALERT_SKEW_S, TaskDesk, evaluate_report
 from envrec_coordinator.waiting import WaitingDesk
 from envrec_coordinator.web import WEB_HOST, WebScreen
+from envrec_net import envrun as ER
 from envrec_net import identity as ident
 from envrec_net import pake, tls
 from envrec_net.envelope import EnvelopeRejected
@@ -58,6 +60,14 @@ def _clip(v, cap: int) -> str:
     return "".join(c for c in str(v) if c.isprintable())[:cap]
 
 
+class LocalStep:
+    """The record of a step run on this computer, with what the setup adapter reads from a node task's record."""
+
+    def __init__(self) -> None:
+        self.status, self.reason, self.result, self.duration_s = "sent", "", {}, 0.0
+        self.done = asyncio.Event()
+
+
 class Coordinator:
     def __init__(self, state_dir: Path, host: str, port: int, *, clock=time.time, idle_timeout_s: float = IDLE_TIMEOUT_S, owner_ttl_s: float = 120.0, summary_every_s: float = SUMMARY_EVERY_S,
                  web: bool = False, web_port: int = 0, discovery_port: int | None = None, name: str | None = None, include_virtual: bool = False,
@@ -80,6 +90,7 @@ class Coordinator:
         self._online: dict[str, int] = {}  # node id -> open authenticated sessions
         self._web_wanted, self._web_port = web, web_port
         self.web: WebScreen | None = None
+        self._native_confirm = None  # tests put a fake dialog here; None means the operating system's own
 
     async def start(self) -> None:
         self.state.mkdir(parents=True, exist_ok=True)
@@ -88,11 +99,13 @@ class Coordinator:
         self.registry = Registry(self.state, self.layer)
         self.log = EventLog(self.state / "log")  # opened on this thread: the store belongs to it
         self.ctx = tls.server_context(self.state / "identity", self.registry.trusted_certs())
-        self.watcher = ControlWatcher(self.state, self.layer, self._on_cli_offer, self._on_cli_task)
-        self.tasks = TaskDesk(clock=self.clock, log=lambda t, p, owner=False: self.log.add(t, p, owner=owner), sessions=lambda nid: self._sessions.get(nid))
+        self.watcher = ControlWatcher(self.state, self.layer, self._on_cli_offer, self._on_cli_task, self._on_cli_unpair)
+        self.tasks = TaskDesk(clock=self.clock, log=lambda t, p, owner=False: self.log.add(t, p, owner=owner), sessions=lambda nid: self._sessions.get(nid), approvals=self._owner_approval, origins=self._owner_origin)
         self.tasks.on_result = self._on_task_result
         self.tasks.on_change = self._publish_tasks
         self.runs = AgentRuns(self, model_profile=self._model_profile, models_file=self._models_file)
+        self.harness = HarnessCore(self, native_confirm=self._native_confirm, clock=self.clock)
+        self._connect_env = None  # what the connection of a chat needs to know about this computer; a test gives it a temporary home and fake commands
         self.waiting = WaitingDesk(clock=self.clock, log=lambda t, p: self.log.add(t, p), on_change=self._publish_waiting)
         self.owner = OwnerDesk(self.clock)
         self.desk = PairingDesk(identity=self.identity, registry=self.registry, log=self.log, ask_owner=self._ask_owner, on_paired=lambda der: tls.add_trusted(self.ctx, der),
@@ -117,6 +130,7 @@ class Coordinator:
                 self.web = None
                 await self.stop()
                 raise
+            self.harness.write_endpoint(self.web.port)
             self.log.add("web_started", {"host": WEB_HOST, "port": self.web.port})  # the link carries the one-time secret: it is never logged
 
     # ---- the owner's front ends: the terminal (control files) and the web screen. Both call these; neither holds protocol logic -------------------
@@ -203,7 +217,7 @@ class Coordinator:
         machines = [{"id": n.node_id, "name": n.name, "os": n.os, "arch": n.arch, "status": "online" if self._online.get(n.node_id) else "offline",
                      "last_heartbeat": n.last_heartbeat, "fingerprint": n.fingerprint, "paired_at": n.paired_at, "skew_s": n.skew_s, "report": n.report, "report_at": n.report_at,
                      "alerts": self._alerts_of(n), "analysis_at": n.analysis_at, "agent_analysis_at": (self.runs.stored_analysis(n.node_id) or {}).get("stored_at")} for n in self.registry.all()]
-        return {"now": self.clock(), "machines": machines, "pairing": self.owner.view(), "waiting": [w.view() for w in self.waiting.list()], "tasks": [t.view() for t in self.tasks.list()[-30:]], "runs": self.runs.listing(), "model": self.runs.model_status()}
+        return {"now": self.clock(), "machines": machines, "pairing": self.owner.view(), "waiting": [w.view() for w in self.waiting.list()], "tasks": [t.view() for t in self.tasks.list()[-30:]], "runs": self.runs.listing(), "model": self.runs.model_status(), "confirmations": self.harness.pending_confirmations(), "activity": self.harness.activity_tail(), "openwebui_admin": (self.connect_env.home / "mas-openwebui" / "admin.secret").exists()}
 
     def _alerts_of(self, n) -> list:
         """The stored alerts of the last report, plus a clock warning measured at the last connect (never a refusal)."""
@@ -234,6 +248,37 @@ class Coordinator:
 
         asyncio.ensure_future(finish())
 
+    def _on_cli_unpair(self, req_id: str, node_ref: str) -> None:
+        async def finish() -> None:
+            res = await self.unpair_node(node_ref)
+            write_json(self.layer, self.watcher.dir / f"unpair-res-{req_id}.json", res)
+
+        asyncio.ensure_future(finish())
+
+    async def unpair_node(self, node_ref: str, *, via: str = "cli") -> dict:
+        """The owner unpairs a node (contract 2.6). The pin leaves the registry FIRST, so from this moment `_node_session` refuses the node at the channel; then, if it is connected, it
+        is told on its signed session (`revoked`) so it forgets this coordinator too, and the connection is closed. The certificate stays in the live TLS context until the next start,
+        which is why the refusal does not rest on the handshake alone."""
+        hits = [n for n in self.registry.all() if n.node_id == node_ref or n.name == node_ref or n.node_id.startswith(node_ref)]
+        if len(hits) != 1:
+            return {"status": "not_found" if not hits else "ambiguous", "node": node_ref}
+        rec = hits[0]
+        self.registry.remove(rec.node_id)
+        sess = self._sessions.pop(rec.node_id, None)
+        notified = False
+        if sess is not None:
+            try:
+                await sess.send("reject", {"reason": "revoked", "message": PLAIN["revoked"]})
+                notified = True
+            except Exception:
+                pass
+            try:
+                sess.writer.close()
+            except Exception:
+                pass
+        self.log.add("node_unpaired", {"node": rec.node_id, "name": rec.name, "notified": notified, "via": via}, owner=True)
+        return {"status": "unpaired", "node": rec.node_id, "name": rec.name, "notified": notified}
+
     def _publish_tasks(self) -> None:
         try:
             write_json(self.layer, self.watcher.dir / "tasks.json", {"tasks": [t.view() for t in self.tasks.list()[-50:]], "at": self.clock()})
@@ -246,11 +291,23 @@ class Coordinator:
     # ---- harness runs (the model drives; see runs.py) ----
 
     def start_analysis(self, node_id: str, via: str = "web", **kw) -> dict:
-        """The owner pressed "Analizar esta máquina": an agent run starts (an OWNER event)."""
+        """The owner pressed "Analyze this machine": an agent run starts (an OWNER event)."""
         return self.runs.view(self.runs.start_analysis(node_id, via, **kw).id, events=False)
 
     def start_options_run(self, node_id: str, via: str = "web", **kw) -> dict:
         return self.runs.view(self.runs.start_options(node_id, via, **kw).id, events=False)
+
+    def start_draft_run(self, via: str = "web", correction: str | None = None, **kw) -> dict:
+        return self.runs.view(self.runs.start_draft(via, correction=correction, **kw).id, events=False)
+
+    def approve_draft(self, run_id: str, by: str = "owner") -> dict | None:
+        return self.runs.approve_draft(run_id, by)
+
+    def profile_view(self) -> dict:
+        return self.runs.profile_view()
+
+    def profile_reset(self) -> int:
+        return self.runs.profile_reset()
 
     def start_lan_run(self, via: str = "web", **kw) -> dict:
         return self.runs.view(self.runs.start_lan(via, **kw).id, events=False)
@@ -258,11 +315,85 @@ class Coordinator:
     def run_view(self, run_id: str) -> dict | None:
         return self.runs.view(run_id)
 
-    def answer_run(self, run_id: str, qid: str, option: str, by: str = "owner") -> bool:
-        return self.runs.answer(run_id, qid, option, by)
+    def pick_of(self, node_id: str) -> dict | None:
+        """The option the owner recorded for a machine, as a summary a screen can show (the whole option stays in the coordinator): None when nothing was picked."""
+        doc = self.runs.stored_pick(node_id)
+        if doc is None:
+            return None
+        o = doc["option"]
+        return {"node": node_id, "picked_at": doc.get("picked_at"), "option": o["id"], "title": o.get("title"), "model": o.get("model"), "build": o.get("build"), "memory_needed_gib": o.get("memory_needed_gib"),
+                "disk_needed_gib": o.get("disk_needed_gib"), "labels": o.get("labels", []), "license": o.get("license"), "license_basis": o.get("license_basis")}
 
-    def pick_option(self, run_id: str, option_id: str) -> bool:
-        return self.runs.pick_option(run_id, option_id)
+    def start_install_run(self, node_id: str, via: str = "web", **kw) -> dict:
+        return self.runs.view(self.runs.start_install(node_id, via, **kw).id, events=False)
+
+    def start_uninstall_run(self, node_id: str, via: str = "web", **kw) -> dict:
+        return self.runs.view(self.runs.start_uninstall(node_id, via, **kw).id, events=False)
+
+    def setup_of(self, node_id: str) -> dict | None:
+        """What a setup left on a machine, as a summary a screen can show (the plan stays in the coordinator): None when nothing is left to undo."""
+        rec = self.runs.stored_setup(node_id)
+        if rec is None:
+            return None
+        left = sorted(int(n) for n, st in rec["status"].items() if st in ("done", "failed"))
+        return {"node": node_id, "run": rec["run"], "recorded_at": rec.get("recorded_at"), "plan_hash": rec["plan"]["plan_hash"], "option": rec["plan"]["option_id"], "option_title": rec.get("option_title"), "steps_left": left}
+
+    @property
+    def connect_env(self):
+        from envrec_coordinator import connect as C
+        if self._connect_env is None:
+            self._connect_env = C.Env.system(self.state.parent)  # the entry says where the state directory is: the folder that holds `coordinator/`, as for every adapter
+        return self._connect_env
+
+    @connect_env.setter
+    def connect_env(self, env) -> None:
+        self._connect_env = env
+
+    def openwebui_admin(self) -> dict | None:
+        from envrec_coordinator import connect as C
+        return C.read_admin_account(self.connect_env)
+
+    def start_connect_run(self, host: str | None = None, via: str = "web", **kw) -> dict:
+        return self.runs.view(self.runs.start_connect(host, via, **kw).id, events=False)
+
+    def start_disconnect_run(self, host: str, via: str = "web", **kw) -> dict:
+        return self.runs.view(self.runs.start_uninstall(f"connect-{host}", via, **kw).id, events=False)
+
+    def connect_step(self, plan: dict, n: int, action: str = "run"):
+        """Run one step of a connection plan on THIS computer, by the coordinator's own code, and only when the log holds an OWNER approval of this exact plan hash, step and action (the same rule the task desk
+        applies before it sends a step to a node). A plan whose hash is not its own, or one nobody approved, ends `rejected` at once and nothing is touched."""
+        from envrec_coordinator import connect as C
+        rec = LocalStep()
+        asyncio.ensure_future(self._connect_run(rec, plan, n, action, C))
+        return rec
+
+    async def _connect_run(self, rec, plan: dict, n: int, action: str, C) -> None:
+        t0 = time.monotonic()
+        try:
+            digest = C.plan_hash(plan)
+            if plan.get("plan_hash") != digest:
+                rec.status, rec.reason = "rejected", "plan_altered"
+            elif not self._owner_approval(digest, n, action):
+                rec.status, rec.reason = "rejected", "no_owner_approval"
+            else:
+                rec.status = "running"
+                self.log.add("connect_step_started", {"host": plan.get("option_id"), "step": n, "action": action, "plan_hash": digest})
+                rec.result = await asyncio.to_thread(C.run_step, plan, n, action, self.connect_env)
+                rec.status = "done"
+        except C.StepFailed as exc:
+            rec.status, rec.reason = "failed", f"StepFailed: {exc.code}: {exc.text}"
+        except Exception as exc:  # a step never takes the coordinator down
+            rec.status, rec.reason = "failed", f"StepFailed: {type(exc).__name__}"
+        finally:
+            rec.duration_s = round(time.monotonic() - t0, 2)
+            self.log.add("connect_step_ended", {"host": plan.get("option_id"), "step": n, "action": action, "status": rec.status, "reason": rec.reason[:120]})
+            rec.done.set()
+
+    def answer_run(self, run_id: str, qid: str, option: str, by: str = "owner", channel: str | None = None, gesture: str | None = None) -> bool:
+        return self.runs.answer(run_id, qid, option, by, channel, gesture)
+
+    def pick_option(self, run_id: str, option_id: str, channel: str | None = None, by: str | None = None) -> bool:
+        return self.runs.pick_option(run_id, option_id, channel, by)
 
     def run_task(self, node_id: str, task_type: str, via: str = "web", params: dict | None = None) -> dict:
         """The owner asks for a task on one node (the web screen and the CLI call this). Returns the task's view; it ends on its own."""
@@ -271,6 +402,95 @@ class Coordinator:
 
     def web_event(self, type: str, payload: dict) -> None:
         self.log.add(type, payload)
+
+    def _owner_approval(self, plan_hash: str, step: int, action: str) -> str | None:
+        """The id of the OWNER event in the log that approved exactly this plan, step and action, or None. Only an event tagged OWNER counts: the operator's (CLAUDE-CODE) and the code's never do."""
+        for e in reversed(self.log.events("setup_step_approved")):
+            p = e.payload
+            if e.effective_tag == "OWNER" and p.get("plan_hash") == plan_hash and p.get("step") == step and p.get("action") == action:
+                return e.id
+        return None
+
+    def _owner_origin(self, task_id: str, task_type: str | None = None, sensitivity: str | None = None) -> str | None:
+        """The id of the OWNER event in the log that created or approved exactly this task, or None. Only an event tagged OWNER counts: the operator's (CLAUDE-CODE) and the code's never do. A subtask of an
+        owner-approved decomposition counts through the OWNER decision that approved it (`_decomposition_origin`)."""
+        for e in reversed(self.log.events("environment_task_origin")):
+            if e.effective_tag == "OWNER" and e.payload.get("task") == task_id:
+                return e.id
+        return self._decomposition_origin(task_id, task_type, sensitivity)
+
+    def _owner_decision(self, event_id: str, parent: str, subtasks: list[dict]):
+        """The OWNER event `event_id` if it is a human decision (a gesture of the OS dialog, the chat host's dialog or the panel) for exactly this decomposition, else None. The authority is the recorded event:
+        its tag must be OWNER (never the operator's or the code's), its gesture one of HUMAN_GESTURES, and the decomposition it records must be, character for character, the one being approved."""
+        e = next((x for x in self.log.events("decomposition_decision") if x.id == event_id), None)
+        if e is None or e.effective_tag != "OWNER" or e.payload.get("gesture") not in ER.HUMAN_GESTURES:
+            return None
+        try:
+            same = ER.decomposition_canon(e.payload.get("parent", ""), e.payload.get("subtasks", [])) == ER.decomposition_canon(parent, subtasks)
+        except (KeyError, TypeError):
+            return None
+        return e if same else None
+
+    def _decomposition_origin(self, task_id: str, task_type: str | None = None, sensitivity: str | None = None) -> str | None:
+        """For a subtask: the id of the OWNER decision that approved it, or None. The subtask must have been registered against a recorded decomposition (`decomposition_approved`), by its subtask id from the
+        owner's list; the OWNER decision is checked again from the store; the id may be claimed by one task only (the first); and the task actually being sent must be of the listed type and at least the listed level."""
+        regs = [e for e in self.log.events("environment_task_origin") if e.payload.get("kind") == "subtask"]
+        mine = next((e for e in reversed(regs) if e.payload.get("task") == task_id), None)
+        if mine is None:
+            return None
+        rec = next((e for e in self.log.events("decomposition_approved") if e.payload.get("id") == mine.payload.get("decomposition")), None)
+        if rec is None:
+            return None
+        decided = self._owner_decision(rec.payload.get("owner_event", ""), rec.payload.get("parent", ""), rec.payload.get("subtasks", []))
+        if decided is None:
+            return None
+        listed = next((x for x in rec.payload["subtasks"] if x.get("id") == mine.payload.get("subtask_id")), None)
+        if listed is None:
+            return None
+        first = next(e for e in regs if e.payload.get("decomposition") == rec.payload["id"] and e.payload.get("subtask_id") == listed["id"])
+        if first.payload.get("task") != task_id:
+            return None  # that subtask id was already claimed by another task
+        if task_type is not None and task_type != listed["type"]:
+            return None
+        if sensitivity is not None and ER.SENSITIVITIES.index(sensitivity) < ER.SENSITIVITIES.index(listed["sensitivity"]):
+            return None  # a task routed under a LOWER level than the one the owner listed would be more permissive than approved
+        return decided.id
+
+    def own_task(self, task_id: str, *, by: str = "owner", kind: str = "created") -> str:
+        """Record that the owner created (`created`) or accepted a planner's suggestion for (`accepted`) this task. Called by the owner's own screens; the operator passes `by="claude-code"` and the event
+        is then not the owner's. Returns the event id."""
+        return self.log.add("environment_task_origin", {"task": task_id, "kind": kind, **({"by": "claude-code"} if by != "owner" else {})}, owner=True).id
+
+    def record_owner_decision(self, parent_task_id: str, subtasks: list[dict], *, gesture: str, by: str = "owner") -> str:
+        """Called by the layer that shows the dialog (the OS dialog, the chat host's, the panel) AFTER a human gesture: records the owner's decision on one exact decomposition (subtasks with their ids, types
+        and levels). Returns the event id, which `approve_decomposition` then verifies. A call made by the operator is recorded as not the owner's."""
+        listed = [{"id": str(x["id"]), "type": str(x["type"]), "sensitivity": str(x["sensitivity"])} for x in subtasks]
+        return self.log.add("decomposition_decision", {"parent": parent_task_id, "subtasks": listed, "gesture": gesture, **({"by": "claude-code"} if by != "owner" else {})}, owner=True).id
+
+    def approve_decomposition(self, parent_task_id: str, subtasks: list[dict], owner_event_id: str):
+        """Accept a decomposition on the strength of a recorded OWNER decision. `owner_event_id` must name, in this coordinator's store, an OWNER event from a human gesture for exactly this decomposition; the
+        caller's say-so counts for nothing. Returns the decomposition id, or a Refusal (`no_owner_origin`)."""
+        from envrec_coordinator.router import strings as RS
+        from envrec_coordinator.router.model import Refusal
+        ids = [str(x.get("id", "")) for x in subtasks if isinstance(x, dict)]
+        decided = self._owner_decision(owner_event_id, parent_task_id, subtasks) if len(ids) == len(subtasks) and len(set(ids)) == len(ids) and all(ids) else None
+        if decided is None:
+            return Refusal(task_id=parent_task_id, code="no_owner_origin", reason=RS.refusal_text("no_owner_origin"), details={"owner_event": owner_event_id})
+        listed = [{"id": str(x["id"]), "type": str(x["type"]), "sensitivity": str(x["sensitivity"])} for x in subtasks]
+        did = ER.decomposition_id(parent_task_id, listed, owner_event_id)
+        if not any(e.payload.get("id") == did for e in self.log.events("decomposition_approved")):
+            self.log.add("decomposition_approved", {"id": did, "parent": parent_task_id, "subtasks": listed, "count": len(listed), "owner_event": owner_event_id, "gesture": decided.payload["gesture"]})
+        return did
+
+    def own_subtask(self, task_id: str, decomposition_id: str, subtask_id: str) -> str | None:
+        """Register a task as the subtask `subtask_id` of an approved decomposition. The type and level are the owner's listed ones, not the caller's. Returns the OWNER decision it rests on, or None when the
+        decomposition is unknown, the id is not on the owner's list, or another task already holds that id (then it needs a new OWNER decision)."""
+        rec = next((e for e in self.log.events("decomposition_approved") if e.payload.get("id") == decomposition_id), None)
+        listed = next((x for x in rec.payload["subtasks"] if x["id"] == subtask_id), None) if rec is not None else None
+        if listed is None:
+            return None
+        self.log.add("environment_task_origin", {"task": task_id, "kind": "subtask", "decomposition": decomposition_id, "subtask_id": subtask_id, "task_type": listed["type"], "sensitivity": listed["sensitivity"]})
+        return self._decomposition_origin(task_id)
 
     async def stop(self) -> None:
         if self._udp is not None:

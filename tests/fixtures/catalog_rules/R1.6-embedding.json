@@ -1,0 +1,31 @@
+{
+ "rule": "R1.6-embedding",
+ "kind": "file",
+ "says": "an embedding model is never a chat model",
+ "cases": [
+  {
+   "name": "a pooling type in the header",
+   "facts": {
+    "gguf.arch.pooling_type": 3
+   },
+   "expect": {
+    "kind": "embedding",
+    "requires_task_keys": [
+     "embedding"
+    ]
+   }
+  },
+  {
+   "name": "the hub says feature extraction",
+   "facts": {
+    "hub.pipeline_tag": "feature-extraction"
+   },
+   "expect": {
+    "kind": "embedding",
+    "requires_task_keys": [
+     "embedding"
+    ]
+   }
+  }
+ ]
+}

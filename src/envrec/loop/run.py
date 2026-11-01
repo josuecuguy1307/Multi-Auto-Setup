@@ -32,7 +32,7 @@ from envrec.contracts import (
     ToolSpec,
     new_id,
 )
-from envrec.discovery.sanitize import Salts, quoted
+from envrec.discovery.sanitize import Salts, quoted, quoted_counted
 from envrec.guard import LOOP_ACTIVE
 from envrec.loop.menu import MenuEntry, build_menu, eligible_tools
 from envrec.loop.prompts import R45_ACTIONS, R45_PROMPT, RETRY_HINT, SYSTEM_PROMPT
@@ -209,7 +209,7 @@ class Loop:
                                   proto.card() if proto is not None else "",
                                   (R45_ACTIONS if self.workbench else "") + (" · advance(to)" if proto is not None else "") + (" · extend_to(target_id)" if cands else ""),
                                   self.mission.render() if self.mission else "", self._skill_note or self._kept_skills(proto), cands, forward,
-                                  self._missing_text(current, need, menu))
+                                  self._missing_text(current, need, menu), proto.shown_keys() if live else None)
                 self._skill_note = ""
                 self._log(Actor.loop, "view_built", {"target": current.id, "menu": [e.name for e in menu],
                                                      "forward": forward, "view_chars": len(view), "view": view})  # the text itself: the audit of a run needs what the model was shown, not its digest
@@ -355,6 +355,14 @@ class Loop:
         if t == ActionType.record_unknown:
             return current, self._record_unknown(action, current, fallback)
         if t == ActionType.ask_human:
+            dedicated = next((e.name for e in menu if getattr(e.spec, "asks_owner", False)), None)
+            if dedicated is not None:  # the owner is asked by a tool of this step, with its closed options: `ask_human` is not terminal here, it is refused with the tool's name and the model chooses again
+                proto = self._proto(current)
+                self.summary.protocol_refusals += 1
+                reason = f"ask_human is not how the owner is asked in this step: use the tool {dedicated}, which is on this menu"
+                self._log(Actor.loop, "protocol_refused", {"target": current.id, "state": proto.state if proto is not None else None, "action": "ask_human", "code": "owner_question_tool_on_menu",
+                                                           "tool": dedicated, "reason": reason})
+                return current, self._reject(action, reason)
             return current, self._ask(action, current)
         if t == ActionType.extend_to:
             return self._extend(action, current)
@@ -574,7 +582,7 @@ class Loop:
             evidence=[Evidence(provider="human", probe="ask_human", event_id=evt.id, confidence=1.0,
                                limitations=["stated by the human, not measured"])]))
         self._log(Actor.human, "human_answer", {"key": key})
-        return f"the human answered for {key}: " + quoted(answer, 800)  # what the owner said, quoted: it reaches the model on the next turn
+        return f"the human answered for {key}: " + quoted_counted(answer, 800)  # what the owner said, quoted: it reaches the model on the next turn
 
     def _next_ring_target(self, current: Target, ring: int | None = None) -> Target | None:
         """The nearest unvisited target on a further ring that hangs off the current one."""

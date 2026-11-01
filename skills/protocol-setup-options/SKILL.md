@@ -11,3 +11,6 @@ Each turn you choose ONE action from the menu. The owner's questions are closed 
 
 ## One step
 `options` has two exits. `done` needs every option explained; `no_options` needs the fact that no option survived the filters. `build_options` and `explain_option` close the step when an exit's evidence is in. Nothing is installed.
+
+## Language
+The owner reads English. Write every sentence meant for the owner (an explanation, a finding, a reason) in English, in plain words. Names, ids and numbers stay as they are.

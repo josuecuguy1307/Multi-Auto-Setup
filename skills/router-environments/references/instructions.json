@@ -1,0 +1,3 @@
+{
+ "instr:verify": "You are verifying the output of another task. Below is that output. Check it against the original request and report whether it is correct, with the specific reasons. If it is wrong or incomplete, say exactly what is missing. Do not rewrite it."
+}

@@ -1,0 +1,20 @@
+{
+ "rule": "R2.1-real-size",
+ "kind": "file",
+ "says": "the size in the row is the hub listing's, and a disagreement is recorded",
+ "cases": [
+  {
+   "name": "the catalog declared 1 GiB, the listing at the pinned revision says 2",
+   "facts": {
+    "file.bytes": 1073741824,
+    "hub.listing_size": 2147483648
+   },
+   "expect": {
+    "bytes": 2147483648,
+    "conflict_fields": [
+     "bytes"
+    ]
+   }
+  }
+ ]
+}

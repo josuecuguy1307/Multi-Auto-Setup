@@ -30,6 +30,12 @@ class OsLayer(Protocol):
     def is_private(self, path: Path) -> bool:
         """True when only the current user can read the file or folder."""
 
+    def make_executable(self, path: Path) -> None:
+        """Let the current user run this file as a program (the execute bit; a no-op where the system has none)."""
+
+    def spawn_detached(self, argv: list[str], cwd: Path, log_path: Path, env: dict[str, str] | None = None) -> int:
+        """Start a program that outlives its parent, with no console and no input, its output going to `log_path`. Returns its process id. No shell: `argv` is the whole command."""
+
 
 def family() -> str:
     if sys.platform == "win32":
@@ -39,12 +45,32 @@ def family() -> str:
     return "linux"
 
 
+def config_root(home: Path, env: dict[str, str] | None = None) -> Path:
+    """The folder an application keeps this user's settings in: the roaming settings folder on Windows, the XDG config folder (or `~/.config`) elsewhere. What each tool puts inside is data in a skill."""
+    env = os.environ if env is None else env
+    if family() == "windows":
+        return Path(env["APPDATA"]) if env.get("APPDATA") else home / "AppData" / "Roaming"
+    return Path(env["XDG_CONFIG_HOME"]) if env.get("XDG_CONFIG_HOME") else home / ".config"
+
+
+def child_environment(env: dict[str, str] | None = None) -> dict[str, str]:
+    """The few variables a child process needs on this operating system to run at all (nothing else is passed on: no secret of the owner's environment)."""
+    env = os.environ if env is None else env
+    keys = ("SYSTEMROOT", "USERPROFILE", "TEMP", "TMP") if family() == "windows" else ("TMPDIR",)
+    return {k: env[k] for k in keys if k in env}
+
+
 def current() -> OsLayer:
     if family() == "windows":
         from envrec_os.windows import WindowsLayer
         return WindowsLayer()
     from envrec_os.posix import PosixLayer
     return PosixLayer(family())
+
+
+def set_executable(path: Path, executable: bool) -> None:
+    """Mode bits of an unpacked file: owner-writable, executable or not (a no-op beyond the read-only flag on Windows)."""
+    os.chmod(path, 0o755 if executable else 0o644)
 
 
 def _expand(template: str, env: dict[str, str] | None = None) -> Path:

@@ -1,0 +1,159 @@
+{
+ "label": "REAL: typed results of the five analysis probes run in-process on the coordinator Mac (macOS arm64) on 2026-10-30; no host name, user name or address among these facts",
+ "facts": {
+  "machine.ai_cli_count": {
+   "value": 2,
+   "status": "tested",
+   "probe": "node_ai_clis",
+   "limits": []
+  },
+  "machine.ai_clis": {
+   "value": [
+    {
+     "id": "claude",
+     "name": "Claude Code",
+     "kind": "subscription_cli",
+     "installed": true,
+     "set_up": true,
+     "note": "'set up' means its configuration folder or file exists; no login or token was read"
+    },
+    {
+     "id": "codex",
+     "name": "Codex CLI",
+     "kind": "subscription_cli",
+     "installed": true,
+     "set_up": true,
+     "note": "'set up' means its configuration folder or file exists; no login or token was read"
+    }
+   ],
+   "status": "tested",
+   "probe": "node_ai_clis",
+   "limits": []
+  },
+  "machine.api_key_variable_names": {
+   "value": [],
+   "status": "tested",
+   "probe": "node_ai_clis",
+   "limits": []
+  },
+  "machine.disk_free_gib": {
+   "value": 40.5,
+   "status": "tested",
+   "probe": "node_memory_fit",
+   "limits": []
+  },
+  "machine.gpu_count": {
+   "value": 1,
+   "status": "tested",
+   "probe": "node_gpu",
+   "limits": []
+  },
+  "machine.gpus": {
+   "value": [
+    {
+     "vendor": "Apple",
+     "name": "Apple M3",
+     "vram_gib": null,
+     "cores": "10",
+     "memory": "unified",
+     "source": "system_profiler"
+    }
+   ],
+   "status": "tested",
+   "probe": "node_gpu",
+   "limits": []
+  },
+  "machine.largest_model_limited_by": {
+   "value": "catalog_top",
+   "status": "tested",
+   "probe": "node_memory_fit",
+   "limits": []
+  },
+  "machine.largest_model_params_b": {
+   "value": 13.0,
+   "status": "tested",
+   "probe": "node_memory_fit",
+   "limits": []
+  },
+  "machine.model_path": {
+   "value": "unified",
+   "status": "tested",
+   "probe": "node_memory_fit",
+   "limits": []
+  },
+  "machine.os.arch": {
+   "value": "arm64",
+   "status": "tested",
+   "probe": "node_os_details",
+   "limits": []
+  },
+  "machine.os.build": {
+   "value": "24.6.0",
+   "status": "tested",
+   "probe": "node_os_details",
+   "limits": []
+  },
+  "machine.os.name": {
+   "value": "macOS",
+   "status": "tested",
+   "probe": "node_os_details",
+   "limits": []
+  },
+  "machine.os.version": {
+   "value": "15.7.1",
+   "status": "tested",
+   "probe": "node_os_details",
+   "limits": []
+  },
+  "machine.ram_available_gib": {
+   "value": 5.0,
+   "status": "tested",
+   "probe": "node_memory_fit",
+   "limits": []
+  },
+  "machine.ram_total_gib": {
+   "value": 16.0,
+   "status": "tested",
+   "probe": "node_memory_fit",
+   "limits": []
+  },
+  "machine.runtime_count": {
+   "value": 1,
+   "status": "tested",
+   "probe": "node_runtimes",
+   "limits": []
+  },
+  "machine.runtimes": {
+   "value": [
+    {
+     "id": "ollama",
+     "name": "Ollama",
+     "installed": true,
+     "running": true,
+     "port": 11434,
+     "answers_on_loopback": true,
+     "exposed_beyond_loopback": null,
+     "models": [
+      {
+       "name": "qwen3.5:9b",
+       "size_gib": 7.11
+      },
+      {
+       "name": "aleph-ggml-org-embeddinggemma-300m-qat-q8-0-gg:latest",
+       "size_gib": 0.31
+      }
+     ]
+    }
+   ],
+   "status": "tested",
+   "probe": "node_runtimes",
+   "limits": []
+  },
+  "machine.vram_gib": {
+   "value": null,
+   "status": "tested",
+   "probe": "node_memory_fit",
+   "limits": []
+  }
+ }
+}

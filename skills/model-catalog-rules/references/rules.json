@@ -1,0 +1,1474 @@
+{
+ "version": 1,
+ "skill": "model-catalog-rules",
+ "label": "declared-by-project (the rules); every fact they read is verified-by-code (GGUF header, hub listing at a pinned revision, the runtime's own source at its pinned commit)",
+ "parameters": {
+  "default_context": 4096,
+  "kv_bytes_per_element": 2,
+  "overhead_fixed_gib": 1.0,
+  "overhead_weight_share": 0.1,
+  "available_margin": 0.15,
+  "total_ram_share": 0.7,
+  "vram_share": 0.7,
+  "disk_temp_factor": 1.0,
+  "quant_nominal_bits": {
+   "Q4_0": 4.0,
+   "Q4_K_M": 4.0,
+   "Q8_0": 8.0
+  },
+  "license_classes_offered": [
+   "permissive",
+   "community-host-run"
+  ],
+  "max_params_b": 9,
+  "unified_gpu_max_share": 0.66,
+  "runtime_source": "llama.cpp"
+ },
+ "template_markers": {
+  "thinking": [
+   "<think>"
+  ],
+  "tools": [
+   "<tool_call>",
+   "tool_calls"
+  ]
+ },
+ "runtime_sources": {
+  "llama.cpp": {
+   "label": "the runtime's own architecture table at its pinned commit",
+   "host": "raw.githubusercontent.com",
+   "table_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/{commit}/src/llama-arch.cpp",
+   "pattern": "\\{\\s*LLM_ARCH_[A-Z0-9_]+\\s*,\\s*\"([^\"]+)\"\\s*\\}",
+   "workflow_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/{commit}/.github/workflows/release.yml",
+   "backend_evidence": [
+    {
+     "os": "macos",
+     "arch": "arm64",
+     "backend": "metal",
+     "anchor": "os: macos-26",
+     "within": 6,
+     "needle": "GGML_METAL_EMBED_LIBRARY=ON",
+     "note": "Metal is compiled into the Apple silicon build"
+    },
+    {
+     "os": "macos",
+     "arch": "amd64",
+     "backend": "cpu",
+     "anchor": "os: macos-15-intel",
+     "within": 8,
+     "needle": "GGML_METAL=OFF",
+     "note": "Metal is turned off in the Intel Mac build"
+    }
+   ]
+  }
+ },
+ "tasks": {
+  "default": [
+   "chat"
+  ],
+  "known": [
+   "chat",
+   "completion",
+   "vision",
+   "audio",
+   "embedding",
+   "rerank",
+   "speculative_draft",
+   "moderation",
+   "other_modality"
+  ]
+ },
+ "os_families": {
+  "label": "declared-by-project: how an operating-system NAME maps to a family, used only when the machine did not report `machine.os.family` itself (an analysis stored before that fact existed). A name not listed gives no family and no guess.",
+  "macos": [
+   "macOS",
+   "Darwin"
+  ],
+  "windows": [
+   "Windows"
+  ],
+  "linux": [
+   "Linux",
+   "Ubuntu",
+   "Debian",
+   "Fedora",
+   "Arch",
+   "Red Hat",
+   "CentOS",
+   "SUSE",
+   "openSUSE",
+   "Alpine",
+   "Rocky",
+   "AlmaLinux",
+   "Linux Mint",
+   "Pop!_OS",
+   "Raspbian",
+   "Raspberry Pi OS",
+   "NixOS",
+   "Manjaro",
+   "Amazon Linux",
+   "Oracle Linux",
+   "Kali",
+   "elementary",
+   "Zorin"
+  ]
+ },
+ "license_classes": {
+  "permissive": {
+   "label": "permissive license",
+   "offered": true
+  },
+  "community-host-run": {
+   "label": "Meta Llama community license: not permissive; allowed here only as a model the owner runs on their own machines (host-run), not redistributed or embedded in a product; the license name is recorded",
+   "offered": true
+  }
+ },
+ "licenses": {
+  "apache-2.0": {
+   "name": "Apache License 2.0",
+   "class": "permissive"
+  },
+  "mit": {
+   "name": "MIT License",
+   "class": "permissive"
+  },
+  "bsd-2-clause": {
+   "name": "BSD 2-Clause License",
+   "class": "permissive"
+  },
+  "bsd-3-clause": {
+   "name": "BSD 3-Clause License",
+   "class": "permissive"
+  },
+  "isc": {
+   "name": "ISC License",
+   "class": "permissive"
+  },
+  "unlicense": {
+   "name": "The Unlicense",
+   "class": "permissive"
+  },
+  "llama2": {
+   "name": "Llama 2 Community License",
+   "class": "community-host-run",
+   "publisher": "Meta"
+  },
+  "llama3": {
+   "name": "Meta Llama 3 Community License",
+   "class": "community-host-run",
+   "publisher": "Meta"
+  },
+  "llama3.1": {
+   "name": "Llama 3.1 Community License",
+   "class": "community-host-run",
+   "publisher": "Meta"
+  },
+  "llama3.2": {
+   "name": "Llama 3.2 Community License",
+   "class": "community-host-run",
+   "publisher": "Meta"
+  },
+  "llama3.3": {
+   "name": "Llama 3.3 Community License",
+   "class": "community-host-run",
+   "publisher": "Meta"
+  },
+  "llama4": {
+   "name": "Llama 4 Community License",
+   "class": "community-host-run",
+   "publisher": "Meta"
+  }
+ },
+ "kv_estimate_markers": [
+  {
+   "fact": "gguf.arch.attention.sliding_window",
+   "op": "exists",
+   "note": "sliding-window attention"
+  },
+  {
+   "fact": "gguf.arch.ssm.state_size",
+   "op": "exists",
+   "note": "hybrid (state-space) layers"
+  },
+  {
+   "fact": "gguf.arch.attention.kv_lora_rank",
+   "op": "exists",
+   "note": "multi-head latent attention"
+  }
+ ],
+ "build_matrix": {
+  "label": "declared-by-project (which build each kind of machine gets); the facts it reads are measured by probes, and every build named here must exist in the catalog (else `no_build_in_catalog`)",
+  "backends": {
+   "cpu": {
+    "supported": true,
+    "memory": "ram"
+   },
+   "metal": {
+    "supported": true,
+    "memory": "unified",
+    "note": "Apple silicon: the GPU is Metal and shares the one memory"
+   },
+   "cuda": {
+    "supported": true,
+    "memory": "vram"
+   },
+   "vulkan": {
+    "supported": true,
+    "memory": "vram"
+   },
+   "rocm": {
+    "supported": false,
+    "refuse": "backend_not_supported",
+    "text": "ROCm is not supported yet: the catalog has no ROCm build and no probe says whether ROCm is installed; an AMD graphics card uses the Vulkan build instead"
+   }
+  },
+  "cells": [
+   {
+    "id": "macos-arm64-metal",
+    "when": {
+     "os": "macos",
+     "arch": "arm64",
+     "path": "unified"
+    },
+    "backend": "metal",
+    "memory": "unified"
+   },
+   {
+    "id": "macos-arm64-cpu",
+    "when": {
+     "os": "macos",
+     "arch": "arm64",
+     "path": "cpu"
+    },
+    "backend": "cpu",
+    "memory": "ram",
+    "build": "metal",
+    "text": "the only Apple-silicon build has Metal compiled in; here it runs with no layers on the GPU"
+   },
+   {
+    "id": "macos-amd64-cpu",
+    "when": {
+     "os": "macos",
+     "arch": "amd64",
+     "path": "cpu"
+    },
+    "backend": "cpu",
+    "memory": "ram"
+   },
+   {
+    "id": "macos-amd64-gpu",
+    "when": {
+     "os": "macos",
+     "arch": "amd64",
+     "path": "gpu"
+    },
+    "refuse": "unsupported_cell",
+    "text": "An Intel Mac with a separate graphics card: the prebuilt macOS Intel build has Metal turned off, so there is no GPU build for it"
+   },
+   {
+    "id": "unified-memory-not-apple-silicon",
+    "when": {
+     "path": "unified"
+    },
+    "refuse": "unsupported_cell",
+    "text": "Shared memory was reported on a machine that is not Apple silicon: there is no build to match, so nothing is guessed"
+   },
+   {
+    "id": "linux-nvidia-cuda",
+    "when": {
+     "os": "linux",
+     "arch": [
+      "amd64",
+      "arm64"
+     ],
+     "path": "gpu",
+     "vendor": "NVIDIA"
+    },
+    "backend": "cuda",
+    "memory": "vram"
+   },
+   {
+    "id": "linux-amd-vulkan",
+    "when": {
+     "os": "linux",
+     "arch": [
+      "amd64",
+      "arm64"
+     ],
+     "path": "gpu",
+     "vendor": "AMD"
+    },
+    "backend": "vulkan",
+    "memory": "vram"
+   },
+   {
+    "id": "linux-intel-vulkan",
+    "when": {
+     "os": "linux",
+     "arch": [
+      "amd64",
+      "arm64"
+     ],
+     "path": "gpu",
+     "vendor": "Intel"
+    },
+    "backend": "vulkan",
+    "memory": "vram"
+   },
+   {
+    "id": "linux-other-gpu",
+    "when": {
+     "os": "linux",
+     "path": "gpu"
+    },
+    "refuse": "unsupported_cell",
+    "text": "A graphics card from a maker this version has no build for"
+   },
+   {
+    "id": "linux-cpu",
+    "when": {
+     "os": "linux",
+     "arch": [
+      "amd64",
+      "arm64"
+     ],
+     "path": "cpu"
+    },
+    "backend": "cpu",
+    "memory": "ram"
+   },
+   {
+    "id": "windows-nvidia-vulkan",
+    "when": {
+     "os": "windows",
+     "arch": [
+      "amd64",
+      "arm64"
+     ],
+     "path": "gpu",
+     "vendor": "NVIDIA"
+    },
+    "backend": "vulkan",
+    "memory": "vram"
+   },
+   {
+    "id": "windows-amd-vulkan",
+    "when": {
+     "os": "windows",
+     "arch": [
+      "amd64",
+      "arm64"
+     ],
+     "path": "gpu",
+     "vendor": "AMD"
+    },
+    "backend": "vulkan",
+    "memory": "vram"
+   },
+   {
+    "id": "windows-intel-vulkan",
+    "when": {
+     "os": "windows",
+     "arch": [
+      "amd64",
+      "arm64"
+     ],
+     "path": "gpu",
+     "vendor": "Intel"
+    },
+    "backend": "vulkan",
+    "memory": "vram"
+   },
+   {
+    "id": "windows-other-gpu",
+    "when": {
+     "os": "windows",
+     "path": "gpu"
+    },
+    "refuse": "unsupported_cell",
+    "text": "A graphics card from a maker this version has no build for"
+   },
+   {
+    "id": "windows-cpu",
+    "when": {
+     "os": "windows",
+     "arch": [
+      "amd64",
+      "arm64"
+     ],
+     "path": "cpu"
+    },
+    "backend": "cpu",
+    "memory": "ram"
+   }
+  ]
+ },
+ "rules": [
+  {
+   "id": "R1.1-projector",
+   "section": "1",
+   "scope": "file",
+   "title": "A vision projector (mmproj) is not the model",
+   "when": {
+    "any": [
+     {
+      "fact": "file.name",
+      "op": "matches",
+      "value": "(?i)mmproj"
+     },
+     {
+      "fact": "gguf.general.architecture",
+      "op": "eq",
+      "value": "clip"
+     },
+     {
+      "fact": "gguf.general.type",
+      "op": "eq",
+      "value": "mmproj"
+     },
+     {
+      "all": [
+       {
+        "fact": "gguf.general.architecture",
+        "op": "missing"
+       },
+       {
+        "fact": "file.size_ratio_to_repo_largest",
+        "op": "lt",
+        "value": 0.1
+       }
+      ]
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "set_kind",
+     "kind": "vision-projector"
+    },
+    {
+     "action": "companion",
+     "reason": "a vision projector is never an option by itself; it is attached to its model only when the task needs vision"
+    }
+   ]
+  },
+  {
+   "id": "R1.2-adapter",
+   "section": "1",
+   "scope": "file",
+   "title": "A LoRA adapter needs a base model",
+   "when": {
+    "any": [
+     {
+      "fact": "gguf.general.type",
+      "op": "eq",
+      "value": "adapter"
+     },
+     {
+      "fact": "gguf.adapter.type",
+      "op": "exists"
+     },
+     {
+      "fact": "gguf.has_lora_tensors",
+      "op": "eq",
+      "value": true
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "set_kind",
+     "kind": "adapter"
+    },
+    {
+     "action": "exclude",
+     "reason": "a LoRA adapter is not a model: it needs a base model"
+    }
+   ]
+  },
+  {
+   "id": "R1.3-vocab-only",
+   "section": "1",
+   "scope": "file",
+   "title": "A vocabulary-only GGUF has no weights",
+   "when": {
+    "any": [
+     {
+      "fact": "gguf.general.type",
+      "op": "eq",
+      "value": "vocab"
+     },
+     {
+      "all": [
+       {
+        "fact": "gguf.tensor_count",
+        "op": "eq",
+        "value": 0
+       },
+       {
+        "fact": "gguf.general.architecture",
+        "op": "exists"
+       }
+      ]
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "set_kind",
+     "kind": "vocab"
+    },
+    {
+     "action": "exclude",
+     "reason": "a vocabulary-only file has no weight tensors"
+    }
+   ]
+  },
+  {
+   "id": "R1.4-auxiliary-file",
+   "section": "1",
+   "scope": "file",
+   "title": "An importance matrix, tokenizer or config file is not a model",
+   "when": {
+    "any": [
+     {
+      "fact": "file.name",
+      "op": "matches",
+      "value": "(?i)(imatrix|\\.dat$|\\.json$|\\.txt$|\\.md$|tokenizer)"
+     },
+     {
+      "fact": "gguf.general.type",
+      "op": "eq",
+      "value": "imatrix"
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "set_kind",
+     "kind": "auxiliary"
+    },
+    {
+     "action": "exclude",
+     "reason": "an importance matrix, tokenizer or configuration file is not a model"
+    }
+   ]
+  },
+  {
+   "id": "R1.5-draft-model",
+   "section": "1",
+   "scope": "file",
+   "title": "A draft (speculative) model is not a general option",
+   "when": {
+    "any": [
+     {
+      "fact": "file.name",
+      "op": "matches",
+      "value": "(?i)(^|[-_.])draft([-_.]|$)"
+     },
+     {
+      "fact": "file.repo",
+      "op": "matches",
+      "value": "(?i)(^|[-_./])draft(er)?([-_.]|$)"
+     },
+     {
+      "fact": "hub.tags",
+      "op": "contains",
+      "value": "draft-model"
+     },
+     {
+      "fact": "gguf.general.architecture",
+      "op": "matches",
+      "value": "(?i)^(dflash|eagle|medusa)"
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "set_kind",
+     "kind": "draft"
+    },
+    {
+     "action": "require_task",
+     "task": "speculative_draft",
+     "reason": "a draft model only speeds up a larger model; it is not offered for general use"
+    }
+   ]
+  },
+  {
+   "id": "R1.6-reranker",
+   "section": "1",
+   "scope": "file",
+   "title": "A reranker is never a chat model",
+   "when": {
+    "any": [
+     {
+      "fact": "gguf.arch.pooling_type",
+      "op": "eq",
+      "value": 4
+     },
+     {
+      "fact": "hub.pipeline_tag",
+      "op": "eq",
+      "value": "text-ranking"
+     },
+     {
+      "fact": "file.repo",
+      "op": "matches",
+      "value": "(?i)rerank"
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "set_kind",
+     "kind": "reranker"
+    },
+    {
+     "action": "require_task",
+     "task": "rerank",
+     "reason": "a reranker scores passages, it does not chat: only for retrieval tasks"
+    }
+   ]
+  },
+  {
+   "id": "R1.6-embedding",
+   "section": "1",
+   "scope": "file",
+   "title": "An embedding model is never a chat model",
+   "when": {
+    "any": [
+     {
+      "fact": "gguf.arch.pooling_type",
+      "op": "gt",
+      "value": 0
+     },
+     {
+      "fact": "hub.pipeline_tag",
+      "op": "in",
+      "value": [
+       "feature-extraction",
+       "sentence-similarity"
+      ]
+     },
+     {
+      "fact": "file.repo",
+      "op": "matches",
+      "value": "(?i)embed"
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "set_kind",
+     "kind": "embedding"
+    },
+    {
+     "action": "require_task",
+     "task": "embedding",
+     "reason": "an embedding model produces vectors, not chat answers: only for embedding and retrieval tasks"
+    }
+   ],
+   "skip_if_kind": [
+    "reranker"
+   ]
+  },
+  {
+   "id": "R2.1-real-size",
+   "section": "2",
+   "scope": "estimate",
+   "title": "Use the real file size, not parameters x bits",
+   "effects": [
+    {
+     "action": "use_listing_size",
+     "reason": "the size comes from the hub listing at the pinned revision (and the header read); a quantization name is an effective bit width, not an exact one"
+    }
+   ]
+  },
+  {
+   "id": "R2.2-shards",
+   "section": "2",
+   "scope": "shards",
+   "title": "Split GGUF shards: size is the sum, every shard is downloaded and checked",
+   "effects": [
+    {
+     "action": "sum_shards",
+     "pattern": "-(\\d{5})-of-(\\d{5})\\.gguf$"
+    }
+   ]
+  },
+  {
+   "id": "R2.3-moe",
+   "section": "2",
+   "scope": "file",
+   "title": "Mixture of experts: total parameters decide memory, active parameters decide speed",
+   "effects": [
+    {
+     "action": "keep_active_params",
+     "reason": "both counts are stored: params_b is the total (memory), params_active_b the active part (speed)"
+    }
+   ]
+  },
+  {
+   "id": "R2.4-kv-cache",
+   "section": "2",
+   "scope": "estimate",
+   "title": "The KV cache grows with the context",
+   "effects": [
+    {
+     "action": "kv_cache",
+     "reason": "2 x layers x kv_heads x head_dim x context x bytes per element, read from the header; the context is always set explicitly"
+    }
+   ]
+  },
+  {
+   "id": "R2.5-runtime-overhead",
+   "section": "2",
+   "scope": "estimate",
+   "title": "Runtime overhead is a fixed allowance plus a share of the weights",
+   "effects": [
+    {
+     "action": "runtime_overhead",
+     "reason": "a fixed allowance plus a percentage of the weights, labeled as an estimate"
+    }
+   ]
+  },
+  {
+   "id": "R3.1-available-memory",
+   "section": "3",
+   "scope": "machine",
+   "title": "Compare against available memory at probe time, less a margin",
+   "effects": [
+    {
+     "action": "budget_from_available",
+     "reason": "the free memory when it was measured, less a margin, not the total"
+    }
+   ]
+  },
+  {
+   "id": "R3.2-memory-path",
+   "section": "3",
+   "scope": "machine",
+   "title": "A GPU helps only with enough dedicated memory; the explanation follows machine.model_path",
+   "effects": [
+    {
+     "action": "budget_follows_path",
+     "reason": "VRAM counts only when the probe says models run on the GPU; an integrated GPU shares system RAM and adds none"
+    }
+   ]
+  },
+  {
+   "id": "R3.3-disk",
+   "section": "3",
+   "scope": "machine",
+   "title": "Disk must cover every file plus temporary download space",
+   "effects": [
+    {
+     "action": "disk_with_temp",
+     "reason": "all files plus room for the file being downloaded"
+    }
+   ]
+  },
+  {
+   "id": "R3.6-build-matrix",
+   "section": "3",
+   "scope": "build",
+   "title": "The build comes from a matrix of the machine's facts (OS x architecture x where models run x graphics maker); a cell with no build refuses with a typed reason",
+   "effects": [
+    {
+     "action": "build_matrix",
+     "reason": "the first cell that matches the measured facts names the backend; a cell the matrix marks unsupported, or one whose build the catalog lacks, ends in a typed refusal, never in a guessed fallback"
+    }
+   ]
+  },
+  {
+   "id": "R3.7-unified-memory",
+   "section": "3",
+   "scope": "machine",
+   "title": "On Apple silicon the GPU path is Metal with the one shared memory: the budget is the unified memory available, within what the GPU may wire",
+   "effects": [
+    {
+     "action": "budget_unified",
+     "reason": "the unified memory that was free when measured, less a margin, and never more than the share of the total that Metal lets the GPU use"
+    }
+   ]
+  },
+  {
+   "id": "R3.4-fitting-variants",
+   "section": "3",
+   "scope": "option",
+   "title": "When it does not fit, say so with the numbers and offer the variants that fit",
+   "effects": [
+    {
+     "action": "offer_fitting_variants",
+     "reason": "a smaller quantization or a smaller model that fits; the owner picks"
+    }
+   ]
+  },
+  {
+   "id": "R3.5-measured-wins",
+   "section": "3",
+   "scope": "option",
+   "title": "Measured here beats the estimate",
+   "effects": [
+    {
+     "action": "measured_replaces_estimate",
+     "reason": "resident memory and tokens per second after the minimal call replace the estimate and change its label"
+    }
+   ]
+  },
+  {
+   "id": "R4.5-guard-model",
+   "section": "4",
+   "scope": "file",
+   "title": "A safety (guard) classifier is not a chat model",
+   "skip_if_kind": [
+    "vision-projector",
+    "adapter",
+    "vocab",
+    "auxiliary",
+    "embedding",
+    "reranker",
+    "draft"
+   ],
+   "when": {
+    "any": [
+     {
+      "fact": "file.repo",
+      "op": "matches",
+      "value": "(?i)(guardian|[-_/]guard[-_.]|llama-guard|(^|[-_/])shield|safeguard)"
+     },
+     {
+      "fact": "hub.tags",
+      "op": "contains",
+      "value": "safety-classifier"
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "set_kind",
+     "kind": "guard"
+    },
+    {
+     "action": "require_task",
+     "task": "moderation",
+     "reason": "a guard model classifies text as safe or unsafe; it does not hold a conversation: only for moderation tasks"
+    }
+   ]
+  },
+  {
+   "id": "R4.6-other-modality",
+   "section": "4",
+   "scope": "file",
+   "title": "A model for another modality (images, video, 3D) is not a language model",
+   "skip_if_kind": [
+    "vision-projector",
+    "adapter",
+    "vocab",
+    "auxiliary",
+    "embedding",
+    "reranker",
+    "draft",
+    "guard"
+   ],
+   "when": {
+    "fact": "hub.pipeline_tag",
+    "op": "in",
+    "value": [
+     "text-to-image",
+     "image-to-image",
+     "text-to-video",
+     "image-to-video",
+     "text-to-3d",
+     "image-to-3d",
+     "unconditional-image-generation",
+     "image-classification",
+     "object-detection",
+     "image-segmentation",
+     "depth-estimation",
+     "zero-shot-image-classification",
+     "video-classification"
+    ]
+   },
+   "effects": [
+    {
+     "action": "set_kind",
+     "kind": "other-modality"
+    },
+    {
+     "action": "require_task",
+     "task": "other_modality",
+     "reason": "this model makes or reads images, video or 3D, it is not a language model: only for a task of its own kind"
+    }
+   ]
+  },
+  {
+   "id": "R4.2-audio",
+   "section": "4",
+   "scope": "file",
+   "title": "Audio and speech models only when the task needs audio",
+   "skip_if_kind": [
+    "vision-projector",
+    "adapter",
+    "vocab",
+    "auxiliary",
+    "embedding",
+    "reranker",
+    "draft",
+    "guard",
+    "other-modality"
+   ],
+   "when": {
+    "any": [
+     {
+      "fact": "hub.pipeline_tag",
+      "op": "in",
+      "value": [
+       "automatic-speech-recognition",
+       "audio-text-to-text",
+       "text-to-speech"
+      ]
+     },
+     {
+      "fact": "file.repo",
+      "op": "matches",
+      "value": "(?i)(speech|audio|whisper)"
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "set_kind",
+     "kind": "speech"
+    },
+    {
+     "action": "require_task",
+     "task": "audio",
+     "reason": "a speech or audio model is not a general chat model: only when the task needs audio"
+    }
+   ]
+  },
+  {
+   "id": "R4.2-vision",
+   "section": "4",
+   "scope": "file",
+   "title": "A vision model is offered when it fits with its projector counted, labeled 'includes vision'",
+   "skip_if_kind": [
+    "vision-projector",
+    "adapter",
+    "vocab",
+    "auxiliary",
+    "embedding",
+    "reranker",
+    "draft",
+    "guard",
+    "other-modality",
+    "speech"
+   ],
+   "when": {
+    "any": [
+     {
+      "fact": "hub.pipeline_tag",
+      "op": "in",
+      "value": [
+       "image-text-to-text",
+       "visual-question-answering",
+       "image-to-text",
+       "any-to-any"
+      ]
+     },
+     {
+      "fact": "repo.has_companion_projector",
+      "op": "eq",
+      "value": true
+     },
+     {
+      "fact": "gguf.arch.vision.block_count",
+      "op": "exists"
+     },
+     {
+      "fact": "file.repo",
+      "op": "matches",
+      "value": "(?i)(vision|[-_]vl[-_]|omni)"
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "set_kind",
+     "kind": "vision-language"
+    },
+    {
+     "action": "count_projector",
+     "reason": "the projector file is part of what the model needs: it is counted in the memory and disk numbers and downloaded with the model"
+    },
+    {
+     "action": "label",
+     "label": "includes vision (the projector is counted in the memory and disk numbers)"
+    }
+   ]
+  },
+  {
+   "id": "R4.1-base-model",
+   "section": "4",
+   "scope": "file",
+   "title": "A base model cannot take chat turns",
+   "skip_if_kind": [
+    "vision-projector",
+    "adapter",
+    "vocab",
+    "auxiliary",
+    "embedding",
+    "reranker",
+    "draft",
+    "guard",
+    "speech",
+    "vision-language",
+    "other-modality"
+   ],
+   "when": {
+    "any": [
+     {
+      "fact": "gguf.general.finetune",
+      "op": "eq",
+      "value": "base"
+     },
+     {
+      "fact": "file.name",
+      "op": "matches",
+      "value": "(?i)(^|[-_.])base([-_.]|$)"
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "set_kind",
+     "kind": "base"
+    },
+    {
+     "action": "require_task",
+     "task": "completion",
+     "reason": "a base model cannot take chat turns: only for plain text completion"
+    }
+   ]
+  },
+  {
+   "id": "R4.1-chat-template",
+   "section": "4",
+   "scope": "file",
+   "title": "Chat and agent tasks need a chat template in the file",
+   "skip_if_kind": [
+    "vision-projector",
+    "adapter",
+    "vocab",
+    "auxiliary",
+    "embedding",
+    "reranker",
+    "draft",
+    "guard",
+    "speech",
+    "vision-language",
+    "other-modality",
+    "base"
+   ],
+   "when": {
+    "all": [
+     {
+      "fact": "gguf.tensor_count",
+      "op": "exists"
+     },
+     {
+      "fact": "gguf.has_chat_template",
+      "op": "eq",
+      "value": false
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "set_kind",
+     "kind": "no_template"
+    },
+    {
+     "action": "require_task",
+     "task": "completion",
+     "reason": "the file carries no chat template, so chat turns cannot be formatted from it (a template would have to be supplied by hand, which is not done here): only for plain text completion"
+    }
+   ]
+  },
+  {
+   "id": "R4.3-reasoning",
+   "section": "4",
+   "scope": "file",
+   "title": "Reasoning (thinking) models are labeled: long outputs, higher latency",
+   "when": {
+    "any": [
+     {
+      "fact": "gguf.template.thinking",
+      "op": "eq",
+      "value": true
+     },
+     {
+      "fact": "file.name",
+      "op": "matches",
+      "value": "(?i)(thinking|reasoning)"
+     },
+     {
+      "fact": "hub.tags",
+      "op": "contains",
+      "value": "reasoning"
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "label",
+     "label": "reasoning (thinking) model: long outputs and higher latency"
+    }
+   ]
+  },
+  {
+   "id": "R4.4-context-claims",
+   "section": "4",
+   "scope": "file",
+   "title": "Trained context and RoPE-extended context are stored apart",
+   "effects": [
+    {
+     "action": "split_context_claims",
+     "reason": "the trained length (header) and the extended length (RoPE scaling) are separate fields; a card's claim would be a third, declared-by-project"
+    }
+   ]
+  },
+  {
+   "id": "R5.1-runtime-architecture",
+   "section": "5",
+   "scope": "option",
+   "title": "The pinned runtime must support the architecture; until a load test, 'load not verified'",
+   "effects": [
+    {
+     "action": "runtime_architecture",
+     "reason": "the architecture table of the runtime at its pinned commit lists what it can load"
+    },
+    {
+     "action": "label",
+     "label": "load not verified"
+    }
+   ]
+  },
+  {
+   "id": "R5.2-ollama-pin",
+   "section": "5",
+   "scope": "ollama",
+   "title": "Ollama: never a moving tag, pin the digest, record the name mapping",
+   "effects": [
+    {
+     "action": "pin_ollama_digest",
+     "reason": "an Ollama reference is valid only with a sha256 digest, never :latest, and a recorded Hugging Face name"
+    }
+   ]
+  },
+  {
+   "id": "R6.1-pinned-revision",
+   "section": "6",
+   "scope": "file",
+   "title": "Pin the repository revision (a commit) and the SHA-256 of the file",
+   "when": {
+    "any": [
+     {
+      "fact": "file.revision",
+      "op": "not_matches",
+      "value": "^[0-9a-f]{40}$"
+     },
+     {
+      "fact": "file.sha256",
+      "op": "not_matches",
+      "value": "^[0-9a-f]{64}$"
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "exclude",
+     "reason": "not pinned: it needs a 40-hex commit revision and a 64-hex SHA-256"
+    }
+   ]
+  },
+  {
+   "id": "R6.1-checksum-matches-listing",
+   "section": "6",
+   "scope": "file",
+   "title": "The SHA-256 must be the one the hub lists at the pinned revision",
+   "when": {
+    "fact": "file.sha256",
+    "op": "differs",
+    "other_fact": "hub.listing_sha256"
+   },
+   "effects": [
+    {
+     "action": "exclude",
+     "reason": "its SHA-256 differs from the hub listing at the pinned revision"
+    }
+   ]
+  },
+  {
+   "id": "R6.2-publisher",
+   "section": "6",
+   "scope": "file",
+   "title": "Only the original publisher or an approved quantizer; the publisher is recorded",
+   "when": {
+    "all": [
+     {
+      "fact": "policy.approved_publishers",
+      "op": "exists"
+     },
+     {
+      "fact": "hub.author",
+      "op": "not_in_fact",
+      "other_fact": "policy.approved_publishers"
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "exclude",
+     "reason": "published by someone who is not on the list of approved publishers: a re-upload of unclear origin"
+    }
+   ]
+  },
+  {
+   "id": "R6.3-gated",
+   "section": "6",
+   "scope": "file",
+   "title": "A gated repository needs the owner's own login: we never handle tokens",
+   "when": {
+    "any": [
+     {
+      "fact": "hub.gated",
+      "op": "eq",
+      "value": true
+     },
+     {
+      "fact": "hub.gated",
+      "op": "in",
+      "value": [
+       "auto",
+       "manual"
+      ]
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "not_default",
+     "reason": "gated: unavailable without the owner's own login (a token is never handled here)"
+    },
+    {
+     "action": "label",
+     "label": "gated: unavailable without the owner's own login"
+    }
+   ]
+  },
+  {
+   "id": "R6.4-license-disagrees",
+   "section": "6",
+   "scope": "file",
+   "title": "The license in the header and the card must agree",
+   "when": {
+    "fact": "gguf.general.license",
+    "op": "differs",
+    "other_fact": "hub.card_license"
+   },
+   "effects": [
+    {
+     "action": "not_default",
+     "reason": "license unverified: the header and the card disagree"
+    },
+    {
+     "action": "label",
+     "label": "license unverified"
+    }
+   ]
+  },
+  {
+   "id": "R6.4-license-card-only",
+   "section": "6",
+   "scope": "file",
+   "title": "A license only the card states is accepted, labeled declared, not verified",
+   "when": {
+    "all": [
+     {
+      "fact": "gguf.general.license",
+      "op": "missing"
+     },
+     {
+      "fact": "hub.card_license",
+      "op": "exists"
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "label",
+     "label": "license declared-by-project (the card; the file header states none): not verified"
+    }
+   ]
+  },
+  {
+   "id": "R6.4-license-both-missing",
+   "section": "6",
+   "scope": "file",
+   "title": "A license stated nowhere keeps the model out by default",
+   "when": {
+    "all": [
+     {
+      "fact": "gguf.general.license",
+      "op": "missing"
+     },
+     {
+      "fact": "hub.card_license",
+      "op": "missing"
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "not_default",
+     "reason": "license unverified: neither the file header nor the card states one"
+    },
+    {
+     "action": "label",
+     "label": "license unverified"
+    }
+   ]
+  },
+  {
+   "id": "R6.4-license-unknown",
+   "section": "6",
+   "scope": "file",
+   "title": "A license that is not on the table of known licenses keeps the model out by default",
+   "when": {
+    "all": [
+     {
+      "fact": "license.effective",
+      "op": "exists"
+     },
+     {
+      "fact": "license.class",
+      "op": "missing"
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "not_default",
+     "reason": "its license is not on the table of known licenses: the terms are not known here"
+    },
+    {
+     "action": "label",
+     "label": "license unknown"
+    }
+   ]
+  },
+  {
+   "id": "R6.4-license-class-not-offered",
+   "section": "6",
+   "scope": "file",
+   "title": "A license class that is not offered keeps the model out",
+   "when": {
+    "fact": "license.offered",
+    "op": "eq",
+    "value": false
+   },
+   "effects": [
+    {
+     "action": "not_default",
+     "reason": "its license class is not offered here"
+    }
+   ]
+  },
+  {
+   "id": "R6.4-license-community",
+   "section": "6",
+   "scope": "file",
+   "title": "A Meta Llama community license is known and labeled: not permissive, allowed as a host-run model",
+   "when": {
+    "fact": "license.class",
+    "op": "eq",
+    "value": "community-host-run"
+   },
+   "effects": [
+    {
+     "action": "label",
+     "label": "community license (not permissive): allowed as a model you run on your own machines; the license name is recorded"
+    }
+   ]
+  },
+  {
+   "id": "R6.5-no-vendor-numbers",
+   "section": "6",
+   "scope": "evidence",
+   "title": "Vendor benchmark numbers are not evidence",
+   "when": {
+    "any": [
+     {
+      "fact": "evidence.source_kind",
+      "op": "in",
+      "value": [
+       "vendor",
+       "vote_ranking",
+       "aggregator"
+      ]
+     },
+     {
+      "fact": "evidence.tier",
+      "op": "not_in",
+      "value": [
+       1,
+       2,
+       3
+      ]
+     }
+    ]
+   },
+   "effects": [
+    {
+     "action": "reject_evidence",
+     "reason": "vendor numbers, vote rankings and aggregators are out; only source tiers 1 to 3 count (RECOMMENDATION_SPEC)"
+    }
+   ]
+  },
+  {
+   "id": "R7.1-verified-wins",
+   "section": "7",
+   "scope": "file",
+   "title": "When a declared value and a verified one disagree, the verified one wins and the conflict is recorded",
+   "effects": [
+    {
+     "action": "verified_wins",
+     "reason": "verified-by-code (header, listing) beats declared-by-project (names, card text); both are recorded"
+    }
+   ]
+  },
+  {
+   "id": "R7.2-header-required",
+   "section": "7",
+   "scope": "file",
+   "title": "Nothing is offered by default until its header was read",
+   "when": {
+    "fact": "gguf.tensor_count",
+    "op": "missing"
+   },
+   "effects": [
+    {
+     "action": "not_default",
+     "reason": "unverified: the file header was not read"
+    },
+    {
+     "action": "label",
+     "label": "header not read"
+    }
+   ]
+  }
+ ]
+}

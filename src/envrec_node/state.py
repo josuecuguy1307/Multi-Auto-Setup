@@ -63,3 +63,12 @@ class NodeState:
         self.layer.protect_private(Path(tmp))
         os.replace(tmp, self.dir / PIN_FILE)
         return self.pin()  # type: ignore[return-value]
+
+    def forget_pin(self) -> bool:
+        """Forget the coordinator (it unpaired this node, or the owner asked). Only the pin goes: this node's own identity stays, so a later `mas join` pairs the same computer again."""
+        f = self.dir / PIN_FILE
+        try:
+            f.unlink()
+        except FileNotFoundError:
+            return False
+        return True

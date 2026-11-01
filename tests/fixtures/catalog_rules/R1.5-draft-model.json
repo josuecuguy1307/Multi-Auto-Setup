@@ -1,0 +1,46 @@
+{
+ "rule": "R1.5-draft-model",
+ "kind": "file",
+ "says": "a draft model is not a general option",
+ "cases": [
+  {
+   "name": "named draft",
+   "facts": {
+    "file.name": "Model-0.5B-draft-Q8_0.gguf"
+   },
+   "expect": {
+    "kind": "draft",
+    "requires_task_keys": [
+     "speculative_draft"
+    ]
+   }
+  },
+  {
+   "name": "tagged draft-model on the hub",
+   "facts": {
+    "hub.tags": [
+     "gguf",
+     "draft-model"
+    ]
+   },
+   "expect": {
+    "kind": "draft",
+    "requires_task_keys": [
+     "speculative_draft"
+    ]
+   }
+  },
+  {
+   "name": "a speculative-decoding architecture",
+   "facts": {
+    "gguf.general.architecture": "dflash"
+   },
+   "expect": {
+    "kind": "draft",
+    "requires_task_keys": [
+     "speculative_draft"
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,23 @@
+{
+ "rule": "R4.4-context-claims",
+ "kind": "file",
+ "says": "the trained context and the RoPE-extended one are stored apart",
+ "cases": [
+  {
+   "name": "trained 32768, extended to 131072 by yarn",
+   "facts": {
+    "gguf.arch.context_length": 131072,
+    "gguf.arch.rope.scaling.original_context_length": 32768,
+    "gguf.arch.rope.scaling.type": "yarn",
+    "gguf.arch.rope.scaling.factor": 4.0
+   },
+   "expect": {
+    "context_trained": 32768,
+    "context_extended": {
+     "length": 131072,
+     "scaling": "yarn"
+    }
+   }
+  }
+ ]
+}

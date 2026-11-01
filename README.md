@@ -23,7 +23,7 @@ Verification is labelled and never mixed.
 
 - **Verified, SIMULATED-LOCAL on macOS (Apple Silicon):** the coordinator and a node as two real operating-system processes on one machine over loopback: pairing, heartbeats, and the owner's web screen driven in a browser. The coordinator holds the expected sockets and the node holds none.
 - **Verified, LINUX-CONTAINER:** a node inside a Linux container (Alpine, Python 3.12) paired with a coordinator on the host and sent heartbeats.
-- **Not verified yet:** Windows (the per-OS layer for it exists and has never run), two physical machines, discovery of the coordinator on a LAN, an installer, and anything that involves running a model end to end.
+- **Not verified yet:** Windows (the per-OS layer for it exists; its analysis ran on one real Windows computer, but the Windows installer and service have never run on real Windows), two physical machines running the full flow, and anything that involves running a model end to end through the router.
 
 The model profiles in `config/models.yaml` are placeholders. Put your own endpoint and model id in `config/models.local.yaml` (not committed).
 
@@ -31,7 +31,37 @@ The model profiles in `config/models.yaml` are placeholders. Put your own endpoi
 
 A shared typed board with leases, a router that picks a combination of harness, model and machine by written rules and sensitivity levels, recommendations backed by evidence ([docs/RECOMMENDATION_SPEC.md](docs/RECOMMENDATION_SPEC.md)), and more sandbox backends.
 
-## Install and run
+## Install
+
+One installer per operating system. Each installs for ONE user, with no administrator rights and no sudo, and changes nothing outside that user's folders. It installs this program only; it does not install any AI model (choosing and setting those up is the separate setup flow, done with your approval from a chat). Nothing is signed, so download the script, read it, then run it.
+
+**macOS and Linux:**
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/josuecuguy1307/Multi-Auto-Setup/main/install.sh
+less install.sh
+sh install.sh
+```
+
+**Windows 10 and 11 (PowerShell):**
+
+```powershell
+Invoke-WebRequest https://raw.githubusercontent.com/josuecuguy1307/Multi-Auto-Setup/main/install.ps1 -OutFile install.ps1
+notepad install.ps1
+powershell -ExecutionPolicy Bypass -File .\install.ps1
+```
+
+What each one does, asking before every change: it shows the plan first (every URL, folder and command, and how to undo each); asks before installing `uv` if you do not have it; downloads one pinned release archive and stops if its SHA-256 differs from the value written in the script; unpacks it safely and builds its own Python 3.13 environment; installs a `mas` command; offers to add that command's folder to YOUR user PATH (never the system one); and asks whether this computer will be the **coordinator** (the one you run the network from) or a **node** (a computer that joins it). It never changes a firewall, network profile or router setting: a coordinator listens on one port (TCP 7443) and your firewall may ask you about it.
+
+**Where it installs:** the program and its environments in `~/.mas` (Windows: `%USERPROFILE%\.mas`); the `mas` command in `~/.local/bin` (Windows: `%USERPROFILE%\.mas\bin`); keys, pinned peers and logs in the state folder (`~/Library/Application Support/mas` on macOS, `~/.local/share/mas` on Linux, `%LOCALAPPDATA%\mas` on Windows).
+
+**Pair a node.** On the coordinator, run `mas pair` (or press the button in the web screen): it shows a 6-digit code that lives two minutes. On the node, run `mas join` (the installer offers it): it finds coordinators on your network, you pick one, and you type the code once. Then `mas service install` starts the node by itself when you sign in (per user, no administrator).
+
+**Uninstall:** `sh ~/.mas/install.sh --uninstall` (Windows: `powershell -ExecutionPolicy Bypass -File $env:USERPROFILE\.mas\install.ps1 -Uninstall`). It shows what it will remove and asks. Keys and pairings stay unless you add `--purge` and type `DELETE`. To stop trusting one computer: `mas unpair <node>` on the coordinator, `mas forget` on a node.
+
+What has run, labelled: the shell installer, `mas service` (a real LaunchAgent on macOS), `mas update` and unpair were run on macOS (SIMULATED-LOCAL: a local stand-in release, the real `uv`) and in Linux containers (Debian and Fedora; no systemd inside a container). **`install.ps1` has been parsed and its refusal paths run under PowerShell 7 in a Linux container; it has NOT been run on real Windows.** Everything that touches Windows (the Run registry value, the user PATH, `tar.exe`, `pythonw.exe`) is untested until it is. Details: [docs/INSTALL.md](docs/INSTALL.md).
+
+## Run from a source checkout
 
 Python 3.11 or newer.
 

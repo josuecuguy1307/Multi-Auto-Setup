@@ -36,8 +36,9 @@ def read_json(path: Path) -> dict | None:
 class ControlWatcher:
     """Runs inside the coordinator: picks up pairing offers, asks the owner through files, and reports each outcome back through a file."""
 
-    def __init__(self, state: Path, layer, on_offer: Callable[[str, str], None], on_task: Callable[[str, str, str], None] | None = None) -> None:
-        self.dir, self.layer, self.on_offer, self.on_task = control_dir(state), layer, on_offer, on_task
+    def __init__(self, state: Path, layer, on_offer: Callable[[str, str], None], on_task: Callable[[str, str, str], None] | None = None,
+                 on_unpair: Callable[[str, str], None] | None = None) -> None:
+        self.dir, self.layer, self.on_offer, self.on_task, self.on_unpair = control_dir(state), layer, on_offer, on_task, on_unpair
 
     async def run(self) -> None:
         while True:
@@ -54,6 +55,15 @@ class ControlWatcher:
                     pass
                 if req and isinstance(req.get("id"), str) and isinstance(req.get("node"), str) and isinstance(req.get("type"), str):
                     self.on_task(req["id"][:24], req["node"][:80], req["type"][:40])
+        if self.on_unpair is not None:
+            for uf in sorted(self.dir.glob("unpair-req-*.json")):  # the owner asked at the terminal to unpair a node (`mas unpair`)
+                req = read_json(uf)
+                try:
+                    uf.unlink()
+                except OSError:
+                    pass
+                if req and isinstance(req.get("id"), str) and isinstance(req.get("node"), str):
+                    self.on_unpair(req["id"][:24], req["node"][:80])
         f = self.dir / "pair-offer.json"
         if not f.is_file():
             return

@@ -156,7 +156,8 @@ def parse_models(text: str, fmt: str) -> list[dict]:
     except ValueError:
         return []
     if fmt == "ollama_tags":
-        return [{"name": str(m.get("name", ""))[:60], "size_gib": round(m.get("size", 0) / 2 ** 30, 2)} for m in data.get("models", [])][:50]
+        return [{"name": str(m.get("name", ""))[:60], "size_gib": round(m.get("size", 0) / 2 ** 30, 2), "quantization": str((m.get("details") or {}).get("quantization_level") or "")[:20] or None,
+                 "parameter_size": str((m.get("details") or {}).get("parameter_size") or "")[:20] or None} for m in data.get("models", [])][:50]
     return [{"name": str(m.get("id", ""))[:60]} for m in data.get("data", [])][:50]
 
 
@@ -311,13 +312,21 @@ def key_names(env: dict | None = None) -> list[dict]:
     return out + [{"provider": "other", "name": n} for n in sorted(env) if n.endswith(suffixes) and n not in known]
 
 
+def _windows_version(release: str) -> str:
+    """The release and the edition as the owner knows them ("11 Home"). The edition comes from `platform.win32_edition()` (its code, e.g. "Core") and the names are the table's."""
+    import platform
+    code = platform.win32_edition() if hasattr(platform, "win32_edition") else ""
+    name = table().get("windows_editions", {}).get(code, code)
+    return f"{release} {name}".strip()
+
+
 def os_details() -> dict:
     """The operating system as the owner knows it, with the real build: on Windows the kernel is the build number (10.0.26100), not a repeat of the version."""
     import platform
     fam = family()
     if fam == "windows":
         ver = platform.version()
-        return _result({"machine.os.name": f"Windows {platform.release()}", "machine.os.version": platform.win32_edition() if hasattr(platform, "win32_edition") else "", "machine.os.build": ver,
+        return _result({"machine.os.name": f"Windows {platform.release()}", "machine.os.family": "windows", "machine.os.version": _windows_version(platform.release()), "machine.os.build": ver,
                         "machine.os.arch": platform.machine().lower()}, [{"provider": "platform", "tool": "os_details"}])
     name = {"darwin": "macOS", "linux": "Linux"}[fam]
     ver = platform.mac_ver()[0] if fam == "darwin" else ""
@@ -327,7 +336,8 @@ def os_details() -> dict:
             name, ver = rel.get("NAME", name).strip('"'), rel.get("VERSION_ID", "").strip('"')
         except OSError:
             pass
-    return _result({"machine.os.name": name, "machine.os.version": ver, "machine.os.build": platform.release(), "machine.os.arch": platform.machine().lower()}, [{"provider": "platform", "tool": "os_details"}])
+    return _result({"machine.os.name": name, "machine.os.family": {"darwin": "macos", "linux": "linux"}[fam], "machine.os.version": ver, "machine.os.build": platform.release(), "machine.os.arch": platform.machine().lower()},
+                   [{"provider": "platform", "tool": "os_details"}])
 
 
 def memory_for_models(gpu_list: list[dict] | None = None, *, ram_total_gib: float | None = None, ram_available_gib: float | None = None, disk_free_gib: float | None = None) -> dict:
@@ -335,7 +345,7 @@ def memory_for_models(gpu_list: list[dict] | None = None, *, ram_total_gib: floa
     its CPU and RAM ("no_gpu_detected"); Apple silicon shares one memory ("unified")."""
     import psutil
 
-    from envrec.sizing import CATALOG_PARAMS_B, disk_needed_gb, ram_cap_params_b
+    from envrec.sizing import AVAILABLE_MARGIN, CATALOG_PARAMS_B, disk_needed_gb, ram_cap_params_b, usable_memory_gib
     vm = psutil.virtual_memory()
     ram_total = ram_total_gib if ram_total_gib is not None else round(vm.total / 2 ** 30, 1)
     ram_avail = ram_available_gib if ram_available_gib is not None else round(vm.available / 2 ** 30, 1)
@@ -345,19 +355,24 @@ def memory_for_models(gpu_list: list[dict] | None = None, *, ram_total_gib: floa
     dedicated = [g for g in gpu_list if g.get("memory") == "dedicated" and g.get("vram_gib")]
     unified = any(g.get("memory") == "unified" for g in gpu_list)
     vram = max((g["vram_gib"] for g in dedicated), default=None)
-    caps = {"ram": ram_cap_params_b(ram_total), "disk": max((p for p in CATALOG_PARAMS_B if disk_needed_gb(p) <= disk_free_gib), default=0.0)}
+    usable = usable_memory_gib(ram_avail, ram_total)  # the same margin the setup options use: what is FREE now, not what the machine has
+    by_total = ram_cap_params_b(ram_total)
+    caps = {"available_ram": ram_cap_params_b(usable), "disk": max((p for p in CATALOG_PARAMS_B if disk_needed_gb(p) <= disk_free_gib), default=0.0)}
     path = "unified" if unified else "gpu" if vram else "cpu"
     if vram:
         caps["vram"] = ram_cap_params_b(vram)
+        caps.pop("available_ram")  # a discrete GPU runs the model from its own memory
     top = max(CATALOG_PARAMS_B)
     limit_name = min(caps, key=lambda k: caps[k])
     limit = caps[limit_name]
     fit = max((p for p in CATALOG_PARAMS_B if p <= limit), default=0.0)
     if limit >= top:
         limit_name = "catalog_top"  # nothing on this machine stops a bigger model: the biggest we list is the limit
-    elif path == "cpu" and limit_name == "ram":
+    elif path == "cpu" and limit_name == "available_ram":
         limit_name = "ram_no_gpu_detected"
     return _result({"machine.ram_total_gib": ram_total, "machine.ram_available_gib": ram_avail, "machine.vram_gib": vram, "machine.model_path": path, "machine.disk_free_gib": disk_free_gib,
-                    "machine.largest_model_params_b": fit, "machine.largest_model_limited_by": limit_name},
+                    "machine.usable_memory_gib": usable, "machine.memory_margin_pct": int(AVAILABLE_MARGIN * 100),
+                    "machine.largest_model_params_b": fit, "machine.largest_model_limited_by": limit_name,
+                    "machine.largest_model_by_total_ram_params_b": max((p for p in CATALOG_PARAMS_B if p <= by_total), default=0.0)},
                    [{"provider": "envrec_os.probes", "tool": "memory_for_models", "table": "workspace-sizing"}],
                    ["on a machine without a discrete GPU, models run on the CPU: slower, limited by RAM"] if path == "cpu" else [])

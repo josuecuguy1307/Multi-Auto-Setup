@@ -1,0 +1,58 @@
+{
+ "rule": "R5.1-runtime-architecture",
+ "kind": "option",
+ "says": "the pinned runtime must know the architecture; until a load test, load is not verified",
+ "cases": [
+  {
+   "name": "an architecture missing from the runtime's table is removed",
+   "rows": [
+    {
+     "id": "new",
+     "architecture": "futurearch"
+    }
+   ],
+   "runtime_arches": {
+    "llama.cpp": {
+     "b1": {
+      "architectures": [
+       "qwen3",
+       "llama"
+      ]
+     }
+    }
+   },
+   "expect": {
+    "removed": {
+     "catalog-4.0b-Model-4B-Instruct-GGUF-q4_k_m": "~cannot load the architecture"
+    }
+   }
+  },
+  {
+   "name": "a supported one is offered with the label",
+   "rows": [
+    {
+     "id": "ok",
+     "architecture": "qwen3"
+    }
+   ],
+   "runtime_arches": {
+    "llama.cpp": {
+     "b1": {
+      "architectures": [
+       "qwen3",
+       "llama"
+      ]
+     }
+    }
+   },
+   "expect": {
+    "option_ids": [
+     "catalog-4.0b-Model-4B-Instruct-GGUF-q4_k_m"
+    ],
+    "labels": [
+     "load not verified"
+    ]
+   }
+  }
+ ]
+}

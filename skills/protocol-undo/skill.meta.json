@@ -1,0 +1,111 @@
+{
+  "provenance": "builtin",
+  "protocol": "undo",
+  "tier": "observe",
+  "ring": 0,
+  "platforms": [
+    "any"
+  ],
+  "signature": {},
+  "states": {
+    "kinds": [
+      "uninstall"
+    ],
+    "start": "prepare",
+    "states": {
+      "prepare": {
+        "goal": "Read what the recorded setup of this machine wrote (load_setup). Code makes the undo plan from the recorded plan: only the steps that are done, newest first, each with the undo that plan wrote. You do not write the plan.",
+        "tags": [],
+        "tools": [
+          "load_setup"
+        ],
+        "actions": [],
+        "skills": [],
+        "advance": [
+          {
+            "to": "run",
+            "needs": [
+              {
+                "fact": "plan.built",
+                "at_least": "tested",
+                "equals": true
+              }
+            ]
+          },
+          {
+            "to": "nothing_to_undo",
+            "needs": [
+              {
+                "fact": "setup.refused",
+                "at_least": "tested"
+              }
+            ]
+          }
+        ],
+        "close_on": [
+          "load_setup"
+        ],
+        "terminal": false,
+        "reason": "",
+        "show": [
+          "plan.*",
+          "setup.*"
+        ]
+      },
+      "run": {
+        "goal": "Undo the recorded setup one step at a time, newest first. undo_step N asks the owner to approve that undo (they see what it removes and the plan hash) and only then does the machine run it. finish_undo ends the run once everything is undone.",
+        "tags": [],
+        "tools": [
+          "undo_step",
+          "finish_undo"
+        ],
+        "actions": [],
+        "skills": [],
+        "advance": [
+          {
+            "to": "rolled_back",
+            "needs": [
+              {
+                "fact": "setup.undone_all",
+                "at_least": "tested",
+                "equals": true
+              }
+            ]
+          }
+        ],
+        "close_on": [
+          "finish_undo"
+        ],
+        "terminal": false,
+        "reason": "",
+        "show": [
+          "plan.*",
+          "setup.*",
+          "step.*"
+        ]
+      },
+      "rolled_back": {
+        "goal": "",
+        "tags": [],
+        "tools": [],
+        "actions": [],
+        "skills": [],
+        "advance": [],
+        "close_on": [],
+        "terminal": true,
+        "reason": "everything the recorded setup wrote was undone and nothing was left behind"
+      },
+      "nothing_to_undo": {
+        "goal": "",
+        "tags": [],
+        "tools": [],
+        "actions": [],
+        "skills": [],
+        "advance": [],
+        "close_on": [],
+        "terminal": true,
+        "reason": "this machine has no recorded setup to undo; nothing was changed"
+      }
+    }
+  }
+}

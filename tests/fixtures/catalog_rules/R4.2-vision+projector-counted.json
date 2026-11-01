@@ -1,0 +1,25 @@
+{
+ "rule": "R4.2-vision",
+ "kind": "estimate",
+ "says": "the projector file is counted in the memory a vision model needs",
+ "cases": [
+  {
+   "name": "a 2 GiB model with a 0.5 GiB projector",
+   "row": {
+    "bytes_gib": 2.0,
+    "dims": {},
+    "companions": [
+     {
+      "file": "mmproj-x.gguf",
+      "bytes": 536870912,
+      "kind": "vision-projector"
+     }
+    ]
+   },
+   "expect": {
+    "weights_gib": 2.5,
+    "total_gib": 3.75
+   }
+  }
+ ]
+}

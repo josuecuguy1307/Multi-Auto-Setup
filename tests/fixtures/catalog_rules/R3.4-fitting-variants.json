@@ -1,0 +1,35 @@
+{
+ "rule": "R3.4-fitting-variants",
+ "kind": "option",
+ "says": "what does not fit says so and offers what does",
+ "cases": [
+  {
+   "name": "Q8_0 does not fit 3 GiB free; the Q4_K_M of the same repo does",
+   "machine": {
+    "ram_available_gib": 3.0
+   },
+   "rows": [
+    {
+     "id": "big",
+     "quantization": "Q8_0",
+     "bytes_gib": 4.0
+    },
+    {
+     "id": "small",
+     "quantization": "Q4_K_M",
+     "bytes_gib": 0.8
+    }
+   ],
+   "expect": {
+    "removed": {
+     "catalog-4.0b-Model-4B-Instruct-GGUF-q8_0": "~needs"
+    },
+    "fit_variants": {
+     "catalog-4.0b-Model-4B-Instruct-GGUF-q8_0": [
+      "small"
+     ]
+    }
+   }
+  }
+ ]
+}

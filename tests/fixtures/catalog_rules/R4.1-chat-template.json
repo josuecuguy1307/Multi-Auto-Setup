@@ -1,0 +1,19 @@
+{
+ "rule": "R4.1-chat-template",
+ "kind": "file",
+ "says": "a file with no chat template cannot take chat turns",
+ "cases": [
+  {
+   "name": "no chat template in the file (an old chat model counts: it is named for what it lacks, not called a base model)",
+   "facts": {
+    "gguf.has_chat_template": false
+   },
+   "expect": {
+    "kind": "no_template",
+    "requires_task_keys": [
+     "completion"
+    ]
+   }
+  }
+ ]
+}

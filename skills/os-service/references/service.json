@@ -1,0 +1,158 @@
+{
+ "_note": "operating system family -> user-level managers in the order they are tried. Knowledge lives here, not in Python. {placeholders} are filled by envrec_os.service: {role} {label} {file} {uid} {command} {value_name}.",
+ "label": "io.github.multi-auto-setup.{role}",
+ "darwin": [
+  {
+   "kind": "launchd-agent",
+   "template": "launchd.plist.tmpl",
+   "file": "~/Library/LaunchAgents/{label}.plist",
+   "probe": [
+    "launchctl",
+    "print",
+    "gui/{uid}"
+   ],
+   "start": [
+    [
+     "launchctl",
+     "bootstrap",
+     "gui/{uid}",
+     "{file}"
+    ]
+   ],
+   "retries": 4,
+   "retry_delay_s": 1.5,
+   "stop": [
+    [
+     "launchctl",
+     "bootout",
+     "gui/{uid}/{label}"
+    ]
+   ],
+   "status": [
+    "launchctl",
+    "print",
+    "gui/{uid}/{label}"
+   ],
+   "what": "Writes a file in your user folder (a LaunchAgent) and asks macOS to load it. The program starts by itself every time you sign in and restarts if it fails. macOS may show a 'background item' notice; that is normal.",
+   "undo": "mas service uninstall   (or by hand: launchctl bootout gui/$(id -u)/{label} and delete {file})",
+   "when": "When you sign in to this user account (not before you sign in)."
+  }
+ ],
+ "linux": [
+  {
+   "kind": "systemd-user",
+   "template": "systemd.service.tmpl",
+   "file": "${XDG_CONFIG_HOME:-~/.config}/systemd/user/mas-{role}.service",
+   "probe": [
+    "systemctl",
+    "--user",
+    "show-environment"
+   ],
+   "pre": [
+    [
+     "systemctl",
+     "--user",
+     "daemon-reload"
+    ]
+   ],
+   "start": [
+    [
+     "systemctl",
+     "--user",
+     "enable",
+     "--now",
+     "mas-{role}.service"
+    ]
+   ],
+   "stop": [
+    [
+     "systemctl",
+     "--user",
+     "disable",
+     "--now",
+     "mas-{role}.service"
+    ]
+   ],
+   "post_remove": [
+    [
+     "systemctl",
+     "--user",
+     "daemon-reload"
+    ]
+   ],
+   "status": [
+    "systemctl",
+    "--user",
+    "is-active",
+    "mas-{role}.service"
+   ],
+   "what": "Writes a user systemd unit in your configuration folder and enables it. The program starts when you sign in and restarts if it fails. No administrator or sudo needed.",
+   "undo": "mas service uninstall   (or by hand: systemctl --user disable --now mas-{role}.service and delete {file})",
+   "when": "When you sign in. To make it start when the computer boots without anyone signing in, an administrator has to run 'loginctl enable-linger' once for your user; this program does not do that."
+  },
+  {
+   "kind": "xdg-autostart",
+   "template": "xdg-autostart.desktop.tmpl",
+   "file": "${XDG_CONFIG_HOME:-~/.config}/autostart/mas-{role}.desktop",
+   "needs_env_any": [
+    "XDG_CURRENT_DESKTOP",
+    "DISPLAY",
+    "WAYLAND_DISPLAY"
+   ],
+   "start": [],
+   "stop": [],
+   "status": null,
+   "what": "This computer has no user systemd; this writes a desktop autostart entry. The program starts when you sign in to the desktop. It does not restart by itself if it fails.",
+   "undo": "mas service uninstall   (or by hand: delete {file})",
+   "when": "When you sign in to the desktop."
+  }
+ ],
+ "windows": [
+  {
+   "kind": "run-key",
+   "template": null,
+   "file": null,
+   "windowless_python": "pythonw.exe",
+   "value_name": "MultiAutoSetup-{role}",
+   "probe": [
+    "reg",
+    "query",
+    "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run"
+   ],
+   "start": [
+    [
+     "reg",
+     "add",
+     "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+     "/v",
+     "{value_name}",
+     "/t",
+     "REG_SZ",
+     "/d",
+     "{command}",
+     "/f"
+    ]
+   ],
+   "stop": [
+    [
+     "reg",
+     "delete",
+     "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+     "/v",
+     "{value_name}",
+     "/f"
+    ]
+   ],
+   "status": [
+    "reg",
+    "query",
+    "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+    "/v",
+    "{value_name}"
+   ],
+   "what": "Adds an entry in YOUR user's startup key (HKCU, no administrator). The program starts without a window every time you sign in. It does not restart by itself if it fails. It appears in Settings > Apps > Startup.",
+   "undo": "mas service uninstall   (or by hand: reg delete HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run /v {value_name} /f)",
+   "when": "When you sign in to this user account."
+  }
+ ]
+}

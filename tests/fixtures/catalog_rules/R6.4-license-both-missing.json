@@ -1,0 +1,20 @@
+{
+ "rule": "R6.4-license-both-missing",
+ "kind": "file",
+ "says": "a license stated nowhere keeps the model out by default",
+ "cases": [
+  {
+   "name": "neither the header nor the card",
+   "facts": {
+    "gguf.general.license": null,
+    "hub.card_license": null
+   },
+   "expect": {
+    "offer_by_default": false,
+    "labels": [
+     "license unverified"
+    ]
+   }
+  }
+ ]
+}

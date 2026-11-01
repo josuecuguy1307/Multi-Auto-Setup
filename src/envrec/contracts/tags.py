@@ -4,6 +4,7 @@ MODEL  the model chose (an action from the menu, an advance it asked for).
 GUARD  code refused, enforced or recorded; it never picked what happens next.
 SCRIPT code decided the next action or the outcome (a fallback, a forced advance, a ring move, a repair, a fixed sequence).
 OWNER  the human approved or typed an answer.
+ROUTER  the router chose a harness/model/machine combination by its written rule (a route decision, an escalation); refusals and dispatches stay GUARD.
 CLAUDE-CODE  the operator (the assistant that builds this) acted for the owner in a verification run, with the owner's authorization given in chat: it is counted apart and is never an OWNER event. Zero in a normal run.
 `Event.tag` is stored; for an event written before the field existed `derive_tag` reproduces it from the actor, type and payload, so old logs still count."""
 
@@ -13,11 +14,12 @@ from typing import Any
 
 from envrec.contracts.enums import Actor
 
-TAGS = ("MODEL", "GUARD", "SCRIPT", "OWNER", "CLAUDE-CODE")
+TAGS = ("MODEL", "GUARD", "SCRIPT", "OWNER", "CLAUDE-CODE", "ROUTER")
 
 # `discovery_adapter` is only the RECORD that a skill ran; who chose to run it is told by the event before it: the model's action_chosen, or the loop's first_rung_identify (SCRIPT)
 _SCRIPT_TYPES = {"first_rung_identify", "skill_reuse", "skill_reused", "transport_planned", "model_fallback", "model_repaired"}
-_MODEL_TYPES = {"model_call", "model_invalid", "research", "skill_proposed", "skill_result", "fact_expanded"}
+_ROUTER_TYPES = {"route_decision", "escalation"}
+_MODEL_TYPES = {"model_call", "admission_reply", "model_invalid", "research", "skill_proposed", "skill_result", "fact_expanded"}
 
 
 def derive_tag(actor: Actor | str, type: str, payload: dict[str, Any] | None = None) -> str:
@@ -33,6 +35,8 @@ def derive_tag(actor: Actor | str, type: str, payload: dict[str, Any] | None = N
         if p.get("fallback") or p.get("by") == "code":
             return "SCRIPT"
         return "MODEL" if (p.get("by") == "model" or type != "protocol_state") else "SCRIPT"
+    if type in _ROUTER_TYPES:
+        return "ROUTER"
     if type in _SCRIPT_TYPES:
         return "SCRIPT"
     if type in _MODEL_TYPES:

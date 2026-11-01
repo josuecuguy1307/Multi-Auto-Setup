@@ -92,7 +92,7 @@ def cmd_catalog(args) -> int:
     except NotApproved as exc:
         print(f"Refused: {exc}", file=sys.stderr)
         return 2
-    gen = generate(manifest, LiveMetadata(github_token=os.environ.get("GITHUB_TOKEN")))
+    gen = generate(manifest, LiveMetadata(github_token=os.environ.get("GITHUB_TOKEN"), pace_s=0.25, cache_dir=Path(args.cache) if getattr(args, "cache", None) else None))
     write(gen, args.lock, args.excluded)
     print(f"catalog: {gen.lock.counts}")
     return 0
@@ -124,6 +124,7 @@ def main(argv: list[str] | None = None) -> int:
     cat.add_argument("--manifest", default="config/runtime_manifest.yaml")
     cat.add_argument("--lock", default="catalog.lock.yaml")
     cat.add_argument("--excluded", default="catalog.excluded.md")
+    cat.add_argument("--cache", default=None, help="a directory where the hub's answers are kept, so a re-run (or one after a rate limit) does not ask again")
     cat.set_defaults(func=cmd_catalog)
 
     from envrec.cli_discover import add_discover_commands

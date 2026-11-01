@@ -55,12 +55,5 @@
    "id": "other",
    "name": "Another provider"
   }
- ],
- "licenses_allowed": [
-  "apache-2.0",
-  "mit",
-  "bsd-3-clause",
-  "bsd-2-clause",
-  "isc"
  ]
 }

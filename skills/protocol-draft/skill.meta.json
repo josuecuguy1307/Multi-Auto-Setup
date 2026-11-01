@@ -1,0 +1,37 @@
+{
+ "provenance": "builtin",
+ "protocol": "draft",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": ["any"],
+ "signature": {},
+ "states": {
+  "kinds": ["network"],
+  "start": "draft",
+  "states": {
+   "draft": {
+    "goal": "Propose the whole setup of the owner's network from what is already known. Read the network first (load_network). Then draft EACH machine (draft_machine) and the team (draft_network); every element that is not a measured fact is an assumption and names what it rests on. Apply the owner's correction when one is pending (apply_edit). Ask the owner (ask_owner) only when two candidate drafts differ in something only the owner can decide. finish_draft states what changed and what is still assumed. Nothing is installed.",
+    "tags": [],
+    "tools": ["load_network", "ask_owner", "apply_edit", "draft_machine", "draft_network", "finish_draft"],
+    "actions": [],
+    "skills": [],
+    "advance": [
+     {"to": "done", "needs": [
+       {"fact": "network.loaded", "at_least": "tested"},
+       {"fact": "draft.network", "at_least": "hypothesis"},
+       {"fact": "draft.machines_covered", "at_least": "tested", "equals": true},
+       {"fact": "draft.finished", "at_least": "tested"}]},
+     {"to": "no_machines", "needs": [{"fact": "network.none", "at_least": "tested"}]}
+    ],
+    "close_on": ["finish_draft", "load_network"],
+    "terminal": false,
+    "reason": "",
+    "show": ["network.machine.*", "owner.profile.*", "owner.correction.*", "owner.edit.*", "owner.answer.*", "draft.pending", "draft.previous", "draft.network", "draft.machine.*"]
+   },
+   "done": {"goal": "", "tags": [], "tools": [], "actions": [], "skills": [], "advance": [], "close_on": [], "terminal": true,
+            "reason": "the draft is complete and waits for the owner to approve it or correct it; nothing was installed"},
+   "no_machines": {"goal": "", "tags": [], "tools": [], "actions": [], "skills": [], "advance": [], "close_on": [], "terminal": true,
+                   "reason": "no paired machine has a stored analysis, so there is nothing to draft; analyse the machines first"}
+  }
+ }
+}

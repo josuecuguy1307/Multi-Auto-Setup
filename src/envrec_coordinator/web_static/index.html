@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -36,6 +36,9 @@
       </div>
       <button id="start-from-machines" type="button" class="btn primary" data-i18n="machines.pair_button"></button>
     </div>
+    <section id="approvals" class="run" hidden aria-labelledby="approvals-title"></section>
+    <section id="activity" class="run" hidden aria-labelledby="activity-title"></section>
+    <iframe id="network-map" class="mapframe" src="/card/network" title=""></iframe>
     <section id="run-panel" class="run" hidden aria-labelledby="run-title"></section>
     <p id="pairing-banner" class="banner" hidden><span data-i18n="machines.pairing_banner"></span> <a href="#/pair" data-i18n="machines.pairing_banner_link"></a></p>
     <div id="machines-empty" class="empty" hidden>
@@ -49,6 +52,11 @@
     <p id="waiting-empty" class="muted" data-i18n="waiting.empty"></p>
     <ul id="waiting" class="cards"></ul>
     <div class="actions"><button id="lan-agent" type="button" class="btn" data-i18n="waiting.ask_agent"></button></div>
+
+    <h2 class="sub-h" id="chats-title" data-i18n="chats.title"></h2>
+    <p class="muted" data-i18n="chats.hint"></p>
+    <div class="actions"><button id="connect-chat" type="button" class="btn" data-i18n="chats.connect"></button> <button id="owui-admin" type="button" class="btn" hidden data-i18n="chats.account"></button></div>
+    <pre id="owui-account" class="mono" hidden></pre>
   </section>
 
   <section id="view-pair" aria-labelledby="pair-title" hidden>

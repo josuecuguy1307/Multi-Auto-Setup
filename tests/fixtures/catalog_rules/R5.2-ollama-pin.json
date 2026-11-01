@@ -1,0 +1,32 @@
+{
+ "rule": "R5.2-ollama-pin",
+ "kind": "ollama",
+ "says": "Ollama: no moving tag, a digest, and the Hugging Face name it maps to",
+ "cases": [
+  {
+   "name": "latest and no digest",
+   "ref": {
+    "name": "qwen3:latest",
+    "hf_name": "Qwen/Qwen3-4B-GGUF"
+   },
+   "expect": {
+    "problems": [
+     "~moving tag",
+     "~digest"
+    ]
+   }
+  },
+  {
+   "name": "no mapping recorded",
+   "ref": {
+    "name": "qwen3:4b-q4_K_M",
+    "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+   },
+   "expect": {
+    "problems": [
+     "~Hugging Face name"
+    ]
+   }
+  }
+ ]
+}

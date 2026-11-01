@@ -7,6 +7,10 @@ asset `digest` field ("sha256:...") and the Hugging Face LFS object id (a sha256
 
 from __future__ import annotations
 
+import hashlib
+import json
+import time
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
@@ -20,8 +24,11 @@ class HostNotAllowed(PermissionError):
 
 
 class LiveMetadata:
-    def __init__(self, client: httpx.Client | None = None, github_token: str | None = None) -> None:
+    def __init__(self, client: httpx.Client | None = None, github_token: str | None = None, *, pace_s: float = 0.0, cache_dir: Path | None = None, max_retries: int = 6) -> None:
         self.client = client or httpx.Client(timeout=30, follow_redirects=False)
+        self.pace_s, self.cache_dir, self.max_retries = pace_s, cache_dir, max_retries  # a pause between requests, answers kept on disk so a re-run asks nothing again, and how often a 429 is waited out
+        if cache_dir:
+            cache_dir.mkdir(parents=True, exist_ok=True)
         self.headers = {"accept": "application/json", "user-agent": "envrec-catalog"}
         if github_token:
             self.headers["authorization"] = f"Bearer {github_token}"
@@ -31,12 +38,25 @@ class LiveMetadata:
         host = urlparse(url).hostname
         if host not in ALLOWED_HOSTS:
             raise HostNotAllowed(f"{host} is not a metadata host the catalog may read")
-        self.requests.append(url)
+        key = self.cache_dir / (hashlib.sha256(json.dumps([url, params], sort_keys=True).encode()).hexdigest() + ".json") if self.cache_dir and host == "huggingface.co" else None
+        if key and key.is_file():
+            return json.loads(key.read_text())
         # the token only goes to GitHub, never to the other host
         headers = {k: v for k, v in self.headers.items() if k != "authorization" or host == "api.github.com"}
-        r = self.client.get(url, params=params or None, headers=headers)
-        r.raise_for_status()
-        return r.json()
+        for attempt in range(self.max_retries + 1):
+            self.requests.append(url)
+            if self.pace_s:
+                time.sleep(self.pace_s)
+            r = self.client.get(url, params=params or None, headers=headers)
+            if (r.status_code == 429 or r.status_code in (500, 502, 503, 504)) and attempt < self.max_retries:  # rate limited or a passing server error: wait as long as the source says (or back off), then ask again
+                time.sleep(min(float(r.headers.get("retry-after", 0)) or 2.0 * 2 ** attempt, 120.0))
+                continue
+            r.raise_for_status()
+            out = r.json()
+            if key:
+                key.write_text(json.dumps(out))
+            return out
+        raise RuntimeError("unreachable")
 
     def releases(self, repo_url: str) -> list[dict[str, Any]]:
         path = urlparse(repo_url).path.strip("/")

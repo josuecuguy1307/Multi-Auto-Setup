@@ -139,6 +139,8 @@ class ToolSpec(Strict):
     requires: list[str] = Field(default_factory=list)
     # True: what it answers depends on what changed since it last ran (a plan after a new skill was kept), so asking it again is a real question and the menu keeps offering it.
     repeatable: bool = False
+    # True: this tool is how the owner is asked a question in this protocol step. While it is on the menu, `ask_human` is not the way to ask (the loop refuses it and names this tool).
+    asks_owner: bool = False
 
     @field_validator("one_line")
     @classmethod
@@ -245,7 +247,7 @@ class Event(Strict):
     payload: dict[str, JsonValue] = Field(default_factory=dict)
     run_id: str | None = None
     # Who decided: MODEL, GUARD, SCRIPT or OWNER (envrec.contracts.tags). None only on events written before the field existed; the store fills it on write.
-    tag: Literal["MODEL", "GUARD", "SCRIPT", "OWNER", "CLAUDE-CODE"] | None = None
+    tag: Literal["MODEL", "GUARD", "SCRIPT", "OWNER", "CLAUDE-CODE", "ROUTER"] | None = None
 
     @property
     def effective_tag(self) -> str:

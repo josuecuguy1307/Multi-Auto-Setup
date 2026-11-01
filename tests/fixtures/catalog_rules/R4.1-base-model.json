@@ -1,0 +1,31 @@
+{
+ "rule": "R4.1-base-model",
+ "kind": "file",
+ "says": "a base model cannot take chat turns",
+ "cases": [
+  {
+   "name": "general.finetune says base",
+   "facts": {
+    "gguf.general.finetune": "base"
+   },
+   "expect": {
+    "kind": "base",
+    "requires_task_keys": [
+     "completion"
+    ]
+   }
+  },
+  {
+   "name": "named base",
+   "facts": {
+    "file.name": "Model-4B-base-Q4_K_M.gguf"
+   },
+   "expect": {
+    "kind": "base",
+    "requires_task_keys": [
+     "completion"
+    ]
+   }
+  }
+ ]
+}

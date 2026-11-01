@@ -1,0 +1,22 @@
+{
+ "rule": "R3.5-measured-wins",
+ "kind": "estimate",
+ "says": "measured here replaces the estimate and changes its label",
+ "cases": [
+  {
+   "name": "resident 5.1 GiB after the minimal call",
+   "row": {
+    "bytes_gib": 2.0
+   },
+   "measured": {
+    "resident_gib": 5.1,
+    "tokens_per_s": 7.2
+   },
+   "expect": {
+    "total_gib": 5.1,
+    "label": "measured here",
+    "tokens_per_s": 7.2
+   }
+  }
+ ]
+}

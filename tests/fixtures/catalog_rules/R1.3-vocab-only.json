@@ -1,0 +1,31 @@
+{
+ "rule": "R1.3-vocab-only",
+ "kind": "file",
+ "says": "a vocabulary-only file has no weights",
+ "cases": [
+  {
+   "name": "general.type is vocab",
+   "facts": {
+    "gguf.general.type": "vocab"
+   },
+   "expect": {
+    "kind": "vocab",
+    "excluded_rules": [
+     "R1.3-vocab-only"
+    ]
+   }
+  },
+  {
+   "name": "zero tensors",
+   "facts": {
+    "gguf.tensor_count": 0,
+    "gguf.param_count": 0
+   },
+   "expect": {
+    "excluded_rules": [
+     "R1.3-vocab-only"
+    ]
+   }
+  }
+ ]
+}

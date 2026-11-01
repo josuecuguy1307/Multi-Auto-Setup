@@ -1,0 +1,85 @@
+{
+ "rule": {
+  "tie_margin": 0.1,
+  "tie_margin_note": "OPEN in the spec (contract 10.8); a visible, adjustable value, not a recommendation",
+  "cost_order": [
+   "local",
+   "api",
+   "subscription"
+  ],
+  "max_escalation": 2,
+  "admission_threshold": 8,
+  "admission_of": 10
+ },
+ "owner_policy_defaults": {
+  "note": "used until the owner's draft (T3b) supplies the real values; the conservative option: nothing outside the local model is open",
+  "open_subtypes": [
+   "local_model"
+  ],
+  "approved_providers_for_internal": [],
+  "automated_use_cleared": []
+ },
+ "sandbox_wrappers": {
+  "docker": {
+   "argv": [
+    "docker",
+    "run",
+    "--rm",
+    "-i",
+    "--read-only",
+    "--cap-drop",
+    "ALL",
+    "--security-opt",
+    "no-new-privileges",
+    "--pids-limit",
+    "256",
+    "--memory",
+    "2g",
+    "--user",
+    "65534:65534",
+    "-v",
+    "{workspace}:/work",
+    "-w",
+    "/work",
+    "{image}"
+   ],
+   "image": "mas-env-runner:pinned",
+   "status": "argv built and tested; no image is built and no environment ran inside it (UNTESTED)"
+  }
+ },
+ "env_base": [
+  "PATH",
+  "HOME",
+  "USERPROFILE",
+  "SYSTEMROOT",
+  "TEMP",
+  "TMP",
+  "TMPDIR",
+  "LANG",
+  "APPDATA",
+  "LOCALAPPDATA",
+  "XDG_CONFIG_HOME",
+  "XDG_DATA_HOME"
+ ],
+ "env_base_note": "the only variables a node passes through to an environment besides the NAMES an environment declares in env_pass; values are never logged",
+ "limits": {
+  "max_output_chars": 20000,
+  "max_files": 20,
+  "max_file_chars": 50000
+ },
+ "outbound": {
+  "drop_keys_internal": [
+   "text",
+   "content",
+   "result",
+   "output",
+   "output_text",
+   "files",
+   "answer",
+   "summary",
+   "prompt",
+   "input_text"
+  ],
+  "max_chars": 500
+ }
+}

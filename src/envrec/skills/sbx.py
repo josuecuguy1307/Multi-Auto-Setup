@@ -115,3 +115,79 @@ def run_script(skill_dir: Path, script: str, payload: dict, *, timeout_s: float 
         last = done.stderr.decode("utf-8", "replace").strip().splitlines()
         raise ScriptFailed(f"the script failed (exit {done.returncode}): {last[-1][:160] if last else 'no message'}")
     return validate_output(done.stdout)
+
+
+# ---- the admission exam's code tasks ------------------------------------------------------------------------------------------------------------
+# A model's answer to a "code" task is model-written code. It runs HERE and nowhere else: the same container limits as a skill script, but nothing is mounted at all (the solution and the
+# project's hidden checks travel on stdin, so the solution cannot read the checks from disk). Output is one JSON line the wrapper writes after the solution's own prints are discarded.
+EXAM_WRAPPER = (
+    "import sys, json, io, signal\n"
+    "d = json.load(sys.stdin)\n"
+    "real = sys.stdout\n"
+    "signal.alarm(max(1, int(d.get('limit_s', 10))))\n"
+    "res = {'ok': False, 'kind': 'error', 'checked': 0}\n"
+    "class Failed(Exception):\n"
+    "    pass\n"
+    "def check(actual, expected):\n"
+    "    res['checked'] += 1\n"
+    "    if actual != expected or type(actual) is not type(expected):\n"
+    "        raise Failed(repr(actual)[:80] + ' != ' + repr(expected)[:80])\n"
+    "def raises(exc, fn, *a):\n"
+    "    res['checked'] += 1\n"
+    "    try:\n"
+    "        fn(*a)\n"
+    "    except exc:\n"
+    "        return\n"
+    "    except BaseException as e:\n"
+    "        raise Failed('raised ' + type(e).__name__)\n"
+    "    raise Failed('did not raise ' + exc.__name__)\n"
+    "ns = {'__name__': 'solution', 'check': check, 'raises': raises}\n"
+    "sys.stdout = io.StringIO()\n"
+    "try:\n"
+    "    exec(compile(d['solution'], 'solution', 'exec'), ns)\n"
+    "    res['checked'] = 0\n"
+    "    ns2 = dict(ns)\n"
+    "    ns2['check'], ns2['raises'] = check, raises\n"  # the solution cannot swap the project's checkers for its own
+    "    exec(compile(d['checks'], 'checks', 'exec'), ns2)\n"
+    "    res.update(ok=res['checked'] == d['n_checks'], kind='passed' if res['checked'] == d['n_checks'] else 'wrong_check_count')\n"
+    "except Failed as e:\n"
+    "    res.update(ok=False, kind='wrong_answer', detail=str(e))\n"
+    "except SyntaxError as e:\n"
+    "    res.update(ok=False, kind='syntax_error', detail=str(e)[:80])\n"
+    "except BaseException as e:\n"
+    "    res.update(ok=False, kind='exception', detail=type(e).__name__ + ': ' + str(e)[:80])\n"
+    "sys.stdout = real\n"
+    "sys.stdout.write(json.dumps({'ok': bool(res['ok']), 'kind': res['kind'], 'checked': res['checked'], 'detail': res.get('detail', '')}))\n"
+)
+EXAM_KINDS = {"passed", "wrong_answer", "syntax_error", "exception", "wrong_check_count", "error"}
+
+
+def exam_argv(name: str, image: str = IMAGE) -> list[str]:
+    return ["docker", "run", "--rm", "-i", "--name", name, "--network", "none", "--read-only", "--tmpfs", "/tmp:rw,noexec,nosuid,size=4m", "--cap-drop", "ALL",
+            "--security-opt", "no-new-privileges", "--pids-limit", "24", "--memory", "256m", "--memory-swap", "256m", "--cpus", "1", "--user", "65534:65534",
+            image, "python", "-I", "-c", EXAM_WRAPPER]
+
+
+def run_exam_code(solution: str, checks: str, n_checks: int, *, timeout_s: float = 10.0, image: str = IMAGE) -> dict:
+    """Run a model's solution followed by the project's hidden checks. Returns {ok, kind, checked, detail}. Raises SandboxUnavailable (fail closed, before anything starts) when no sandbox
+    backend is ready: model-written code never runs without one. A solution that runs over the limit is a result (`timeout`), not an error."""
+    if not docker_ready(image):
+        raise SandboxUnavailable("Docker (or the sandbox image) is not available: model-written code does not run without it")
+    body = json.dumps({"solution": solution, "checks": checks, "n_checks": n_checks, "limit_s": timeout_s}).encode()
+    if len(body) > MAX_INPUT:
+        raise SandboxRefused("input too large for the sandbox")
+    name = f"envrec-exam-{uuid.uuid4().hex[:10]}"
+    try:
+        done = subprocess.run(exam_argv(name, image), input=body, capture_output=True, timeout=timeout_s + START_SLACK_S)
+    except subprocess.TimeoutExpired:
+        subprocess.run(["docker", "kill", name], capture_output=True, timeout=15)
+        return {"ok": False, "kind": "timeout", "checked": 0, "detail": f"over {timeout_s:g} s"}
+    if done.returncode in (142, -14):
+        return {"ok": False, "kind": "timeout", "checked": 0, "detail": f"over {timeout_s:g} s"}
+    try:
+        out = json.loads(done.stdout.decode("utf-8", "replace").strip().splitlines()[-1])
+    except (ValueError, IndexError):
+        return {"ok": False, "kind": "no_result", "checked": 0, "detail": "the solution ended the process without the checks finishing"}
+    if not isinstance(out, dict) or out.get("kind") not in EXAM_KINDS or not isinstance(out.get("ok"), bool) or (out["ok"] and out["kind"] != "passed"):
+        return {"ok": False, "kind": "no_result", "checked": 0, "detail": "the sandbox result was not understood"}
+    return {"ok": out["ok"], "kind": out["kind"], "checked": int(out.get("checked") or 0), "detail": str(out.get("detail", ""))[:120]}

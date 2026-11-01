@@ -1,0 +1,30 @@
+{
+ "rule": "R1.4-auxiliary-file",
+ "kind": "file",
+ "says": "an importance matrix or tokenizer file is not a model",
+ "cases": [
+  {
+   "name": "an imatrix by name",
+   "facts": {
+    "file.name": "Model-4B.imatrix.gguf"
+   },
+   "expect": {
+    "kind": "auxiliary",
+    "excluded_rules": [
+     "R1.4-auxiliary-file"
+    ]
+   }
+  },
+  {
+   "name": "an imatrix by header type",
+   "facts": {
+    "gguf.general.type": "imatrix"
+   },
+   "expect": {
+    "excluded_rules": [
+     "R1.4-auxiliary-file"
+    ]
+   }
+  }
+ ]
+}

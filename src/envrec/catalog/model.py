@@ -8,12 +8,16 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import yaml
 from pydantic import Field
 
 from envrec.contracts.base import Strict
-from envrec.runtime.manifest import Artifact
+
+
+if TYPE_CHECKING:
+    from envrec.runtime.manifest import Artifact
 
 
 class RuntimeAsset(Strict):
@@ -50,6 +54,33 @@ class ModelFile(Strict):
     quantization: str
     params_b: float
     min_ram_gib: float
+    # What the rules of `model-catalog-rules` verified (all optional: a lock written before the check still loads). Verified-by-code unless a name says "declared".
+    kind: str = "chat"  # chat | base | embedding | reranker | vision-language | speech | draft (a projector, adapter, vocab or auxiliary file is never a row)
+    params_active_b: float | None = None  # mixture of experts: the active part (params_b is the total, which decides memory)
+    architecture: str | None = None
+    size_label: str | None = None
+    name: str | None = None
+    dims: dict[str, Any] = Field(default_factory=dict)  # what the KV estimate reads: layers, kv_heads, key/value length, notes
+    context_trained: int | None = None
+    context_extended: dict[str, Any] | None = None
+    publisher: str | None = None
+    base_model: str | None = None
+    gated: bool | str = False
+    license_header: str | None = None
+    license_card: str | None = None
+    license_verified: bool = False
+    license_name: str | None = None  # the full name of the terms (for a community license, its version), from the table of known licenses
+    license_class: str | None = None  # permissive | community-host-run
+    license_label: str | None = None
+    license_basis: str | None = None  # whether the license was read from the header, the card, or both (and whether they agree)
+    labels: list[str] = Field(default_factory=list)
+    requires_task: dict[str, str] = Field(default_factory=dict)  # task -> why; the row is offered only when the task needs it
+    offer_by_default: bool = True
+    not_default_reasons: list[str] = Field(default_factory=list)
+    conflicts: list[dict[str, Any]] = Field(default_factory=list)  # a declared value that disagreed with a verified one (the verified one is stored)
+    companions: list[dict[str, Any]] = Field(default_factory=list)  # a vision projector, attached only when the task needs vision
+    shards: list[dict[str, Any]] = Field(default_factory=list)
+    verified: dict[str, Any] = Field(default_factory=dict)
 
 
 class CatalogEntry(Strict):
@@ -101,13 +132,19 @@ class Catalog:
 
     def artifacts(self) -> dict[str, Artifact]:
         """The only things the fetcher may download, from the lockfile and nowhere else."""
+        from envrec.runtime.manifest import Artifact  # here, not at import: the rules of this package are read by the coordinator, which must not load the fetcher behind it
+
         out: dict[str, Artifact] = {}
         for a in self.lock.runtime_assets:
             out[a.id] = Artifact(a.id, "runtime", a.file, a.url, a.sha256, a.bytes, a.license, a.license_source, a.source,
                                  {"platform": f"{a.os}/{a.arch}", "backend": a.backend, "tag": a.tag, "server_binary": a.server_binary})
         for m in self.lock.model_files:
-            out[m.id] = Artifact(m.id, "model", m.file, m.url, m.sha256, m.bytes, m.license, m.license_source, m.source,
-                                 {"quantization": m.quantization, "params_b": m.params_b, "min_ram_gib": m.min_ram_gib})
+            meta = {"quantization": m.quantization, "params_b": m.params_b, "min_ram_gib": m.min_ram_gib}
+            if m.shards:  # a split model: one artifact per shard, each with its own checksum (the plan downloads and checks all of them)
+                for i, sh in enumerate(m.shards, 1):
+                    out[f"{m.id}#shard{i}"] = Artifact(f"{m.id}#shard{i}", "model", sh["file"], sh["url"], sh["sha256"], sh["bytes"], m.license, m.license_source, m.source, {**meta, "shard": i, "shards": len(m.shards)})
+                continue
+            out[m.id] = Artifact(m.id, "model", m.file, m.url, m.sha256, m.bytes, m.license, m.license_source, m.source, meta)
         return out
 
 

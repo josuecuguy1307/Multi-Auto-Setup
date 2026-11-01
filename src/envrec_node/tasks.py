@@ -1,8 +1,9 @@
 """What a node does with a task from its coordinator (docs/NETWORK_CONTRACT.md 3.7): check it, run it ONLY if it is on the read-only allowlist below, report the result.
 
 THE ALLOWLIST IS THIS DICTIONARY AND NOTHING ELSE. A task type that is not a key of `ALLOWED` is rejected with a typed reason; there is no lookup by name, no import from a string, no
-shell, no `eval`, and the task's parameters are validated against a Pydantic model that forbids undeclared fields (so a `command` or a path to write is "bad_parameters"). Writes need a
-fresh approval from the owner ON the node, which this version does not offer: nothing here changes the machine (conformance T1 scans this module)."""
+shell, no `eval`, and the task's parameters are validated against a Pydantic model that forbids undeclared fields (so a `command` or a path to write is "bad_parameters"). Eight of the
+ten types only read. The ninth, `setup_step`, writes, and only after `envrec_node.setup.authorize` has checked the plan's hash against the signed token, the owner's approval of exactly that plan
+and step, this computer's own copy of the recipe and the paths the step declares (docs/NETWORK_CONTRACT.md 3.9); it runs in `_setup_step` and in no other place (conformance T1, W1-W3 scan this module)."""
 
 from __future__ import annotations
 
@@ -12,8 +13,10 @@ from collections.abc import Awaitable, Callable
 
 import envrec_os
 from envrec_net import task as T
+from envrec_net.envrun import load_environments
 from envrec_os import probes
-from envrec_node import analysis
+from envrec_node import analysis, envrun, setup
+from envrec_node.executors import EXECUTORS as STEP_FUNCTIONS
 
 MAX_CONCURRENT = 2
 
@@ -59,7 +62,19 @@ def _memory_for_models(params: T.TaskParams, ctx: dict) -> tuple[dict, list[dict
     return _as_result(probes.memory_for_models())
 
 
+def _setup_step(params: T.SetupStepParams, ctx: dict) -> tuple[dict, list[dict]]:
+    plan, step = setup.authorize(params, ctx["token"], ctx["recipes"])  # again, here: nothing below runs unless this passes, whoever called us
+    return setup.run_step(plan, step, params.action, ctx)
+
+
+def _environment_run(params: T.EnvironmentRunParams, ctx: dict) -> tuple[dict, list[dict]]:
+    entry, mode = envrun.authorize(params, ctx["token"], ctx)  # again, here: nothing below runs unless this passes, whoever called us
+    return envrun.run_environment(params, entry, mode, ctx)
+
+
 ALLOWED: dict[str, Callable[[T.TaskParams, dict], tuple[dict, list[dict]]]] = {
+    "setup_step": _setup_step,
+    "environment_run": _environment_run,
     "node_report": _node_report,
     "machine_analysis": _machine_analysis,
     "os_details": _os_details,
@@ -74,8 +89,9 @@ Send = Callable[[str, dict], Awaitable[None]]
 
 
 class TaskRunner:
-    def __init__(self, *, key_path, agent: str = "", max_concurrent: int = MAX_CONCURRENT, mono: Callable[[], float] = time.monotonic) -> None:
-        self.ctx = {"key_path": key_path, "agent": agent}
+    def __init__(self, *, key_path, agent: str = "", max_concurrent: int = MAX_CONCURRENT, mono: Callable[[], float] = time.monotonic, mas_home=None, recipes=None, executors=None, envs=None) -> None:
+        self.ctx = {"key_path": key_path, "agent": agent, "mas_home": mas_home, "recipes": setup.load_recipes() if recipes is None else recipes, "executors": STEP_FUNCTIONS if executors is None else executors,
+                    "envs": load_environments() if envs is None else envs}
         self.max_concurrent, self.mono = max_concurrent, mono
         self.checker: T.TokenChecker | None = None
         self._running: dict[str, dict] = {}
@@ -108,6 +124,14 @@ class TaskRunner:
             token = self.checker.check(payload.get("token"), task_id=task_id, task_type=task_type)
         except T.TokenRejected as exc:
             return await reject(exc.reason)
+        if task_type in T.WRITE_TYPES:  # a write is refused here, before it is even accepted, unless its plan, approval, recipe and paths (or its environment, origin, recipe and confinement) all check out
+            try:
+                if task_type == "environment_run":
+                    envrun.authorize(params, token, self.ctx)
+                else:
+                    setup.authorize(params, token, self.ctx["recipes"])
+            except T.TokenRejected as exc:
+                return await reject(exc.reason)
         self._running[task_id] = {"cancelled": False}
         await send("task_update", {"task_id": task_id, "state": "accepted", "reason": ""})
         asyncio.ensure_future(self._run(task_id, task_type, params, token, received, send))
@@ -121,10 +145,11 @@ class TaskRunner:
             await send("task_update", {"task_id": task_id, "state": "running", "reason": ""})
             t0 = self.mono()
             try:
-                result, evidence = await asyncio.to_thread(ALLOWED[task_type], params, self.ctx)
+                result, evidence = await asyncio.to_thread(ALLOWED[task_type], params, {**self.ctx, "token": token})
                 res = T.TaskResult(task_id=task_id, status="done", result=result, evidence=evidence, duration_s=round(self.mono() - t0, 2))
             except Exception as exc:  # a failing task is reported, never fatal to the node
-                res = T.TaskResult(task_id=task_id, status="failed", reason=f"{type(exc).__name__}: {str(exc)[:120]}", duration_s=round(self.mono() - t0, 2))
+                reason = exc.code if isinstance(exc, envrun.EnvFailed) else f"{type(exc).__name__}: {str(exc)[:120]}"
+                res = T.TaskResult(task_id=task_id, status="failed", reason=reason, duration_s=round(self.mono() - t0, 2))
             if state["cancelled"]:
                 return  # the coordinator cancelled it and was already told
             await send("result", res.model_dump())

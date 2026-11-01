@@ -1,0 +1,19 @@
+{
+ "rule": "R2.1-real-size",
+ "kind": "estimate",
+ "says": "weights are the real file size, not parameters x bits",
+ "cases": [
+  {
+   "name": "an 8B Q4_K_M is 4.6 GiB on disk, not the 3.7 GiB the nominal 4 bits give",
+   "row": {
+    "params_b": 8.0,
+    "bytes_gib": 4.6,
+    "quantization": "Q4_K_M",
+    "dims": {}
+   },
+   "expect": {
+    "weights_gib": 4.6
+   }
+  }
+ ]
+}

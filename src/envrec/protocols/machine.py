@@ -163,6 +163,15 @@ class ProtocolRun:
                 return True
         return False
 
+    def exit_keys(self) -> list[str]:
+        """The fact keys the step's first exit is made of (known or missing): what the step is about, so the view can always show them."""
+        rules = self.current.advance
+        return [n.get("fact") or n.get("tried") for n in rules[0].needs if (n.get("fact") or n.get("tried"))] if rules else []
+
+    def shown_keys(self) -> list[str]:
+        """The facts the view must always show in this step: the first exit's own facts and the ones the step's spec lists in `show`."""
+        return [*self.exit_keys(), *self.current.show]
+
     def missing_facts(self, ev: EvidenceView) -> tuple[str, list[str]] | None:
         """When no way forward is open: the first exit and the fact keys it still lacks (only needs that name a fact key; the others have no key to show). None when an exit is open or
         nothing is named. This is for the model's VIEW and menu order; code never produces the key and never moves."""

@@ -1,0 +1,29 @@
+{
+ "rule": "R4.3-reasoning",
+ "kind": "file",
+ "says": "a reasoning model is labeled",
+ "cases": [
+  {
+   "name": "the chat template has a thinking block",
+   "facts": {
+    "gguf.template.thinking": true
+   },
+   "expect": {
+    "labels": [
+     "~reasoning"
+    ]
+   }
+  },
+  {
+   "name": "named thinking",
+   "facts": {
+    "file.name": "Model-4B-Thinking-Q4_K_M.gguf"
+   },
+   "expect": {
+    "labels": [
+     "~reasoning"
+    ]
+   }
+  }
+ ]
+}

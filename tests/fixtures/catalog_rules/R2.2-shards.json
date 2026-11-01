@@ -1,0 +1,38 @@
+{
+ "rule": "R2.2-shards",
+ "kind": "shards",
+ "says": "a split model is one entry: the sum of its shards, every shard listed",
+ "cases": [
+  {
+   "name": "three shards",
+   "files": [
+    {
+     "file": "m-Q4_K_M-00001-of-00003.gguf",
+     "bytes_gib": 3.0,
+     "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    {
+     "file": "m-Q4_K_M-00002-of-00003.gguf",
+     "bytes_gib": 3.0,
+     "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+    },
+    {
+     "file": "m-Q4_K_M-00003-of-00003.gguf",
+     "bytes_gib": 1.0,
+     "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+    }
+   ],
+   "expect": {
+    "count": 1,
+    "bytes": [
+     7516192768
+    ],
+    "shard_files": [
+     "m-Q4_K_M-00001-of-00003.gguf",
+     "m-Q4_K_M-00002-of-00003.gguf",
+     "m-Q4_K_M-00003-of-00003.gguf"
+    ]
+   }
+  }
+ ]
+}

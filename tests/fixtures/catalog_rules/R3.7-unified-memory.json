@@ -1,0 +1,31 @@
+{
+ "rule": "R3.7-unified-memory",
+ "kind": "machine",
+ "says": "on Apple silicon the budget is the unified memory available, within what the GPU may wire",
+ "cases": [
+  {
+   "name": "16 GiB unified, 10 free: 10 x 0.85",
+   "machine": {
+    "model_path": "unified",
+    "ram_total_gib": 16.0,
+    "ram_available_gib": 10.0
+   },
+   "expect": {
+    "budget_gib": 8.5,
+    "basis": "~unified memory"
+   }
+  },
+  {
+   "name": "16 GiB unified, 15 free: the GPU may use 66% of the total",
+   "machine": {
+    "model_path": "unified",
+    "ram_total_gib": 16.0,
+    "ram_available_gib": 15.0
+   },
+   "expect": {
+    "budget_gib": 10.56,
+    "basis": "~at most 66%"
+   }
+  }
+ ]
+}

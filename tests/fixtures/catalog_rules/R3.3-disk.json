@@ -1,0 +1,18 @@
+{
+ "rule": "R3.3-disk",
+ "kind": "machine",
+ "says": "disk covers every file plus temporary download space",
+ "cases": [
+  {
+   "name": "0.5 GiB runtime + 2 GiB model + room for the largest file",
+   "machine": {},
+   "disk_row": {
+    "bytes_gib": 2.0
+   },
+   "runtime_gib": 0.5,
+   "expect": {
+    "disk_need_gib": 4.5
+   }
+  }
+ ]
+}

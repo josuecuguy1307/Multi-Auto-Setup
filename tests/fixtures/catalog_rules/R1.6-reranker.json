@@ -1,0 +1,46 @@
+{
+ "rule": "R1.6-reranker",
+ "kind": "file",
+ "says": "a reranker is never a chat model",
+ "cases": [
+  {
+   "name": "rank pooling in the header (it also has a pooling type, which is not an embedding model's)",
+   "facts": {
+    "gguf.arch.pooling_type": 4
+   },
+   "expect": {
+    "kind": "reranker",
+    "requires_task_keys": [
+     "rerank"
+    ],
+    "!requires_task_keys": [
+     "embedding"
+    ]
+   }
+  },
+  {
+   "name": "the hub says text ranking",
+   "facts": {
+    "hub.pipeline_tag": "text-ranking"
+   },
+   "expect": {
+    "kind": "reranker",
+    "requires_task_keys": [
+     "rerank"
+    ]
+   }
+  },
+  {
+   "name": "named reranker",
+   "facts": {
+    "file.repo": "Org/Model-Reranker-GGUF"
+   },
+   "expect": {
+    "kind": "reranker",
+    "requires_task_keys": [
+     "rerank"
+    ]
+   }
+  }
+ ]
+}

@@ -21,9 +21,13 @@ from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+from envrec_coordinator.harness import CHANNELS, Refused
+from envrec_harness.cards import CSS as CARDS_CSS
+from envrec_harness.host import BEHAVIOR_JS, FRAME_CSP, linked_document
 from envrec_coordinator.pairing import PairingBusy
 from envrec_coordinator.waiting import Waiting  # noqa: F401
 
+CHANNEL_PANEL = CHANNELS["panel"]
 WEB_HOST = "127.0.0.1"  # the only address the screen can bind to
 STATIC = Path(__file__).parent / "web_static"
 SESSION_MAX_AGE_S = 8 * 3600
@@ -33,7 +37,7 @@ REQUEST_TIMEOUT_S = 10.0
 LOOP_TIMEOUT_S = 5.0
 REFUSAL_LOG_EVERY_S = 5.0
 SECURITY_HEADERS = {
-    "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; frame-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "no-referrer",
@@ -57,7 +61,7 @@ def check_loopback(host: str) -> str:
     return str(a)
 
 
-def load_strings(lang: str = "es") -> dict[str, str]:
+def load_strings(lang: str = "en") -> dict[str, str]:
     return json.loads((STATIC / f"strings.{lang}.json").read_text(encoding="utf-8"))
 
 
@@ -95,6 +99,8 @@ class WebScreen:
         self._lock = threading.Lock()
         self.strings = load_strings()
         self.assets = {p: ((STATIC / f).read_bytes(), ct) for p, (f, ct) in ASSETS.items()}
+        self.assets["/cards.css"] = (CARDS_CSS.encode(), "text/css; charset=utf-8")  # the shared card layer, served as files so the screen's strict policy (no inline script or style) holds
+        self.assets["/cards.js"] = (BEHAVIOR_JS.encode(), "text/javascript; charset=utf-8")
         self._token: str | None = secrets.token_urlsafe(32)  # the one-time link's secret
         self._sessions: dict[str, Session] = {}
         self._last_refusal: dict[str, float] = {}
@@ -138,7 +144,8 @@ class WebScreen:
 
     def handle(self, req: Request) -> Response:
         res = self._route(req)
-        res.headers.extend(SECURITY_HEADERS.items())
+        own = {k.lower() for k, _ in res.headers}
+        res.headers.extend((k, v) for k, v in SECURITY_HEADERS.items() if k.lower() not in own)  # a response that sets its own policy (the map's frame) keeps it
         return res
 
     def _on_loop(self, fn, *args):
@@ -198,6 +205,9 @@ class WebScreen:
         if req.headers.get("host") not in allowed_hosts:  # DNS rebinding: a page on another name that resolves to 127.0.0.1 still sends ITS name here
             return self._refuse(req, 403, "host", "server.forbidden")
 
+        if req.path.startswith("/harness/v1/"):
+            return self._harness(req)  # a chat adapter: its own bearer token, never the owner's cookie
+
         sess = self._session(req)
         if sess is None:
             want = (req.query.get("t") or [""])[0]
@@ -231,6 +241,74 @@ class WebScreen:
             return self._post(req, sess)
         return Response(405, b"", "text/plain; charset=utf-8", [("Allow", "GET, POST")])
 
+    def _harness(self, req: Request) -> Response:
+        """`/harness/v1/*` (docs/HARNESS_APP_STANDARD.md). The Host check already passed. A browser page is refused outright (it sends an Origin; an adapter does not), and everything else needs the
+        bearer token of one chat channel: the channel is the token's, never a header the client writes."""
+        if req.headers.get("origin") is not None or req.headers.get("cookie"):
+            return self._refuse(req, 403, "harness_browser", "server.forbidden")
+        bearer = req.headers.get("authorization", "")
+        ch = self._on_loop(self.front.harness.authenticate, bearer[7:]) if bearer.startswith("Bearer ") and len(bearer) < 200 else None
+        if ch is None:
+            return self._refuse(req, 401, "harness_auth", "server.unauthorized")
+        core = self.front.harness
+        path, q = req.path[len("/harness/v1/"):].strip("/"), req.query
+        try:
+            body = {}
+            if req.method == "POST":
+                if req.headers.get("content-type", "").split(";")[0].strip().lower() != "application/json":
+                    return self._refuse(req, 415, "content_type", "server.bad_request")
+                body = json.loads(req.body.decode("utf-8") or "{}")
+                if not isinstance(body, dict):
+                    raise ValueError
+            s = lambda k, n=120: (lambda v: v if isinstance(v, str) and 0 < len(v) <= n else None)(body.get(k))  # noqa: E731
+            if req.method == "GET" and path == "capabilities":
+                return _json(200, self._on_loop(core.capabilities, ch))
+            if req.method == "POST" and path == "capabilities":
+                return _json(200, self._on_loop(core.declare, ch, body.get("declared") if isinstance(body.get("declared"), dict) else {}))
+            if req.method == "POST" and path == "view":
+                return _json(200, self._on_loop(core.view_context, ch, body.get("context") if isinstance(body.get("context"), dict) else {}))
+            if req.method == "GET" and path == "network":
+                return _json(200, self._on_loop(core.network_intent, ch))
+            if req.method == "GET" and path == "activity":
+                return _json(200, self._on_loop(core.activity, ch, int((q.get("since") or ["0"])[0] or 0)))
+            if req.method == "POST" and path == "runs":
+                return _json(200, self._on_loop(core.start, ch, str(body.get("goal", ""))[:20], s("node", 80), str(body.get("sensitivity", "internal"))[:20], "claude-code" if body.get("by") == "claude-code" else None))
+            if req.method == "GET" and path.startswith("runs/") and path.endswith("/intents"):
+                run_id = path.split("/")[1][:40]
+                since = int((q.get("since") or ["0"])[0] or 0)
+                deadline = self.clock() + min(float((q.get("wait") or ["0"])[0] or 0), 20.0)
+                while True:
+                    out = self._on_loop(core.intents, ch, run_id, since)
+                    if out["intents"] or out["run"]["finished"] or self.clock() >= deadline:
+                        return _json(200, out)
+                    time.sleep(0.25)
+            if req.method == "POST" and path == "decisions":
+                if not s("intent_id") or not s("option"):
+                    raise ValueError
+                return _json(200, self._on_loop(core.decide, ch, s("intent_id"), s("option"), "claude-code" if body.get("by") == "claude-code" else None))
+            if req.method == "POST" and path == "confirmations":
+                if not s("intent_id") or not s("mechanism", 40):
+                    raise ValueError
+                return _json(200, self._on_loop(core.begin_confirmation, ch, s("intent_id"), s("mechanism", 40)))
+            if path.startswith("confirmations/"):
+                parts = path.split("/")
+                if req.method == "GET" and len(parts) == 2:
+                    return _json(200, self._on_loop(core.ticket, ch, parts[1][:40]))
+                if req.method == "POST" and len(parts) == 3 and parts[2] == "complete":
+                    if not s("plan_hash") or not s("action", 20):
+                        raise ValueError
+                    return _json(200, self._on_loop(core.complete_confirmation, ch, parts[1][:40], s("plan_hash"), s("action", 20)))
+            if req.method == "GET" and path == "card":
+                host = (q.get("host") or ["plain"])[0]
+                if host not in ("panel", "openwebui", "mcp", "plain"):
+                    raise ValueError
+                return _json(200, self._on_loop(core.card, ch, (q.get("intent_id") or [""])[0][:120], host, (q.get("fragment") or ["0"])[0] == "1"))
+        except Refused as exc:
+            return _json(exc.status, {"error": exc.reason, "message": exc.message})
+        except (ValueError, UnicodeDecodeError, TypeError):
+            return self._refuse(req, 400, "bad_body", "server.bad_request")
+        return _json(404, {"error": "not_found"})
+
     def _state(self, sess: Session) -> dict:
         return {**self._on_loop(self.front.snapshot), "csrf": sess.csrf}
 
@@ -245,9 +323,27 @@ class WebScreen:
         if req.path == "/api/run":
             data = self._on_loop(self.front.run_view, (req.query.get("id") or [""])[0][:40])
             return _json(200, data) if data is not None else _json(404, {"error": "not_found"})
+        if req.path == "/card/intent":  # any card of a run, framed the same way (the owner's screen shows what the chats show)
+            iid = (req.query.get("id") or [""])[0][:120]
+            try:
+                frag = self._on_loop(self.front.harness.card, CHANNEL_PANEL, iid, "panel", True)["html"]
+            except Refused as exc:
+                return _json(exc.status, {"error": exc.reason})
+            return Response(200, linked_document(frag, self.front.harness.lang).encode(), "text/html; charset=utf-8", [("Content-Security-Policy", FRAME_CSP), ("X-Frame-Options", "SAMEORIGIN")])
+        if req.path == "/card/network":  # the map, for a frame in this screen: same cards as the chats, framed by this screen only
+            doc = linked_document(self._on_loop(self.front.harness.network_fragment), self.front.harness.lang)
+            return Response(200, doc.encode(), "text/html; charset=utf-8", [("Content-Security-Policy", FRAME_CSP), ("X-Frame-Options", "SAMEORIGIN")])
+        if req.path == "/api/profile":
+            return _json(200, self._on_loop(self.front.profile_view))
         if req.path == "/api/node/analysis":
             nid = (req.query.get("id") or [""])[0][:80]
             data = self._on_loop(self.front.analysis_of, nid)
+            return _json(200, data) if data is not None else _json(404, {"error": "not_found"})
+        if req.path == "/api/node/pick":
+            data = self._on_loop(self.front.pick_of, (req.query.get("id") or [""])[0][:80])
+            return _json(200, {"pick": data}) if data is not None else _json(200, {"pick": None})
+        if req.path == "/api/openwebui/admin":  # the owner's own screen only (it needs the panel's session): the account Open WebUI was made with, from the file only the owner can read
+            data = self._on_loop(self.front.openwebui_admin)
             return _json(200, data) if data is not None else _json(404, {"error": "not_found"})
         if req.path == "/favicon.ico":
             return Response(204, b"", "image/x-icon")
@@ -291,6 +387,38 @@ class WebScreen:
                 return self._refuse(req, 400, "bad_body", "server.bad_request")
             view = self._on_loop(self.front.start_options_run, node, "claude-code" if body.get("by") == "claude-code" else "web")
             return _json(200, {**self._state(sess), "run": view})
+        if req.path == "/api/install/start":
+            node = body.get("node")
+            if not isinstance(node, str) or not 0 < len(node) <= 80:
+                return self._refuse(req, 400, "bad_body", "server.bad_request")
+            view = self._on_loop(self.front.start_install_run, node, "claude-code" if body.get("by") == "claude-code" else "web")
+            return _json(200, {**self._state(sess), "run": view})
+        if req.path == "/api/connect/start":
+            host = body.get("host")
+            if host is not None and not (isinstance(host, str) and 0 < len(host) <= 40):
+                return self._refuse(req, 400, "bad_body", "server.bad_request")
+            view = self._on_loop(self.front.start_connect_run, host, "claude-code" if body.get("by") == "claude-code" else "web")
+            return _json(200, {**self._state(sess), "run": view})
+        if req.path == "/api/uninstall/start":
+            node = body.get("node")
+            if not isinstance(node, str) or not 0 < len(node) <= 80:
+                return self._refuse(req, 400, "bad_body", "server.bad_request")
+            view = self._on_loop(self.front.start_uninstall_run, node, "claude-code" if body.get("by") == "claude-code" else "web")
+            return _json(200, {**self._state(sess), "run": view})
+        if req.path == "/api/draft/start":
+            text = body.get("correction")
+            if text is not None and (not isinstance(text, str) or len(text) > 600):
+                return self._refuse(req, 400, "bad_body", "server.bad_request")
+            view = self._on_loop(self.front.start_draft_run, "claude-code" if body.get("by") == "claude-code" else "web", text or None)
+            return _json(200, {**self._state(sess), "run": view})
+        if req.path == "/api/draft/approve":
+            run = body.get("run")
+            if not isinstance(run, str) or not 0 < len(run) <= 40:
+                return self._refuse(req, 400, "bad_body", "server.bad_request")
+            out = self._on_loop(self.front.approve_draft, run, "claude-code" if body.get("by") == "claude-code" else "owner")
+            return _json(200, {**self._state(sess), "approved": out}) if out else _json(409, {"error": "nothing_to_approve"})
+        if req.path == "/api/profile/reset":
+            return _json(200, {**self._state(sess), "removed": self._on_loop(self.front.profile_reset)})
         if req.path == "/api/lan/start":
             view = self._on_loop(self.front.start_lan_run, "claude-code" if body.get("by") == "claude-code" else "web")
             return _json(200, {**self._state(sess), "run": view})
@@ -298,7 +426,7 @@ class WebScreen:
             run, q, opt = body.get("run"), body.get("question"), body.get("option")
             if not all(isinstance(x, str) and 0 < len(x) <= 80 for x in (run, q, opt)):
                 return self._refuse(req, 400, "bad_body", "server.bad_request")
-            if not self._on_loop(self.front.answer_run, run, q, opt, "claude-code" if body.get("by") == "claude-code" else "owner"):  # a label for the log, as for the start: an answer that is not the owner's says so
+            if not self._on_loop(self.front.answer_run, run, q, opt, "claude-code" if body.get("by") == "claude-code" else "owner", None, "panel"):  # a label for the log, as for the start: an answer that is not the owner's says so
                 return _json(409, {"error": "nothing_to_answer"})
             return _json(200, self._state(sess))
         if req.path == "/api/run/pick":
@@ -313,6 +441,24 @@ class WebScreen:
             if not isinstance(node, str) or not 0 < len(node) <= 80 or ttype not in ("node_report", "machine_analysis"):
                 return self._refuse(req, 400, "bad_body", "server.bad_request")
             self._on_loop(self.front.run_task, node, ttype, "web")
+            return _json(200, self._state(sess))
+        if req.path == "/api/confirm/decide":  # the owner's click on the panel: the last resort for approving a write
+            intent, plan_hash, accept = body.get("intent"), body.get("plan_hash"), body.get("accept")
+            if not all(isinstance(x, str) and 0 < len(x) <= 120 for x in (intent, plan_hash)) or not isinstance(accept, bool):
+                return self._refuse(req, 400, "bad_body", "server.bad_request")
+            try:
+                self._on_loop(self.front.harness.panel_decide, intent, plan_hash, accept)
+            except Refused as exc:
+                return _json(exc.status, {"error": exc.reason})
+            return _json(200, self._state(sess))
+        if req.path == "/api/node/kind":
+            node, kind = body.get("node"), body.get("kind")
+            if not isinstance(node, str) or not isinstance(kind, str):
+                return self._refuse(req, 400, "bad_body", "server.bad_request")
+            try:
+                self._on_loop(self.front.harness.set_kind, node, kind)
+            except Refused as exc:
+                return _json(exc.status, {"error": exc.reason})
             return _json(200, self._state(sess))
         if req.path == "/api/pair/decision":
             offer, accept = body.get("offer"), body.get("accept")

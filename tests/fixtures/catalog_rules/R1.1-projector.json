@@ -1,0 +1,44 @@
+{
+ "rule": "R1.1-projector",
+ "kind": "file",
+ "says": "a vision projector is never an entry by itself",
+ "cases": [
+  {
+   "name": "named mmproj, clip architecture, type mmproj",
+   "facts": {
+    "file.name": "mmproj-Model-VL-Q8_0.gguf",
+    "gguf.general.architecture": "clip",
+    "gguf.general.type": "mmproj",
+    "gguf.has_chat_template": false
+   },
+   "expect": {
+    "kind": "vision-projector",
+    "companion": true
+   }
+  },
+  {
+   "name": "only the clip architecture says so",
+   "facts": {
+    "gguf.general.architecture": "clip",
+    "gguf.has_chat_template": false
+   },
+   "expect": {
+    "kind": "vision-projector",
+    "companion": true
+   }
+  },
+  {
+   "name": "header unreadable and far smaller than the repo's biggest file",
+   "facts": {
+    "gguf.general.architecture": null,
+    "gguf.general.type": null,
+    "gguf.tensor_count": null,
+    "file.size_ratio_to_repo_largest": 0.05
+   },
+   "expect": {
+    "kind": "vision-projector",
+    "companion": true
+   }
+  }
+ ]
+}

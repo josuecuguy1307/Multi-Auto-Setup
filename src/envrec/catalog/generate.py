@@ -11,11 +11,13 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from envrec.catalog.model import Lock, ModelFile, RuntimeAsset, parse_params_b, parse_quant
-from envrec_worker.runtime.spec import SUPPORTED_KINDS
-from envrec.runtime.manifest import Manifest
+from envrec.catalog.rules import Rules, group_shards
+
+if TYPE_CHECKING:
+    from envrec.runtime.manifest import Manifest
 
 SHARD = re.compile(r"-\d{5}-of-\d{5}", re.I)
 
@@ -41,12 +43,14 @@ def _gib(n: int) -> float:
     return n / 2**30
 
 
-def generate(manifest: Manifest, meta: MetadataSource) -> Generated:
+def generate(manifest: Manifest, meta: MetadataSource, rules: Rules | None = None) -> Generated:
+    from envrec_worker.runtime.spec import SUPPORTED_KINDS  # here, not at import: the coordinator reads the rules of this package and must not load the worker code behind the generator
+
     manifest.require_approved()
+    rules = rules or Rules.load()
     raw = manifest.raw
-    allow = {x.lower() for x in manifest.license_allowlist}
-    max_bytes = int(float(raw.get("max_artifact_gb", 3.0)) * 1e9)
-    max_params = float(raw.get("max_model_params_b", 8))
+    allow = {x.lower() for x in manifest.license_allowlist}  # for the RUNTIMES; a model's license is judged by the table of known licenses in the rules of `model-catalog-rules`
+    max_bytes = int(float(raw.get("max_artifact_gb", 3.0)) * 1e9)  # a cap on RUNTIME builds only (a huge GPU build must not enter by accident); a model is judged by what fits the machine, at option time
     quants = {q.upper() for q in raw.get("quantizations", [])}
     excluded: list[dict[str, str]] = []
 
@@ -96,6 +100,8 @@ def generate(manifest: Manifest, meta: MetadataSource) -> Generated:
                 runnable=src["id"] in SUPPORTED_KINDS))
 
     # ---- models --------------------------------------------------------------------------------------
+    # Nothing here caps a model by its size or by a number read from its name: the file's own header is read afterwards (`envrec.catalog.verify`), which sets the parameter count and applies the
+    # manifest's parameter cap to the REAL count; whether a file fits a machine is decided for that machine, at option time.
     files: list[ModelFile] = []
     for src in raw["model_sources"]:
         if src.get("status") != "approve":
@@ -106,10 +112,11 @@ def generate(manifest: Manifest, meta: MetadataSource) -> Generated:
             if not lic:
                 exclude(name, "no license stated on the model page")
                 continue
-            if lic not in allow:
-                exclude(name, f"license {lic!r} is not in the allowlist")
+            if not rules.license_offered(lic):
+                exclude(name, f"license {lic!r} is not in the allowlist: it is not a known license whose class is offered")
                 continue
             info = meta.repo_files(name)
+            cands: list[dict[str, Any]] = []
             for f in info["files"]:
                 path = f["path"]
                 if not path.lower().endswith(".gguf"):
@@ -117,27 +124,27 @@ def generate(manifest: Manifest, meta: MetadataSource) -> Generated:
                 q = parse_quant(path)
                 if q is None or q not in quants:
                     continue
-                if SHARD.search(path):
-                    exclude(f"{name}/{path}", "multi-file (sharded) model: not supported")
-                    continue
-                p = parse_params_b(path) or parse_params_b(name)
-                if p is None:
-                    exclude(f"{name}/{path}", "parameter count not readable from the name")
-                    continue
-                if p > max_params:
-                    exclude(f"{name}/{path}", f"{p:g}B parameters is over the {max_params:g}B cap")
-                    continue
                 if not f.get("sha256"):
                     exclude(f"{name}/{path}", "the source gives no checksum for this file")
                     continue
-                if f["bytes"] > max_bytes:
-                    exclude(f"{name}/{path}", f"{f['bytes'] / 1e9:.2f} GB is over the {max_bytes / 1e9:.1f} GB artifact cap")
-                    continue
+                cands.append({"repo": name, "file": path, "bytes": f["bytes"], "sha256": f["sha256"], "quantization": q,
+                              "url": f"https://huggingface.co/{name}/resolve/{info['revision']}/{path}"})
+            grouped = group_shards(cands, rules)  # R2.2: a split model is one entry (the sum of its shards, every shard listed with its checksum)
+            in_group = {s["file"] for g in grouped for s in g.get("shards", [])}
+            for c in cands:
+                if SHARD.search(c["file"]) and c["file"] not in in_group:
+                    exclude(f"{name}/{c['file']}", "incomplete set of shards: one is missing")
+            singles = {(g["repo"], g["quantization"]) for g in grouped if not g.get("shards")}
+            for g in [g for g in grouped if g.get("shards") and (g["repo"], g["quantization"]) in singles]:  # the same quantization published twice: keep the single file, not its split copy
+                exclude(f"{name}/{g['file']}", "the same quantization is also published as a single file: the split copy is not listed twice")
+            grouped = [g for g in grouped if not (g.get("shards") and (g["repo"], g["quantization"]) in singles)]
+            for g in grouped:
+                path = g["file"]
+                p = parse_params_b(path) or parse_params_b(name) or 0.0  # what the NAME says: kept as the declared value, replaced by the header's count when verified
                 files.append(ModelFile(
-                    id=f"{name}/{path}", source=src["id"], repo=name, file=path,
-                    url=f"https://huggingface.co/{name}/resolve/{info['revision']}/{path}", revision=info["revision"],
-                    sha256=f["sha256"], bytes=f["bytes"], license=lic, license_source=f"https://huggingface.co/{name}",
-                    format="gguf", quantization=q, params_b=p, min_ram_gib=round(_gib(f["bytes"]) * 1.25 + 0.3, 2)))
+                    id=f"{name}/{path}", source=src["id"], repo=name, file=path, url=g["url"], revision=info["revision"], sha256=g["sha256"], bytes=g["bytes"], license=lic,
+                    license_source=f"https://huggingface.co/{name}", format="gguf", quantization=g["quantization"], params_b=p, min_ram_gib=round(_gib(g["bytes"]) * 1.25 + 0.3, 2),
+                    shards=g.get("shards", [])))
 
     # ---- combinations: computed from the compatibility matrix, never written by hand -------------------
     assets.sort(key=lambda a: a.id)

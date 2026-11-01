@@ -502,7 +502,7 @@ def test_the_page_never_builds_html_from_text_and_loads_nothing_from_elsewhere()
 
 
 def test_every_string_the_page_asks_for_exists_and_no_copy_is_hardcoded():
-    strings = json.loads((STATIC / "strings.es.json").read_text())
+    strings = json.loads((STATIC / "strings.en.json").read_text())
     html = (STATIC / "index.html").read_text()
     js = (STATIC / "app.js").read_text()
     wanted = set(re.findall(r'data-i18n="([\w.]+)"', html)) | set(re.findall(r'\bt\("([\w.]+)"', js)) - {"pair.result.", "node.analysis.limit.", "run.status.", "run.step.", "run.group.", "run.cost.", "run.finished."}  # (those are built from a status or a limit name below)

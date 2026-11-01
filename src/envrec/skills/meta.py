@@ -58,6 +58,7 @@ class State(Strict):
     actions: list[str] = Field(default_factory=list)  # extra model actions allowed here (research, propose_skill, ...)
     skills: list[str] = Field(default_factory=list)  # guidance skills whose body stays in the view for every turn of this step (the authoring skill while a skill is being written)
     advance: list[Advance] = Field(default_factory=list)
+    show: list[str] = Field(default_factory=list)  # fact keys (a trailing * is a prefix) the view always shows in this step, outside its budget: what the step's choices depend on
     close_on: list[str] = Field(default_factory=list)  # tools whose SUCCESS ends this step: when one of them has run (chosen by the model) and an exit's evidence is in, the guard takes that exit and records it
     terminal: bool = False
     reason: str = ""

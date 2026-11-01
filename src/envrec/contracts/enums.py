@@ -23,6 +23,10 @@ class TargetKind(StrEnum):
     node = "node"  # a node's own connection to its coordinator: card, connect, heartbeat, reconnect (protocol-node-connect)
     coordinator = "coordinator"  # the coordinator analysing one paired machine: the model picks read-only probes that run on the node through signed tasks (protocol-analyze)
     setup = "setup"  # the coordinator choosing which AI to set up on one analysed machine: reads the stored analysis, asks the owner, builds and explains options (protocol-setup-options)
+    install = "install"  # the coordinator setting up the option the owner picked on one analysed machine: re-checks the fit, builds the plan, runs each step the owner approves, verifies, can undo (protocol-setup)
+    chat_connect = "chat_connect"  # the coordinator connecting a chat host (Open WebUI, Claude Desktop, a terminal agent) to Multi Auto Setup: detects, asks the owner, builds the plan from the recipes, each step approved (protocol-connect-chats)
+    uninstall = "uninstall"  # the coordinator undoing, later and in a new run, what a recorded setup wrote on one machine: only its done steps, newest first, each undo approved by the owner (protocol-undo)
+    network = "network"  # the coordinator drafting the whole setup of the owner's network from the stored analyses: tasks, environment per machine, team, freedom, rhythm (protocol-draft)
     lan = "lan"  # the coordinator's own network: waiting machines and pairing offers the OWNER picked (protocol-lan)
     media = "media"  # this computer's own Bluetooth, audio output and media apps, enrolled in targets.yaml as a `local` entry
     scope = "scope"  # the candidates a goal covers: the model picks one of them (protocol-choose)

@@ -49,11 +49,12 @@ class NodeAgent:
         self.clock_offset_s = 0.0
         self.skew_s = None
         self._wlock = asyncio.Lock()
-        self.runner = TaskRunner(key_path=self.state.identity_dir / KEY_FILE, agent=AGENT)
+        self.runner = TaskRunner(key_path=self.state.identity_dir / KEY_FILE, agent=AGENT, mas_home=self.state.dir / "mas")
         self.connected = False
         self.heartbeats_acked = 0
         self._acked_this_session = 0
         self.stop_event = asyncio.Event()
+        self.revoked = False  # the coordinator unpaired this node on its signed session: the pin is gone and the agent has stopped
         self._kick = asyncio.Event()
         self._seq = 0
         self._loop: asyncio.AbstractEventLoop | None = None
@@ -163,7 +164,8 @@ class NodeAgent:
         except EnvelopeRejected as exc:
             writer.close()
             reason = f"coordinator message rejected: {exc.reason}"
-            self.say(f"The coordinator's first message was refused ({PLAIN.get(exc.reason, exc.reason)}).")
+            hint = PLAIN.get(str(raw.get("reason")), "") if isinstance(raw, dict) and raw.get("type") == "reject" else ""  # an UNSIGNED refusal is only a hint: it never makes the node forget anything
+            self.say(f"The coordinator's first message was refused ({PLAIN.get(exc.reason, exc.reason)})." + (f" It says: {hint}" if hint else ""))
             return reason
         if env.type == "reject":
             writer.close()
@@ -240,6 +242,13 @@ class NodeAgent:
             elif env.type == "cancel":
                 await self.runner.on_cancel(env.payload, send)
             elif env.type == "reject":
+                if str(env.payload.get("reason")) == "revoked":  # signed by the pinned coordinator (the session verifier opened it): only this path forgets the pin
+                    self.state.forget_pin()
+                    self.pin, self.revoked = None, True
+                    self.log.add("unpaired_by_coordinator", {})
+                    self.say("The coordinator unpaired this node. This computer no longer remembers that coordinator. To join it again run `mas join`.")
+                    self.stop_event.set()
+                    return "coordinator unpaired this node"
                 return self._refused(env.payload)
             else:
                 self.log.add("message_rejected", {"reason": "unexpected_type"})

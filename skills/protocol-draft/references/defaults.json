@@ -1,0 +1,10 @@
+{
+ "no_task_info": "The owner has not said what these machines are used for yet.",
+ "internal_sensitivity": "Nobody said how sensitive the work is: assumed internal.",
+ "unrestricted_resources": "Nobody said what the owner puts on this machine: any detected access is assumed usable.",
+ "owner_present": "Nobody said whether the agent works at night: assumed only with the owner present.",
+ "ask_before_acting": "Nobody said how much freedom the agent has: assumed it asks first.",
+ "strongest_machine_directs": "Nobody chose who directs: assumed the machine with the most memory for models.",
+ "single_machine": "There is a single usable machine: there is no team to organize.",
+ "no_harness_catalog": "There is no catalog of open harnesses yet: the harness name is a proposal, not verified."
+}

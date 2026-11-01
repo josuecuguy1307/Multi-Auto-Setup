@@ -1,0 +1,20 @@
+{
+ "rule": "R3.2-memory-path",
+ "kind": "machine",
+ "says": "VRAM counts only when models run on the GPU; an integrated GPU adds none",
+ "cases": [
+  {
+   "name": "a shared 1 GiB GPU on the CPU path",
+   "machine": {
+    "ram_total_gib": 19.7,
+    "ram_available_gib": 8.2,
+    "vram_gib": 1.0,
+    "model_path": "cpu"
+   },
+   "expect": {
+    "budget_gib": 6.97,
+    "basis": "~available RAM"
+   }
+  }
+ ]
+}

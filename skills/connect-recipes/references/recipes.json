@@ -1,0 +1,374 @@
+{
+ "version": 1,
+ "about": "How the owner's chats get connected to Multi Auto Setup, as data. Each host lists its steps per operating system; the code that runs a step is generic (src/envrec_coordinator/connect.py) and never knows a host by name. A cell that is not documented for an operating system refuses with a typed reason instead of guessing. Every path and flag below is quoted from the tool's own documentation (see `sources`).",
+ "entry_args": [
+  "-m",
+  "envrec_harness.mcp_server",
+  "--state-dir",
+  "{state_dir}",
+  "--channel",
+  "{channel}"
+ ],
+ "server_name": "multi-auto-setup",
+ "hosts": {
+  "claude-desktop": {
+   "label": "Claude Desktop",
+   "channel": "claude-desktop",
+   "sources": [
+    "https://modelcontextprotocol.io/docs/develop/connect-local-servers"
+   ],
+   "quits_to_edit": "Claude Desktop rewrites its settings file when it quits, so it must be fully quit (Cmd+Q on macOS) before the file is edited, and started again afterwards.",
+   "process": {
+    "macos": "Claude",
+    "windows": "Claude.exe",
+    "linux": "claude-desktop"
+   },
+   "cells": {
+    "macos": {
+     "config": "~/Library/Application Support/Claude/claude_desktop_config.json",
+     "app_dir": "~/Library/Application Support/Claude",
+     "status": "untested"
+    },
+    "windows": {
+     "config": "{config_root}/Claude/claude_desktop_config.json",
+     "app_dir": "{config_root}/Claude",
+     "status": "untested"
+    },
+    "linux": {
+     "config": "~/.config/Claude/claude_desktop_config.json",
+     "app_dir": "~/.config/Claude",
+     "status": "untested"
+    }
+   },
+   "steps": [
+    {
+     "op": "backup_file",
+     "kind": "configure",
+     "title": "Keep a copy of the settings file"
+    },
+    {
+     "op": "json_merge_entry",
+     "kind": "configure",
+     "title": "Add the multi-auto-setup entry to the settings file",
+     "key": "mcpServers",
+     "entry": {
+      "command": "{py}",
+      "args": "@entry_args"
+     }
+    },
+    {
+     "op": "json_verify_entry",
+     "kind": "verify",
+     "title": "Read the settings file back and check the entry",
+     "key": "mcpServers"
+    }
+   ],
+   "verification": "the settings file is read back and our entry is found"
+  },
+  "claude-code": {
+   "label": "Claude Code",
+   "channel": "terminal",
+   "sources": [
+    "https://code.claude.com/docs/en/mcp"
+   ],
+   "binary": "claude",
+   "cells": {
+    "macos": {
+     "status": "untested"
+    },
+    "windows": {
+     "status": "untested"
+    },
+    "linux": {
+     "status": "untested"
+    }
+   },
+   "steps": [
+    {
+     "op": "cli_add",
+     "kind": "configure",
+     "title": "Add the MCP server with the claude command",
+     "argv": [
+      "{binary}",
+      "mcp",
+      "add",
+      "--transport",
+      "stdio",
+      "--scope",
+      "user",
+      "multi-auto-setup",
+      "--",
+      "{py}",
+      "@entry_args"
+     ],
+     "undo_argv": [
+      "{binary}",
+      "mcp",
+      "remove",
+      "multi-auto-setup",
+      "--scope",
+      "user"
+     ],
+     "writes": [
+      "~/.claude.json"
+     ]
+    },
+    {
+     "op": "cli_verify_listed",
+     "kind": "verify",
+     "title": "Check that claude lists the server",
+     "argv": [
+      "{binary}",
+      "mcp",
+      "list"
+     ],
+     "name": "multi-auto-setup"
+    }
+   ],
+   "verification": "claude lists our server"
+  },
+  "codex": {
+   "label": "Codex",
+   "channel": "terminal",
+   "sources": [
+    "https://learn.chatgpt.com/docs/extend/mcp?surface=cli"
+   ],
+   "binary": "codex",
+   "cells": {
+    "macos": {
+     "config": "~/.codex/config.toml",
+     "status": "untested"
+    },
+    "windows": {
+     "config": "~/.codex/config.toml",
+     "status": "untested"
+    },
+    "linux": {
+     "config": "~/.codex/config.toml",
+     "status": "untested"
+    }
+   },
+   "steps": [
+    {
+     "op": "backup_file",
+     "kind": "configure",
+     "title": "Keep a copy of the settings file"
+    },
+    {
+     "op": "toml_add_table",
+     "kind": "configure",
+     "title": "Add the multi-auto-setup table to the settings file",
+     "table": "mcp_servers",
+     "entry": {
+      "command": "{py}",
+      "args": "@entry_args"
+     }
+    },
+    {
+     "op": "toml_verify_table",
+     "kind": "verify",
+     "title": "Read the settings file back and check the table"
+    }
+   ],
+   "verification": "the settings file is read back and our table is found"
+  },
+  "opencode": {
+   "label": "OpenCode",
+   "channel": "terminal",
+   "sources": [
+    "https://opencode.ai/docs/mcp-servers/",
+    "https://opencode.ai/docs/config/"
+   ],
+   "binary": "opencode",
+   "cells": {
+    "macos": {
+     "config": "~/.config/opencode/opencode.json",
+     "jsonc_sibling": "~/.config/opencode/opencode.jsonc",
+     "status": "untested"
+    },
+    "linux": {
+     "config": "~/.config/opencode/opencode.json",
+     "jsonc_sibling": "~/.config/opencode/opencode.jsonc",
+     "status": "untested"
+    },
+    "windows": {
+     "refuse": "os_not_documented",
+     "text": "OpenCode's documentation gives the global settings location only as ~/.config/opencode/opencode.json and does not say where it is on Windows."
+    }
+   },
+   "steps": [
+    {
+     "op": "backup_file",
+     "kind": "configure",
+     "title": "Keep a copy of the settings file"
+    },
+    {
+     "op": "json_merge_entry",
+     "kind": "configure",
+     "title": "Add the multi-auto-setup entry under mcp in the settings file",
+     "key": "mcp",
+     "new_file": {
+      "$schema": "https://opencode.ai/config.json"
+     },
+     "entry": {
+      "type": "local",
+      "command": [
+       "{py}",
+       "@entry_args"
+      ],
+      "enabled": true
+     }
+    },
+    {
+     "op": "json_verify_entry",
+     "kind": "verify",
+     "title": "Read the settings file back and check the entry",
+     "key": "mcp"
+    }
+   ],
+   "verification": "the settings file is read back and our entry is found"
+  },
+  "muse-code": {
+   "label": "Muse Code",
+   "channel": "terminal",
+   "sources": [
+    "https://meta-models.github.io/muse-code-sdk/next/guides/extend/mcp-servers/"
+   ],
+   "binary": "muse",
+   "cells": {
+    "macos": {
+     "config": "{config_root}/muse/settings.json",
+     "status": "untested"
+    },
+    "linux": {
+     "config": "{config_root}/muse/settings.json",
+     "status": "untested"
+    },
+    "windows": {
+     "refuse": "os_not_documented",
+     "text": "Muse Code's documentation gives the settings file as $XDG_CONFIG_HOME/muse/settings.json or ~/.config/muse/settings.json and does not say where it is on Windows."
+    }
+   },
+   "steps": [
+    {
+     "op": "backup_file",
+     "kind": "configure",
+     "title": "Keep a copy of the settings file"
+    },
+    {
+     "op": "json_merge_entry",
+     "kind": "configure",
+     "title": "Add the multi-auto-setup entry under mcpServers in the settings file",
+     "key": "mcpServers",
+     "legacy_key": "mcp_servers",
+     "new_file": {
+      "schema_version": 1
+     },
+     "entry": {
+      "command": "{py}",
+      "args": "@entry_args"
+     }
+    },
+    {
+     "op": "json_verify_entry",
+     "kind": "verify",
+     "title": "Read the settings file back and check the entry",
+     "key": "mcpServers"
+    }
+   ],
+   "verification": "the settings file is read back and our entry is found"
+  },
+  "openwebui": {
+   "label": "Open WebUI",
+   "channel": "openwebui",
+   "sources": [
+    "https://github.com/open-webui/open-webui (the pinned version's own source: env.py, utils/auth.py create_admin_user, routers/functions.py)"
+   ],
+   "pinned": {
+    "package": "open-webui",
+    "version": "0.12.5",
+    "python": "3.11",
+    "disk_gib": 1.9
+   },
+   "license_exception": "Open WebUI License (BSD-3-style plus a branding clause), which is not on the MIT, Apache-2.0, BSD or ISC list. Open WebUI is a separate tool: it is not bundled, modified or redistributed, and its branding is left as it is. Approving the install accepts this exception.",
+   "cells": {
+    "macos": {
+     "status": "untested"
+    },
+    "linux": {
+     "status": "untested"
+    },
+    "windows": {
+     "status": "untested"
+    }
+   },
+   "steps": [
+    {
+     "op": "ensure_dir",
+     "kind": "configure",
+     "title": "Make Open WebUI's own folder"
+    },
+    {
+     "op": "uv_install_pinned",
+     "kind": "install",
+     "title": "Create a Python environment there and install the pinned Open WebUI"
+    },
+    {
+     "op": "openwebui_start",
+     "kind": "start",
+     "title": "Start Open WebUI on this computer only, offline, with a first admin account"
+    },
+    {
+     "op": "openwebui_register",
+     "kind": "configure",
+     "title": "Add our function to Open WebUI through its own API, turn it on and set its valve"
+    },
+    {
+     "op": "openwebui_verify",
+     "kind": "verify",
+     "title": "Ask Open WebUI whether the function is there, on, and has its valve"
+    }
+   ],
+   "verification": "the function is read back from Open WebUI's own API and found on, with its valve set"
+  },
+  "openwebui-cleanup": {
+   "label": "Remove the manual Open WebUI install",
+   "kind": "cleanup",
+   "channel": "openwebui",
+   "sources": [
+    "https://github.com/open-webui/open-webui (the server this plan stops is the one started from the folder named in the plan; nothing else is touched)"
+   ],
+   "cells": {
+    "macos": {
+     "status": "untested"
+    },
+    "linux": {
+     "status": "untested"
+    },
+    "windows": {
+     "status": "untested"
+    }
+   },
+   "steps": [
+    {
+     "op": "stop_legacy_server",
+     "kind": "start",
+     "title": "Stop the Open WebUI server that was started from that folder",
+     "only_if": "legacy_process"
+    },
+    {
+     "op": "move_legacy_aside",
+     "kind": "configure",
+     "title": "Move that folder aside (nothing is deleted)"
+    },
+    {
+     "op": "verify_legacy_gone",
+     "kind": "verify",
+     "title": "Check that the folder moved and nothing of it is running"
+    }
+   ],
+   "verification": "the folder is found at its new name, is gone from its old place, and no server started from it is running",
+   "plan_title": "Plan to remove the manual Open WebUI install from this computer"
+  }
+ }
+}

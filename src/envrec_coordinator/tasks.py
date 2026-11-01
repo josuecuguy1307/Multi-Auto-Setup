@@ -11,6 +11,8 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from envrec_net import envrun as ER
+from envrec_net import setup as P
 from envrec_net import task as T
 from envrec_net.protocol import IllegalTransition, ProtocolGuard
 
@@ -55,8 +57,12 @@ def evaluate_report(report: dict, skew_s: float | None = None, *, alert_skew_s: 
 
 
 class TaskDesk:
-    def __init__(self, *, clock: Callable[[], float] = time.time, log: Callable[..., object], sessions: Callable[[str], object | None], max_per_node: int = MAX_PER_NODE) -> None:
+    def __init__(self, *, clock: Callable[[], float] = time.time, log: Callable[..., object], sessions: Callable[[str], object | None], max_per_node: int = MAX_PER_NODE,
+                 approvals: Callable[[str, int, str], str | None] = lambda plan_hash, step, action: None,
+                 origins: Callable[..., str | None] = lambda task_id, task_type=None, sensitivity=None: None) -> None:
         self.clock, self.log, self.sessions, self.max_per_node = clock, log, sessions, max_per_node
+        self.approvals = approvals  # (plan hash, step, action) -> the hash of the OWNER event in the log that approved exactly that, or None. The default approves nothing.
+        self.origins = origins  # (task id, type, level) -> the id of the OWNER event in the log that created or approved that task, or None. The default accepts nothing.
         self.tasks: dict[str, TaskRecord] = {}
         self.on_result: Callable[[TaskRecord], None] = lambda rec: None
         self.on_change: Callable[[], None] = lambda: None
@@ -87,6 +93,12 @@ class TaskDesk:
         """Create and send a task. Returns at once; `await rec.done.wait()` for the end. Everything that can go wrong ends the task with a typed reason, never an exception."""
         tid = secrets.token_hex(6)
         rec = TaskRecord(tid, node_id, task_type, by, self.clock())
+        if task_type in T.WRITE_TYPES:  # a write goes through `start_setup_step` and nowhere else: it needs the owner's approval of the exact plan
+            self.tasks[tid] = rec
+            self.log("task_created", {"task": tid, "node": node_id, "type": task_type}, owner=False)
+            rec.guard = ProtocolGuard("protocol-task", lambda t, p: self.log(t, p), clock=self.clock, subject=tid)
+            self._end(rec, "rejected", "write_refused", **{"task.rejected": True})
+            return rec
         self.tasks[tid] = rec
         self.on_change()
         rec.guard = ProtocolGuard("protocol-task", lambda t, p: self.log(t, p), clock=self.clock, subject=tid)
@@ -108,6 +120,83 @@ class TaskDesk:
         rec.guard.record("task.created", True)
         self._move(rec, "sent", **{"task.sent": True})
         asyncio.ensure_future(session.send("task", {"task_id": tid, "task_type": task_type, "params": params or {}, "token": token, "timeout_s": timeout}))
+        asyncio.ensure_future(self._watch(rec, session, timeout))
+        return rec
+
+    def start_setup_step(self, node_id: str, plan: dict, step: int, action: str = "run", *, timeout_s: float | None = None) -> TaskRecord:
+        """Send one step of an approved plan to a node. The task is made by CODE (GUARD) and sent only when the log holds an OWNER approval of this exact plan hash, step and action; a plan whose hash is
+        not its own, or one nobody approved, ends `rejected` at once and nothing leaves this computer. The approval's event hash is signed into the node's token."""
+        tid = secrets.token_hex(6)
+        rec = TaskRecord(tid, node_id, "setup_step", "GUARD", self.clock())
+        self.tasks[tid] = rec
+        self.on_change()
+        rec.guard = ProtocolGuard("protocol-task", lambda t, p: self.log(t, p), clock=self.clock, subject=tid)
+        self.log("task_created", {"task": tid, "node": node_id, "type": "setup_step", "step": step, "action": action})
+        try:
+            parsed = P.parse_plan(plan)
+            spec = parsed.step(step)
+            T.validate_params("setup_step", {"plan": plan, "step": step, "action": action})
+        except (P.PlanError, ValueError) as exc:
+            self._end(rec, "rejected", "bad_plan" if isinstance(exc, P.PlanError) else str(exc), **{"task.rejected": True})
+            return rec
+        digest = P.plan_hash(parsed)
+        if parsed.plan_hash != digest:
+            self._end(rec, "rejected", "plan_altered", **{"task.rejected": True})
+            return rec
+        approval = self.approvals(digest, step, action)
+        if not approval:
+            self._end(rec, "rejected", "no_owner_approval", **{"task.rejected": True})
+            return rec
+        session = self.sessions(node_id)
+        if session is None:
+            self._end(rec, "failed", "node_offline", **{"task.result": "failed"})
+            return rec
+        if sum(1 for t in self.tasks.values() if t.node_id == node_id and t.status in ("sent", "accepted", "running")) >= self.max_per_node:
+            self._end(rec, "rejected", "busy", **{"task.rejected": True})
+            return rec
+        timeout = timeout_s or T.TIMEOUTS_S["setup_step"]
+        scope = T.write_scope(digest, parsed.recipe_id, step, action, spec.writes, approval)
+        token = T.issue_token(session.identity, task_id=tid, node_id=node_id, sid=session.sid, tools=["setup_step"], ttl_s=min(T.DEFAULT_TTL_S, timeout), scope=scope)
+        rec.guard.record("task.created", True)
+        self._move(rec, "sent", **{"task.sent": True})
+        asyncio.ensure_future(session.send("task", {"task_id": tid, "task_type": "setup_step", "params": {"plan": plan, "step": step, "action": action}, "token": token, "timeout_s": timeout}))
+        asyncio.ensure_future(self._watch(rec, session, timeout))
+        return rec
+
+    def start_environment_run(self, node_id: str, task_id: str, entry: dict, params: dict, decision: dict, *, timeout_s: float | None = None) -> TaskRecord:
+        """Hand a routed task to an environment on a node. Made by CODE (GUARD), and sent only when the log holds an OWNER event that created or approved THIS task (`origins`); with none, the task ends
+        `rejected` at once and nothing leaves this computer. The origin's event hash, the environment, its recipe hash, the mode, the workspace and the endpoint are signed into the node's token."""
+        tid = secrets.token_hex(6)
+        rec = TaskRecord(tid, node_id, "environment_run", "GUARD", self.clock())
+        self.tasks[tid] = rec
+        self.on_change()
+        rec.guard = ProtocolGuard("protocol-task", lambda t, p: self.log(t, p), clock=self.clock, subject=tid)
+        self.log("task_created", {"task": tid, "node": node_id, "type": "environment_run", "routed_task": task_id, "environment": entry.get("id")})
+        try:
+            parsed = T.validate_params("environment_run", params)
+        except ValueError as exc:
+            self._end(rec, "rejected", str(exc), **{"task.rejected": True})
+            return rec
+        origin = self.origins(task_id, parsed.task_type, parsed.sensitivity)
+        if not origin:
+            self._end(rec, "rejected", "no_owner_origin", **{"task.rejected": True})
+            return rec
+        if parsed.environment_id != entry.get("id") or parsed.recipe_sha256 != ER.recipe_sha256(entry):
+            self._end(rec, "rejected", "stale_recipe", **{"task.rejected": True})
+            return rec
+        session = self.sessions(node_id)
+        if session is None:
+            self._end(rec, "failed", "node_offline", **{"task.result": "failed"})
+            return rec
+        if sum(1 for t in self.tasks.values() if t.node_id == node_id and t.status in ("sent", "accepted", "running")) >= self.max_per_node:
+            self._end(rec, "rejected", "busy", **{"task.rejected": True})
+            return rec
+        timeout = timeout_s or T.TIMEOUTS_S["environment_run"]
+        scope = ER.env_scope(entry=entry, task_type=parsed.task_type, sensitivity=parsed.sensitivity, workspace_id=parsed.workspace_id, endpoint=parsed.endpoint, origin_event=origin, decision=decision)
+        token = T.issue_token(session.identity, task_id=tid, node_id=node_id, sid=session.sid, tools=["environment_run"], ttl_s=min(T.DEFAULT_TTL_S, timeout), scope=scope)
+        rec.guard.record("task.created", True)
+        self._move(rec, "sent", **{"task.sent": True})
+        asyncio.ensure_future(session.send("task", {"task_id": tid, "task_type": "environment_run", "params": params, "token": token, "timeout_s": timeout}))
         asyncio.ensure_future(self._watch(rec, session, timeout))
         return rec
 

@@ -1,8 +1,9 @@
-"""Windows: restrict the access control list to the current user. UNTESTED: written without a Windows machine; the first real run needs a Windows machine."""
+"""Windows: restrict the access control list to the current user. UNTESTED: written without a Windows machine; the first real run needs a Windows machine (spawn_detached and make_executable included)."""
 
 from __future__ import annotations
 
 import getpass
+import os
 import subprocess
 from pathlib import Path
 
@@ -20,3 +21,12 @@ class WindowsLayer:
         done = subprocess.run(["icacls", str(path)], capture_output=True, text=True, timeout=30)
         others = [ln for ln in done.stdout.splitlines() if ("Everyone" in ln or "BUILTIN\\Users" in ln or "Authenticated Users" in ln)]
         return done.returncode == 0 and not others
+
+    def make_executable(self, path: Path) -> None:
+        return None  # Windows has no execute bit: a file runs by its extension
+
+    def spawn_detached(self, argv: list[str], cwd: Path, log_path: Path, env: dict[str, str] | None = None) -> int:
+        flags = 0x00000008 | 0x00000200 | 0x08000000  # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW: no console, not killed with the node's
+        with open(log_path, "ab") as log:
+            proc = subprocess.Popen(argv, cwd=str(cwd), stdin=subprocess.DEVNULL, stdout=log, stderr=log, creationflags=flags, close_fds=True, env={**os.environ, **env} if env else None)
+        return proc.pid

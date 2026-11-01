@@ -240,5 +240,18 @@
    ],
    "kind": "api_key_cli"
   }
- ]
+ ],
+ "windows_editions": {
+  "Core": "Home",
+  "CoreN": "Home N",
+  "CoreSingleLanguage": "Home Single Language",
+  "Professional": "Pro",
+  "ProfessionalN": "Pro N",
+  "ProfessionalWorkstation": "Pro for Workstations",
+  "Enterprise": "Enterprise",
+  "EnterpriseS": "Enterprise LTSC",
+  "Education": "Education",
+  "ProfessionalEducation": "Pro Education",
+  "IoTEnterprise": "IoT Enterprise"
+ }
 }

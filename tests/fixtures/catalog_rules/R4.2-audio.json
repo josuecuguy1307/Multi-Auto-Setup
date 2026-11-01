@@ -1,0 +1,36 @@
+{
+ "rule": "R4.2-audio",
+ "kind": "file",
+ "says": "a speech or audio model is offered only for a task that needs audio",
+ "cases": [
+  {
+   "name": "automatic speech recognition on the hub",
+   "facts": {
+    "hub.pipeline_tag": "automatic-speech-recognition",
+    "repo.has_companion_projector": true
+   },
+   "expect": {
+    "kind": "speech",
+    "requires_task_keys": [
+     "audio"
+    ],
+    "!requires_task_keys": [
+     "vision"
+    ]
+   }
+  },
+  {
+   "name": "a speech recognizer with no chat template is a speech model, not a base model",
+   "facts": {
+    "hub.pipeline_tag": "automatic-speech-recognition",
+    "gguf.has_chat_template": false
+   },
+   "expect": {
+    "kind": "speech",
+    "!requires_task_keys": [
+     "completion"
+    ]
+   }
+  }
+ ]
+}

@@ -91,11 +91,38 @@ def test_the_door_embeds_only_the_public_key_and_not_its_comment():
 
 # ---- the setup link ---------------------------------------------------------------------------------------------------------------------------
 
+_STARTED: list = []  # every link and tool context a test starts: the fixture below stops them whatever the test did
+
+
 def _link(**kw):
     import ipaddress
     events = []
     link = SetupLink("127.0.0.1", b"DOOR-BYTES", emit=lambda k, i: events.append((k, i)), check=ipaddress.IPv4Address, **kw)
+    _STARTED.append(link)
     return link, events
+
+
+@pytest.fixture(autouse=True)
+def links_are_closed_when_the_test_ends():
+    """A link that a test started never keeps its listening socket: stopped here, and the port is checked to refuse a connection (a link's own thread may still be closing it)."""
+    import socket
+    import time
+    yield
+    started, _STARTED[:] = list(_STARTED), []
+    for item in started:
+        link = item if isinstance(item, SetupLink) else ((item.params.get("run_state") or {}).get("door") or {}).get("link")
+        if link is None or not link.port:
+            continue
+        link.stop()
+        end = time.monotonic() + 3
+        while time.monotonic() < end:
+            with socket.socket() as c:
+                c.settimeout(0.2)
+                if c.connect_ex(("127.0.0.1", link.port)) != 0:
+                    break
+            time.sleep(0.05)
+        else:
+            raise AssertionError(f"the link on port {link.port} still accepts connections after the test")
 
 
 def test_the_link_serves_the_file_once_and_then_stops():
@@ -264,7 +291,9 @@ def _serve_ctx(tmp_path, ttl_s):
     store = Store(tmp_path / "store")
     target = store.put_target(Target(kind=TargetKind.host, ring=1, handle="door-test"))
     params = {"ssh_dir": ssh_dir, "lan_address": "127.0.0.1", "door_name": "lan-peer", "link_options": {"check": ipaddress.IPv4Address, "ttl_s": ttl_s}, "show": lambda m: None}
-    return ToolContext(None, this_platform(), store, target, Salts(), params, lambda text: True), store
+    ctx = ToolContext(None, this_platform(), store, target, Salts(), params, lambda text: True)
+    _STARTED.append(ctx)
+    return ctx, store
 
 
 def _link_kinds(store):

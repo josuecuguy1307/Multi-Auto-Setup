@@ -1,0 +1,19 @@
+{
+ "rule": "R6.4-license-disagrees",
+ "kind": "file",
+ "says": "a license that differs between header and card is unverified",
+ "cases": [
+  {
+   "name": "mit in the header, apache-2.0 on the card",
+   "facts": {
+    "gguf.general.license": "mit"
+   },
+   "expect": {
+    "offer_by_default": false,
+    "labels": [
+     "license unverified"
+    ]
+   }
+  }
+ ]
+}

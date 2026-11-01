@@ -1,0 +1,31 @@
+{
+ "rule": "R3.2-memory-path",
+ "kind": "option",
+ "says": "the GPU build is chosen only when models run on the GPU",
+ "cases": [
+  {
+   "name": "an Intel integrated GPU on the CPU path gets the CPU build",
+   "machine": {
+    "model_path": "cpu",
+    "vram_gib": 1.0,
+    "gpus": [
+     {
+      "vendor": "Intel",
+      "memory": "shared"
+     }
+    ]
+   },
+   "rows": [
+    {}
+   ],
+   "expect": {
+    "runtimes": [
+     "~(cpu)"
+    ],
+    "!runtimes": [
+     "llama.cpp b1 (vulkan)"
+    ]
+   }
+  }
+ ]
+}

@@ -52,7 +52,13 @@
      "build_options"
     ],
     "terminal": false,
-    "reason": ""
+    "reason": "",
+    "show": [
+     "machine.model_path",
+     "machine.ram_available_gib",
+     "machine.gpus",
+     "owner.answer.*"
+    ]
    },
    "done": {
     "goal": "",

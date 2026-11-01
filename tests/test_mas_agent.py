@@ -231,7 +231,7 @@ def test_with_no_model_the_run_says_so_and_the_raw_report_is_labeled_code_only_a
             r = c.runs.start_analysis(nid, "web")
             assert r.status == "no_model" and r.reason.startswith("no model available on the coordinator")
             await asyncio.wait_for(r.task, 60)
-            assert r.result["agent"] is False and r.result["label"].startswith("code-only, no model") and r.result["groups"]["system"]["machine.os.name"] and r.result["findings"] == [] and r.result["options"] == []
+            assert r.result["agent"] is False and r.result["label"].startswith("code only, no model") and r.result["groups"]["system"]["machine.os.name"] and r.result["findings"] == [] and r.result["options"] == []
             counts = c.runs.actor_counts(r)
             assert counts["MODEL"] == 0 and counts["SCRIPT"] >= 3  # the probes were run by code in a fixed order, and tagged SCRIPT
             assert c.runs.view(r.id)["status"] == "no_model"

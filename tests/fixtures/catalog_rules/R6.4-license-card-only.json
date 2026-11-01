@@ -1,0 +1,22 @@
+{
+ "rule": "R6.4-license-card-only",
+ "kind": "file",
+ "says": "a license only the card states is accepted, labeled declared-by-project and not verified",
+ "cases": [
+  {
+   "name": "the header states none, the card says apache-2.0",
+   "facts": {
+    "gguf.general.license": null
+   },
+   "expect": {
+    "offer_by_default": true,
+    "license": "apache-2.0",
+    "license_basis": "~declared-by-project",
+    "labels": [
+     "~declared-by-project"
+    ],
+    "license_verified": false
+   }
+  }
+ ]
+}

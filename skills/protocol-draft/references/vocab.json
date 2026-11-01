@@ -1,0 +1,149 @@
+{
+ "subtypes": {
+  "provider": {
+   "label": "inside a plan the owner has (the provider's official command-line tool or API key)",
+   "cloud": true,
+   "access_kinds": [
+    "subscription",
+    "api"
+   ],
+   "needs_model": false
+  },
+  "own_harness": {
+   "label": "an open harness with a local model",
+   "cloud": false,
+   "access_kinds": [
+    "local_hardware"
+   ],
+   "needs_model": true
+  },
+  "embedded": {
+   "label": "AI that already lives inside an application",
+   "cloud": true,
+   "access_kinds": [
+    "app_license"
+   ],
+   "needs_model": false
+  }
+ },
+ "topologies": {
+  "single": {
+   "label": "one machine works and the others stay unused",
+   "min_machines": 1,
+   "director": "one"
+  },
+  "director_workers": {
+   "label": "one strong machine directs and the others execute",
+   "min_machines": 2,
+   "director": "one"
+  },
+  "peers": {
+   "label": "all equal, each takes what falls to it",
+   "min_machines": 2,
+   "director": "none"
+  },
+  "chain": {
+   "label": "in a chain: the work passes from one machine to the next in order",
+   "min_machines": 2,
+   "director": "ordered"
+  }
+ },
+ "freedom": {
+  "propose_only": {
+   "label": "the agent only proposes; you decide every step"
+  },
+  "routine_alone": {
+   "label": "the agent does routine reading alone and asks about the rest"
+  },
+  "alone_inside_limits": {
+   "label": "the agent decides alone inside the limits; every write still asks for your permission"
+  }
+ },
+ "rhythm": {
+  "owner_present": {
+   "label": "only when you are present"
+  },
+  "also_night": {
+   "label": "also at night, without you present"
+  }
+ },
+ "resources": {
+  "plan": {
+   "label": "a subscription plan",
+   "access_kind": "subscription"
+  },
+  "api": {
+   "label": "an API key",
+   "access_kind": "api"
+  },
+  "local_models": {
+   "label": "local models",
+   "access_kind": "local_hardware"
+  },
+  "app": {
+   "label": "the AI of an installed application",
+   "access_kind": "app_license"
+  },
+  "night_compute": {
+   "label": "compute at night",
+   "access_kind": null
+  }
+ },
+ "sensitivity": [
+  "public",
+  "internal",
+  "confidential"
+ ],
+ "edit_kinds": {
+  "resources": {
+   "needs": [
+    "machine",
+    "value"
+   ],
+   "value": "resources"
+  },
+  "sensitivity": {
+   "needs": [
+    "machine",
+    "value"
+   ],
+   "value": "sensitivity"
+  },
+  "director": {
+   "needs": [
+    "machine"
+   ],
+   "value": null
+  },
+  "topology": {
+   "needs": [
+    "value"
+   ],
+   "value": "topologies"
+  },
+  "freedom": {
+   "needs": [
+    "value"
+   ],
+   "value": "freedom"
+  },
+  "rhythm": {
+   "needs": [
+    "value"
+   ],
+   "value": "rhythm"
+  },
+  "exclude_machine": {
+   "needs": [
+    "machine"
+   ],
+   "value": null
+  },
+  "tasks": {
+   "needs": [
+    "value"
+   ],
+   "value": null
+  }
+ }
+}

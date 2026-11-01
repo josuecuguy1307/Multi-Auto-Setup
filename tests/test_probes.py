@@ -132,11 +132,11 @@ def test_the_ai_cli_probe_never_opens_a_login_file():
 
 
 @pytest.mark.parametrize("name,kw,limited_by,path", [
-    ("nvidia 6 GiB", dict(gpu_list=[{"vendor": "NVIDIA", "vram_gib": 6.0, "memory": "dedicated"}], ram_total_gib=32, disk_free_gib=500), "vram", "gpu"),
-    ("no gpu 8 GiB", dict(gpu_list=[], ram_total_gib=8, disk_free_gib=500), "ram_no_gpu_detected", "cpu"),
-    ("apple unified 16", dict(gpu_list=[{"vendor": "Apple", "vram_gib": None, "memory": "unified"}], ram_total_gib=16, disk_free_gib=500), "catalog_top", "unified"),
-    ("big machine", dict(gpu_list=[{"vendor": "NVIDIA", "vram_gib": 48.0, "memory": "dedicated"}], ram_total_gib=128, disk_free_gib=2000), "catalog_top", "gpu"),
-    ("small disk", dict(gpu_list=[], ram_total_gib=64, disk_free_gib=3), "disk", "cpu"),
+    ("nvidia 6 GiB", dict(gpu_list=[{"vendor": "NVIDIA", "vram_gib": 6.0, "memory": "dedicated"}], ram_total_gib=32, ram_available_gib=32, disk_free_gib=500), "vram", "gpu"),
+    ("no gpu 8 GiB", dict(gpu_list=[], ram_total_gib=8, ram_available_gib=8, disk_free_gib=500), "ram_no_gpu_detected", "cpu"),
+    ("apple unified 16", dict(gpu_list=[{"vendor": "Apple", "vram_gib": None, "memory": "unified"}], ram_total_gib=32, ram_available_gib=32, disk_free_gib=500), "catalog_top", "unified"),
+    ("big machine", dict(gpu_list=[{"vendor": "NVIDIA", "vram_gib": 48.0, "memory": "dedicated"}], ram_total_gib=128, ram_available_gib=128, disk_free_gib=2000), "catalog_top", "gpu"),
+    ("small disk", dict(gpu_list=[], ram_total_gib=64, ram_available_gib=64, disk_free_gib=3), "disk", "cpu"),
 ])
 def test_the_largest_model_that_fits_names_the_real_limit_never_none(name, kw, limited_by, path):
     f = P.memory_for_models(**kw)["facts"]
@@ -156,8 +156,10 @@ def test_os_details_on_this_machine_gives_a_real_build_and_windows_kernel_is_not
     monkeypatch.setattr(P, "family", lambda: "windows")
     monkeypatch.setattr(platform, "release", lambda: "11")
     monkeypatch.setattr(platform, "version", lambda: "10.0.26100")
+    monkeypatch.setattr(platform, "win32_edition", lambda: "Core", raising=False)
     w = P.os_details()["facts"]
     assert w["machine.os.name"] == "Windows 11" and w["machine.os.build"] == "10.0.26100" and w["machine.os.build"] != "11"
+    assert w["machine.os.version"] == "11 Home"  # a real Windows 11 Home reports the code "Core": the version is not that code
     from envrec.probes import ring0
     monkeypatch.setattr(ring0.platform, "system", lambda: "Windows")
     assert ring0.read_os().values["os.kernel"] == "10.0.26100" and ring0.read_os().values["os.version"] == "11"  # the real build, not a repeat of the version
@@ -171,3 +173,29 @@ def test_every_table_row_is_complete():
     for gpu in t["gpu"].values():
         for argv in gpu.get("commands", {}).values():
             assert P.Path(argv[0]).name in t["allowed_programs"]
+
+
+def test_the_real_windows_capture_covers_what_the_analysis_exit_needs_and_options_can_be_built_from_it():
+    import json
+
+    from envrec.skills.discover import library
+    from envrec_coordinator import options as O
+    doc = json.loads((Path(__file__).resolve().parent.parent / "fixtures" / "probes" / "windows-real" / "typed_facts.redacted.json").read_text())
+    facts = {k: row["value"] for k, row in doc["facts"].items()}
+    survey = [sk for sk in library().protocols() if sk.meta.protocol == "analyze"][0].meta.states.states["survey"]
+    need = {n["fact"] for n in survey.advance[0].needs} - {"analysis.finished"}
+    assert need <= set(facts), sorted(need - set(facts))  # a real Windows machine gave every fact the exit asks for
+    assert all(row["status"] == "tested" for row in doc["facts"].values())
+    assert facts["machine.os.name"] == "Windows 11" and facts["machine.os.arch"] == "amd64" and facts["machine.model_path"] == "cpu"
+    built = O.build_options(facts, choice="local")
+    assert built["options"] and all(not o["cloud"] for o in built["options"])
+
+
+def test_the_largest_model_uses_the_memory_that_is_free_with_the_same_margin_as_the_options_and_shows_both_numbers():
+    unified = [{"vendor": "Apple", "vram_gib": None, "memory": "unified"}]
+    f = P.memory_for_models(gpu_list=unified, ram_total_gib=16, ram_available_gib=2.2, disk_free_gib=500)["facts"]
+    assert f["machine.usable_memory_gib"] == 1.87 and f["machine.memory_margin_pct"] == 15  # 2.2 x 0.85: what a model may use, the options' own figure
+    assert f["machine.largest_model_by_total_ram_params_b"] == 13.0 and f["machine.largest_model_params_b"] < 13.0  # the total RAM would allow 13B; what is free does not
+    assert f["machine.largest_model_limited_by"] == "available_ram" and f["machine.ram_available_gib"] == 2.2 and f["machine.ram_total_gib"] == 16
+    from envrec_coordinator import options as O
+    assert f["machine.usable_memory_gib"] == O._memory_budget(O._norm({"machine.ram_total_gib": 16, "machine.ram_available_gib": 2.2, "machine.model_path": "unified"}))[0]  # one margin for both
