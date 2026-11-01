@@ -17,8 +17,8 @@
 #            -NoJoin                do not offer `mas join`  -Uninstall [-Purge]    remove (keys only with -Purge)
 
 # PIN-BEGIN (scripts/pin_installers.py rewrites these three lines)
-$DefaultTag = 'node-preview-6'
-$DefaultSha256 = '3cee794be44ad07eb2893b3de80ccba42d13f52e97f0bcc1b319af23bdc33ca4'
+$DefaultTag = 'node-preview-7'
+$DefaultSha256 = '114ca2bd8e377082161e6337b76bbb75b0b23923dd6d68d759f42a3e591f5e3e'
 $DefaultBase = 'https://github.com/josuecuguy1307/Multi-Auto-Setup/releases'
 # PIN-END
 $PyVersion = '3.13'
