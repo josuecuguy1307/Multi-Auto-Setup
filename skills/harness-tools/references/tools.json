@@ -5,7 +5,7 @@
    "name": "mas_create_task",
    "tool": "create_task",
    "readOnly": false,
-   "description": "Create a task from the owner's request. Nothing runs yet: you get the route the written rule picked, with the reasoning, and an intent_id; the owner approves that exact route in his own system dialog (call mas_request_approval), and the task then runs and is checked by code. A cloud chat cannot create a confidential task: say 'create it from a local chat or the owner panel'.",
+   "description": "Create a task from the owner's request. Nothing runs yet: you get the route the written rule picked, with the reasoning, and an intent_id for the owner's approval of that exact route, and the task then runs and is checked by code. You never give the task's level: the harness derives it from the owner's profile and what the text touches (touches), and asks the owner when it cannot tell. The first time it also asks him a few profile questions: relay them, never answer them. The text is the owner's, whole: if it is long, do not shorten it; the result says how many characters arrived.",
    "inputSchema": {
     "type": "object",
     "properties": {
@@ -17,24 +17,21 @@
       "type": "string",
       "description": "one of the task types the catalog serves, for example summarize, extraction, data-cleaning, numeric-analysis, text, code"
      },
-     "sensitivity": {
-      "type": "string",
-      "enum": [
-       "public",
-       "internal",
-       "confidential"
-      ],
-      "description": "ask the owner if he has not said; never guess"
-     },
      "check": {
       "type": "object",
       "description": "an optional check graded by code: {kind: equals|contains|regex|sha256, value} or {kind: project_tests, files: {path: text}, pattern}. Without one the result is shown but not graded."
+     },
+     "touches": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "which of the owner's categories the text concerns (the values come from his profile), \"none\" if it concerns none of them, \"unsure\" if you cannot tell. This is a statement about the text, not a level."
      }
     },
     "required": [
      "text",
-     "task_type",
-     "sensitivity"
+     "task_type"
     ]
    }
   },
@@ -94,7 +91,7 @@
    "name": "mas_job",
    "tool": "job_status",
    "readOnly": true,
-   "description": "What happened to a task, an admission exam or an access change: its state, each attempt and its code check, the result (withheld from a cloud chat when it is confidential) and the step waiting for the owner. Call it again until it is finished.",
+   "description": "What happened to a task, an admission exam or an access change: its state, each attempt and its code check, the result (withheld from a cloud chat when it is confidential) and the step waiting for the owner. Call it again only when something may have changed (after the owner answered), not in a row.",
    "inputSchema": {
     "type": "object",
     "properties": {
@@ -112,7 +109,7 @@
    "name": "mas_add_access",
    "tool": "add_access",
    "readOnly": false,
-   "description": "Add an access (an API key) on one machine. The owner types the key into a hidden window of the operating system; you never see it. You get a job_id; the owner's approval dialog and then the key window open on his screen by themselves. Follow with mas_job (it gives the intent_id for mas_request_approval only if no dialog could be opened).",
+   "description": "Connect a computer to an API, provider or account: add an access (an API key) on one machine, from the accesses the catalog lists (the access argument is one of them). The owner types the key into a hidden window of the operating system; you never see it, never ask for it and never accept it in the chat. You get a job_id; the owner's approval dialog and then the key window open on his screen by themselves. Follow with mas_job.",
    "inputSchema": {
     "type": "object",
     "properties": {
@@ -270,6 +267,76 @@
     },
     "required": [
      "action"
+    ]
+   }
+  },
+  {
+   "name": "mas_profile",
+   "tool": "profile_tool",
+   "readOnly": false,
+   "description": "The owner's profile: what is confidential for him, his stance on cloud spend, local-first, what each machine is for, and what he closed. show reads it (and the next question if answers are missing); ask puts the next question; set, role, close and open change it with HIS words. Closing something is a question to him; open undoes it. Never fill an answer in yourself.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "show",
+       "ask",
+       "set",
+       "role",
+       "close",
+       "open"
+      ]
+     },
+     "field": {
+      "type": "string"
+     },
+     "value": {},
+     "machine": {
+      "type": "string"
+     },
+     "role": {
+      "type": "string"
+     },
+     "what": {
+      "type": "string",
+      "enum": [
+       "environment",
+       "subtype",
+       "access"
+      ]
+     },
+     "id": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  {
+   "name": "mas_propose",
+   "tool": "propose",
+   "readOnly": true,
+   "description": "What the owner's machines can do now (which environments for which task types, from what is detected) and what each other one needs first, built by the harness from the catalog, as one proposal with one question for the owner. Present it as it is; do not add options of your own.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {}
+   }
+  },
+  {
+   "name": "mas_cancel",
+   "tool": "cancel",
+   "readOnly": false,
+   "description": "Cancel a run that is still open (for example one waiting for an answer the owner never wants to give). run_id is the one a tool printed. What the run already did stays; mas_undo takes back a finished setup.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "run_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "run_id"
     ]
    }
   }

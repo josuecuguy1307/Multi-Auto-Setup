@@ -146,3 +146,24 @@ def test_when_no_dialog_can_be_raised_the_chat_is_still_shown_the_id_to_use(tmp_
         finally:
             await teardown()
     run(go())
+
+
+def test_asking_again_for_an_item_whose_dialog_is_open_opens_no_second_dialog_and_does_not_time_out_the_first(tmp_path):
+    async def go():
+        w, c, nid, host, teardown = await build(tmp_path, key=False)
+        try:
+            confirm, secret = owner_world(c)
+            r = await host.tool("mas_add_access", node="lenovo", access="meta-model-api:api-key")
+            j = sc(r)["job_id"]
+            await opened(confirm)
+            again = await host.tool("mas_add_access", node="lenovo", access="meta-model-api:api-key")
+            assert sc(again)["job_id"] == j and "already open" in text(again) and "No second dialog was opened" in text(again)
+            await asyncio.sleep(0.3)
+            assert len(confirm.calls) == 1 and len([e for e in events(c, "confirmation_started")]) == 1  # one dialog; the first is still the one the owner answers
+            confirm.release.set()
+            await opened(secret)
+            secret.release.set()
+            assert sc(await wait_job(host, j, until=("done", "failed", "declined", "refused")))["state"] == "done"
+        finally:
+            await teardown()
+    run(go())

@@ -25,7 +25,7 @@ from test_executors import Origin
 from test_mas_agent import AVAILABLE, act, analysed, node_up
 from test_setup_run import LOOSE, make_world, record_pick, tree
 
-pytestmark = pytest.mark.skipif(envrec_os.family() == "windows", reason="the test runtime is a POSIX program (the Windows branch is UNTESTED)")
+pytestmark = [pytest.mark.usefixtures("per_step_approvals"), pytest.mark.skipif(envrec_os.family() == "windows", reason="the test runtime is a POSIX program (the Windows branch is UNTESTED)")]
 CLAUDE, OWUI, PANEL = CHANNELS["claude-desktop"], CHANNELS["openwebui"], CHANNELS["panel"]
 INSTALL = [act("load_context"), act("recheck_fit"), act("build_plan")] + [act("run_step", args={"step": str(n)}) for n in range(1, 7)]
 UNDO = [act("undo_step", args={"step": str(n)}) for n in range(6, 0, -1)]

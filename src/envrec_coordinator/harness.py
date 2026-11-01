@@ -25,6 +25,7 @@ from dataclasses import dataclass, field
 import envrec_os.confirm as osconfirm
 import envrec_os.secret_prompt as ossecret
 from envrec_coordinator import agent as A
+from envrec_coordinator import approval
 from envrec_coordinator.runs import SHOWN, describe_event
 from envrec_harness import cards
 from envrec_harness.cards import fmt_value, human_bytes
@@ -223,7 +224,7 @@ class HarnessCore:
         for i in log:
             if i.extra.get("adapter_q") and i.extra.get("state") == "pending" and not (p and p.qid == i.payload["question"]):
                 i.extra["state"] = "answered"  # the run's own question was answered or timed out; the owner's pick is not the run's question and is resolved below
-        if p is not None and p.data.get("kind") != "approve_step" and f"{run.id}:q:{p.qid}" not in have:
+        if p is not None and p.data.get("kind") not in ("approve_step", "approve_plan") and f"{run.id}:q:{p.qid}" not in have:
             opts = [{"id": o["id"], "label": str(o.get("label", o["id"])), "detail": str(o.get("detail", ""))} for o in p.options]
             i = self._add(run.id, "ask_choice", "GUARD", sens, {"question": p.qid, "text": p.text, "options": opts, "writes": False}, f"{p.text}\n{numbered(opts)}\n{t(self.lang, 'reply_hint')}", f"{run.id}:q:{p.qid}")
             i.extra.update(state="pending", adapter_q=True)
@@ -424,6 +425,23 @@ class HarnessCore:
             d = self.plan_data(run, view)
             self._add(run.id, "show_data", "GUARD", sens, {"data_kind": "plan", "data": d}, cards.fallback_text("plan", d, self.lang), f"{run.id}:plan:{pl['hash'][-12:]}")
 
+    def _plan_question(self, run, p, d: dict, key: str, sens: str) -> None:
+        """ONE question for the whole plan (approval-policy.json: `chat_choice`): every step with its exact command, what it writes, its size and its undo, bound to the plan's hash. The owner answers it in the
+        chat (the model relays his words); it is recorded as `chat_choice`, never as a system dialog."""
+        undoing = d["action"] == "undo"
+        total = sum(x["bytes"] or 0 for x in d["steps"] if x.get("size_kind") != "move")
+        head = t(self.lang, "ap_plan_head").format(verb=t(self.lang, "ap_undo" if undoing else "ap_run"), n=len(d["steps"]), machine=run.node_name, title=(" — " + fmt_value(d["title"], 120)) if d.get("title") else "")
+        rows = []
+        for s in d["steps"]:
+            targets = ", ".join(for_display(str(w)) for w in s.get("writes") or []) or t(self.lang, "pl_nothing")
+            rows.append(f"{s['n']}. {fmt_value(s['title'], 120)}\n   {t(self.lang, 'ud_does' if undoing else 'pl_cmd')}: {for_display(s['command'])}\n   {t(self.lang, 'ud_removes' if undoing else 'pl_writes')}: {targets} · {t(self.lang, 'ap_size')}: "
+                        f"{cards.size_text(s.get('bytes'), s.get('size_kind'), self.lang)}" + ("" if undoing else f"\n   {t(self.lang, 'pl_undo')}: {for_display(s['undo'])}"))
+        text = head + "\n" + "\n".join(rows) + f"\n{t(self.lang, 'ap_total')}: {human_bytes(total)}\n{t(self.lang, 'pl_hash')}: {d['plan_hash']}\n" + t(self.lang, "ap_plan_ask")
+        payload = {"writes": True, "chat_choice": True, "approval_kind": run.kind, "summary": head, "plan_hash": d["plan_hash"], "command": f"{len(d['steps'])} step(s), listed above", "undo": t(self.lang, "ap_plan_undo"),
+                   "action": d["action"], "targets": [for_display(str(w)) for s in d["steps"] for w in s.get("writes") or []], "bytes": total, "options": approval.options(), "question": p.qid}
+        i = self._add(run.id, "confirm", "GUARD", sens, payload, text, key)
+        i.extra.update(state="pending", answer=(run.id, p.qid))
+
     def _sync_install(self, run, log: list, have: set, sens: str) -> None:
         p = run.adapter.pending if run.adapter is not None else None
         d = p.data if p is not None else {}
@@ -443,6 +461,10 @@ class HarnessCore:
                            "targets": [for_display(str(w)) for w in d.get("writes") or []], "bytes": d.get("bytes"), "size_kind": d.get("size_kind")}
                 i = self._add(run.id, "confirm", "GUARD", sens, payload, text, key)
                 i.extra.update(state="pending", answer=(run.id, p.qid))
+        if p is not None and d.get("kind") == "approve_plan":
+            key = f"{run.id}:approve:{p.qid}:{int(p.asked_at * 1000)}"
+            if key not in have:
+                self._plan_question(run, p, d, key, sens)
         for i in log:
             if i.kind == "confirm" and i.extra.get("answer") and i.extra.get("state") == "pending" and not (p is not None and p.qid == i.extra["answer"][1] and f":{int(p.asked_at * 1000)}" in i.id):
                 i.extra["state"] = "answered"  # answered on the panel, timed out, or replaced by the next step's question
@@ -458,6 +480,9 @@ class HarnessCore:
                 view = self.coord.runs.view(run.id) or {}
                 d = {"run": {"id": run.id, "kind": run.kind, "node": run.node_name, "status": run.status, "reason": run.reason}, "events": [{"tag": x["tag"], "text": x["text"]} for x in view.get("events", [])], "actors": view.get("actors", {})}
                 self._add(run.id, "show_data", "GUARD", sens, {"data_kind": "run", "data": d}, cards.fallback_text("run", d, self.lang), f"{run.id}:end")
+                svc = getattr(self.coord, "services", None)
+                if run.kind == "install" and run.status == "done" and svc is not None:  # a setup finished: the harness itself proposes what it enables, from the catalog (one question)
+                    self._add(run.id, "text", "GUARD", sens, {}, svc.proposal_text(), f"{run.id}:proposal")
 
     def for_channel(self, i: Intent, ch: Channel) -> dict:
         """The intent as THIS channel may see it. A cloud channel never receives `confidential`; internal data passes a filter, a size cap, and is logged once."""
@@ -731,6 +756,18 @@ class HarnessCore:
 
     # ---- owner decisions ------------------------------------------------------------------------------------------------------------------------
 
+    def ask_chat(self, run_id: str | None, *, key: str, text: str, options: list[dict], on_choice, sensitivity: str = "internal", multi: bool = False) -> Intent:
+        """A closed question the owner answers in the chat (the model relays his words; `mas_answer`). It writes nothing: `on_choice(option_id)` runs only from `decide`, once. The options are the caller's data,
+        never a model's. Asking the same key again while it is pending is the same question."""
+        for x in self._logs.get(run_id or "-", []):
+            if x.extra.get("base") == key and x.extra.get("state") == "pending":
+                return x
+        base, key = key, f"{key}:{self._seq + 1}"  # every question has its own id: an answered one is over
+        opts = [{"id": o["id"], "label": str(o.get("label", o["id"])), "detail": str(o.get("detail", ""))} for o in options]
+        i = self._add(run_id, "ask_choice", "GUARD", sensitivity, {"question": key, "text": text, "options": opts, "writes": False, "chat": True}, f"{text}\n{numbered(opts)}\n{t(self.lang, 'reply_hint')}", key)
+        i.extra.update(state="pending", on_choice=on_choice, base=base)
+        return i
+
     def _find(self, intent_id: str) -> Intent | None:
         for log in self._logs.values():
             for i in log:
@@ -743,12 +780,20 @@ class HarnessCore:
         i = self._find(intent_id)
         if i is None or i.extra.get("state") != "pending":
             raise Refused(409, "nothing_to_decide")
+        if i.kind == "confirm" and i.payload.get("chat_choice") and approval.mechanism_for(str(i.payload.get("approval_kind"))) == approval.CHAT_CHOICE and not i.payload.get("secret"):
+            return self._decide_chat_choice(ch, i, option, by)
         if i.kind == "confirm" or i.payload.get("writes") or str(i.payload.get("question", "")).startswith("approve_"):
             self.coord.log.add("decision_refused", {"channel": ch.name, "intent": i.id, "reason": "confirmation_required"})
             raise Refused(409, "confirmation_required", "a write is approved by a confirmation bound to its plan hash, never by a tool call")
         if i.kind != "ask_choice":
             raise Refused(400, "bad_option")
         option = self._option_id(i, option)
+        cb = i.extra.get("on_choice")
+        if cb is not None:  # a question the harness itself put (the owner's profile, a proposal): its own callback takes the answer, once
+            i.extra["state"] = "answered"
+            self.coord.log.add("harness_decision", {"channel": ch.name, "intent": i.id, "question": i.payload.get("question"), "option": option, "relayed_by_model": ch.model_in_middle}, owner=(by != "claude-code"))
+            nxt = cb(option)
+            return {"ok": True, "channel": ch.name, "relayed_by_model": ch.model_in_middle, **({"next": nxt} if isinstance(nxt, str) and nxt else {})}
         run = self.coord.runs.runs.get(i.run_id or "")
         if run is None:
             raise Refused(404, "not_found")
@@ -762,6 +807,17 @@ class HarnessCore:
         i.extra["state"] = "answered"
         self.coord.log.add("harness_decision", {"channel": ch.name, "intent": i.id, "option": option, "relayed_by_model": by_model, **({"by": "claude-code"} if by == "claude-code" else {})}, owner=(by != "claude-code"))
         return {"ok": True, "channel": ch.name, "relayed_by_model": by_model}
+
+    def _decide_chat_choice(self, ch: Channel, i: Intent, option: str, by: str | None) -> dict:
+        """The owner's answer to ONE plan question, relayed by the chat. Bound to the plan hash the question carries (a changed plan is another question), recorded with the gesture `chat_choice` and the fact
+        that a model relayed it: a weaker assurance than a system dialog, said so wherever it is shown."""
+        if ch.cloud and i.sensitivity == "confidential":
+            raise Refused(403, "withheld_from_cloud", t(self.lang, "withheld"))
+        option = self._option_id(i, option)
+        tk = Ticket(secrets.token_urlsafe(12), i.id, i.payload["plan_hash"], approval.CHAT_CHOICE, ch.name, self.clock())
+        self._tickets[tk.id] = tk
+        self._resolve(tk, "accept" if option == "approve" else "decline", i.payload["plan_hash"], {"assurance": "chat_relay", "relayed_by_model": ch.model_in_middle})
+        return {"ok": True, "channel": ch.name, "relayed_by_model": ch.model_in_middle, "state": tk.state, "mechanism": approval.CHAT_CHOICE}
 
     def _option_id(self, i: Intent, given: str) -> str:
         """The option an answer names: its id, its number in the question's numbered list, or its exact label. Anything else is refused WITH the valid ones, so the next call can be right."""
@@ -867,6 +923,8 @@ class HarnessCore:
             raise Refused(409, "nothing_to_confirm", t(self.lang, "ap_nothing_pending").format(pending=now))
         if ch.cloud and i.sensitivity == "confidential":
             raise Refused(403, "withheld_from_cloud", t(self.lang, "withheld"))
+        if i.payload.get("chat_choice") and mechanism in (OS_DIALOG, "host_elicitation", "host_dialog"):
+            raise Refused(409, "answer_in_chat", t(self.lang, "ap_answer_in_chat").format(id=i.id))
         if i.payload.get("secret") and mechanism != OS_DIALOG:  # a credential is typed into the OS window and nowhere else: a host form, a chat dialog or the panel would put the value where a model or a host can read it
             raise Refused(409, "secret_needs_os_dialog", t(self.lang, "secret_os_only"))
         if mechanism not in self.mechanisms(ch):

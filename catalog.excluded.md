@@ -1,6 +1,6 @@
 # catalog.excluded
 
-137 things were left out of the catalog automatically. Reason for each:
+136 things were left out of the catalog automatically. Reason for each:
 
 - **source llamafile**: status is propose-off: needs the APE loader on the target and is a different execution model; worth enabling only if you want a third runtime in the comparison
 - **source ollama**: status is propose-off: archives are 1.5 GB each (over max_artifact_gb), it is a daemon with its own model registry (a source outside this manifest), and needs zstd
@@ -12,7 +12,6 @@
 - **source ik_llama.cpp**: status is exclude: no binary release assets (a fork; llama.cpp is already approved)
 - **source fastllm**: status is exclude: no release binaries
 - **source ggml-org**: status is propose-off: 100 repos: 50 apache-2.0, 11 mit, 27 none, 7 other, 1 cc-by-nc, 1 gemma
-- **source bartowski**: status is propose-off: 100 repos: 54 apache-2.0, 11 mit, 14 none, 13 other, 4 gemma, 2 cc-by-nc
 - **source unsloth**: status is propose-off: 100 repos: 63 apache-2.0, 8 mit, 23 other, 2 llama3.2, 2 gemma, 1 llama3.3
 - **source google**: status is exclude: 37 gguf repos: 25 'gemma' license (restricted use), 9 apache-2.0, 3 llama; the Gemma terms restrict use
 - **source meta-llama**: status is exclude: 0 gguf repos under this author when read; Meta's Llama licenses are now KNOWN licenses (class community-host-run: not permissive, allowed as a model the owner runs on their own machines, the license name recorded), so approving this source or any quantizer of a Llama model no long

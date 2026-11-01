@@ -68,7 +68,7 @@ def build_candidates(task: Task, envs: dict[str, dict], facts: Facts, policy: Po
                 reason = "machine_offline"
             elif m.os_family not in entry.get("os", []):
                 reason = "unsupported_os"
-            elif entry["subtype"] not in policy.open_subtypes:
+            elif entry["subtype"] not in policy.open_subtypes or entry["id"] in policy.closed_environments or policy.machine_closes.get(m.machine_id) == "all":
                 reason = "closed_by_owner"
             elif entry.get("automated_use") == "to review" and entry["id"] not in policy.automated_use_cleared:
                 reason = "automated_use_unreviewed"
@@ -81,7 +81,7 @@ def build_candidates(task: Task, envs: dict[str, dict], facts: Facts, policy: Po
                 continue
             first_fail, found, partial = None, False, {}
             for acc in entry["accesses"]:
-                if acc["id"] in policy.closed_accesses:
+                if acc["id"] in policy.closed_accesses or (E.is_cloud(entry, acc["id"]) and (policy.cloud_stance == "never" or policy.machine_closes.get(m.machine_id) == "cloud")):
                     first_fail = first_fail or "closed_by_owner"
                     continue
                 why = _access_present(acc, m)

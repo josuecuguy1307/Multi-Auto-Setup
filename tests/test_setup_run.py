@@ -22,7 +22,7 @@ from test_executors import Origin, fake_runtime, free_port, sha
 from test_mas_agent import AVAILABLE, act, analysed, down, node_up
 from mas_world import coordinator
 
-pytestmark = pytest.mark.skipif(envrec_os.family() == "windows", reason="the test runtime is a POSIX program (the Windows branch is UNTESTED)")
+pytestmark = [pytest.mark.usefixtures("per_step_approvals"), pytest.mark.skipif(envrec_os.family() == "windows", reason="the test runtime is a POSIX program (the Windows branch is UNTESTED)")]
 REAL_CATALOG = O.load_catalog()
 LOOSE = O.load_rules().with_params(overhead_fixed_gib=0.0, overhead_weight_share=0.0)  # the test model is a few bytes: the machine's real memory is read, the runtime allowance is not charged
 

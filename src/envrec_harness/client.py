@@ -53,7 +53,7 @@ class CoreClient:
     def tool(self, name: str, arguments: dict) -> dict: return self.call("POST", f"tools/{name}", {"arguments": arguments})
     def activity(self, since: int = 0) -> dict: return self.call("GET", f"activity?since={int(since)}")
     def start(self, goal: str, node: str) -> dict: return self.call("POST", "runs", {"goal": goal, "node": node, **self._by()})
-    def intents(self, run_id: str, since: int = 0, wait: float = 0) -> dict: return self.call("GET", f"runs/{run_id}/intents?since={int(since)}&wait={wait}", timeout=self.timeout + wait)
+    def intents(self, run_id: str, since: int = 0, wait: float = 0, until: str = "") -> dict: return self.call("GET", f"runs/{run_id}/intents?since={int(since)}&wait={wait}" + (f"&until={until}" if until else ""), timeout=self.timeout + wait)
     def pairing(self, machine: str | None = None) -> dict: return self.call("POST", "pairing", {"machine": machine} if machine else {})
     def unpair(self, machine: str) -> dict: return self.call("POST", "unpair", {"machine": machine})
     def decide(self, intent_id: str, option: str) -> dict: return self.call("POST", "decisions", {"intent_id": intent_id, "option": option, **self._by()})

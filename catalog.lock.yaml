@@ -1,11 +1,11 @@
 {
  "version": 1,
- "manifest_sha256": "57588f5020082afca7f999bb9d6cefaeed86110b0f4198d1de11aedde95adf22",
+ "manifest_sha256": "079fdddc564b7a8e46c03115c06f70c767c55b35f5b6302ee8771b13503e17e7",
  "counts": {
   "runtime_assets": 15,
-  "model_files": 173,
-  "combinations": 2595,
-  "excluded": 137
+  "model_files": 175,
+  "combinations": 2625,
+  "excluded": 136
  },
  "runtime_assets": [
   {
@@ -4883,6 +4883,124 @@
     "label": "verified-by-code",
     "checked": "2026-10-30",
     "revision": "02ab6ea6894a8418eb14f6d8ee1bfb08bd298080",
+    "sources": [
+     "hub listing at the pinned revision",
+     "GGUF header (range request)"
+    ],
+    "rules": "03929205c69fb860"
+   }
+  },
+  {
+   "id": "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+   "source": "bartowski",
+   "repo": "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF",
+   "file": "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+   "url": "https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/bf5b95e96dac0462e2a09145ec66cae9a3f12067/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+   "revision": "bf5b95e96dac0462e2a09145ec66cae9a3f12067",
+   "sha256": "7b064f5842bf9532c91456deda288a1b672397a54fa729aa665952863033557c",
+   "bytes": 4920739232,
+   "license": "llama3.1",
+   "license_source": "https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF",
+   "format": "gguf",
+   "quantization": "Q4_K_M",
+   "params_b": 8.03,
+   "min_ram_gib": 6.54,
+   "kind": "chat",
+   "params_active_b": null,
+   "architecture": "llama",
+   "size_label": "8B",
+   "name": null,
+   "dims": {
+    "layers": 32,
+    "kv_layers": 32,
+    "kv_heads": 8,
+    "key_length": 128,
+    "value_length": 128
+   },
+   "context_trained": 131072,
+   "context_extended": null,
+   "publisher": "bartowski",
+   "base_model": "meta-llama/Llama-3.1-8B-Instruct",
+   "gated": false,
+   "license_header": "llama3.1",
+   "license_card": "llama3.1",
+   "license_verified": true,
+   "license_name": "Llama 3.1 Community License",
+   "license_class": "community-host-run",
+   "license_label": "Meta Llama community license: not permissive; allowed here only as a model the owner runs on their own machines (host-run), not redistributed or embedded in a product; the license name is recorded",
+   "license_basis": "verified-by-code: the file header and the card agree",
+   "labels": [
+    "community license (not permissive): allowed as a model you run on your own machines; the license name is recorded"
+   ],
+   "requires_task": {},
+   "offer_by_default": true,
+   "not_default_reasons": [],
+   "conflicts": [],
+   "companions": [],
+   "shards": [],
+   "verified": {
+    "label": "verified-by-code",
+    "checked": "2026-11-01",
+    "revision": "bf5b95e96dac0462e2a09145ec66cae9a3f12067",
+    "sources": [
+     "hub listing at the pinned revision",
+     "GGUF header (range request)"
+    ],
+    "rules": "03929205c69fb860"
+   }
+  },
+  {
+   "id": "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf",
+   "source": "bartowski",
+   "repo": "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF",
+   "file": "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf",
+   "url": "https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/bf5b95e96dac0462e2a09145ec66cae9a3f12067/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf",
+   "revision": "bf5b95e96dac0462e2a09145ec66cae9a3f12067",
+   "sha256": "9da71c45c90a821809821244d4971e5e5dfad7eb091f0b8ff0546392393b6283",
+   "bytes": 8540775840,
+   "license": "llama3.1",
+   "license_source": "https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF",
+   "format": "gguf",
+   "quantization": "Q8_0",
+   "params_b": 8.03,
+   "min_ram_gib": 10.25,
+   "kind": "chat",
+   "params_active_b": null,
+   "architecture": "llama",
+   "size_label": "8B",
+   "name": null,
+   "dims": {
+    "layers": 32,
+    "kv_layers": 32,
+    "kv_heads": 8,
+    "key_length": 128,
+    "value_length": 128
+   },
+   "context_trained": 131072,
+   "context_extended": null,
+   "publisher": "bartowski",
+   "base_model": "meta-llama/Llama-3.1-8B-Instruct",
+   "gated": false,
+   "license_header": "llama3.1",
+   "license_card": "llama3.1",
+   "license_verified": true,
+   "license_name": "Llama 3.1 Community License",
+   "license_class": "community-host-run",
+   "license_label": "Meta Llama community license: not permissive; allowed here only as a model the owner runs on their own machines (host-run), not redistributed or embedded in a product; the license name is recorded",
+   "license_basis": "verified-by-code: the file header and the card agree",
+   "labels": [
+    "community license (not permissive): allowed as a model you run on your own machines; the license name is recorded"
+   ],
+   "requires_task": {},
+   "offer_by_default": true,
+   "not_default_reasons": [],
+   "conflicts": [],
+   "companions": [],
+   "shards": [],
+   "verified": {
+    "label": "verified-by-code",
+    "checked": "2026-11-01",
+    "revision": "bf5b95e96dac0462e2a09145ec66cae9a3f12067",
     "sources": [
      "hub listing at the pinned revision",
      "GGUF header (range request)"
@@ -11655,6 +11773,14 @@
   ],
   [
    "llama.cpp:b12017:linux/amd64:cpu",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:cpu",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:cpu",
    "ibm-granite/granite-3.3-2b-base-GGUF/granite-3.3-2b-base-Q4_0.gguf"
   ],
   [
@@ -12347,6 +12473,14 @@
   ],
   [
    "llama.cpp:b12017:linux/amd64:cuda",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:cuda",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:cuda",
    "ibm-granite/granite-3.3-2b-base-GGUF/granite-3.3-2b-base-Q4_0.gguf"
   ],
   [
@@ -13039,6 +13173,14 @@
   ],
   [
    "llama.cpp:b12017:linux/amd64:vulkan",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:vulkan",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:vulkan",
    "ibm-granite/granite-3.3-2b-base-GGUF/granite-3.3-2b-base-Q4_0.gguf"
   ],
   [
@@ -13731,6 +13873,14 @@
   ],
   [
    "llama.cpp:b12017:linux/arm64:cpu",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:cpu",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:cpu",
    "ibm-granite/granite-3.3-2b-base-GGUF/granite-3.3-2b-base-Q4_0.gguf"
   ],
   [
@@ -14423,6 +14573,14 @@
   ],
   [
    "llama.cpp:b12017:linux/arm64:cuda",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:cuda",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:cuda",
    "ibm-granite/granite-3.3-2b-base-GGUF/granite-3.3-2b-base-Q4_0.gguf"
   ],
   [
@@ -15115,6 +15273,14 @@
   ],
   [
    "llama.cpp:b12017:linux/arm64:vulkan",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:vulkan",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:vulkan",
    "ibm-granite/granite-3.3-2b-base-GGUF/granite-3.3-2b-base-Q4_0.gguf"
   ],
   [
@@ -15807,6 +15973,14 @@
   ],
   [
    "llama.cpp:b12017:macos/amd64:cpu",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:macos/amd64:cpu",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:macos/amd64:cpu",
    "ibm-granite/granite-3.3-2b-base-GGUF/granite-3.3-2b-base-Q4_0.gguf"
   ],
   [
@@ -16499,6 +16673,14 @@
   ],
   [
    "llama.cpp:b12017:macos/arm64:metal",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:macos/arm64:metal",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:macos/arm64:metal",
    "ibm-granite/granite-3.3-2b-base-GGUF/granite-3.3-2b-base-Q4_0.gguf"
   ],
   [
@@ -17191,6 +17373,14 @@
   ],
   [
    "llama.cpp:b12017:windows/amd64:cpu",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/amd64:cpu",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/amd64:cpu",
    "ibm-granite/granite-3.3-2b-base-GGUF/granite-3.3-2b-base-Q4_0.gguf"
   ],
   [
@@ -17883,6 +18073,14 @@
   ],
   [
    "llama.cpp:b12017:windows/amd64:vulkan",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/amd64:vulkan",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/amd64:vulkan",
    "ibm-granite/granite-3.3-2b-base-GGUF/granite-3.3-2b-base-Q4_0.gguf"
   ],
   [
@@ -18575,6 +18773,14 @@
   ],
   [
    "llama.cpp:b12017:windows/arm64:cpu",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/arm64:cpu",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/arm64:cpu",
    "ibm-granite/granite-3.3-2b-base-GGUF/granite-3.3-2b-base-Q4_0.gguf"
   ],
   [
@@ -19267,6 +19473,14 @@
   ],
   [
    "llama.cpp:b12017:windows/arm64:vulkan",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/arm64:vulkan",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/arm64:vulkan",
    "ibm-granite/granite-3.3-2b-base-GGUF/granite-3.3-2b-base-Q4_0.gguf"
   ],
   [
@@ -19959,6 +20173,14 @@
   ],
   [
    "mistral.rs:v0.9.5:linux/amd64:cpu",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:linux/amd64:cpu",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:linux/amd64:cpu",
    "ibm-granite/granite-3.3-2b-base-GGUF/granite-3.3-2b-base-Q4_0.gguf"
   ],
   [
@@ -20651,6 +20873,14 @@
   ],
   [
    "mistral.rs:v0.9.5:linux/arm64:cpu",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:linux/arm64:cpu",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:linux/arm64:cpu",
    "ibm-granite/granite-3.3-2b-base-GGUF/granite-3.3-2b-base-Q4_0.gguf"
   ],
   [
@@ -21340,6 +21570,14 @@
   [
    "mistral.rs:v0.9.5:macos/arm64:metal",
    "allenai/OLMoE-1B-7B-0924-Instruct-GGUF/olmoe-1b-7b-0924-instruct-q8_0.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:macos/arm64:metal",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:macos/arm64:metal",
+   "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
   ],
   [
    "mistral.rs:v0.9.5:macos/arm64:metal",
@@ -21790,10 +22028,6 @@
   {
    "what": "source ggml-org",
    "reason": "status is propose-off: 100 repos: 50 apache-2.0, 11 mit, 27 none, 7 other, 1 cc-by-nc, 1 gemma"
-  },
-  {
-   "what": "source bartowski",
-   "reason": "status is propose-off: 100 repos: 54 apache-2.0, 11 mit, 14 none, 13 other, 4 gemma, 2 cc-by-nc"
   },
   {
    "what": "source unsloth",

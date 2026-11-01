@@ -7,7 +7,7 @@ import json
 
 import yaml
 
-from acceptance_world import ENVS, MODEL, SENTINEL, build, wait_job
+from acceptance_world import ENVS, MODEL, SENTINEL, build, wait_job, TOUCHES
 from test_acceptance_run import actors, answers, create, execute, filt, measure, no_secret_anywhere, record, run, sc, text
 
 NEW_TYPE = "classification"
@@ -92,7 +92,7 @@ def test_held_out_a_new_environment_a_new_access_and_a_new_task_type_enter_as_da
             # a task type that exists in no code: a suite file and a catalog entry
             w.script.answers.append((lambda e, a, p: p.startswith("Classify '"), "fruit"))
             await measure(w, host, "llamacpp-local", "local-hardware", NEW_TYPE, 10)
-            t = await host.tool("mas_create_task", text="Classify 'apple' as fruit or vegetable. Reply with one word, lowercase.", task_type=NEW_TYPE, sensitivity="public", check={"kind": "equals", "value": "fruit"})
+            t = await host.tool("mas_create_task", text="Classify 'apple' as fruit or vegetable. Reply with one word, lowercase.", task_type=NEW_TYPE, touches=TOUCHES["public"], check={"kind": "equals", "value": "fruit"})
             assert sc(t)["chosen"] == f"llamacpp-local|{MODEL}|local-hardware|{nid}" and sc(t)["evidence"] == "measured here 10/10"
             j = await execute(host, t)
             assert sc(j)["state"] == "done" and sc(j)["attempts"][0]["graded"] is True

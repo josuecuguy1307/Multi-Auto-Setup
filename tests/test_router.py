@@ -170,9 +170,11 @@ def test_the_decision_is_a_router_event_and_a_refusal_is_a_guard_event():
     assert ("route_refusal", "GUARD") in [(t, a) for t, a, _ in log] and ("route_decision", "ROUTER") in [(t, a) for t, a, _ in log2]
 
 
-def test_the_tie_margin_default_is_the_visible_config_value_and_the_default_policy_is_conservative():
+def test_the_tie_margin_default_is_the_visible_config_value_and_nothing_starts_closed():
     p = Policy.defaults()
-    assert p.tie_margin == 0.1 and p.open_subtypes == {"local_model"} and p.automated_use_cleared == set() and p.max_escalation == 2
+    subtypes = {e["subtype"] for e in E.load_environments().values()}
+    assert p.tie_margin == 0.1 and p.open_subtypes >= subtypes and p.closed_environments == set() and p.closed_accesses == set() and p.machine_closes == {}
+    assert p.automated_use_cleared == set() and p.max_escalation == 2  # a vendor CLI whose automated use is unreviewed stays unrouted: that is a licence question, not an owner closure
 
 
 def test_an_environment_whose_automated_use_the_owner_has_not_cleared_is_never_routed_automatically():
@@ -286,7 +288,7 @@ def test_an_unknown_level_or_entry_kind_is_treated_as_confidential_and_cloud():
 
 def test_internal_to_a_cloud_chat_drops_content_keys_and_caps_size():
     out = filter_outbound({**INTENT, "sensitivity": "internal", "payload": {"task_id": "t", "result": "x", "note": "y" * 900}}, {"kind": "cloud"}, outbound_policy=Policy.defaults().outbound)
-    assert "result" not in out["payload"] and len(out["payload"]["note"]) == 500 and out["redacted"] is True
+    assert "result" not in out["payload"] and out["payload"]["note"].startswith("y" * 500) and out["payload"]["note"].endswith("[…cut: 500 of 900 characters shown]") and out["redacted"] is True  # a cut says it is a cut
 
 
 def test_the_router_filter_method_uses_the_owner_policy():

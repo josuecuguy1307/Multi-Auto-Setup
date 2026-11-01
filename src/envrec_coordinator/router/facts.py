@@ -39,6 +39,9 @@ class Policy:
     threshold: int = 8
     of: int = 10
     outbound: dict[str, Any] = field(default_factory=dict)
+    closed_environments: set[str] = field(default_factory=set)  # the owner's "do not use X" (his profile); an availability is detected, a closure is his choice
+    machine_closes: dict[str, str] = field(default_factory=dict)  # machine id -> what its role closes: `cloud` (only local models there) or `all` (kept out of the router)
+    cloud_stance: str = "allowed"  # never | only_if_local_cannot | allowed (the owner's profile)
     unmeasured: str = "measured_first"  # what an unmeasured candidate is worth against a measured one (policy.json): `measured_first` or `cost_first`
 
     @classmethod

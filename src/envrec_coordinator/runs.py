@@ -20,6 +20,7 @@ from envrec.protocols import ProtocolSet
 from envrec.skills.discover import library
 from envrec.store import Store
 from envrec_coordinator import agent as A
+from envrec_coordinator import approval
 from envrec_coordinator import draft as DR
 from envrec_coordinator import strings as S
 from envrec_coordinator.draft_agent import DraftAdapter
@@ -122,7 +123,7 @@ def describe_event(e: Event) -> str:
     return t.replace("_", " ")
 
 
-OWNER_GESTURES = ("panel", "panel_click", "os_dialog", "host_dialog", "host_elicitation", "cli_typed")  # the human gestures that may approve a write; set by trusted code (the owner's panel, the core's confirmation), never by a request body
+OWNER_GESTURES = ("panel", "panel_click", "os_dialog", "host_dialog", "host_elicitation", "cli_typed", "chat_choice")  # the human gestures that may approve a write; set by trusted code (the owner's panel, the core's confirmation), never by a request body
 SHOWN = {"owner_confirmation", "setup_plan", "setup_step", "run_requested", "action_chosen", "tool_run", "tool_result", "protocol_state", "owner_answer", "owner_pick", "owner_pick_option", "owner_correction", "owner_approve_draft", "run_end", "action_rejected", "protocol_refused", "code_only_probe", "run_start"}
 
 
@@ -239,7 +240,7 @@ class AgentRuns:
         approve = lambda h, n, a, by: self.coord.log.add("setup_step_approved", {"run": run.id, "node": node_id, "plan_hash": h, "step": n, "action": a, **({"by": "claude-code"} if by != "owner" else {})}, owner=True)  # noqa: E731
         adapter = SetupAdapter(node_id=node_id, node_name=run.node_name, load_stored=lambda: self.stored_analysis(node_id), load_pick=lambda: self.stored_pick(node_id),
                                run_task=lambda tt, p: self.coord.tasks.start(node_id, tt, p, by="GUARD", timeout_s=T.TIMEOUTS_S.get(tt)),
-                               start_step=lambda plan, n, action: self.coord.tasks.start_setup_step(node_id, plan, n, action), approve=approve, owner_events=self._owner_event, recipes=recipes, catalog=catalog, rules=rules)
+                               start_step=lambda plan, n, action: self.coord.tasks.start_setup_step(node_id, plan, n, action), approve=approve, owner_events=self._owner_event, recipes=recipes, catalog=catalog, rules=rules, plan_approval=approval.mechanism_for("install") if approval.mechanism_for("install") == approval.CHAT_CHOICE else None)
         run.adapter = adapter
         run.task = asyncio.ensure_future(self._execute(run, adapter, model or self._model()))
         return run
@@ -270,7 +271,7 @@ class AgentRuns:
             return run
         approve = lambda h, n, a, by: self.coord.log.add("setup_step_approved", {"run": run.id, "node": node_id, "plan_hash": h, "step": n, "action": a, **({"by": "claude-code"} if by != "owner" else {})}, owner=True)  # noqa: E731
         adapter = UndoAdapter(node_id=node_id, node_name=run.node_name, load_setup=lambda: self.stored_setup(node_id), start_step=(lambda plan, n, action: self.coord.connect_step(plan, n, action)) if local else (lambda plan, n, action: self.coord.tasks.start_setup_step(node_id, plan, n, action)),
-                              approve=approve, owner_events=self._owner_event)
+                              approve=approve, owner_events=self._owner_event, plan_approval=approval.mechanism_for("uninstall") if approval.mechanism_for("uninstall") == approval.CHAT_CHOICE else None)
         run.adapter = adapter
         run.task = asyncio.ensure_future(self._execute(run, adapter, model or self._model()))
         return run
@@ -571,6 +572,21 @@ class AgentRuns:
             self.coord.log.add("owner_authority_refused", {"run": run_id, "question": qid, "channel": channel, "gesture": gesture})
             return False
         return bool(run and run.adapter and run.adapter.answer(qid, option, by, channel))
+
+    def cancel(self, run_id: str, by: str = "owner") -> tuple[bool, str]:
+        """End a run that has not finished (it may be waiting for the owner on a question nobody will answer). (True, status) or (False, why). Nothing it already did is undone: that is `mas_undo`."""
+        run = self.runs.get(run_id)
+        if run is None:
+            return False, "unknown_run"
+        if run.finished is not None:
+            return False, f"already_{run.status}"
+        if run.adapter is not None and run.adapter.pending is not None and not run.adapter.pending.future.done():
+            run.adapter.pending.future.cancel()
+        if run.task is not None and not run.task.done():
+            run.task.cancel()
+        run.status, run.reason, run.finished = "cancelled", f"cancelled by the {by}", time.time()
+        self.coord.log.add("run_cancelled", {"run": run_id, "kind": run.kind, "by": by}, owner=(by == "owner"))
+        return True, "cancelled"
 
     @staticmethod
     def needs_gesture(run: AgentRun, qid: str) -> bool:

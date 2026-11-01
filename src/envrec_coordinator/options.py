@@ -19,9 +19,9 @@ CATALOG_FILE = SKILLS_DIR.parent / "catalog.lock.yaml"
 COST_RANK = {"free_local": 0, "subscription": 1, "metered_api": 2}
 WRITTEN_ORDER = {"installed_runtime": 0, "catalog_runtime": 1, "installed_cli": 2, "api_key": 3}
 ORDER_TEXT = ("cost class (free and local, then subscription, then metered API); then measured pass rate and measured time when they exist (none are measured yet, so they are skipped); then the written "
-              "order (an installed runtime before a download, an installed command-line tool, an API key), one that is already set up or whose key variable was found before one that is not; then the larger model that fits; then the name")
+              "order (an installed runtime before a download, an installed command-line tool, an API key), one that is already set up or whose key variable was found before one that is not; then the larger model that fits; then the name. "
+              "A model published in several quantizations is one option (the preferred quantization that fits), and up to twelve options are shown, with the count of those not shown")
 PROVISIONAL = "provisional, not measured here"
-MAX_SHOWN = 3
 ARCHES = {"x86_64": "amd64", "amd64": "amd64", "arm64": "arm64", "aarch64": "arm64"}
 
 
@@ -205,6 +205,32 @@ def order_options(options: list[dict]) -> list[dict]:
     return sorted(options, key=key)
 
 
+def load_display() -> dict:
+    return json.loads((REF / "display.json").read_text())
+
+
+def one_per_model(options: list[dict], rules: R.Rules) -> list[dict]:
+    """A model published in several quantizations is ONE option (three files of the same model would fill the list and hide every other model). The quantization shown is the first of the rules'
+    preference that fits; the others that also fit are listed on it (`other_quantizations`, with their ids) so the owner can still ask for one. Order is kept."""
+    pref = [q.upper() for q in load_display()["option_quant_preference"]]
+    rank = lambda o: pref.index(str(o.get("quantization", "")).upper()) if str(o.get("quantization", "")).upper() in pref else len(pref)  # noqa: E731
+    groups: dict[tuple, list[dict]] = {}
+    for o in options:
+        groups.setdefault((o["kind"], o.get("model") or o["id"], o.get("runtime")), []).append(o)
+    out, done = [], set()
+    for o in options:
+        key = (o["kind"], o.get("model") or o["id"], o.get("runtime"))
+        if key in done:
+            continue
+        done.add(key)
+        same = groups[key]
+        best = min(same, key=lambda x: (rank(x), same.index(x)))
+        if len(same) > 1:
+            best = {**best, "other_quantizations": [{"id": x["id"], "quantization": x.get("quantization"), "memory_needed_gib": x.get("memory_needed_gib")} for x in same if x is not best]}
+        out.append(best)
+    return out
+
+
 def relabel_measured(options: list[dict], lookup) -> list[dict]:
     """Measured wins (spec 6): where `lookup(option)` returns an admission view (envrec_coordinator.admission.facts), a fresh measurement fills the `measured` slot that `order_options` reads
     and the option says so; a stale one is shown as stale and does not rank. `lookup` returns None for an option that has no combination to look up."""
@@ -249,7 +275,9 @@ def build_options(facts: dict, *, choice: str, sensitivity: str = "internal", ch
                 seen.add(o["kind"])
                 picked.append(o)
         ordered = picked
-    shown = ordered[:MAX_SHOWN]
+    ordered = one_per_model(ordered, rules)
+    cap = int(load_display()["options_shown_max"])
+    shown = ordered[:cap]
     nn = _norm(facts)
     budget, mem_name = _memory_budget(nn, rules)
     path = facts.get("machine.model_path")
@@ -261,5 +289,5 @@ def build_options(facts: dict, *, choice: str, sensitivity: str = "internal", ch
                                  f"budget {budget} GiB from {mem_name}; the analysis says models run on: {path or 'not measured'}") if e else f"needs {o['memory_needed_gib']} GiB; budget {budget} GiB from {mem_name}; the analysis says models run on: {path or 'not measured'}"
         o["status"] = o.get("admission_label", "measured") if o.get("measured") else (f"{PROVISIONAL}; {o['admission_label']}" if o.get("admission_state") == "stale" else PROVISIONAL)
         o["evidence"] = evidence_for(evidence, o.get("runtime", ""))["note"] or "public evidence exists (see entries)"
-    return {"choice": choice, "sensitivity": sensitivity, "task_needs": list(needs), "options": shown, "considered": len(all_), "kept": len(kept),
+    return {"choice": choice, "sensitivity": sensitivity, "task_needs": list(needs), "options": shown, "not_shown": max(0, len(ordered) - len(shown)), "considered": len(all_), "kept": len(kept),
             "removed": refused + [{"id": o["id"], "reason": o["removed_by"], **({"fit_variants": o["fit_variants"]} if o.get("fit_variants") else {})} for o in removed][:60], "rule": ORDER_TEXT}

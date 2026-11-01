@@ -86,11 +86,25 @@ def test_a_measured_pass_rate_would_come_before_the_written_order_within_a_cost_
     assert [o["id"] for o in O.order_options([a, c, b])] == ["b", "c", "a"]
 
 
-def test_at_most_three_options_are_shown_and_the_rule_is_stated():
+def test_the_options_shown_are_capped_by_the_data_value_the_rest_are_counted_and_the_rule_is_stated(monkeypatch):
+    cap = int(O.load_display()["options_shown_max"])
     r = build(choice="mix")
-    assert len(r["options"]) <= 3 and "cost class" in r["rule"]
+    assert len(r["options"]) <= cap and "cost class" in r["rule"] and "one option" in r["rule"] and r["not_shown"] == 0
     many = build({**WIN, "machine.api_key_variable_names": []}, choice="api")
-    assert len(many["options"]) == 3 and all(o["kind"] == "api" for o in many["options"])
+    assert 0 < len(many["options"]) <= cap and all(o["kind"] == "api" for o in many["options"])
+    monkeypatch.setattr(O, "load_display", lambda: {"option_quant_preference": ["Q4_K_M", "Q4_0", "Q8_0"], "options_shown_max": 1})
+    one = O.build_options(WIN, catalog=copy.deepcopy(CAT), evidence={"entries": []}, choice="local")
+    assert len(one["options"]) == 1 and one["not_shown"] == 1  # a cut says how many it cut
+
+
+def test_a_model_published_in_several_quantizations_is_one_option_with_the_others_listed_on_it():
+    cat = copy.deepcopy(CAT)
+    base = cat["model_files"][1]
+    cat["model_files"] += [{**base, "id": base["id"] + "-q8", "quantization": "Q8_0", "bytes": 5 * 2 ** 30}, {**base, "id": base["id"] + "-q40", "quantization": "Q4_0"}]
+    r = O.build_options(WIN, catalog=cat, evidence={"entries": []}, choice="local")
+    mids = [o for o in r["options"] if o.get("model") == base["repo"]]
+    assert len(mids) == 1 and mids[0]["quantization"] == "Q4_K_M"  # the rules' preferred quantization that fits
+    assert sorted(x["quantization"] for x in mids[0]["other_quantizations"]) == ["Q4_0", "Q8_0"]
 
 
 def test_an_operating_system_with_no_runtime_build_gets_no_local_option_and_an_unknown_arch_too():
@@ -272,3 +286,50 @@ def test_a_vision_model_is_offered_when_it_fits_with_its_projector_counted_and_s
     [o], [p] = seen["options"], plain["options"]
     assert any("includes vision" in x for x in o["labels"]) and abs((o["memory_needed_gib"] - p["memory_needed_gib"]) - 0.55) < 0.02 and o["disk_needed_gib"] > p["disk_needed_gib"]  # 0.5 GiB of projector, and the 10% runtime share of it
     assert o["requires_task"] == {} and o["companions"] == row["companions"]
+
+
+# ---- Llama 3.1 8B Instruct, in the SHIPPED catalog (data: catalog.lock.yaml, approved for one repo in config/runtime_manifest.yaml) ----------------------
+
+LLAMA_REPO = "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF"
+LLAMA_PINS = {"Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf": ("7b064f5842bf9532c91456deda288a1b672397a54fa729aa665952863033557c", 4920739232),
+              "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf": ("9da71c45c90a821809821244d4971e5e5dfad7eb091f0b8ff0546392393b6283", 8540775840)}
+
+
+def shipped():
+    return O.load_catalog()
+
+
+def test_the_shipped_catalog_pins_llama_3_1_8b_instruct_by_revision_size_and_sha256_with_its_licence_recorded():
+    rows = {m["file"]: m for m in shipped()["model_files"] if m["repo"] == LLAMA_REPO}
+    assert set(rows) == set(LLAMA_PINS)
+    for f, (sha, size) in LLAMA_PINS.items():
+        m = rows[f]
+        assert (m["sha256"], m["bytes"]) == (sha, size) and m["revision"] in m["url"] and m["url"].startswith(f"https://huggingface.co/{LLAMA_REPO}/resolve/") and m["url"].endswith("/" + f)
+        assert m["license_name"] == "Llama 3.1 Community License" and m["license_class"] == "community-host-run" and m["license_verified"] is True and m["gated"] is False
+        assert m["verified"]["label"] == "verified-by-code" and m["kind"] == "chat" and m["architecture"] == "llama" and m["offer_by_default"] is True
+        assert "not permissive" in m["license_label"] and "host-run" in m["license_label"]  # declared as a community licence, never passed off as a permissive one
+
+
+LENOVO_LIKE = {**WIN, "machine.ram_total_gib": 32.0, "machine.ram_available_gib": 20.0}
+
+
+def test_llama_3_1_8b_is_offered_for_a_machine_with_the_memory_for_it_and_not_for_one_without():
+    r = O.build_options(LENOVO_LIKE, catalog=shipped(), evidence={"entries": []}, choice="local")
+    mine = {o["id"]: o for o in r["options"] if "Llama-3.1-8B" in o["id"]}
+    assert "catalog-8.03b-Meta-Llama-3.1-8B-Instruct-GGU-q4_k_m" in mine, titles(r)[:10]
+    q4 = mine["catalog-8.03b-Meta-Llama-3.1-8B-Instruct-GGU-q4_k_m"]
+    assert q4["cloud"] is False and q4["label"].startswith("verified-by-code") and q4["license"] == "llama3.1" and q4["license_name"] == "Llama 3.1 Community License" and q4["license_class"] == "community-host-run"
+    assert q4["model_sha256"] == LLAMA_PINS["Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"][0] and [x["quantization"] for x in q4["other_quantizations"]] == ["Q8_0"]
+    assert q4["fit"]["fits"] is True
+    small = {**WIN, "machine.ram_total_gib": 6.0, "machine.ram_available_gib": 4.0}
+    r2 = O.build_options(small, catalog=shipped(), evidence={"entries": []}, choice="local")
+    assert not [o for o in r2["options"] if "Llama-3.1-8B" in o["id"]]
+    why = {x["id"]: x["reason"] for x in r2["removed"]}
+    assert "needs" in why["catalog-8.03b-Meta-Llama-3.1-8B-Instruct-GGU-q4_k_m"], "it goes with its numbers, not silently"
+
+
+def test_a_community_licence_is_offered_only_while_the_rules_know_it(monkeypatch):
+    from envrec.catalog.rules import Rules
+    rules = Rules.load()
+    assert rules.license_offered("llama3.1") is True
+    assert rules.license_offered("llama-made-up-9") is False  # an unknown licence is never offered by default

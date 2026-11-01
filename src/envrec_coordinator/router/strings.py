@@ -70,3 +70,5 @@ def reason_text(code: str, detail: dict | None = None) -> str:
 
 def refusal_text(code: str) -> str:
     return REFUSALS.get(code, REFUSALS["no_candidate"])
+
+CUT_MARK = " […cut: {cap} of {total} characters shown]"

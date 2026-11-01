@@ -14,6 +14,7 @@ from typing import Any
 from envrec.adapters import ToolContext
 from envrec.contracts import Actor, CreatedBy, Event, Fact, FactStatus, ProbeResult, TargetKind, ToolSpec
 from envrec_coordinator import agent as A
+from envrec_coordinator import approval as AP
 from envrec_coordinator import options as O
 from envrec_coordinator.setup_plan import PlanRefused, build_plan
 from envrec_net import setup as P
@@ -30,8 +31,11 @@ def _code_of(reason: str) -> str:
 
 
 class SetupAdapter(A.BaseAdapter):
-    def __init__(self, *, node_id: str, node_name: str, load_stored, load_pick, run_task, start_step, approve, owner_events, catalog: dict | None = None, recipes: dict | None = None, rules=None) -> None:
+    def __init__(self, *, node_id: str, node_name: str, load_stored, load_pick, run_task, start_step, approve, owner_events, catalog: dict | None = None, recipes: dict | None = None, rules=None,
+                 plan_approval: str | None = None) -> None:
         super().__init__(owner_events=owner_events)
+        self.plan_approval = plan_approval  # `chat_choice` (approval-policy.json): ONE question per plan; None: one question per step
+        self.plan_ok: tuple[str, str] | None = None  # (plan hash, action) the owner approved as a whole; cleared by a failed step, so the next one asks again
         self.node_id, self.node_name = node_id, node_name
         self.load_stored, self.load_pick = load_stored, load_pick  # () -> the stored analysis / the owner's recorded pick, or None
         self.run_task, self.start_step, self.approve = run_task, start_step, approve  # run_task(type, params) -> record; start_step(plan, n, action) -> record; approve(plan_hash, n, action, by) writes the OWNER event
@@ -174,6 +178,8 @@ class SetupAdapter(A.BaseAdapter):
                 f"Writes: {', '.join(step['writes']) or 'nothing'}\nUndo: {step['undo']}\nPlan {self.plan['plan_hash'][:19]}…")  # type: ignore[index]
         if self.pending is not None:
             return False, "a question is already waiting for the owner"
+        if self.plan_approval == AP.CHAT_CHOICE:
+            return await self._approved_plan(ctx, n, action)
         data = {"kind": "approve_step", "plan_hash": self.plan["plan_hash"], "step": n, "of": len(self.plan["steps"]), "action": action, "title": step["title"], "command": step["exact_command"],  # type: ignore[index]
                 "writes": step["writes"], "bytes": step["bytes"], "size_kind": step.get("size_kind"), "undo": step["undo"]}  # type: ignore[index]
         self._event(ctx, "setup_step", {"step": n, "action": action, "state": "waiting_for_owner"})
@@ -185,6 +191,30 @@ class SetupAdapter(A.BaseAdapter):
         if answer != "approve":
             return False, "the owner did not approve it; nothing was changed"
         self.approve(self.plan["plan_hash"], n, action, by)  # type: ignore[index]  # the OWNER event the coordinator's task desk looks for (an operator's answer is written as the operator's and does not count)
+        return True, ""
+
+    async def _approved_plan(self, ctx: ToolContext, n: int, action: str) -> tuple[bool, str]:
+        """ONE chat question per plan: the whole plan (steps, exact commands, sizes, undo) bound to its hash. A later step of the same approved plan does not ask again; a changed plan (another hash) or a
+        failed step does."""
+        plan = self.plan
+        key = (plan["plan_hash"], action)  # type: ignore[index]
+        if self.plan_ok != key:
+            if action == "run":
+                steps = [s for s in plan["steps"] if self.status.get(s["n"]) != "done"]  # type: ignore[index]
+            else:
+                steps = [s for s in reversed(plan["steps"]) if self.status.get(s["n"]) == "done"]  # type: ignore[index]
+            rows = [{"n": s["n"], "title": s["title"], "command": s["exact_command"] if action == "run" else s["undo"], "writes": s["writes"], "bytes": s["bytes"], "size_kind": s.get("size_kind"), "undo": s["undo"]} for s in steps]
+            data = {"kind": "approve_plan", "plan_hash": plan["plan_hash"], "action": action, "steps": rows, "of": len(plan["steps"]), "title": plan.get("plan_title") or plan.get("option_title") or ""}  # type: ignore[index]
+            self._event(ctx, "setup_step", {"step": n, "action": action, "state": "waiting_for_owner"})
+            answer = await self._ask(ctx, f"approve_plan_{action}", f"{'Run' if action == 'run' else 'Undo'} this plan ({len(rows)} step(s))?", AP.options(), data)
+            if answer is None:
+                return False, "the owner did not answer in time"
+            by = self.last_answered_by
+            self._owner(ctx.store, "owner_answer", {"question": f"approve_plan_{action}", "option": answer, "plan_hash": plan["plan_hash"], "gesture": AP.CHAT_CHOICE, **({"by": by} if by != "owner" else {})})  # type: ignore[index]
+            if answer != "approve":
+                return False, "the owner did not approve it; nothing was changed"
+            self.plan_ok = key
+        self.approve(plan["plan_hash"], n, action, self.last_answered_by)  # type: ignore[index]  # the OWNER event of THIS step, covered by the plan the owner approved
         return True, ""
 
     async def _run_step(self, args: dict, ctx: ToolContext) -> ProbeResult:
@@ -204,6 +234,7 @@ class SetupAdapter(A.BaseAdapter):
         step = self.plan["steps"][n - 1]  # type: ignore[index]
         if rec.status != "done":
             self.status[n] = "failed"
+            self.plan_ok = None  # a failed step: the plan the owner approved is no longer the plan in front of us
             code = _code_of(rec.reason)
             return ProbeResult(ok=False, facts=[self._fact(ctx, f"step.{n}", {"op": step["op"], "status": "failed", "reason": code, "detail": T.REJECTIONS.get(rec.reason, rec.reason)[:200]}, "run_step")],
                                error=f"step {n} did not succeed: {code}")
@@ -240,6 +271,7 @@ class SetupAdapter(A.BaseAdapter):
         step = self.plan["steps"][n - 1]  # type: ignore[index]
         left = rec.result.get("left") if rec.status == "done" else None
         if rec.status != "done" or left:
+            self.plan_ok = None
             return ProbeResult(ok=False, facts=[self._fact(ctx, f"step.{n}", {"op": step["op"], "status": "undo_failed", "reason": _code_of(rec.reason), "left": left}, "undo_step")],
                                error=f"the undo of step {n} did not finish: " + (f"left behind: {left}" if left else _code_of(rec.reason)))
         self.status[n] = "undone"
@@ -260,9 +292,9 @@ class UndoAdapter(SetupAdapter):
     offers only the steps that are done, with the undo that plan itself wrote; the model chooses the order of its own calls from a menu of three, the owner approves every undo with a gesture, and the node removes
     exactly what the step wrote."""
 
-    def __init__(self, *, node_id: str, node_name: str, load_setup, start_step, approve, owner_events) -> None:
+    def __init__(self, *, node_id: str, node_name: str, load_setup, start_step, approve, owner_events, plan_approval: str | None = None) -> None:
         super().__init__(node_id=node_id, node_name=node_name, load_stored=lambda: None, load_pick=lambda: None, run_task=lambda *a, **k: None, start_step=start_step, approve=approve,
-                         owner_events=owner_events, catalog={})
+                         owner_events=owner_events, catalog={}, plan_approval=plan_approval)
         self.load_setup = load_setup  # () -> the recorded setup {run, plan, status} or None
         self.offered: list[int] = []
 

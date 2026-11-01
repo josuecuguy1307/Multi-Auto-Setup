@@ -29,3 +29,13 @@ def pytest_collection_modifyitems(config, items):
 def _helper_files_stay_in_a_temp_dir(tmp_path, monkeypatch):
     """No test may write to the owner's real helper directory (its approval log lives there)."""
     monkeypatch.setenv("ENVREC_HELPER_DIR", str(tmp_path / "helper-dir"))
+
+
+@pytest.fixture
+def per_step_approvals(monkeypatch):
+    """A policy that lists no chat_choice kind: a setup or an undo asks one question per STEP, the way a kind that is not in approval-policy.json does. The step-level guards (the gesture, the plan hash, the
+    stale ticket) are tested under it; tests/test_plan_approval.py tests the shipped policy."""
+    from envrec_coordinator import approval
+    doc = approval.load()
+    doc = {**doc, "kinds": {k: v for k, v in doc["kinds"].items() if v != approval.CHAT_CHOICE}}
+    monkeypatch.setattr(approval, "load", lambda path=None: doc)

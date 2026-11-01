@@ -157,7 +157,7 @@ def test_real_manifest_source_statuses_exclude_the_right_things(tmp_path):
             return []
     g = generate(m, Empty())
     assert set(calls) == {"https://github.com/ggml-org/llama.cpp", "https://github.com/EricLBuehler/mistral.rs",
-                          "Qwen", "HuggingFaceTB", "ibm-granite", "microsoft", "mistralai", "allenai", "TinyLlama"}
+                          "Qwen", "HuggingFaceTB", "ibm-granite", "microsoft", "mistralai", "allenai", "TinyLlama", "bartowski"}
     r = reasons(g)
     for off in ("llamafile", "ollama", "LocalAI", "ggml-org", "google", "meta-llama"):
         assert f"source {off}" in r
@@ -243,3 +243,27 @@ def test_a_quantization_published_both_as_one_file_and_as_shards_is_listed_once(
     g = generate(Manifest.load(write_manifest(tmp_path)), Both())
     assert [(m.file, bool(m.shards)) for m in g.lock.model_files] == [("both-7b-q4_k_m.gguf", False), ("both-7b-q8_0-00001-of-00002.gguf", True)]  # the Q8_0 exists only split: kept, as one entry
     assert any("also published as a single file" in e["reason"] for e in g.lock.excluded)
+
+
+def test_a_source_that_names_its_repos_is_approved_for_those_repos_only(tmp_path):
+    """bartowski is approved for ONE repo (the ungated Meta Llama 3.1 8B Instruct quantization): its other repos are never listed, read or offered."""
+    from pathlib import Path
+    raw = yaml.safe_load((Path(__file__).resolve().parents[1] / "config" / "runtime_manifest.yaml").read_text())
+    raw["approved"] = True
+    src = next(x for x in raw["model_sources"] if x["id"] == "bartowski")
+    assert src["status"] == "approve" and src["repos"] == ["bartowski/Meta-Llama-3.1-8B-Instruct-GGUF"]
+    raw["runtime_sources"] = []
+    raw["model_sources"] = [src]
+    p = tmp_path / "m.yaml"
+    p.write_text(yaml.safe_dump(raw))
+    asked = []
+
+    class Meta(FakeMeta):
+        def model_repos(self, author):
+            return [{"repo": "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF", "license": "llama3.1"}, {"repo": "bartowski/Some-Other-Model-GGUF", "license": "llama3.1"}]
+
+        def repo_files(self, repo):
+            asked.append(repo)
+            return {"revision": "r" * 40, "license": "llama3.1", "files": [{"path": "m-Q4_K_M.gguf", "bytes": 5, "sha256": "a" * 64}]}
+    g = generate(Manifest.load(p), Meta())
+    assert asked == ["bartowski/Meta-Llama-3.1-8B-Instruct-GGUF"] and [m.repo for m in g.lock.model_files] == ["bartowski/Meta-Llama-3.1-8B-Instruct-GGUF"]

@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from envrec_coordinator import services_strings as S
+from envrec_coordinator.profile_tools import ProfileTools
 from envrec_coordinator.admission import router_bridge as bridge
 from envrec_coordinator.admission.decision import AdmissionDesk
 from envrec_coordinator.admission.decision import Refusal as AdmissionRefusal
@@ -89,7 +90,7 @@ def _digest(*parts: Any) -> str:
     return hashlib.sha256(json.dumps(parts, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
 
 
-class Services:
+class Services(ProfileTools):
     def __init__(self, coord, *, envs: dict[str, dict] | None = None, policy: Policy | None = None, sandbox_ready=None, sandbox_runner=None) -> None:
         self.coord = coord
         self.envs = envs if envs is not None else E.load_environments()
@@ -110,6 +111,7 @@ class Services:
         limit = getattr(coord, "board_escalation_limit", self.policy.max_escalation)  # the coordinator settings key board_escalation_limit
         if isinstance(limit, bool) or not isinstance(limit, int):
             raise TypeError(f"board_escalation_limit must be an integer, got {type(limit).__name__}")
+        self._init_profile()  # the owner's profile reads into the router's policy before anything is routed
         self.board_preapproved = max(0, min(limit, self.policy.max_escalation))  # escalation steps a board may take without asking the owner: 0 to the router's maximum, outside that it is clamped. Steps, not money
 
     # ---- plumbing ------------------------------------------------------------------------------------------------------------------------------
@@ -215,12 +217,23 @@ class Services:
         data = self._explain_data(res, task_type=task.task_type, sensitivity=task.sensitivity, chat=task.entry_chat)
         return self._out(True, self._explain_text(data), **data)
 
-    def create_task(self, ch, *, text: str, task_type: str, sensitivity: str, check: dict | None = None) -> dict:
-        """Create a task. Nothing runs: the owner approves the exact route in his own system dialog first."""
+    def create_task(self, ch, *, text: str, task_type: str, touches=None, check: dict | None = None, sensitivity: str | None = None) -> dict:
+        """Create a task. Its level comes from the owner's profile and what the text touches (`touches`: his categories, `none` or `unsure`); when the harness cannot tell it asks him. A chat's model never gives a
+        level: only the owner's own screens (panel, terminal) state one. Nothing runs: the owner approves the exact route first."""
+        if sensitivity is not None:
+            if ch.model_in_middle:
+                return self._out(False, S.TASK_LEVEL_NOT_YOURS)
+            return self._create(ch, text=text, task_type=task_type, sensitivity=sensitivity, check=check)
+        if not isinstance(text, str) or not text.strip() or len(text) > MAX_TEXT:
+            return self._create(ch, text=text, task_type=task_type, sensitivity="internal", check=check)  # the refusal for the size is the same one, with the size in it
+        level, res = self._level_or_question(ch, text, task_type, touches, check)
+        return res if level is None else self._create(ch, text=text, task_type=task_type, sensitivity=level, check=check)
+
+    def _create(self, ch, *, text: str, task_type: str, sensitivity: str, check: dict | None = None) -> dict:
         self._stale_credentials()
         task_id = "t-" + secrets.token_hex(4)
         if not isinstance(text, str) or not text.strip() or len(text) > MAX_TEXT:
-            return self._out(False, S.TASK_REFUSED.format(task_id=task_id, reason=f"the text must be 1 to {MAX_TEXT} characters"))
+            return self._out(False, S.TASK_REFUSED.format(task_id=task_id, reason=S.TEXT_SIZE.format(max=MAX_TEXT, got=len(text) if isinstance(text, str) else 0)))
         spec = None
         if check is not None:
             kind = check.get("kind") if isinstance(check, dict) else None
@@ -256,7 +269,7 @@ class Services:
             if spec["kind"] in grading.EXECUTING_KINDS:  # the answer comes back as text; any code in it runs only in this computer's sandbox, never on the machine that answered
                 check_line += " " + (S.CHECK_SANDBOX if self.router.sandbox_ready() else S.CHECK_NO_SANDBOX).format(machine=self._name(res.route.machine_id))
         return self._out(True, S.TASK_CREATED.format(task_id=task_id, task_type=task.task_type, sensitivity=res.effective_sensitivity, route_line=route_line, intent_id=pending.intent.id, check_line=check_line)
-                         + "\n" + self._explain_text(data), task_id=task_id, intent_id=pending.intent.id, **data)
+                         + "\n" + S.TEXT_RECEIVED.format(n=len(text), tail=" ".join(text.split())[-50:]) + "\n" + self._explain_text(data), task_id=task_id, intent_id=pending.intent.id, **data)
 
     def _approved(self, task_id: str, ok: bool) -> None:
         job = self.jobs[task_id]
@@ -515,6 +528,9 @@ class Services:
         label = self._name(nid)
         if nid not in self.coord._sessions:
             return self._out(False, S.ACCESS_OFFLINE.format(node=label))
+        same = next((j for j in self.jobs.values() if j.kind == "access" and j.state in ("checking", "awaiting_owner") and (j.data.get("node"), j.data.get("access"), j.data.get("name"), j.data.get("action")) == (nid, access, name, action)), None)
+        if same is not None:  # the same item is already open: no second dialog, and the first is not timed out
+            return self._out(True, S.ACCESS_ALREADY_OPEN.format(node=label, name=name, job_id=same.id), job_id=same.id)
         job_id = "acc-" + secrets.token_hex(4)
         plan_hash = T.credential_plan_hash(nid, access, name, action)
         self.coord.log.add("credential_plan", {"plan_hash": plan_hash, "node": nid, "access": access, "name": name, "action": action, "job": job_id, "tag": "GUARD"})
@@ -557,6 +573,8 @@ class Services:
             names = self.facts.credential_names.setdefault(nid, set())
             (names.add if action in ("set", "restore") else names.discard)(name)
             job.state, job.text = "done", {"set": S.ACCESS_DONE_SET, "remove": S.ACCESS_DONE_REMOVE, "restore": S.ACCESS_DONE_RESTORE}[action].format(name=name, node=label)
+            if action in ("set", "restore"):  # an access was stored: the harness itself proposes what it enables (from the catalog), as one question
+                job.text += "\n\n" + self.proposal_text(ch)
         except TimeoutError:
             job.state, job.text = "timed_out", S.ACCESS_FAILED.format(reason="no answer in time")
         except Exception as exc:  # noqa: BLE001
@@ -648,9 +666,19 @@ class Services:
 
     def specs(self) -> list[dict]:
         """The tools a chat may call, as data (`skills/harness-tools`): name, description, arguments. The adapters list exactly these."""
-        return json.loads(self.SPECS_FILE.read_text(encoding="utf-8"))["tools"]
+        tools = json.loads(self.SPECS_FILE.read_text(encoding="utf-8"))["tools"]
+        accesses = sorted({a["id"] for e in self.envs.values() for a in e.get("accesses", []) if a.get("kind") == "api_key"})  # the choices come from the catalog, never from a model's memory
+        types = sorted({t for e in self.envs.values() for t in e.get("task_types", [])})
+        for t in tools:
+            props = t["inputSchema"]["properties"]
+            if t["name"] in ("mas_add_access", "mas_remove_access") and "access" in props:
+                props["access"] = {**props["access"], "enum": accesses}
+            if t["name"] == "mas_create_task":
+                props["task_type"] = {**props["task_type"], "enum": types}
+                props["touches"] = {**props["touches"], "items": {"type": "string", "enum": [*self.profile.categories(), "none", "unsure"]}}
+        return tools
 
-    TOOLS = ("create_task", "explain_route", "run_admission", "job_status", "add_access", "remove_access", "board_start", "board_show", "board_approve", "measurements", "draft")
+    TOOLS = ("create_task", "explain_route", "run_admission", "job_status", "add_access", "remove_access", "board_start", "board_show", "board_approve", "measurements", "draft", "profile_tool", "propose", "cancel")
 
     def call(self, ch, name: str, args: dict) -> dict:
         """The tool door: a registered tool, its arguments as the chat sent them. The channel is the token's, and `args` can never carry the entry chat."""
@@ -659,6 +687,9 @@ class Services:
         fn = getattr(self, name)
         names = fn.__code__.co_varnames[2:fn.__code__.co_argcount + fn.__code__.co_kwonlyargcount]
         try:
-            return fn(ch, **{k: v for k, v in (args or {}).items() if k in names})
+            out = fn(ch, **{k: v for k, v in (args or {}).items() if k in names})
         except TypeError:
             return self._out(False, f"{name} was called with arguments it does not take.")
+        if name not in ("profile_tool", "cancel") and out.get("ok") and not out.get("question") and ch.model_in_middle:
+            out["text"] = self._more_questions(out["text"], ch)  # first run: the harness itself puts the owner's next profile question
+        return out

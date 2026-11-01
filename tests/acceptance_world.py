@@ -153,6 +153,8 @@ async def build(tmp: Path, *, key: bool = True, server: bool = True, web: bool =
     c.harness.raise_dialogs = False  # this world plays the owner through mas_request_approval; tests/test_harness_dialogs.py is where the harness opens the dialogs by itself
     c.services.envs = c.services.router.envs = c.services.facts.envs = envs  # the catalog this world runs on (the shipped one unless a test hands another)
     c.services.policy.open_subtypes = set(subtypes)
+    p = c.services.profile  # the owner's answers, given up front (this world plays him): finance is confidential, a task that touches nothing is public, local first, any cloud step allowed up to two escalations
+    p.set("confidential", ["finance"]); p.set("default_sensitivity", "public"); p.set("cloud_spend", "allowed"); p.set("cloud_steps", 2); p.set("local_first", "local"); p.set_role(nid, "general")
     from envrec_coordinator import harness as H
     H.osconfirm.available = lambda *a, **k: {"available": True, "mechanism": "fake_os_dialog"}
     tear2 = None
@@ -208,3 +210,6 @@ async def wait_job(host, job_id, *, until=("done", "refused", "declined", "faile
             return r
         await asyncio.sleep(0.2)
     raise AssertionError(f"job {job_id} never finished: {last['content'][0]['text'][:300]}")
+
+
+TOUCHES = {"public": ["none"], "internal": ["business"], "confidential": ["finance"]}  # what a task of each level touches, in this world's profile

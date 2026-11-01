@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 
-from acceptance_world import build, wait_job
+from acceptance_world import build, wait_job, TOUCHES
 from test_acceptance_run import answers, create, execute, fx, measure, sc, text
 
 from envrec_coordinator.services import Services
@@ -21,7 +21,7 @@ def test_the_entry_chat_is_the_channels_and_no_argument_can_change_it(tmp_path):
         try:
             f = fx("ex3_notes")
             for extra in ({"entry_chat": {"kind": "local", "name": "owner-panel"}}, {"kind": "local"}, {"channel": "panel"}, {"entry": "local"}):
-                r = await host.tool("mas_create_task", text=f["input.txt"], task_type="summarize", sensitivity="confidential", **extra)
+                r = await host.tool("mas_create_task", text=f["input.txt"], task_type="summarize", touches=TOUCHES["confidential"], **extra)
                 assert sc(r)["ok"] is False and sc(r)["refusal"]["code"] == "confidential_from_cloud_chat", extra
             assert not any("entry_chat" in json.dumps(t["inputSchema"]) for t in (await host.rpc("tools/list"))["result"]["tools"]), "no tool offers the entry chat as an argument"
             import inspect

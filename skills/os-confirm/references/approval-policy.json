@@ -1,0 +1,11 @@
+{
+ "note": "Who answers what, as data. `os_dialog`: the harness itself opens the operating system's own dialog on the owner's computer (strong where the system offers Touch ID or Windows Hello). `chat_choice`: ONE chat question showing the whole plan, bound to its plan_hash; the owner answers in the chat and the model relays it. That is a weaker gesture and is recorded as `chat_choice`, never as `os_dialog`. A kind not listed keeps the mechanisms its channel lists.",
+ "kinds": {
+  "pairing": "os_dialog",
+  "access_add": "os_dialog",
+  "access_remove": "os_dialog",
+  "install": "chat_choice",
+  "uninstall": "chat_choice"
+ },
+ "chat_choice_options": {"approve": "Approve this plan", "reject": "Do not run it"}
+}

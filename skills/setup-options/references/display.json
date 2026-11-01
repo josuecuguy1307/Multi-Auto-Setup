@@ -1,0 +1,5 @@
+{
+ "_note": "How the options list is shown (data, read by envrec_coordinator/options.py): a model published in several quantizations is ONE option, with the quantization chosen by this preference among those that fit; up to options_shown_max options are shown and the rest are counted, never silently dropped.",
+ "option_quant_preference": ["Q4_K_M", "Q4_0", "Q8_0"],
+ "options_shown_max": 12
+}

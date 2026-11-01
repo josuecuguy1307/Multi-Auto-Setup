@@ -55,15 +55,15 @@ TOOLS = {  # name: (description, schema, shows cards)
     "mas_start": ("Start a run on one paired machine. goal 'analyze' reads the machine (read-only) and 'options' asks the owner which AI to use there. node is the machine's name or id. "
                   "The harness's own agent does the work; follow it with mas_status.",
                   {"type": "object", "properties": {"goal": {"type": "string", "enum": ["analyze", "options"]}, "node": {"type": "string"}}, "required": ["goal", "node"]}, True),
-    "mas_prepare": ("Prepare one paired machine for the option the owner picked there: the harness's own agent builds the setup plan and the whole plan comes back as text before anything is approved. Each step then waits for the owner: "
-                    "call mas_request_approval with the step's intent_id (the owner answers in a system dialog; you cannot answer for him) and follow with mas_status. node is the machine's name or id.",
+    "mas_prepare": ("Prepare one paired machine for the option the owner picked there (only after the machine was analysed and HE picked an option): the harness's own agent builds the setup plan and the whole plan comes back as text before anything is approved. "
+                    "The plan is then ONE question to the owner in the chat (every step, exact command, size and undo): show it complete and relay HIS answer with mas_answer; you cannot answer for him. Follow with mas_status. node is the machine's name or id.",
                     {"type": "object", "properties": {"node": {"type": "string"}}, "required": ["node"]}, True),
     "mas_undo": ("Undo, in a new run, what a finished setup wrote on one paired machine (only what that setup's own plan wrote, newest step first). The undo plan comes back as text before anything is approved; each undo step "
-                 "then waits for the owner exactly like a setup step: call mas_request_approval with the step's intent_id and follow with mas_status. node is the machine's name or id.",
+                 "then waits for the owner as ONE question in the chat (relay HIS answer with mas_answer); follow with mas_status. node is the machine's name or id.",
                  {"type": "object", "properties": {"node": {"type": "string"}}, "required": ["node"]}, True),
     "mas_activity": ("What the owner's machines are doing and have done since the last call, one line each with the machine, what happened and who did it (MODEL, GUARD, SCRIPT, OWNER). Use it to follow a run or to answer "
                      "what is happening on my machines. It takes no arguments.", {"type": "object", "properties": {}}, True),
-    "mas_connect": ("Connect a chat the owner already uses (Open WebUI, Claude Desktop, a terminal agent) to Multi Auto Setup on THIS computer. Without host the owner is asked which of the chats that were found; with host (one of "
+    "mas_connect": ("Connect a CHAT the owner already uses (Open WebUI, Claude Desktop, a terminal agent) to Multi Auto Setup on THIS computer. Only for connecting a chat host: never for giving a computer access to a model, an API or a key (that is mas_add_access). Without host the owner is asked which of the chats that were found; with host (one of "
                     "openwebui, claude-desktop, claude-code, codex, opencode, muse-code) that is their answer. The whole plan comes back as text before anything is approved; each step then waits for the owner like a setup step: "
                     "call mas_request_approval with the step's intent_id and follow with mas_status.", {"type": "object", "properties": {"host": {"type": "string"}}}, True),
     "mas_disconnect": ("Undo, in a new run, the connection of a chat that was made earlier (only what that connection wrote, newest step first). host is the chat's name, as for mas_connect.",
@@ -74,10 +74,11 @@ TOOLS = {  # name: (description, schema, shows cards)
                  {"type": "object", "properties": {"machine": {"type": "string"}, "wait_s": {"type": "number", "minimum": 0, "maximum": 20}}}, True),
     "mas_unpair": ("Ask the owner to unpair a paired computer (machine: its name). Nothing is removed by this call: it returns a confirmation; call mas_request_approval with its intent_id and the owner answers in a "
                    "system dialog. Only that approval removes the computer's key.", {"type": "object", "properties": {"machine": {"type": "string"}}, "required": ["machine"]}, True),
-    "mas_status": ("What happened in a run since the last call: progress, a question for the owner, the machine card, the options. Call it again until the run is finished or a question is waiting.",
+    "mas_status": ("What happened in a run since the last call: progress, a question for the owner, the machine card, the options. It WAITS (up to wait_s, default 20) until something needs the owner, a result arrives or the run ends, "
+                   "and returns the progress that piled up meanwhile: call it once, then act on what it says; do not call it again in a row to check progress.",
                    {"type": "object", "properties": {"run_id": {"type": "string"}, "wait_s": {"type": "number", "minimum": 0, "maximum": 20}}, "required": ["run_id"]}, True),
-    "mas_answer": ("Give the owner's answer to a closed question the harness asked: intent_id from the question, and option = the option's id or its number in the question's numbered list (both are printed in the question). "
-                   "The options are an unordered set that the OWNER chooses from; do not recommend or rank them. It cannot approve anything that writes to a machine.",
+    "mas_answer": ("Give the owner's answer to a closed question the harness asked (his profile, a proposal, a task's level, the whole plan of a setup or an undo): intent_id from the question, and option = the option's id or its number in the question's numbered list. "
+                   "Only after the OWNER has answered in the chat; never for him. The options are an unordered set that he chooses from; do not recommend or rank them. It cannot approve a pairing or a key (those are system dialogs).",
                    {"type": "object", "properties": {"intent_id": {"type": "string"}, "option": {"type": "string", "description": "an option id exactly as printed after 'id:', or its number (1, 2, 3...)"}}, "required": ["intent_id", "option"]}, True),
     "mas_request_approval": ("Ask the owner to approve a pending plan that writes to a machine. The owner answers in his own screen, not through you; you only learn the outcome.",
                              {"type": "object", "properties": {"intent_id": {"type": "string"}}, "required": ["intent_id"]}, True),
@@ -299,19 +300,19 @@ class McpAdapter:
 
     def tool_status(self, a: dict) -> dict:
         run_id = str(a.get("run_id", ""))
-        out = self._poll(run_id, min(float(a.get("wait_s", 12) or 0), 20.0))
+        out = self._poll(run_id, min(float(a.get("wait_s", 20) or 0), 20.0), "change")
         return self._result(out["intents"], t("en", "mcp_status").format(run_id=run_id, status=out["run"]["status"]) + (t("en", "mcp_waiting").format(ids=", ".join(out["waiting"])) if out["waiting"] else ""), live=not out["run"]["ended"],
                             questions=out["questions"], run_id=run_id, status=out["run"]["status"], waiting=out["waiting"], finished=out["run"]["finished"])
 
-    def _poll(self, run_id: str, wait: float) -> dict:
-        out = self.core.intents(run_id, self.cursor.get(run_id, 0), wait)
+    def _poll(self, run_id: str, wait: float, until: str = "") -> dict:
+        out = self.core.intents(run_id, self.cursor.get(run_id, 0), wait, until)
         if out["intents"]:
             self.cursor[run_id] = max(self.cursor.get(run_id, 0), *(i["seq"] for i in out["intents"]))
         return out
 
     def tool_answer(self, a: dict) -> dict:
         r = self.core.decide(str(a.get("intent_id", "")), str(a.get("option", "")))
-        return {"content": [{"type": "text", "text": t("en", "mcp_answered").format(channel=r["channel"])}], "structuredContent": {**r}, "_meta": {"mas/cards": []}}
+        return {"content": [{"type": "text", "text": (t("en", "mcp_recorded") + "\n\n" + r["next"]) if r.get("next") else t("en", "mcp_answered").format(channel=r["channel"])}], "structuredContent": {**r}, "_meta": {"mas/cards": []}}
 
     def tool_request_approval(self, a: dict) -> dict:
         """Obtain the owner's answer from something a model does not drive, in the order the core lists them. The prompt is the core's text, never ours."""

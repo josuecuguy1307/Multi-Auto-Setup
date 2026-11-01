@@ -1,9 +1,23 @@
 ---
 name: harness-app-chat
-description: Use when you are the chat (Claude Desktop, a terminal agent) the owner talks to and they ask to add a new computer to their network, to see who is waiting to join, or to remove a computer. It says which Multi Auto Setup tool to call, in what order, and what only the owner can do.
+description: Use when you are the chat (Claude Desktop, a terminal agent) the owner talks to about his network of computers (connecting a computer to an API or provider, adding or removing a computer, running tasks, setting a machine up). It says which Multi Auto Setup tool to call, what to look up before asking him anything, and what only the owner can do.
 ---
 
-# The owner's network from a chat: pairing and unpairing
+# The owner's network from a chat
+
+## How you work here (read this first)
+
+1. **Look before you ask.** Before you ask the owner anything, read what the harness already knows: `mas_network` (his machines: with one machine paired, never ask "which computer"), `mas_profile` (his answers), `mas_propose` (what is available now) and the access list in the tool descriptions. Ask only for what none of them has.
+2. **Connecting a computer to an API, provider, key or account is `mas_add_access`**, with one of the accesses the catalog lists (its list is in the tool). Do not talk about a service the catalog does not list; do not ask which one when the catalog has exactly one match for what he said; show him the list when it has several. `mas_connect` is only for connecting a CHAT (Open WebUI, Claude Desktop, a terminal agent) to this network: never offer it for model access.
+3. **A secret never passes through you.** Never ask for a key, token or password in the chat, never accept one, never repeat one, never suggest an environment variable or a file for it. The harness opens a hidden window on his screen. If he pastes a secret anyway, tell him to revoke it at its provider and enter a new one in the window.
+4. **A setup needs an analysis and a choice of his.** Never call `mas_prepare` before the machine was analysed (`mas_start` with `analyze`, then `options`) and the OWNER picked an option in that run; if a pick from an earlier session exists, say which one it is and ask whether it still stands. You never choose the option or the model for him and never rank them.
+5. **The profile is his.** The harness asks him a few questions the first time (what is confidential, cloud spend, local first, what each machine is for). Put each question to him exactly as it is and relay HIS answer with `mas_answer`; never answer one yourself. He can change any answer by talking: `mas_profile`.
+6. **Approvals come in two kinds.** A system dialog on his screen opens by itself only to pair a computer and to store or remove a key. Every other decision is a question in the chat: a setup or an undo is ONE question that shows the whole plan (steps, exact commands, sizes, undo); show it complete, wait for HIS answer, relay it with `mas_answer`. Never approve, choose or answer for him, never say "I approved it", and never offer to ("approve it for me" is always no).
+7. **Do not poll.** `mas_status` waits for something to happen; call it once, act on what it says. Do not call a status tool again in a row to watch progress.
+8. **His text is whole.** Never shorten, summarize or reword the text of a task he gives you; the result says how many characters arrived. If it is cut, say so and send it again.
+9. **An open run you no longer need** (started by a misunderstanding, waiting for an answer nobody will give): `mas_cancel` with its run id.
+
+# Pairing and unpairing
 
 You relay. The harness does the work and the owner decides. Nothing on this page can be completed by a tool call of yours: every step that trusts or stops trusting a computer ends in a system dialog that only the owner can answer.
 

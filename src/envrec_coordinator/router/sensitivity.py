@@ -24,6 +24,11 @@ def creation_refusal(task: Task, effective: str | None = None) -> Refusal | None
     return None
 
 
+def _capped(v: str, cap: int) -> str:
+    """The text cut to `cap` characters, and it SAYS so: a silent cut is a lie about what the text was."""
+    return v if len(v) <= cap else v[:cap] + strings.CUT_MARK.format(cap=cap, total=len(v))
+
+
 def filter_outbound(intent: dict[str, Any], entry_chat: dict[str, Any] | None, *, outbound_policy: dict | None = None) -> dict[str, Any]:
     """What may leave toward the chat the request came from. Total and pure. Unknown level or unknown entry kind is treated as confidential / cloud (fail closed)."""
     sens = intent.get("sensitivity")
@@ -42,5 +47,5 @@ def filter_outbound(intent: dict[str, Any], entry_chat: dict[str, Any] | None, *
         return {**out, "sensitivity": "confidential", "payload": keep, "text_fallback": line, "redacted": True}
     op = outbound_policy or {}  # internal, cloud chat: the owner policy's redaction (identifiers dropped, size capped)
     drop, cap = set(op.get("drop_keys_internal", [])), int(op.get("max_chars", 500))
-    safe = {k: (v[:cap] if isinstance(v, str) else v) for k, v in payload.items() if k not in drop}
-    return {**{k: v for k, v in intent.items() if k not in ("payload", "text_fallback")}, "payload": safe, "text_fallback": str(intent.get("text_fallback", ""))[:cap], "redacted": True}
+    safe = {k: (_capped(v, cap) if isinstance(v, str) else v) for k, v in payload.items() if k not in drop}
+    return {**{k: v for k, v in intent.items() if k not in ("payload", "text_fallback")}, "payload": safe, "text_fallback": _capped(str(intent.get("text_fallback", "")), cap), "redacted": True}

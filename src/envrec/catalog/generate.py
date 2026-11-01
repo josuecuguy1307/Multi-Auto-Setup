@@ -106,8 +106,11 @@ def generate(manifest: Manifest, meta: MetadataSource, rules: Rules | None = Non
     for src in raw["model_sources"]:
         if src.get("status") != "approve":
             continue
+        only = {r.lower() for r in src.get("repos", [])}  # a source may name the repos it approves (a quantizer is approved for the one model, not for everything it publishes)
         for repo in meta.model_repos(src["author"]):
             name = repo["repo"]
+            if only and name.lower() not in only:
+                continue
             lic = (repo.get("license") or "").lower()
             if not lic:
                 exclude(name, "no license stated on the model page")

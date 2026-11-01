@@ -55,6 +55,7 @@ def test_a_terminal_agent_reads_the_network_as_text_and_its_handshake_is_kept_as
     run(go())
 
 
+@pytest.mark.usefixtures("per_step_approvals")
 def test_a_terminal_agent_prepares_a_machine_and_only_the_system_dialog_approves_a_step(tmp_path):
     async def go():
         cm, c, agent, nid, _ = await world(tmp_path, [act("load_context"), act("recheck_fit"), act("build_plan"), act("run_step", args={"step": "1"})], web=True, start=False)

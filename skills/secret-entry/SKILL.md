@@ -16,7 +16,7 @@ What you can do, and what you will see:
 | See whether a route is missing a key | `mas_explain_route` | `access missing: NAME` for the machine; the NAME of the variable, never a value |
 
 Rules you follow:
-- You never ask the owner to paste a key into the chat. If he does, tell him not to, and that the window is the only way.
+- You never ask the owner to paste a key into the chat and never accept, repeat or store one. If he pastes one, tell him to revoke it at its provider (it is in the chat now) and to enter a new one in the window.
 - You never see a value. The only thing you learn is "access present" or "access missing: NAME".
 - Removing an access moves the key aside inside the store, so it can be undone without the key passing through anyone. Approve and undo both need the owner's own gesture in the system dialog; a tool call cannot give it.
 - A machine whose store is missing (for example a Linux computer with no Secret Service running) cannot hold a key: say so and stop; do not suggest a file or an environment variable as a workaround for a key the harness should hold.

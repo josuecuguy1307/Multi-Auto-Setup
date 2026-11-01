@@ -1,0 +1,72 @@
+{
+ "note": "The owner's profile as data: the questions the harness puts to him (as chat questions), what each answer is stored as, and what the router and the sensitivity guard read from it. A model never writes these questions or their options. A new field is a new row here and a line in profile.py's APPLY table only when the router must read it.",
+ "fields": [
+  {
+   "id": "confidential",
+   "kind": "multi",
+   "question": "What counts as confidential for you? Tasks that touch any of these never leave your own computers. Pick all that apply.",
+   "options": [
+    {"id": "personal", "label": "Personal data about people (names, addresses, ID numbers)"},
+    {"id": "health", "label": "Health information"},
+    {"id": "finance", "label": "Money: accounts, invoices, payroll"},
+    {"id": "legal", "label": "Legal documents and contracts"},
+    {"id": "credentials", "label": "Passwords, keys and tokens"},
+    {"id": "source_code", "label": "Private source code"},
+    {"id": "business", "label": "Business or client documents"}
+   ],
+   "none_label": "Nothing in particular: I will say so when something is confidential",
+   "default": []
+  },
+  {
+   "id": "default_sensitivity",
+   "kind": "single",
+   "question": "For a task that touches none of those, what should I assume?",
+   "options": [
+    {"id": "ask", "label": "Ask me each time whether it is public, internal or confidential"},
+    {"id": "internal", "label": "Treat it as internal"},
+    {"id": "public", "label": "Treat it as public"}
+   ],
+   "default": "ask"
+  },
+  {
+   "id": "cloud_spend",
+   "kind": "single",
+   "question": "Cloud models (an API or a subscription) can cost money. What is your stance?",
+   "options": [
+    {"id": "never", "label": "Never use them"},
+    {"id": "only_if_local_cannot", "label": "Only when no local model can do the task"},
+    {"id": "allowed", "label": "Allowed, local first"}
+   ],
+   "default": "only_if_local_cannot"
+  },
+  {
+   "id": "cloud_steps",
+   "kind": "number",
+   "question": "When a task fails on a cheaper route, how many times may I move it up to a costlier one without asking you? (0, 1 or 2; steps, not money: no spend limit exists)",
+   "min": 0,
+   "max": 2,
+   "default": 2,
+   "asked_when": {"field": "cloud_spend", "not": "never"}
+  },
+  {
+   "id": "local_first",
+   "kind": "single",
+   "question": "When a local model and a cloud model are equally good, which do you prefer?",
+   "options": [
+    {"id": "local", "label": "The local one"},
+    {"id": "any", "label": "No preference: the best measured one"}
+   ],
+   "default": "local"
+  }
+ ],
+ "machine_roles": {
+  "question": "What is {machine} for?",
+  "options": [
+   {"id": "general", "label": "General: any task may run there", "closes": "none"},
+   {"id": "local_only", "label": "Private: only local models may run there, never a cloud one", "closes": "cloud"},
+   {"id": "not_for_tasks", "label": "Not for tasks: keep it out of the router", "closes": "all"}
+  ],
+  "default": "general"
+ },
+ "categories_note": "A task states which of these it touches (or none, or unsure); the harness derives the level from the profile and asks the owner when it cannot."
+}

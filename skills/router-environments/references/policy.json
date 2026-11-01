@@ -18,9 +18,12 @@
  },
  "os_family_aliases_note": "the analysis names the family macos; the catalog and the node say darwin",
  "owner_policy_defaults": {
-  "note": "used until the owner's draft (T3b) supplies the real values; the conservative option: nothing outside the local model is open",
+  "note": "an environment is available when an access to it is DETECTED on the machine (a signed-in CLI, a key, an installed local runtime, a license): presence and session only. Nothing starts closed. The owner may close a subtype, an environment, an access or a machine in his profile (closed_by_owner); that is his choice, recorded and undoable. Whether an automated use of a vendor's CLI is allowed is a separate list (automated_use_cleared)",
   "open_subtypes": [
-   "local_model"
+   "local_model",
+   "own_harness",
+   "provider",
+   "embedded"
   ],
   "approved_providers_for_internal": [],
   "automated_use_cleared": []

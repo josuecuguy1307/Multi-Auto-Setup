@@ -109,7 +109,7 @@ model_sources:
   - {id: tinyllama,     status: approve, hub: huggingface, author: TinyLlama,     formats: [gguf], seen: "3 gguf repos: 3 apache-2.0"}
   # Conversion hubs host other people's models under mixed licenses. Off by default; per-repo license filtering would still apply.
   - {id: ggml-org,      status: propose-off, hub: huggingface, author: ggml-org,   formats: [gguf], seen: "100 repos: 50 apache-2.0, 11 mit, 27 none, 7 other, 1 cc-by-nc, 1 gemma"}
-  - {id: bartowski,     status: propose-off, hub: huggingface, author: bartowski,  formats: [gguf], seen: "100 repos: 54 apache-2.0, 11 mit, 14 none, 13 other, 4 gemma, 2 cc-by-nc"}
+  - {id: bartowski,     status: approve, hub: huggingface, author: bartowski,  formats: [gguf], repos: [bartowski/Meta-Llama-3.1-8B-Instruct-GGUF], seen: "approved for ONE repo (the ungated quantization of Meta Llama 3.1 8B Instruct, license llama3.1, class community-host-run: the owner runs it on his own machines); the other 99+ repos of this author stay off (mixed licenses)"}
   - {id: unsloth,       status: propose-off, hub: huggingface, author: unsloth,    formats: [gguf], seen: "100 repos: 63 apache-2.0, 8 mit, 23 other, 2 llama3.2, 2 gemma, 1 llama3.3"}
   # Excluded publishers
   - {id: google,        status: exclude, seen: "37 gguf repos: 25 'gemma' license (restricted use), 9 apache-2.0, 3 llama; the Gemma terms restrict use"}

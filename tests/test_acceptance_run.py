@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from acceptance_world import MODEL, SENTINEL, build, set_server, wait_job
+from acceptance_world import MODEL, SENTINEL, build, set_server, wait_job, TOUCHES
 from envrec.skills import sbx
 
 FX = Path(__file__).parent / "fixtures" / "acceptance"
@@ -66,7 +66,7 @@ async def measure(w, host, env, access, task_type, passed, machine=None):
 
 async def create(host, name, task_type, sensitivity, *, check=True, input_text=None):
     f = fx(name)
-    return await host.tool("mas_create_task", text=input_text or f["input.txt"], task_type=task_type, sensitivity=sensitivity, **({"check": json.loads(f["check.json"])} if check else {}))
+    return await host.tool("mas_create_task", text=input_text or f["input.txt"], task_type=task_type, touches=TOUCHES[sensitivity], **({"check": json.loads(f["check.json"])} if check else {}))
 
 
 async def execute(host, created, timeout=120):
@@ -322,7 +322,7 @@ def test_ex7_an_unknown_task_type_is_a_refusal_with_zero_candidates_and_nothing_
     async def go():
         w, c, nid, host, teardown = await build(tmp_path)
         try:
-            r = await host.tool("mas_create_task", text="audio.wav", task_type="transcribe-audio", sensitivity="public")
+            r = await host.tool("mas_create_task", text="audio.wav", task_type="transcribe-audio", touches=TOUCHES["public"])
             d = sc(r)
             assert d["ok"] is False and d["refusal"]["code"] == "no_candidate" and d["refusal"]["why"] == "unknown_task_type" and d["candidates"] == [] and "intent_id" not in d
             assert not w.script.calls and not c.log.events("escalation")
@@ -348,7 +348,7 @@ def test_ex8_an_offline_machine_is_a_typed_refusal_with_one_event_and_no_retry(t
                 await asyncio.sleep(0.05)
             assert nid not in c._sessions
             before = len(c.log.events("task_created"))
-            r = await host.tool("mas_create_task", text="x", task_type="summarize", sensitivity="public")
+            r = await host.tool("mas_create_task", text="x", task_type="summarize", touches=TOUCHES["public"])
             d = sc(r)
             assert d["ok"] is False and d["refusal"]["code"] == "machine_offline" and "machine offline" in d["refusal"]["reason"]
             assert set(d["left_out"].values()) == {"machine offline"}

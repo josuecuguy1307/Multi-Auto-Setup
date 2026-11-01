@@ -31,6 +31,17 @@ The model profiles in `config/models.yaml` are placeholders. Put your own endpoi
 
 A shared typed board with leases, a router that picks a combination of harness, model and machine by written rules and sensitivity levels, recommendations backed by evidence ([docs/RECOMMENDATION_SPEC.md](docs/RECOMMENDATION_SPEC.md)), and more sandbox backends.
 
+## Who approves what
+
+| Decision | How the owner answers | Recorded as |
+|---|---|---|
+| Pair a computer; store or remove a key | the operating system's own dialog, opened by the harness itself (Touch ID or the account password where the machine has them; the key in a hidden-field window) | `os_dialog` |
+| Set a machine up, or undo a setup | ONE question in the chat that shows the whole plan (steps, exact commands, sizes, undo), bound to the plan hash; a failed step or a changed plan asks again | `chat_choice` (weaker: the chat's model relays the owner's answer; it is never recorded as a dialog) |
+| His profile (what is confidential, cloud spend, local first, what each machine is for), a task's level when it is unclear, closing an environment, accepting the harness's proposal | a closed question in the chat | `harness_decision` |
+| Other writes that still use the older flow (unpair, undo of a connection, a task's route, a board decision, an admission exam, a draft) | a confirmation with its `intent_id` in the system dialog, the host's form or the panel | `os_dialog`, `host_elicitation`, `panel_click` |
+
+An environment is available when an access to it is detected on the machine (a signed-in tool, a key, an installed local runtime); nothing starts closed. Known limits are in `docs/KNOWN_GAPS.md`.
+
 ## Install
 
 One installer per operating system. Each installs for ONE user, with no administrator rights and no sudo, and changes nothing outside that user's folders. It installs this program only; it does not install any AI model (choosing and setting those up is the separate setup flow, done with your approval from a chat). Nothing is signed, so download the script, read it, then run it.

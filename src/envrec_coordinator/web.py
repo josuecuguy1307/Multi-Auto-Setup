@@ -93,6 +93,13 @@ def _json(status: int, obj: dict, headers: list[tuple[str, str]] | None = None) 
     return Response(status, json.dumps(obj).encode(), headers=headers or [])
 
 
+def wakes_on(out: dict, until: str = "") -> bool:
+    """Whether a long-polling read of a run's intents returns now. By default on any new intent. With `until=change` the progress lines pile up and only something that needs the owner, a result or the end of the run
+    wakes it, so a chat that waits is not woken (and does not poll) for every line of progress."""
+    news = any(i["kind"] != "progress" for i in out["intents"]) if until == "change" else bool(out["intents"])
+    return news or bool(out["waiting"]) or bool(out["run"]["finished"])
+
+
 class WebScreen:
     def __init__(self, front, *, port: int = 0, clock=None) -> None:
         """`front` is the coordinator: `snapshot()`, `begin_pairing(via)`, `decide_pairing(offer, accept, via)` and `web_event(type, payload)`, all run on its event loop."""
@@ -285,7 +292,7 @@ class WebScreen:
                 deadline = self.clock() + min(float((q.get("wait") or ["0"])[0] or 0), 20.0)
                 while True:
                     out = self._on_loop(core.intents, ch, run_id, since)
-                    if out["intents"] or out["run"]["finished"] or self.clock() >= deadline:
+                    if wakes_on(out, (q.get("until") or [""])[0]) or self.clock() >= deadline:
                         return _json(200, out)
                     time.sleep(0.25)
             if req.method == "POST" and path == "pairing":

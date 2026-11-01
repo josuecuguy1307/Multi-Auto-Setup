@@ -63,6 +63,7 @@ async def approve_all(c, r, ch=CLAUDE, dialog=None):
     return shown
 
 
+@pytest.mark.usefixtures("per_step_approvals")
 def test_claude_desktop_is_connected_from_the_chat_plan_first_each_step_in_the_system_dialog_and_undone_in_a_new_run(tmp_path, home):
     async def go():
         cfg = home / "Library/Application Support/Claude/claude_desktop_config.json"

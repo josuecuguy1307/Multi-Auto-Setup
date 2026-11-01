@@ -147,7 +147,7 @@ Owner choices (accepting a planner suggestion, closing a subtype in the draft, a
 
 ## 8. Seams to other sessions
 
-* **T3b draft** (owner-approved subtypes/accesses per machine): read through `router.policy.get(machine_id)` returning `{open_subtypes, open_accesses, internal_policy}`; default `all detected, owner can close` until T3b merges.
+* **T3b draft** (owner-approved subtypes/accesses per machine): read through `router.policy.get(machine_id)` returning `{open_subtypes, open_accesses, internal_policy}`; default `all detected, owner can close`: since node-preview-8 every subtype in the catalog is open by default and the owner's profile (`<state>/coordinator/profile.json`) closes subtypes, environments, accesses or a machine's cloud use (`closed_by_owner`).
 * **T3a**: the local llama.cpp endpoint comes from the fact `setup.server.endpoint` of the machine's install run (loopback literal only).
 * **T4b**: calls `route`, `report_result`, `filter_outbound`; owns the board, leases and the director/worker pattern. The router does not hold leases; it reads active-lease counts from the board through `board.active_leases(machine_id)`.
 * **T4c**: writes section 4 facts.
