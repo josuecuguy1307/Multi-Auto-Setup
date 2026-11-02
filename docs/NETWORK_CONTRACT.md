@@ -1,6 +1,6 @@
 # Network contract (Multi Auto Setup)
 
-Status: normative for everything built from Phase 1 on (revision 2). The catalog, evidence, admission and recommendation rules are in [docs/RECOMMENDATION_SPEC.md](RECOMMENDATION_SPEC.md). MUST / MUST NOT / MAY are used in the RFC 2119 sense. Nothing in this document is implemented yet; section 12 lists what Phase 1 builds. Where this document and an older document disagree, this one wins for the network; `docs/HARNESS_SPEC.md` is amended to match it.
+Status: normative for everything built from Phase 1 on (revision 2). The catalog, evidence, admission and recommendation rules are in [docs/RECOMMENDATION_SPEC.md](RECOMMENDATION_SPEC.md). MUST / MUST NOT / MAY are used in the RFC 2119 sense. Most of it is built and has been run at the levels labeled in 7.3 (a real Windows 11 node paired with a Mac coordinator; the rest SIMULATED-LOCAL, LINUX-CONTAINER or untested); section 12 lists what Phase 1 builds. Where this document and an older document disagree, this one wins for the network; `docs/HARNESS_SPEC.md` is amended to match it.
 
 The product: a private network of agents across the owner's own computers. Each machine installs the software once, with the owner's consent, then discovers itself, pairs once with owner permission, gets a workspace set up, and takes part in shared work through a board. A router and sensitivity levels are enforced in code.
 
@@ -140,9 +140,9 @@ The board is held by the coordinator. Nodes do not talk to each other; they read
 
 | Platform | Arch | Discovery | Node agent | Coordinator | Installer | Sandbox |
 |---|---|---|---|---|---|---|
-| Windows 10/11 | x86_64 | planned | untested (code is OS-independent; the Windows ACL step has never run) | untested | planned | open (research) |
+| Windows 10/11 | x86_64 | **verified (REAL)** for 5 of 6 probes (see probe coverage) | **verified (REAL)**: paired with the Mac coordinator and first paired 2026-10-29 (node-preview-2), ran read-only tasks 2026-10-30 (owner-run); the Windows ACL step is not confirmed | untested | untested (see lifecycle coverage) | open (research) |
 | Windows 10/11 | arm64 | planned | untested (and `cryptography` has no native wheel newer than 46.0.3) | untested | planned | open (research) |
-| macOS | Apple Silicon | **verified (REAL)** (this Mac, Ring 0, LAN) | **verified (SIMULATED-LOCAL)**: pair, heartbeats, 0 listening sockets | **verified (SIMULATED-LOCAL)**: pair, heartbeats, exactly 1 listening socket | planned | planned (Seatbelt) |
+| macOS | Apple Silicon | **verified (REAL)** (this Mac, Ring 0, LAN) | **verified (SIMULATED-LOCAL)**: pair, heartbeats, 0 listening sockets | **verified (REAL)** with a Windows 11 node (first paired 2026-10-29, owner-run); also **SIMULATED-LOCAL**: pair, heartbeats, exactly 1 listening socket | **verified (SIMULATED-LOCAL)** (see lifecycle coverage) | planned (Seatbelt) |
 | macOS | Intel | untested | untested (`cryptography` 48.x is the last with a wheel) | untested | planned | planned (Seatbelt) |
 | Linux Debian/Ubuntu | x86_64 | untested (containers only) | untested | untested | planned | planned (bubblewrap or Landlock+seccomp; Docker if installed) |
 | Linux Debian/Ubuntu | arm64 | untested (containers only) | untested on Debian/Ubuntu; **verified (LINUX-CONTAINER)** on Alpine Linux, Python 3.12: pair, heartbeats, 0 listening sockets | untested | planned | planned |

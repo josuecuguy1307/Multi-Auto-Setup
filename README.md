@@ -1,52 +1,111 @@
-# Multi Auto Setup
+<div align="center">
 
-A private network of agents across your own computers. Each machine installs the software once, with the owner's consent, pairs once with the owner's permission, and then takes part in shared work. The Python package is called `envrec`.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/brand/logo-dark.svg">
+  <img src="assets/brand/logo-light.svg" alt="MAS: Multi Auto Setup" width="460">
+</picture>
+
+**Your computers, working as a team. Your data, on your network.**
+
+[![Release](https://img.shields.io/github/v/release/josuecuguy1307/Multi-Auto-Setup?include_prereleases&label=release&color=2563EB)](https://github.com/josuecuguy1307/Multi-Auto-Setup/releases)
+![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-2563EB)
+![Platforms](https://img.shields.io/badge/platforms-macOS%20%C2%B7%20Windows%2011%20%C2%B7%20Linux%20(see%20status)-86198F)
+![Stage](https://img.shields.io/badge/stage-pre--release-A21CAF)
 
 AI-assisted development.
 
-## What it is
+</div>
 
-A **coordinator** runs on one computer and listens on **one LAN port**. Every other computer runs a **node agent** that only dials out to the coordinator and **opens no listening port at all**. The rules are written down in [docs/NETWORK_CONTRACT.md](docs/NETWORK_CONTRACT.md) and checked by the conformance suite in `conformance/`.
+## Works with
 
-What exists today:
+Only what has been run for real is shown as a tile. The word on each tile says how far it went; the [status table](#status) has the detail.
 
-- **Secure pairing.** The coordinator shows a 6-digit one-time code. The code is the password of a password-authenticated key exchange (SPAKE2), so a network observer cannot test guesses offline. A code lives two minutes, allows one attempt, and is rate-limited. The owner then sees the node's name, system and key fingerprint on the coordinator and approves or refuses once.
-- **Signed messages over mutual TLS with pinned keys.** Both sides keep each other's identity key from pairing; nothing else authorizes a node. Messages are signed envelopes with a timestamp window and replay protection.
-- **A node agent** that sends signed heartbeats, reconnects with backoff, and holds zero listening sockets (checked at runtime, not only in the source).
-- **A local web screen** for the owner (`mas coordinator start --web`): the paired machines with their online state, and pairing with the code, a countdown and an approve/reject card. It listens on loopback only, needs a one-time link printed on the owner's terminal, and rejects forged Host headers and cross-site requests. It is off by default.
-- **Recognition and setup groundwork**: discovery of a machine and its local network, typed tools and skills, an append-only event log, a policy gate and a sandbox for skill scripts, and setup of a workspace on another machine with an approval for every write.
-- A **harness**, not a script: a model picks one action per turn from a closed menu, and code provides the senses, the guards and the verification. See [docs/HARNESS_SPEC.md](docs/HARNESS_SPEC.md).
+<div align="center">
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-claude-desktop-dark.svg"><img src="assets/readme/tile-claude-desktop-light.svg" alt="Claude Desktop through MCP: real" width="272"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-macos-dark.svg"><img src="assets/readme/tile-macos-light.svg" alt="macOS: real" width="272"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-windows-dark.svg"><img src="assets/readme/tile-windows-light.svg" alt="Windows 11: partly real" width="272"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-linux-dark.svg"><img src="assets/readme/tile-linux-light.svg" alt="Linux: containers only" width="272"></picture>
+</div>
 
-## What is verified, and what is not
+### Connection recipes (not yet tested)
 
-Verification is labelled and never mixed.
+These are written down but have **not** been run end to end, so they have no tile and no claim. Do not read them as support.
 
-- **Verified, SIMULATED-LOCAL on macOS (Apple Silicon):** the coordinator and a node as two real operating-system processes on one machine over loopback: pairing, heartbeats, and the owner's web screen driven in a browser. The coordinator holds the expected sockets and the node holds none.
-- **Verified, LINUX-CONTAINER:** a node inside a Linux container (Alpine, Python 3.12) paired with a coordinator on the host and sent heartbeats.
-- **Not verified yet:** Windows (the per-OS layer for it exists; its analysis ran on one real Windows computer, but the Windows installer and service have never run on real Windows), two physical machines running the full flow, and anything that involves running a model end to end through the router.
+- **Open WebUI.** A connection was made once by the owner (the Pipe showed up and an analysis card rendered). No task has been run through it end to end.
+- **Terminal agents** (Claude Code, Codex, OpenCode, Muse Code) and **Llama through a local runtime**. Each has a recipe or a catalog entry; none was run for real here.
+- **Meta Muse models** (Muse Spark, Muse Wonder). Tests with Meta's models are planned. Muse models run in Meta's cloud; the router never sends confidential tasks there.
 
-The model profiles in `config/models.yaml` are placeholders. Put your own endpoint and model id in `config/models.local.yaml` (not committed).
+## Why MAS
 
-## Roadmap
+You have several computers and several AIs. Today each AI sees one machine, and you are the glue. MAS is the control layer between **you**, **the AI** and **your machines**: one computer coordinates, the others join with your permission, a local model discovers and sets them up, and every decision that matters is yours. The model chooses its actions; code enforces the rules.
 
-A shared typed board with leases, a router that picks a combination of harness, model and machine by written rules and sensitivity levels, recommendations backed by evidence ([docs/RECOMMENDATION_SPEC.md](docs/RECOMMENDATION_SPEC.md)), and more sandbox backends.
+## How it works
 
-## Who approves what
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/flow-dark.svg">
+  <img src="assets/readme/flow-light.svg" alt="Six stages: discover, pair, analyze, plan with approval, route, log. Each stage lists who acts: OWNER, MODEL, GUARD or SCRIPT." width="100%">
+</picture>
 
-| Decision | How the owner answers | Recorded as |
+| Stage | What goes in | What comes out |
 |---|---|---|
-| Pair a computer; store or remove a key | the operating system's own dialog, opened by the harness itself (Touch ID or the account password where the machine has them; the key in a hidden-field window) | `os_dialog` |
-| Set a machine up, or undo a setup | ONE question in the chat that shows the whole plan (steps, exact commands, sizes, undo), bound to the plan hash; a failed step or a changed plan asks again | `chat_choice` (weaker: the chat's model relays the owner's answer; it is never recorded as a dialog) |
-| His profile (what is confidential, cloud spend, local first, what each machine is for), a task's level when it is unclear, closing an environment, accepting the harness's proposal | a closed question in the chat | `harness_decision` |
-| Other writes that still use the older flow (unpair, undo of a connection, a task's route, a board decision, an admission exam, a draft) | a confirmation with its `intent_id` in the system dialog, the host's form or the panel | `os_dialog`, `host_elicitation`, `panel_click` |
+| **1 Discover** | a computer on your own subnet | typed facts about it (hardware, system, programs, local AI runtimes), each with the probe that produced it |
+| **2 Pair** | a 6-digit code shown on the coordinator, typed once on the new computer | pinned keys on both sides and your recorded yes; nothing else authorizes a computer |
+| **3 Analyze** | the facts | what the machine can run, what is missing, options to choose from (you choose) |
+| **4 Plan, with approval** | your pick | a plan with the exact commands, sizes and an undo, bound to a hash; you answer once, a changed plan asks again |
+| **5 Route** | a task and its sensitivity level | a written rule picks a model and a machine among those allowed for that level; the reason is shown |
+| **6 Log** | every event | an append-only, hash-chained log, each line tagged OWNER, MODEL, GUARD or SCRIPT (the router's choice is tagged ROUTER) |
 
-An environment is available when an access to it is detected on the machine (a signed-in tool, a key, an installed local runtime); nothing starts closed. Known limits are in `docs/KNOWN_GAPS.md`.
+### Features
+
+| | Feature |
+|---|---|
+| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/network-dark.svg"><img src="assets/readme/symbols/network-light.svg" alt="network" width="21"></picture> | **One port.** The coordinator listens on one LAN port; nodes listen on none and always dial out. |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/paired-dark.svg"><img src="assets/readme/symbols/paired-light.svg" alt="paired" width="21"></picture> | **Pairing by key exchange.** A one-time code is the password of a SPAKE2 exchange; mutual TLS with pinned keys; signed messages. |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/model-dark.svg"><img src="assets/readme/symbols/model-light.svg" alt="model" width="21"></picture> | **A model decides, code guards.** One validated action per turn from a closed menu ([spec](docs/HARNESS_SPEC.md)). |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/approved-dark.svg"><img src="assets/readme/symbols/approved-light.svg" alt="approved" width="21"></picture> | **Approvals with an undo.** Every write shows the exact action and how to undo it, recorded first. |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/local-dark.svg"><img src="assets/readme/symbols/local-light.svg" alt="local" width="21"></picture> | **Local first.** Data stays on your machines unless you allow otherwise. |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/confidential-dark.svg"><img src="assets/readme/symbols/confidential-light.svg" alt="confidential" width="21"></picture> | **Sensitivity levels in code.** `public`, `internal`, `confidential`; a confidential task never goes to a cloud model. |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/guard-dark.svg"><img src="assets/readme/symbols/guard-light.svg" alt="guard" width="21"></picture> | **A conformance suite** (`conformance/`) that encodes the rules, including that a node opens no listening socket. |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/undone-dark.svg"><img src="assets/readme/symbols/undone-light.svg" alt="undone" width="21"></picture> | **Undo.** A finished setup can be undone as its own approved run. |
+
+## Safety model
+
+- **Nodes open no ports.** The coordinator opens one LAN port (plus, only if you ask, a screen on this computer's loopback).
+- **Pairing needs your code and your yes.** A code lives two minutes and allows one attempt.
+- **Read-only by default.** Discovery reads; it writes nothing.
+- **Every write is approved** with the exact command and its undo, a fresh approval each time.
+- **Confidential never leaves your network.** Enforced when the router chooses and at the node's calls, not by a prompt. Cloud models and commercial harnesses count as cloud.
+- **Key names only.** Secrets are entered in a hidden window on your computer, stored in the operating system's credential store, and never pass through a chat, a log or a prompt.
+- **Your own machines only.** The software never changes a firewall, network profile or router setting; it tells you what to change.
+- **Text from the world is data, never instructions.** Generated code runs only in a sandbox that fails closed, and you approve its exact hash before it touches a device.
+
+Details: [docs/NETWORK_CONTRACT.md](docs/NETWORK_CONTRACT.md).
+
+## Status
+
+<a id="status"></a>
+
+Labels: **REAL** = run on real hardware or real software by a person. **SIMULATED-LOCAL** = real processes on one machine over loopback, or stand-ins for a tool or a cloud API. **LINUX-CONTAINER** = inside a container. **UNTESTED** = code exists, never run there. Labels are never summed.
+
+| Feature | macOS (Apple Silicon) | Windows 11 | Linux |
+|---|---|---|---|
+| Discovery of a machine | REAL | REAL for 5 of 6 probes, through a paired node | LINUX-CONTAINER |
+| Pairing, signed channel, node with no listening port | REAL as the coordinator, with a Windows 11 node (owner-run); also SIMULATED-LOCAL | REAL (as the node, paired with the Mac) | LINUX-CONTAINER |
+| Owner's web screen | SIMULATED-LOCAL | UNTESTED | UNTESTED |
+| Claude Desktop through MCP (chat questions, OS approval dialog) | REAL | UNTESTED | n/a |
+| Setup of a workspace with approvals and undo | SIMULATED-LOCAL | UNTESTED; no real install has run on it yet | LINUX-CONTAINER |
+| Installer (`install.sh` / `install.ps1`) | SIMULATED-LOCAL (stand-in release, real `uv`) | **UNTESTED: parsed and its refusal paths run under PowerShell 7 in a Linux container; never run on real Windows** | LINUX-CONTAINER |
+| Per-user service | REAL (a LaunchAgent) | UNTESTED | UNTESTED (no systemd in a container) |
+| Router, admission exam, board | built; SIMULATED-LOCAL with stand-in environments | UNTESTED | UNTESTED |
+| A cloud model through the router (Meta Model API) | UNTESTED: no real call has been made | UNTESTED | UNTESTED |
+
+Not checked anywhere: macOS Intel, Windows arm64, Fedora, Debian on real hardware. Known limits: [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md).
 
 ## Install
 
-One installer per operating system. Each installs for ONE user, with no administrator rights and no sudo, and changes nothing outside that user's folders. It installs this program only; it does not install any AI model (choosing and setting those up is the separate setup flow, done with your approval from a chat). Nothing is signed, so download the script, read it, then run it.
+One installer per operating system. Each installs for one user, with no administrator rights, and installs this program only (no AI models). Nothing is signed, so download the script, read it, then run it. Details, uninstall, service, update and unpair: [docs/INSTALL.md](docs/INSTALL.md).
 
-**macOS and Linux:**
+**macOS and Linux**
 
 ```bash
 curl -fsSLO https://raw.githubusercontent.com/josuecuguy1307/Multi-Auto-Setup/main/install.sh
@@ -54,7 +113,7 @@ less install.sh
 sh install.sh
 ```
 
-**Windows 10 and 11 (PowerShell):**
+**Windows 10 and 11 (PowerShell)** (not yet run on real Windows, see the status table)
 
 ```powershell
 Invoke-WebRequest https://raw.githubusercontent.com/josuecuguy1307/Multi-Auto-Setup/main/install.ps1 -OutFile install.ps1
@@ -62,17 +121,9 @@ notepad install.ps1
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-What each one does, asking before every change: it shows the plan first (every URL, folder and command, and how to undo each); asks before installing `uv` if you do not have it; downloads one pinned release archive and stops if its SHA-256 differs from the value written in the script; unpacks it safely and builds its own Python 3.13 environment; installs a `mas` command; offers to add that command's folder to YOUR user PATH (never the system one); and asks whether this computer will be the **coordinator** (the one you run the network from) or a **node** (a computer that joins it). It never changes a firewall, network profile or router setting: a coordinator listens on one port (TCP 7443) and your firewall may ask you about it.
+The installers download one pinned release and stop if its SHA-256 differs from the value written in the script. Afterwards: `mas join` on a node, `mas coordinator start --bind ADDRESS` on the coordinator, `mas service install` to start at sign-in, `mas update`, `mas unpair NODE`.
 
-**Where it installs:** the program and its environments in `~/.mas` (Windows: `%USERPROFILE%\.mas`); the `mas` command in `~/.local/bin` (Windows: `%USERPROFILE%\.mas\bin`); keys, pinned peers and logs in the state folder (`~/Library/Application Support/mas` on macOS, `~/.local/share/mas` on Linux, `%LOCALAPPDATA%\mas` on Windows).
-
-**Pair a node.** On the coordinator, run `mas pair` (or press the button in the web screen): it shows a 6-digit code that lives two minutes. On the node, run `mas join` (the installer offers it): it finds coordinators on your network, you pick one, and you type the code once. Then `mas service install` starts the node by itself when you sign in (per user, no administrator).
-
-**Uninstall:** `sh ~/.mas/install.sh --uninstall` (Windows: `powershell -ExecutionPolicy Bypass -File $env:USERPROFILE\.mas\install.ps1 -Uninstall`). It shows what it will remove and asks. Keys and pairings stay unless you add `--purge` and type `DELETE`. To stop trusting one computer: `mas unpair <node>` on the coordinator, `mas forget` on a node.
-
-What has run, labelled: the shell installer, `mas service` (a real LaunchAgent on macOS), `mas update` and unpair were run on macOS (SIMULATED-LOCAL: a local stand-in release, the real `uv`) and in Linux containers (Debian and Fedora; no systemd inside a container). **`install.ps1` has been parsed and its refusal paths run under PowerShell 7 in a Linux container; it has NOT been run on real Windows.** Everything that touches Windows (the Run registry value, the user PATH, `tar.exe`, `pythonw.exe`) is untested until it is. Details: [docs/INSTALL.md](docs/INSTALL.md).
-
-## Run from a source checkout
+### From a source checkout
 
 Python 3.11 or newer.
 
@@ -80,71 +131,19 @@ Python 3.11 or newer.
 uv venv --python 3.13 .venv && uv pip install --python .venv/bin/python -e .
 ```
 
-The `discovery` extra adds optional Bluetooth, serial and mDNS support (`bleak`, `pyserial`, `zeroconf`); features that need them report "unavailable" without them:
-
-```bash
-uv pip install --python .venv/bin/python -e ".[discovery]"
-```
-
-Some fingerprinting uses public ID lists (USB, Bluetooth, vendor and service names). They are downloaded once, by you, into the git-ignored `data/downloads/` (sources in `DATA_SOURCES.md`); the few tests that need them are skipped until then:
-
-```bash
-.venv/bin/python scripts/fetch_data.py
-```
-
-On the coordinator, start it on the address of the network interface nodes will reach (a loopback, private or link-local address; never every interface), optionally with the local web screen:
-
-```bash
-.venv/bin/mas coordinator start --bind 192.0.2.10 --port 7443 --web
-```
-
-Pair a node. On the coordinator, show a code (or press the button in the web screen):
-
-```bash
-.venv/bin/mas pair
-```
-
-On the other computer, type the code once when asked:
-
-```bash
-.venv/bin/mas pair 192.0.2.10:7443
-```
-
-Then run the node agent there, and list the paired nodes on the coordinator:
-
-```bash
-.venv/bin/mas node run
-```
-
-```bash
-.venv/bin/mas nodes
-```
-
-(`192.0.2.10` is a documentation address; use your own.)
-
-## Hard limits
-
-- Own or explicitly authorized machines only.
-- Read-only by default; every write on a device needs a fresh owner approval that shows the exact action, with an undo recorded first.
-- Pairing, trust prompts and passwords are never bypassed.
-- No credentials are stored in the repository, logs, facts or prompts.
-- No scanning of other people's systems; the microphone is off.
-- The software never changes an operating-system firewall, network profile or router setting by itself.
-
-## Tests
-
 ```bash
 .venv/bin/python -m pytest conformance
 ```
 
-```bash
-.venv/bin/python -m pytest tests
-```
+## More
 
-The skill sandbox uses Docker, so the full suite needs Docker running. Two conformance checks read recorded runs that only exist on the machine that made them; in a fresh checkout they are skipped as "not measured".
+- **Harness App standard:** how a chat connects to the harness without being modified: [docs/HARNESS_APP_STANDARD.md](docs/HARNESS_APP_STANDARD.md).
+- **Licenses of what is used:** [THIRD_PARTY.md](THIRD_PARTY.md).
 
-## Layout
+## License
 
-`src/envrec_coordinator/`, `src/envrec_node/`, `src/envrec_net/`, `src/envrec_mas/` (the network layer and the `mas` command), `src/envrec_os/` (the only place with operating-system specific calls), `src/envrec/` (recognition, tools, loop, setup), `skills/` (SKILL.md folders), `conformance/`, `docs/`, `tests/`, `config/`, `fixtures/` (recorded outputs, redacted), and [THIRD_PARTY.md](THIRD_PARTY.md) for licenses.
+The project's license has not been chosen yet. Until one is added, no license is granted.
 
-Tests with Meta's models are planned.
+## Hackathon
+
+Built for the Meta Global AI Developer Hackathon, Indie track. Tests with Meta's models are planned.
