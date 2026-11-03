@@ -91,8 +91,10 @@ LIVE_EVERY_S = 3
 
 
 class McpAdapter:
-    def __init__(self, client: CoreClient, out=None, evidence: Path | None = None, rpc_log: Path | None = None) -> None:
+    def __init__(self, client: CoreClient, out=None, evidence: Path | None = None, rpc_log: Path | None = None, *, server_requests: bool = True) -> None:
+        """`server_requests=False` for transports that cannot carry a request from us to the host (stateless streamable HTTP): we never send one, and the handshake says so, so an approval falls back to the next mechanism the core lists instead of waiting for an answer that cannot arrive."""
         self.core, self.out, self.evidence, self.rpc_log = client, out or sys.stdout, evidence, rpc_log
+        self.server_requests = server_requests
         self.lock = threading.Lock()
         self.waiters: dict = {}
         self.next_id = 0
@@ -110,7 +112,9 @@ class McpAdapter:
             self.out.flush()
 
     def request(self, method: str, params: dict, timeout: float) -> dict | None:
-        """A request to the host (elicitation). None when the host did not answer in time."""
+        """A request to the host (elicitation). None when the host did not answer in time, and at once on a transport that cannot carry one."""
+        if not self.server_requests:
+            return None
         self.next_id += 1
         rid = f"mas-{self.next_id}"
         ev = threading.Event()
@@ -172,6 +176,8 @@ class McpAdapter:
         ext = caps.get("extensions") or {}
         self.declared = {"elicitation": "elicitation" in caps, "elicitation_form": "elicitation" in caps and ("form" in (caps["elicitation"] or {}) or not caps["elicitation"]),
                          "mcp_apps": "io.modelcontextprotocol/ui" in ext, "protocol": str(p.get("protocolVersion", ""))[:20]}
+        if not self.server_requests:  # this transport cannot ask the host anything: say so, so approvals use the next mechanism the core lists
+            self.declared["elicitation"] = self.declared["elicitation_form"] = False
         version = p.get("protocolVersion") if p.get("protocolVersion") in SUPPORTED else SUPPORTED[0]
         return {"protocolVersion": version, "capabilities": {"tools": {}, "resources": {}}, "serverInfo": {"name": "multi-auto-setup", "version": "1"},
                 "instructions": instructions()}

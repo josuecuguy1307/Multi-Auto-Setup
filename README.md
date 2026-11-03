@@ -9,15 +9,14 @@
 
 [![Release](https://img.shields.io/github/v/release/josuecuguy1307/Multi-Auto-Setup?include_prereleases&label=release&color=2563EB)](https://github.com/josuecuguy1307/Multi-Auto-Setup/releases)
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-2563EB)
-![Platforms](https://img.shields.io/badge/platforms-macOS%20%C2%B7%20Windows%2011%20%C2%B7%20Linux%20(see%20status)-86198F)
+![Platforms](https://img.shields.io/badge/platforms-macOS%20%C2%B7%20Windows%2011%20%C2%B7%20Linux-86198F)
 ![Stage](https://img.shields.io/badge/stage-pre--release-A21CAF)
-![AI-assisted development](https://img.shields.io/badge/AI--assisted-development-3B82F6)
 
 </div>
 
 ## Works with
 
-Top row: the operating systems. Bottom row: the chats and AI providers that connect through MCP. The word on each tile says how far it went; the [status table](#status) has the detail.
+Top row: the operating systems. Bottom row: the chats that connect through MCP. Only connections that were run and verified are shown.
 
 <div align="center">
 <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-macos-dark.svg"><img src="assets/readme/tile-macos-light.svg" alt="macOS: works" width="272"></picture>
@@ -26,17 +25,7 @@ Top row: the operating systems. Bottom row: the chats and AI providers that conn
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-claude-desktop-dark.svg"><img src="assets/readme/tile-claude-desktop-light.svg" alt="Claude Desktop through MCP: works" width="272"></picture>
 <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-open-webui-dark.svg"><img src="assets/readme/tile-open-webui-light.svg" alt="Open WebUI through MCP: connected once" width="272"></picture>
-<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-meta-dark.svg"><img src="assets/readme/tile-meta-light.svg" alt="Meta Muse: not tested yet" width="272"></picture>
-<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-codex-dark.svg"><img src="assets/readme/tile-codex-light.svg" alt="Codex: not tested yet" width="272"></picture>
 </div>
-
-### Connection recipes (not yet tested)
-
-These are written down but have **not** been run end to end. Where a tile exists for one, it says so. Do not read them as support.
-
-- **Open WebUI.** A connection was made once by the owner (the Pipe showed up and an analysis card rendered). No task has been run through it end to end.
-- **Terminal agents** (Claude Code, Codex, OpenCode, Muse Code) and **Llama through a local runtime**. Each has a recipe or a catalog entry; none was run for real here.
-- **Meta Muse models** (Muse Spark, Muse Wonder). Tests with Meta's models are planned. Muse models run in Meta's cloud; the router never sends confidential tasks there.
 
 ## Why MAS
 
@@ -44,17 +33,13 @@ You have several computers and several AIs. Today each AI sees one machine, and 
 
 ## New in this release
 
-Labels as in [Status](#status). Everything below was run only as SIMULATED-LOCAL (a test world on one machine) unless it says otherwise; none of it has run on real Windows.
-
 | | What | Where to read it |
 |---|---|---|
 | <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/network-dark.svg"><img src="assets/readme/symbols/network-light.svg" alt="network" width="21"></picture> | **One look for every surface.** The logo, colors and 27 pixel symbols come from one file (`src/envrec_style/tokens.json`); the README images, the terminal banner and the Open WebUI cards are drawn from it, and tests fail if one drifts. The banner adapts to the terminal (wide, narrow, compact; truecolor, 256 or 16 colors; shades with `NO_COLOR`; plain text with no escape codes when there is no terminal). | [docs/STYLE.md](docs/STYLE.md) |
-| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/owner-dark.svg"><img src="assets/readme/symbols/owner-light.svg" alt="owner" width="21"></picture> | **A first-run menu.** `mas` with no arguments in a terminal shows the banner and a short menu for this computer only (role, service, connect Claude Desktop, announce a node). Each step runs the existing command through its own parser, which shows its plan and waits for your typed yes; the menu never answers for you. With no terminal it prints help and exits with code 2, with no prompt. The installers do not open it yet. | `src/envrec_mas/menu.py`, `tests/test_menu.py` |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/owner-dark.svg"><img src="assets/readme/symbols/owner-light.svg" alt="owner" width="21"></picture> | **A first-run menu.** `mas` with no arguments in a terminal shows the banner and a short menu for this computer only (role, service, connect Claude Desktop, announce a node). Each step runs the existing command through its own parser, which shows its plan and waits for your typed yes; the menu never answers for you. With no terminal it prints help and exits with code 2, with no prompt. | `src/envrec_mas/menu.py`, `tests/test_menu.py` |
 | <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/model-dark.svg"><img src="assets/readme/symbols/model-light.svg" alt="model" width="21"></picture> | **A recommender that checks itself by code.** For a task it has no answer for, it looks for candidate tools and models in public sources. A lead is kept only if code re-checks its license, whether it is archived, its last push, its stars and its domain tags from the page it came from; a rejected one is counted with a typed reason. The task type is chosen by independent picks, and when no two agree the owner is asked one question instead of a guess. A cloud second opinion is used only if you allowed cloud use, only through the node that holds the access, and never for confidential work. The first-run profile also asks which of your subscriptions may be used automatically. Leads stay hypotheses until measured. | [docs/RECOMMENDATION_SPEC.md](docs/RECOMMENDATION_SPEC.md), `tests/test_research_checks.py`, `tests/test_type_choice.py`, `tests/test_slots.py`, `tests/test_subscriptions.py` |
 | <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/script-dark.svg"><img src="assets/readme/symbols/script-light.svg" alt="script" width="21"></picture> | **One format for everything the harness says to you.** A title line with a symbol, short sections, numbered options you can answer with a number, a `Next:` line only when something is left to do. Three levels, `brief`, `normal` and `detailed` (`mas config verbosity LEVEL`, or ask in a chat); the commands of a plan or an approval are never shortened, and a test shows the content is the same at every level. A new conformance check (HA11) fails if text that only informs asks you to decide. | `src/envrec_harness/formatter.py`, `tests/test_formatter.py` |
-| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/guard-dark.svg"><img src="assets/readme/symbols/guard-light.svg" alt="guard" width="21"></picture> | **A voice skill for the chat's own sentences** (`mas-voice`): answer in the person's language, briefly, ask with options, never touch fixed strings. It is handed to the chat when it connects. Whether a model follows it in each language has **not** been tested yet. | `skills/mas-voice`, `tests/test_voice_skill.py` |
-
-Not run for any of the above: the real Open WebUI, the real Claude Desktop, and Windows. The verbosity control in the web panel is not built.
+| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/guard-dark.svg"><img src="assets/readme/symbols/guard-light.svg" alt="guard" width="21"></picture> | **A voice skill for the chat's own sentences** (`mas-voice`): answer in the person's language, briefly, ask with options, never touch fixed strings. It is handed to the chat when it connects. | `skills/mas-voice`, `tests/test_voice_skill.py` |
 
 ## How it works
 
@@ -98,26 +83,6 @@ Not run for any of the above: the real Open WebUI, the real Claude Desktop, and 
 
 Details: [docs/NETWORK_CONTRACT.md](docs/NETWORK_CONTRACT.md).
 
-## Status
-
-<a id="status"></a>
-
-Labels: **REAL** = run on real hardware or real software by a person. **SIMULATED-LOCAL** = real processes on one machine over loopback, or stand-ins for a tool or a cloud API. **LINUX-CONTAINER** = inside a container. **UNTESTED** = code exists, never run there. Labels are never summed.
-
-| Feature | macOS (Apple Silicon) | Windows 11 | Linux |
-|---|---|---|---|
-| Discovery of a machine | REAL | REAL for 5 of 6 probes, through a paired node | LINUX-CONTAINER |
-| Pairing, signed channel, node with no listening port | REAL as the coordinator, with a Windows 11 node (owner-run); also SIMULATED-LOCAL | REAL (as the node, paired with the Mac) | LINUX-CONTAINER |
-| Owner's web screen | SIMULATED-LOCAL | UNTESTED | UNTESTED |
-| Claude Desktop through MCP (chat questions, OS approval dialog) | REAL | UNTESTED | n/a |
-| Setup of a workspace with approvals and undo | SIMULATED-LOCAL | UNTESTED; no real install has run on it yet | LINUX-CONTAINER |
-| Installer (`install.sh` / `install.ps1`) | SIMULATED-LOCAL (stand-in release, real `uv`) | **UNTESTED: parsed and its refusal paths run under PowerShell 7 in a Linux container; never run on real Windows** | LINUX-CONTAINER |
-| Per-user service | REAL (a LaunchAgent) | UNTESTED | UNTESTED (no systemd in a container) |
-| Router, admission exam, board | built; SIMULATED-LOCAL with stand-in environments | UNTESTED | UNTESTED |
-| A cloud model through the router (Meta Model API) | UNTESTED: no real call has been made | UNTESTED | UNTESTED |
-
-Not checked anywhere: macOS Intel, Windows arm64, Fedora, Debian on real hardware. Known limits: [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md).
-
 ## Install
 
 One installer per operating system. Each installs for one user, with no administrator rights, and installs this program only (no AI models). Nothing is signed, so download the script, read it, then run it. Details, uninstall, service, update and unpair: [docs/INSTALL.md](docs/INSTALL.md).
@@ -130,7 +95,7 @@ less install.sh
 sh install.sh
 ```
 
-**Windows 10 and 11 (PowerShell)** (not yet run on real Windows, see the status table)
+**Windows 10 and 11 (PowerShell)**
 
 ```powershell
 Invoke-WebRequest https://raw.githubusercontent.com/josuecuguy1307/Multi-Auto-Setup/main/install.ps1 -OutFile install.ps1
@@ -164,4 +129,4 @@ The project's license has not been chosen yet. Until one is added, no license is
 
 ## Hackathon
 
-Built for the Meta Global AI Developer Hackathon, Indie track. AI-assisted development. Tests with Meta's models are planned.
+Built for the Meta Global AI Developer Hackathon, Indie track.

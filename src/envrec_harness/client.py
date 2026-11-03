@@ -61,3 +61,41 @@ class CoreClient:
     def ticket(self, ticket: str) -> dict: return self.call("GET", f"confirmations/{ticket}")
     def complete_confirmation(self, ticket: str, plan_hash: str, action: str) -> dict: return self.call("POST", f"confirmations/{ticket}/complete", {"plan_hash": plan_hash, "action": action})
     def card(self, intent_id: str, host: str) -> str: return self.call("GET", f"card?intent_id={intent_id}&host={host}&fragment=1")["html"]
+
+
+class DirectClient:
+    """The same client interface with no HTTP in between: an adapter that already runs inside the coordinator's process (the streamable-HTTP MCP door in `web.py`) calls the core directly. Every call still goes through `run` (the coordinator's event loop, which owns the state) and the channel is the object the door authenticated, never an argument. A core refusal (`Refused`, with `status`/`reason`) becomes the `CoreError` adapters already handle."""
+
+    def __init__(self, core, channel, run, *, operator: bool = False) -> None:
+        self.core, self.ch, self.run, self.operator = core, channel, run, operator
+
+    def _do(self, fn, *args):
+        try:
+            return self.run(fn, *args)
+        except CoreError:
+            raise
+        except Exception as exc:
+            status, reason = getattr(exc, "status", None), getattr(exc, "reason", None)
+            if isinstance(status, int) and isinstance(reason, str):
+                raise CoreError(status, reason, str(getattr(exc, "message", "") or "")) from exc
+            raise
+
+    def _by(self):
+        return "claude-code" if self.operator else None
+
+    def capabilities(self) -> dict: return self._do(self.core.capabilities, self.ch)
+    def declare(self, declared: dict) -> dict: return self._do(self.core.declare, self.ch, declared)
+    def view(self, context: dict) -> dict: return self._do(self.core.view_context, self.ch, context)
+    def network(self) -> dict: return self._do(self.core.network_intent, self.ch)
+    def tools(self) -> dict: return self._do(self.core.tool_specs, self.ch)
+    def tool(self, name: str, arguments: dict) -> dict: return self._do(self.core.tool, self.ch, name, arguments)
+    def activity(self, since: int = 0) -> dict: return self._do(self.core.activity, self.ch, int(since))
+    def start(self, goal: str, node: str) -> dict: return self._do(lambda ch: self.core.start(ch, goal, node, by=self._by()), self.ch)  # the core's own default level: an adapter never names one (HA1)
+    def intents(self, run_id: str, since: int = 0, wait: float = 0, until: str = "") -> dict: return self._do(self.core.intents, self.ch, run_id, int(since))  # no long-poll in-process: the host calls again, as it does over HTTP
+    def pairing(self, machine: str | None = None) -> dict: return self._do(self.core.pairing, self.ch, machine)
+    def unpair(self, machine: str) -> dict: return self._do(self.core.unpair, self.ch, machine)
+    def decide(self, intent_id: str, option: str) -> dict: return self._do(self.core.decide, self.ch, intent_id, option, self._by())
+    def begin_confirmation(self, intent_id: str, mechanism: str) -> dict: return self._do(self.core.begin_confirmation, self.ch, intent_id, mechanism)
+    def ticket(self, ticket: str) -> dict: return self._do(self.core.ticket, self.ch, ticket)
+    def complete_confirmation(self, ticket: str, plan_hash: str, action: str) -> dict: return self._do(self.core.complete_confirmation, self.ch, ticket, plan_hash, action)
+    def card(self, intent_id: str, host: str) -> str: return self._do(self.core.card, self.ch, intent_id, host, True)["html"]

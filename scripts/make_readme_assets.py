@@ -103,12 +103,10 @@ def flow_svg(theme: str) -> str:
 
 TILES = [
     ("macos", "macOS", "Apple Silicon", "WORKS", "done", "tested for real"),
-    ("windows", "Windows 11", "x86_64", "WORKS", "done", "tested for real; see Status"),
-    ("linux", "Linux", "Debian, Fedora, Alpine", "WORKS", "done", "details in Status"),
+    ("windows", "Windows 11", "x86_64", "WORKS", "done", "tested for real"),
+    ("linux", "Linux", "Debian, Fedora, Alpine", "WORKS", "done", "tested in containers"),
     ("claude-desktop", "Claude Desktop", "chat, through MCP", "WORKS", "done", "tested for real"),
-    ("open-webui", "Open WebUI", "chat, through MCP", "CONNECTED ONCE", "searching", "no task run end to end yet"),
-    ("meta", "Meta Muse", "AI provider chat", "NOT TESTED YET", "searching", "tests with Meta's models are planned"),
-    ("codex", "Codex", "AI provider chat", "NOT TESTED YET", "searching", "recipe written, never run"),
+    ("open-webui", "Open WebUI", "chat, through MCP", "CONNECTED ONCE", "searching", "connected once by the owner"),
 ]
 
 

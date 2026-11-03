@@ -113,6 +113,7 @@ class WebScreen:
         self._sessions: dict[str, Session] = {}
         self._last_refusal: dict[str, float] = {}
         self._suppressed: dict[str, int] = {}
+        self._mcp_adapters: dict = {}  # channel name -> the MCP adapter serving streamable HTTP on this screen (stateless: one per channel, tools only)
         self.loop = None
         self.server: ThreadingHTTPServer | None = None
         self.thread: threading.Thread | None = None
@@ -275,6 +276,8 @@ class WebScreen:
                 return _json(200, self._on_loop(core.declare, ch, body.get("declared") if isinstance(body.get("declared"), dict) else {}))
             if req.method == "POST" and path == "view":
                 return _json(200, self._on_loop(core.view_context, ch, body.get("context") if isinstance(body.get("context"), dict) else {}))
+            if req.method == "POST" and path == "mcp":
+                return self._mcp(ch, body)
             if req.method == "GET" and path == "tools":
                 return _json(200, self._on_loop(core.tool_specs, ch))
             if req.method == "POST" and path.startswith("tools/"):
@@ -327,6 +330,32 @@ class WebScreen:
         except (ValueError, UnicodeDecodeError, TypeError):
             return self._refuse(req, 400, "bad_body", "server.bad_request")
         return _json(404, {"error": "not_found"})
+
+    def _mcp(self, ch, msg: dict) -> Response:
+        """Streamable-HTTP MCP on the same loopback screen (`POST /harness/v1/mcp`): the MCP adapter of `mcp_server.py`, in-process. A chat host that speaks MCP over HTTP (Open WebUI's MCP tool servers, any MCP client) reaches the same tools the stdio adapter lists, with the channel of its Bearer [REDACTED] Stateless: no server-to-host requests (the adapter says so in its handshake, so an approval uses the next mechanism the core lists), no session, and a notification is only acknowledged. Nothing here decides anything: the adapter translates, the core rules."""
+        import io
+
+        from envrec_harness.client import DirectClient
+        from envrec_harness.mcp_server import McpAdapter
+
+        adapter = self._mcp_adapters.get(ch.name)
+        if adapter is None:
+            adapter = McpAdapter(DirectClient(self.front.harness, ch, self._on_loop), out=io.StringIO(), server_requests=False)
+            self._mcp_adapters[ch.name] = adapter
+        if not isinstance(msg, dict) or not isinstance(msg.get("method"), str):
+            return _json(400, {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "invalid request"}})
+        if "id" not in msg:  # a notification: acknowledged, never answered (streamable HTTP)
+            if msg["method"] == "notifications/initialized":
+                adapter._announce()
+            return Response(202, b"", "application/json", [])
+        try:
+            with adapter.lock:
+                result = adapter.handle(msg["method"], msg.get("params") or {})
+        except KeyError:
+            return _json(200, {"jsonrpc": "2.0", "id": msg["id"], "error": {"code": -32601, "message": f"method not found: {msg['method']}"}})
+        except Exception as exc:  # the host never sees a traceback (as in the stdio adapter)
+            return _json(200, {"jsonrpc": "2.0", "id": msg["id"], "error": {"code": -32603, "message": type(exc).__name__}})
+        return _json(200, {"jsonrpc": "2.0", "id": msg["id"], "result": result})
 
     def _state(self, sess: Session) -> dict:
         return {**self._on_loop(self.front.snapshot), "csrf": sess.csrf}

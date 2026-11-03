@@ -156,6 +156,10 @@ Claude Desktop connects a local server as a stdio entry in `claude_desktop_confi
 
 The coordinator must run with `--web`. The model-visible tools are `mas_network`, `mas_start`, `mas_prepare`, `mas_undo`, `mas_connect`, `mas_disconnect`, `mas_status`, `mas_activity`, `mas_answer` and `mas_request_approval`; `mas_live` and `mas_view` are app-only (visibility `["app"]`, never offered to the model). The adapter writes what the handshake declared to `<state>/coordinator/harness/handshake-<channel>-<client>.json` and every method the host called to `rpc-<channel>.jsonl` (never arguments).
 
+## Connect a chat that speaks MCP over HTTP (a model with tools, for example Open WebUI)
+
+The same adapter is also served as stateless streamable-HTTP MCP on the owner's loopback screen: `POST http://127.0.0.1:<web port>/harness/v1/mcp`, with the channel's Bearer token (`<state>/coordinator/harness/openwebui.token` for Open WebUI). No new socket is opened and the channel is the token's, as everywhere. This is how a chat whose **model** must call the tools (a Meta model in Open WebUI, any MCP-over-HTTP host) reaches `mas_refresh_models`, `mas_install_tool`, `mas_measure_recommender` and every other listed tool: in Open WebUI, Admin Settings, Tool Servers, add an MCP server with that URL and token, enable it, and attach it to the model. The transport cannot carry a request from us to the host, so the handshake declares no elicitation: an approval uses the next mechanism the core lists (the OS dialog, or the owner's panel), never a wait for an answer that cannot arrive. Status: SIMULATED-LOCAL (tests against a real coordinator over HTTP); a real Open WebUI MCP connection is UNTESTED until the owner configures it. The Pipe above remains the menu-driven MAS model; free text to the Pipe is still not interpreted.
+
 ## Connect a terminal agent by hand
 
 A terminal agent uses the same adapter. Register the stdio command in the agent's own MCP configuration (see the agent's documentation for how), with the channel:

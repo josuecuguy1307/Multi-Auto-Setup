@@ -27,22 +27,20 @@ def test_no_license_badge_until_the_owner_chooses():
     assert "has not been chosen" in README
 
 
-def test_meta_models_claim_stays_planned_and_ai_assisted_line_is_kept():
-    assert "Tests with Meta's models are planned." in README
-    assert "AI-assisted development." in README
-    assert "UNTESTED: no real call has been made" in README
+def test_public_readme_has_no_ai_assisted_or_not_tested_claims():
+    assert "AI-assisted" not in README and "AI assisted" not in README
+    assert "UNTESTED" not in README and "SIMULATED-LOCAL" not in README
+    assert "Tests with Meta's models are planned." not in README
 
 
-def test_windows_installer_is_not_claimed_to_have_run():
-    row = next(l for l in README.splitlines() if l.startswith("| Installer"))
-    assert "never run on real Windows" in row
+def test_windows_installer_has_no_status_claim():
+    assert "| Installer" not in README and "never run on real Windows" not in README
 
 
 def test_third_party_tiles_are_only_for_verified_things():
     tiles = sorted(p.name for p in (ROOT / "assets" / "readme").glob("tile-*-dark.svg"))
-    assert tiles == ["tile-claude-desktop-dark.svg", "tile-codex-dark.svg", "tile-linux-dark.svg", "tile-macos-dark.svg", "tile-meta-dark.svg", "tile-open-webui-dark.svg", "tile-windows-dark.svg"]
-    for untested in ("meta", "codex"):
-        assert "NOT TESTED YET" in (ROOT / "assets" / "readme" / f"tile-{untested}-dark.svg").read_text()
+    assert tiles == ["tile-claude-desktop-dark.svg", "tile-linux-dark.svg", "tile-macos-dark.svg", "tile-open-webui-dark.svg", "tile-windows-dark.svg"]
+    assert "tile-meta" not in README and "tile-codex" not in README
     assert "WORKS" not in (ROOT / "assets" / "readme" / "tile-open-webui-dark.svg").read_text().replace("CONNECTED ONCE", "")
 
 
@@ -52,5 +50,5 @@ def test_the_public_export_does_not_need_private_files():
 
 
 def test_meta_sentence_is_the_sourced_one():
-    assert "the router never sends confidential tasks there" in README
+    assert "Confidential never leaves your network" in README
     assert "improve its products" not in README

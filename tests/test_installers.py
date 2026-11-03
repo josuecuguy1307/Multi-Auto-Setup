@@ -219,11 +219,12 @@ def lab(tmp_path):
     L.home, L.sha, L.srv, L.data = home, sha, srv, data
     L.base = f"http://127.0.0.1:{httpd.server_address[1]}"
 
-    def run(*args, extra_env=None, stdin=""):
+    def run(*args, extra_env=None, stdin="", detached=False):
         env = {"HOME": str(home), "PATH": f"{home}/bin:/usr/bin:/bin:/usr/sbin:/sbin", "SHELL": "/bin/sh", "MAS_RELEASE_BASE": L.base, "REAL_PY": sys.executable,
                "PYTHONPATH": str(tree / "src"), "TMPDIR": str(tmp_path)}
         env.update(extra_env or {})
-        return subprocess.run(["sh", str(SH), *args], capture_output=True, text=True, env=env, input=stdin, timeout=120)
+        # detached: a new session with no controlling terminal (POSIX), for a test whose precondition is "no terminal": stdin="" only pipes stdin, and the installer asks on /dev/tty, which answers through the controlling terminal this child would otherwise inherit
+        return subprocess.run(["sh", str(SH), *args], capture_output=True, text=True, env=env, input=stdin, timeout=120, start_new_session=detached)
 
     L.run = run
     yield L
@@ -301,7 +302,7 @@ def test_uninstall_refuses_unsafe_or_foreign_folders_and_a_declined_question_cha
     assert lab.run("--uninstall", "--yes", "--home", str(lab.home)).returncode != 0  # the home folder itself
     args = ("--yes", "--role", "node", "--no-join", "--tag", "t1", "--sha256", lab.sha)
     assert lab.run(*args).returncode == 0
-    n = lab.run("--uninstall", stdin="")  # no --yes and no terminal: the answer is no
+    n = lab.run("--uninstall", stdin="", detached=True)  # no --yes and no terminal (detached, so /dev/tty cannot answer): the answer is no
     assert n.returncode != 0 and (lab.home / ".mas" / "current").exists()
 
 
