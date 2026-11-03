@@ -11,25 +11,28 @@
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-2563EB)
 ![Platforms](https://img.shields.io/badge/platforms-macOS%20%C2%B7%20Windows%2011%20%C2%B7%20Linux%20(see%20status)-86198F)
 ![Stage](https://img.shields.io/badge/stage-pre--release-A21CAF)
-
-AI-assisted development.
+![AI-assisted development](https://img.shields.io/badge/AI--assisted-development-3B82F6)
 
 </div>
 
 ## Works with
 
-Only what has been run for real is shown as a tile. The word on each tile says how far it went; the [status table](#status) has the detail.
+Top row: the operating systems. Bottom row: the chats and AI providers that connect through MCP. The word on each tile says how far it went; the [status table](#status) has the detail.
 
 <div align="center">
-<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-claude-desktop-dark.svg"><img src="assets/readme/tile-claude-desktop-light.svg" alt="Claude Desktop through MCP: real" width="272"></picture>
-<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-macos-dark.svg"><img src="assets/readme/tile-macos-light.svg" alt="macOS: real" width="272"></picture>
-<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-windows-dark.svg"><img src="assets/readme/tile-windows-light.svg" alt="Windows 11: partly real" width="272"></picture>
-<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-linux-dark.svg"><img src="assets/readme/tile-linux-light.svg" alt="Linux: containers only" width="272"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-macos-dark.svg"><img src="assets/readme/tile-macos-light.svg" alt="macOS: works" width="272"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-windows-dark.svg"><img src="assets/readme/tile-windows-light.svg" alt="Windows 11: works" width="272"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-linux-dark.svg"><img src="assets/readme/tile-linux-light.svg" alt="Linux: works" width="272"></picture>
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-claude-desktop-dark.svg"><img src="assets/readme/tile-claude-desktop-light.svg" alt="Claude Desktop through MCP: works" width="272"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-open-webui-dark.svg"><img src="assets/readme/tile-open-webui-light.svg" alt="Open WebUI through MCP: connected once" width="272"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-meta-dark.svg"><img src="assets/readme/tile-meta-light.svg" alt="Meta Muse: not tested yet" width="272"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-codex-dark.svg"><img src="assets/readme/tile-codex-light.svg" alt="Codex: not tested yet" width="272"></picture>
 </div>
 
 ### Connection recipes (not yet tested)
 
-These are written down but have **not** been run end to end, so they have no tile and no claim. Do not read them as support.
+These are written down but have **not** been run end to end. Where a tile exists for one, it says so. Do not read them as support.
 
 - **Open WebUI.** A connection was made once by the owner (the Pipe showed up and an analysis card rendered). No task has been run through it end to end.
 - **Terminal agents** (Claude Code, Codex, OpenCode, Muse Code) and **Llama through a local runtime**. Each has a recipe or a catalog entry; none was run for real here.
@@ -146,4 +149,4 @@ The project's license has not been chosen yet. Until one is added, no license is
 
 ## Hackathon
 
-Built for the Meta Global AI Developer Hackathon, Indie track. Tests with Meta's models are planned.
+Built for the Meta Global AI Developer Hackathon, Indie track. AI-assisted development. Tests with Meta's models are planned.
