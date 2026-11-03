@@ -12,8 +12,8 @@ def run(coro):
     return asyncio.run(coro)
 
 
-def call(c, method, path, *, token=None, body=None):
-    h = {"Host": f"127.0.0.1:{c.web.port}", "Content-Type": "application/json"}
+def call(c, method, path, *, token=None, body=None, host=None):
+    h = {"Host": host or f"127.0.0.1:{c.web.port}", "Content-Type": "application/json"}
     if token:
         h["Authorization"] = f"Bearer {token}"
     conn = http.client.HTTPConnection("127.0.0.1", c.web.port, timeout=15)
@@ -26,8 +26,8 @@ def call(c, method, path, *, token=None, body=None):
         conn.close()
 
 
-def rpc(c, token, method, params=None, rid=1):
-    return call(c, "POST", "/harness/v1/mcp", token=token, body={"jsonrpc": "2.0", "id": rid, "method": method, "params": params or {}})
+def rpc(c, token, method, params=None, rid=1, host=None):
+    return call(c, "POST", "/harness/v1/mcp", token=token, body={"jsonrpc": "2.0", "id": rid, "method": method, "params": params or {}}, host=host)
 
 
 def test_mcp_over_http_lists_and_calls_the_same_tools_as_stdio(tmp_path):
@@ -50,4 +50,41 @@ def test_mcp_over_http_lists_and_calls_the_same_tools_as_stdio(tmp_path):
             assert out["result"].get("isError") and "no-such-env" in out["result"]["content"][0]["text"]  # the services door's typed refusal, carried as an MCP error result
             s, out = await a(tok, "no/such-method", rid=5)
             assert out["error"]["code"] == -32601  # JSON-RPC method not found, as the stdio adapter answers
+    run(go())
+
+
+def test_mcp_over_http_allows_host_docker_internal_only_on_the_mcp_route(tmp_path):
+    """Open WebUI in Docker reaches the loopback screen as host.docker.internal: that one Host is allowed on /harness/v1/mcp only, the Bearer check still decides, and every other route and Host keeps its refusal."""
+    async def go():
+        async with coordinator(tmp_path, web=True) as c:
+            tok = c.harness.tokens["openwebui"]
+            a = lambda *x, **k: asyncio.to_thread(rpc, c, *x, **k)  # noqa: E731
+            docker = f"host.docker.internal:{c.web.port}"
+            # 1: valid token through the Docker name (with and without the web port) reaches the same tools
+            for h in (docker, "host.docker.internal"):
+                s, init = await a(tok, "initialize", {"protocolVersion": "2025-11-25", "capabilities": {}, "clientInfo": {"name": "fake-docker-host", "version": "0"}}, host=h)
+                assert s == 200 and init["result"]["serverInfo"]["name"] == "multi-auto-setup", h
+                s, listed = await a(tok, "tools/list", rid=2, host=h)
+                names = {t["name"] for t in listed["result"]["tools"]}
+                assert {"mas_refresh_models", "mas_measure_recommender", "mas_install_tool"} <= names, h
+            # 2 + 3: the Bearer check still runs exactly as on loopback (never a session or tool result without it)
+            s, _ = await asyncio.to_thread(call, c, "POST", "/harness/v1/mcp", host=docker, body={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}})
+            assert s == 401
+            s, _ = await a("wrong-token", "tools/list", host=docker)
+            assert s == 401
+            # 4: any other Host with a valid token is still refused before auth
+            s, _ = await a(tok, "tools/list", host="evil.example")
+            assert s == 403
+            s, _ = await a(tok, "tools/list", host=f"evil.example:{c.web.port}")
+            assert s == 403
+            # 5: loopback behaviour unchanged
+            s, init = await a(tok, "initialize", {"protocolVersion": "2025-11-25", "capabilities": {}, "clientInfo": {"name": "fake-http-host", "version": "0"}})
+            assert s == 200 and init["result"]["serverInfo"]["name"] == "multi-auto-setup"
+            # 6 held-out: another /harness/v1 route with the Docker Host keeps its current refusal
+            s, _ = await asyncio.to_thread(call, c, "GET", "/harness/v1/capabilities", token=tok, host=docker)
+            assert s == 403
+            s, _ = await asyncio.to_thread(call, c, "GET", "/harness/v1/tools", token=tok, host=docker)
+            assert s == 403
+            s, _ = await asyncio.to_thread(call, c, "GET", "/api/state", host=docker)
+            assert s == 403
     run(go())
