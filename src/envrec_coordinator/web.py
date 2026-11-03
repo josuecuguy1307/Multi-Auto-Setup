@@ -62,6 +62,18 @@ def check_loopback(host: str) -> str:
     return str(a)
 
 
+DOCKER_HOST = "host.docker.internal"
+MCP_PATH = "/harness/v1/mcp"
+
+
+def _is_docker_mcp_host(host: str | None, port: int, path: str) -> bool:
+    """Only the MCP route may be reached as host.docker.internal (Open WebUI in Docker), with or without the web port. Every other route and Host keeps the loopback-only refusal."""
+    if not host or path.rstrip("/") != MCP_PATH:
+        return False
+    h = host.strip().lower()
+    return h == DOCKER_HOST or h == f"{DOCKER_HOST}:{port}"
+
+
 def load_strings(lang: str = "en") -> dict[str, str]:
     return json.loads((STATIC / f"strings.{lang}.json").read_text(encoding="utf-8"))
 
@@ -211,7 +223,8 @@ class WebScreen:
 
     def _route(self, req: Request) -> Response:
         allowed_hosts = {f"127.0.0.1:{self.port}", f"localhost:{self.port}"}
-        if req.headers.get("host") not in allowed_hosts:  # DNS rebinding: a page on another name that resolves to 127.0.0.1 still sends ITS name here
+        host = req.headers.get("host")
+        if host not in allowed_hosts and not _is_docker_mcp_host(host, self.port, req.path):  # DNS rebinding: a page on another name that resolves to 127.0.0.1 still sends ITS name here
             return self._refuse(req, 403, "host", "server.forbidden")
 
         if req.path.startswith("/harness/v1/"):
