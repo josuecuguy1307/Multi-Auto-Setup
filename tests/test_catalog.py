@@ -157,9 +157,9 @@ def test_real_manifest_source_statuses_exclude_the_right_things(tmp_path):
             return []
     g = generate(m, Empty())
     assert set(calls) == {"https://github.com/ggml-org/llama.cpp", "https://github.com/EricLBuehler/mistral.rs",
-                          "Qwen", "HuggingFaceTB", "ibm-granite", "microsoft", "mistralai", "allenai", "TinyLlama", "bartowski"}
+                          "Qwen", "HuggingFaceTB", "ibm-granite", "microsoft", "mistralai", "allenai", "TinyLlama", "bartowski", "google", "LiquidAI", "nvidia"}  # the last four are approved for NAMED repos only
     r = reasons(g)
-    for off in ("llamafile", "ollama", "LocalAI", "ggml-org", "google", "meta-llama"):
+    for off in ("llamafile", "ollama", "LocalAI", "ggml-org", "meta-llama"):  # google, liquidai and nvidia are approved for named repos now
         assert f"source {off}" in r
 
 
@@ -246,12 +246,12 @@ def test_a_quantization_published_both_as_one_file_and_as_shards_is_listed_once(
 
 
 def test_a_source_that_names_its_repos_is_approved_for_those_repos_only(tmp_path):
-    """bartowski is approved for ONE repo (the ungated Meta Llama 3.1 8B Instruct quantization): its other repos are never listed, read or offered."""
+    """bartowski is approved for TWO repos (the ungated Meta Llama 3.1 8B Instruct and Llama 3.2 3B Instruct quantizations): its other repos are never listed, read or offered."""
     from pathlib import Path
     raw = yaml.safe_load((Path(__file__).resolve().parents[1] / "config" / "runtime_manifest.yaml").read_text())
     raw["approved"] = True
     src = next(x for x in raw["model_sources"] if x["id"] == "bartowski")
-    assert src["status"] == "approve" and src["repos"] == ["bartowski/Meta-Llama-3.1-8B-Instruct-GGUF"]
+    assert src["status"] == "approve" and src["repos"] == ["bartowski/Meta-Llama-3.1-8B-Instruct-GGUF", "bartowski/Llama-3.2-3B-Instruct-GGUF"]
     raw["runtime_sources"] = []
     raw["model_sources"] = [src]
     p = tmp_path / "m.yaml"

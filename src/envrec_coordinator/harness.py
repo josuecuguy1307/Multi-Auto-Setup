@@ -28,6 +28,7 @@ from envrec_coordinator import agent as A
 from envrec_coordinator import approval
 from envrec_coordinator.runs import SHOWN, describe_event
 from envrec_harness import cards
+from envrec_harness import formatter
 from envrec_harness.cards import fmt_value, human_bytes
 from envrec_harness.intents import ACTORS, RANK, Intent, IntentInvalid, for_display, numbered, validate
 from envrec_harness.strings import STR, humanize, label_for, t
@@ -97,6 +98,11 @@ def _drop(v):
     if isinstance(v, list):
         return [_drop(x) for x in v]
     return v
+
+
+def approval_question_text(lang: str, intent_id: str) -> str:
+    """What a chat is told about a confirmation that is ONE question in the chat: how to relay the owner's answer, and that it cannot answer for him."""
+    return t(lang, "ap_chat_ask") + "\n" + t(lang, "ap_answer_id").format(id=intent_id)
 
 
 class HarnessCore:
@@ -391,7 +397,8 @@ class HarnessCore:
         self._task_lines()
         new = [i for i in self._feed if i.seq > since]
         busy = bool(self.activity_of(self.coord.snapshot()))
-        return {"intents": [self.for_channel(i, ch) for i in new], "seq": max([since] + [i.seq for i in new]), "busy": busy}
+        svc = getattr(self.coord, "services", None)
+        return {"intents": [self.for_channel(i, ch) for i in new], "seq": max([since] + [i.seq for i in new]), "busy": busy, "open": svc.open_lines() if svc is not None else []}
 
     def activity_tail(self, n: int = 30) -> list[dict]:
         """The last lines for the owner's panel (it is the owner's own screen: nothing is withheld from it)."""
@@ -484,14 +491,32 @@ class HarnessCore:
                 if run.kind == "install" and run.status == "done" and svc is not None:  # a setup finished: the harness itself proposes what it enables, from the catalog (one question)
                     self._add(run.id, "text", "GUARD", sens, {}, svc.proposal_text(), f"{run.id}:proposal")
 
+    def verbosity(self) -> str:
+        """How much the owner wants to read: his setting (the profile's `verbosity`), `normal` until he says otherwise. Presentation only."""
+        svc = getattr(self.coord, "services", None)
+        prof = getattr(svc, "profile", None)
+        return formatter.level_of(prof.get("verbosity") if prof is not None and "verbosity" in prof.fields else None)
+
     def for_channel(self, i: Intent, ch: Channel) -> dict:
+        """The intent as THIS channel may see it, laid out by the one formatter at the owner's verbosity. The log keeps the intent's own text; what leaves here is for a person."""
+        d = self._for_channel(i, ch)
+        d["text_fallback"] = formatter.render(d, self.verbosity(), self.lang)
+        return d
+
+    def _for_channel(self, i: Intent, ch: Channel) -> dict:
         """The intent as THIS channel may see it. A cloud channel never receives `confidential`; internal data passes a filter, a size cap, and is logged once."""
         d = i.to_dict()
         d["state"] = i.extra.get("state", "")
         if ch.name == "cli" and i.kind == "confirm" and d["text_fallback"].endswith(t(self.lang, "ap_ask_tool")):  # the owner's terminal asks for the typed yes itself: the line that tells a chat to call a tool is not for it
             d["text_fallback"] = d["text_fallback"][:-len(t(self.lang, "ap_ask_tool"))] + t(self.lang, "ap_ask_cli")
-        if ch.name != "cli" and i.kind == "confirm" and d["state"] == "pending" and f"intent_id for mas_request_approval: {i.id}" not in d["text_fallback"]:
+        if ch.name == "cli" and i.kind == "confirm" and i.payload.get("chat_choice"):  # a plan that is ONE chat question is answered at his terminal by his typed yes: the lines that tell a chat to relay it are not for him
+            for line in (t(self.lang, "ap_plan_ask"), t(self.lang, "ap_chat_ask"), t(self.lang, "ap_answer_id").format(id=i.id)):
+                d["text_fallback"] = d["text_fallback"].replace(line, "").rstrip()
+            d["text_fallback"] = d["text_fallback"] + "\n" + t(self.lang, "ap_ask_cli_plan")
+        if ch.name != "cli" and i.kind == "confirm" and d["state"] == "pending" and f"intent_id for mas_request_approval: {i.id}" not in d["text_fallback"] and not i.payload.get("chat_choice"):
             d["text_fallback"] = d["text_fallback"] + "\n" + t(self.lang, "ap_intent_id").format(id=i.id)  # a chat is never asked to pass an id it was not shown
+        if ch.name != "cli" and ((i.kind == "ask_choice") or (i.kind == "confirm" and i.payload.get("chat_choice"))) and d["state"] == "pending" and f"intent_id for mas_answer: {i.id}" not in d["text_fallback"]:
+            d["text_fallback"] = d["text_fallback"] + "\n" + t(self.lang, "ap_answer_id").format(id=i.id)  # every question a chat relays shows the id it must answer with
         if not ch.cloud:
             return d
         if i.sensitivity == "confidential":
@@ -748,10 +773,11 @@ class HarnessCore:
             raise Refused(404, "unknown_node", t(self.lang, "pr_unknown").format(ref=(machine or "")[:60]))
         kw = {"name": rec.name}
         ph = "sha256:" + hashlib.sha256(json.dumps({"unpair": rec.node_id, "name": rec.name}, sort_keys=True).encode()).hexdigest()
-        p = self.request_confirmation(None, summary=t(self.lang, "un_summary").format(**kw), plan_hash=ph, command=t(self.lang, "un_command").format(**kw), undo=t(self.lang, "un_undo").format(**kw))
+        p = self.request_confirmation(None, summary=t(self.lang, "un_summary").format(**kw), plan_hash=ph, command=t(self.lang, "un_command").format(**kw), undo=t(self.lang, "un_undo").format(**kw), kind="unpair")
         via_ = lambda approved, via: approved and asyncio.ensure_future(self.coord.unpair_node(rec.node_id, via=via))  # noqa: E731
         p.intent.extra["on_decision"] = via_
-        p.intent.text_fallback = p.intent.text_fallback + "\n" + t(self.lang, "ap_ask_tool")
+        if not p.intent.payload.get("chat_choice"):
+            p.intent.text_fallback = p.intent.text_fallback + "\n" + t(self.lang, "ap_ask_tool")
         return {"intents": [self.for_channel(p.intent, ch)]}
 
     # ---- owner decisions ------------------------------------------------------------------------------------------------------------------------
@@ -764,7 +790,7 @@ class HarnessCore:
                 return x
         base, key = key, f"{key}:{self._seq + 1}"  # every question has its own id: an answered one is over
         opts = [{"id": o["id"], "label": str(o.get("label", o["id"])), "detail": str(o.get("detail", ""))} for o in options]
-        i = self._add(run_id, "ask_choice", "GUARD", sensitivity, {"question": key, "text": text, "options": opts, "writes": False, "chat": True}, f"{text}\n{numbered(opts)}\n{t(self.lang, 'reply_hint')}", key)
+        i = self._add(run_id, "ask_choice", "GUARD", sensitivity, {"question": key, "text": text, "options": opts, "writes": False, "chat": True}, f"{text}\n{numbered(opts)}\n{t(self.lang, 'reply_hint')}\n{t(self.lang, 'ap_answer_id').format(id=key)}", key)
         i.extra.update(state="pending", on_choice=on_choice, base=base)
         return i
 
@@ -793,7 +819,9 @@ class HarnessCore:
             i.extra["state"] = "answered"
             self.coord.log.add("harness_decision", {"channel": ch.name, "intent": i.id, "question": i.payload.get("question"), "option": option, "relayed_by_model": ch.model_in_middle}, owner=(by != "claude-code"))
             nxt = cb(option)
-            return {"ok": True, "channel": ch.name, "relayed_by_model": ch.model_in_middle, **({"next": nxt} if isinstance(nxt, str) and nxt else {})}
+            svc = getattr(self.coord, "services", None)
+            line = svc.job_line(intent_id) if svc is not None else ""
+            return {"ok": True, "channel": ch.name, "relayed_by_model": ch.model_in_middle, **({"next": nxt} if isinstance(nxt, str) and nxt else {}), **({"job_line": line} if line else {})}
         run = self.coord.runs.runs.get(i.run_id or "")
         if run is None:
             raise Refused(404, "not_found")
@@ -814,10 +842,15 @@ class HarnessCore:
         if ch.cloud and i.sensitivity == "confidential":
             raise Refused(403, "withheld_from_cloud", t(self.lang, "withheld"))
         option = self._option_id(i, option)
+        if by == "claude-code":  # the operator is not the owner: his answer is recorded apart, as his, and the question stays open (nothing runs, nothing counts as approved)
+            self.coord.log.add("harness_decision", {"channel": ch.name, "intent": i.id, "option": option, "by": "claude-code", "counted": False}, owner=False)
+            return {"ok": True, "channel": ch.name, "state": "not_counted", "mechanism": approval.CHAT_CHOICE, "relayed_by_model": ch.model_in_middle}
         tk = Ticket(secrets.token_urlsafe(12), i.id, i.payload["plan_hash"], approval.CHAT_CHOICE, ch.name, self.clock())
         self._tickets[tk.id] = tk
         self._resolve(tk, "accept" if option == "approve" else "decline", i.payload["plan_hash"], {"assurance": "chat_relay", "relayed_by_model": ch.model_in_middle})
-        return {"ok": True, "channel": ch.name, "relayed_by_model": ch.model_in_middle, "state": tk.state, "mechanism": approval.CHAT_CHOICE}
+        svc = getattr(self.coord, "services", None)
+        line = svc.job_line(i.id) if svc is not None else ""
+        return {"ok": True, "channel": ch.name, "relayed_by_model": ch.model_in_middle, "state": tk.state, "mechanism": approval.CHAT_CHOICE, **({"job_line": line} if line else {})}
 
     def _option_id(self, i: Intent, given: str) -> str:
         """The option an answer names: its id, its number in the question's numbered list, or its exact label. Anything else is refused WITH the valid ones, so the next call can be right."""
@@ -834,8 +867,11 @@ class HarnessCore:
 
     # ---- confirmations of a write ---------------------------------------------------------------------------------------------------------------
 
-    def request_confirmation(self, run_id: str | None, *, summary: str, plan_hash: str, command: str, undo: str, sensitivity: str = "internal", actor: str = "GUARD", raise_for: Channel | None = None) -> Pending:
-        """A protocol (T3a's setup) asks the owner to approve a write. The returned future resolves True/False once a valid confirmation arrives. Nothing is shown unless the intent validates."""
+    def request_confirmation(self, run_id: str | None, *, summary: str, plan_hash: str, command: str, undo: str, sensitivity: str = "internal", actor: str = "GUARD", raise_for: Channel | None = None,
+                             kind: str | None = None) -> Pending:
+        """A protocol (T3a's setup) asks the owner to approve a write. The returned future resolves True/False once a valid confirmation arrives. Nothing is shown unless the intent validates. `kind` is the sort of
+        decision (approval-policy.json): `chat_choice` makes it ONE chat question bound to the plan hash, answered with mas_answer and recorded as answered in the chat; a kind the policy does not list, or lists as
+        `os_dialog`, keeps the system dialog."""
         payload = {"writes": True, "summary": summary, "plan_hash": plan_hash, "command": command, "undo": undo}
         key = f"{run_id or '-'}:confirm:{plan_hash[-12:]}"
         same = self._pending.get(key)
@@ -844,14 +880,23 @@ class HarnessCore:
         if self._find(key) is not None:  # the same plan was asked before and answered (declined, or approved and done): a new question gets its own id
             key = f"{key}:{self._seq + 1}"
         text = f"{summary}\n{t(self.lang, 'command')}: {command}\n{t(self.lang, 'undo')}: {undo}\nplan {plan_hash}"
+        in_chat = kind is not None and approval.mechanism_for(kind) == approval.CHAT_CHOICE
+        if in_chat:
+            payload.update(chat_choice=True, approval_kind=kind, options=approval.options(), question=key)
+            text += "\n" + approval_question_text(self.lang, key)
         i = self._add(run_id, "confirm", actor, sensitivity, payload, text, key)
         i.extra["state"] = "pending"
         p = Pending(i)
         self._pending[i.id] = p
-        if raise_for is not None:
+        if raise_for is not None and not in_chat:
             i.extra["raise_for"] = raise_for
             self.raise_dialog(raise_for, i.id)
         return p
+
+    def answer_how(self, intent_id: str) -> str:
+        """How the owner's answer to this confirmation reaches the harness, in words a chat can follow: one chat question (mas_answer) or his own system dialog (mas_request_approval). From the policy's data via the intent."""
+        i = self._find(intent_id)
+        return t(self.lang, "ap_how_chat" if i is not None and i.payload.get("chat_choice") else "ap_how_dialog").format(id=intent_id)
 
     def request_secret_entry(self, run_id: str | None, *, summary: str, plan_hash: str, command: str, undo: str, credential: str, sensitivity: str = "internal", actor: str = "GUARD", raise_for: Channel | None = None) -> Pending:
         """Ask the owner to type a credential into the operating system's own hidden-field window. The confirmation is a `secret` one: the only mechanism that can answer it is the OS window, the typed value
@@ -1016,7 +1061,9 @@ class HarnessCore:
         tk = self._tickets.get(ticket_id)
         if tk is None or tk.channel != ch.name:
             raise Refused(404, "unknown_ticket")
-        return {"ticket": tk.id, "state": tk.state, "state_text": t(self.lang, "tk_" + tk.state), "reason": tk.reason, "assurance": tk.assurance}
+        svc = getattr(self.coord, "services", None)
+        line = svc.job_line(tk.intent_id) if svc is not None else ""  # what the approval started, with the id to follow it by (mas_job)
+        return {"ticket": tk.id, "state": tk.state, "state_text": t(self.lang, "tk_" + tk.state), "reason": tk.reason, "assurance": tk.assurance, **({"job_line": line} if line else {})}
 
     def _resolve(self, tk: Ticket, action: str, plan_hash: str, extra: dict) -> None:
         i = self._find(tk.intent_id)
@@ -1090,7 +1137,10 @@ class HarnessCore:
 
     def tool(self, ch: Channel, name: str, args: dict) -> dict:
         """A tool of the services, called by a chat. The channel is the token's: whether the chat is a cloud one is its own property, never an argument."""
-        return self.coord.services.call(ch, name, args)
+        out = self.coord.services.call(ch, name, args)
+        if isinstance(out, dict) and isinstance(out.get("text"), str):
+            out = {**out, "text": formatter.render_tool(bool(out.get("ok", True)), out["text"], self.verbosity(), self.lang)}
+        return out
 
     def view_context(self, ch: Channel, context: dict) -> dict:
         """How the host displays our view (display mode, size, theme): booleans, short strings and numbers only, kept as evidence."""

@@ -4,6 +4,7 @@
   "harness-app-chat",
   "harness-tools",
   "secret-entry",
-  "owner-profile"
+  "owner-profile",
+  "mas-voice"
  ]
 }

@@ -34,6 +34,7 @@ mas = "envrec_mas.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
+envrec_style = ["tokens.json"]
 envrec_coordinator = ["web_static/*"]  # the owner's screen: plain HTML, CSS, JS and the strings file, served from memory by the coordinator
 
 [tool.pytest.ini_options]

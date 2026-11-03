@@ -332,9 +332,9 @@ class ConnectAdapter(SetupAdapter):
     """protocol-connect-chats: detect which chats are on this computer (read-only), put the owner's one closed question, have code build the plan from the recipes, then the same guarded steps as a setup, run on
     THIS computer by the coordinator's own code after the owner's approval of each step. The model chooses the order of its calls; it writes no command, path or entry."""
 
-    def __init__(self, *, detect, build, preselected: str | None, start_step, approve, owner_events) -> None:
+    def __init__(self, *, detect, build, preselected: str | None, start_step, approve, owner_events, plan_approval: str | None = None) -> None:
         super().__init__(node_id="this-computer", node_name="this computer", load_stored=lambda: None, load_pick=lambda: None, run_task=lambda *a, **k: None, start_step=start_step, approve=approve,
-                         owner_events=owner_events, catalog={})
+                         owner_events=owner_events, catalog={}, plan_approval=plan_approval)
         self.detect, self.build, self.preselected = detect, build, preselected  # detect() -> rows; build(host) -> plan or raises ConnectRefused
         self.host: str | None = None
         self.rows: list[dict] = []
@@ -377,12 +377,12 @@ class ConnectAdapter(SetupAdapter):
         return ProbeResult(ok=True, facts=facts)
 
     async def _ask_hosts(self, args: dict, ctx: ToolContext) -> ProbeResult:
-        offered = [r for r in self.rows if r["state"] in ("found", "installable")]
+        offered = [r for r in self.rows if r["state"] in ("found", "installable", "repair")]
         if not offered:
             return ProbeResult(ok=True, facts=[self._fact(ctx, "setup.refused", {"reason": "no_host_found", "text": "no chat that can be connected was found on this computer"}, "ask_hosts")])
         if self.pending is not None:
             return ProbeResult(ok=False, error="a question is already waiting for the owner")
-        options = [{"id": r["host"], "label": r["label"] + (" (will be installed)" if r["state"] == "installable" else ""), "detail": r["detail"]} for r in offered]
+        options = [{"id": r["host"], "label": r["label"] + (" (will be installed)" if r["state"] == "installable" else " (its entry needs repair)" if r["state"] == "repair" else ""), "detail": r["detail"]} for r in offered]
         answer = await self._ask(ctx, "which_chats", "Which chats do you want to use Multi Auto Setup in?", options)
         if answer is None:
             return ProbeResult(ok=False, error="the owner did not answer in time")

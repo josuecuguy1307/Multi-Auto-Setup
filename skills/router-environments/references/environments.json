@@ -1,6 +1,6 @@
 {
  "version": 1,
- "note": "curated by the project; see SKILL.md. Read 2026-10-30.",
+ "note": "curated by the project; see SKILL.md. Read 2026-10-30. Each entry states its evidence_state (unknown, hypothesis, tested, verified, contradicted) and why in evidence_note; domains are free tags ([] = serves any domain its task types cover).",
  "environments": [
   {
    "id": "llamacpp-local",
@@ -88,6 +88,23 @@
       "confinement": "none_needed"
      }
     }
+   },
+   "domains": [],
+   "retrieved": "2026-10-30",
+   "evidence_state": "tested",
+   "evidence_note": "real setups and a minimal call ran on the Lenovo (PROGRESS, 2026-11-01); license verified by the setup recipe",
+   "domains_source": {
+    "sources": [
+     {
+      "url": "https://api.github.com/repos/ggml-org/llama.cpp",
+      "capture_sha256": "d94784ae71c03f4a16914ad887f6478de6e9790d5b1eaadd4730c8d2ea113732",
+      "description": "LLM inference in C/C++",
+      "topics": "ggml"
+     }
+    ],
+    "matched": [],
+    "retrieved": "2026-11-03",
+    "states_no_domain": "its sources state no work domain that a rule of the data names"
    }
   },
   {
@@ -276,6 +293,31 @@
       ]
      }
     }
+   },
+   "domains": [
+    "coding"
+   ],
+   "source_url": "https://code.claude.com/docs/en/cli-reference",
+   "retrieved": "2026-10-30",
+   "evidence_state": "tested",
+   "evidence_note": "`claude auth status` ran on the Mac (ROUTER_ENVIRONMENTS 1); the vendor's terms for automated use are not read",
+   "domains_source": {
+    "sources": [
+     {
+      "url": "https://api.github.com/repos/anthropics/claude-code",
+      "capture_sha256": "cb5a26941ed9bd5c0bdb1fd2827c626c8a4ac179394d0eaadc04ca03172eb404",
+      "description": "Claude Code is an agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster by executing routine tasks, explaining complex code, and handling git workflows - all through natural language commands.",
+      "topics": ""
+     }
+    ],
+    "matched": [
+     {
+      "tag": "coding",
+      "rule": "coding tool",
+      "in": "description"
+     }
+    ],
+    "retrieved": "2026-11-03"
    }
   },
   {
@@ -303,16 +345,57 @@
    },
    "license": {
     "spdx": "Apache-2.0",
-    "note": "LICENSE read at the commit below; still a provider: we do not install it"
+    "note": "LICENSE read at the commit below; the harness can install the release asset, after the owner approves the plan"
    },
    "upstream": {
     "kind": "repo",
     "url": "https://github.com/openai/codex",
     "commit": "67f0994b532b8740f14b5b738af7b7b2a915b1d6",
-    "seen_release": "rust-v0.166.0"
+    "seen_release": "rust-v0.166.0",
+    "release": "rust-v0.166.0",
+    "pin": "resolved",
+    "pin_note": "release rust-v0.166.0 published 2026-10-29 (GET /repos/openai/codex/releases/latest, capture tests/fixtures/github_releases/codex.json, original sha256 3cd65f3307eed390\u2026). Asset SHA-256 is the `digest` GitHub reports; the darwin-arm64 asset was REALLY downloaded on 2026-11-02 and its SHA-256 matched. The file inside each archive was read from the archive listing (tar.gz: streamed; zip: its central directory). linux and windows builds are the musl and msvc ones.",
+    "assets": {
+     "darwin-arm64": {
+      "name": "codex-aarch64-apple-darwin.tar.gz",
+      "sha256": "c48824462fc57681eafb0925d97b11b589010475613904f570b42fea53e240d5",
+      "bytes": 107610108,
+      "url": "https://github.com/openai/codex/releases/download/rust-v0.166.0/codex-aarch64-apple-darwin.tar.gz"
+     },
+     "darwin-x64": {
+      "name": "codex-x86_64-apple-darwin.tar.gz",
+      "sha256": "db0c38713c36199b12e7c8d1629386c35a4ce8f99e1c9ce72f1725a74df67b57",
+      "bytes": 117027024,
+      "url": "https://github.com/openai/codex/releases/download/rust-v0.166.0/codex-x86_64-apple-darwin.tar.gz"
+     },
+     "linux-arm64": {
+      "name": "codex-aarch64-unknown-linux-musl.tar.gz",
+      "sha256": "94eb707605ec2646b2e05b7edf7c4e7b3ccf02b16237c34ae9beb8cfb7f810a9",
+      "bytes": 113382496,
+      "url": "https://github.com/openai/codex/releases/download/rust-v0.166.0/codex-aarch64-unknown-linux-musl.tar.gz"
+     },
+     "linux-x64": {
+      "name": "codex-x86_64-unknown-linux-musl.tar.gz",
+      "sha256": "a0bf572d2f93f056c6712a6da348e96078dc84f3885fd7be67807ef389cb3978",
+      "bytes": 121764138,
+      "url": "https://github.com/openai/codex/releases/download/rust-v0.166.0/codex-x86_64-unknown-linux-musl.tar.gz"
+     },
+     "windows-x64": {
+      "name": "codex-x86_64-pc-windows-msvc.exe.zip",
+      "sha256": "bf67d9662ed539f305849b74ad6420cc7b23aa2be07753710ca3db9134a0246d",
+      "bytes": 207243835,
+      "url": "https://github.com/openai/codex/releases/download/rust-v0.166.0/codex-x86_64-pc-windows-msvc.exe.zip"
+     },
+     "windows-arm64": {
+      "name": "codex-aarch64-pc-windows-msvc.exe.zip",
+      "sha256": "2025588829bb65deb4c92e27025a56091fa17bcf2f651262b7331fbffb078117",
+      "bytes": 192135893,
+      "url": "https://github.com/openai/codex/releases/download/rust-v0.166.0/codex-aarch64-pc-windows-msvc.exe.zip"
+     }
+    }
    },
    "automated_use": "to review",
-   "installed_by_us": false,
+   "installed_by_us": true,
    "labels": {
     "license": {
      "label": "verified by code",
@@ -333,6 +416,10 @@
     "automated_use": {
      "label": "declared by the project",
      "source": "vendor terms not read: to review"
+    },
+    "pin": {
+     "label": "verified by code",
+     "source": "GitHub releases API rust-v0.166.0 asset digests; darwin-arm64 downloaded and hashed on 2026-11-02"
     }
    },
    "accesses": [
@@ -464,6 +551,70 @@
       ]
      }
     }
+   },
+   "domains": [
+    "coding"
+   ],
+   "source_url": "https://github.com/openai/codex",
+   "pin": "67f0994b532b8740f14b5b738af7b7b2a915b1d6",
+   "retrieved": "2026-10-30",
+   "evidence_state": "verified",
+   "evidence_note": "LICENSE bytes read at the pinned commit; `codex login status` and the flags ran on the Mac",
+   "install": {
+    "recipe": "github-release-tool",
+    "sequence": [
+     "fetch_check",
+     "unpack_archive",
+     "verify_program"
+    ],
+    "binary": {
+     "darwin-arm64": "codex-aarch64-apple-darwin",
+     "darwin-x64": "codex-x86_64-apple-darwin",
+     "linux-arm64": "codex-aarch64-unknown-linux-musl",
+     "linux-x64": "codex-x86_64-unknown-linux-musl",
+     "windows-x64": "codex-x86_64-pc-windows-msvc.exe",
+     "windows-arm64": "codex-aarch64-pc-windows-msvc.exe"
+    },
+    "asset_keys": {
+     "macos": {
+      "arm64": "darwin-arm64",
+      "x86_64": "darwin-x64"
+     },
+     "linux": {
+      "arm64": "linux-arm64",
+      "x86_64": "linux-x64"
+     },
+     "windows": {
+      "x86_64": "windows-x64",
+      "arm64": "windows-arm64"
+     }
+    },
+    "verify": {
+     "argv": [
+      "--version"
+     ],
+     "timeout_s": 30,
+     "expect_exit": 0,
+     "expect": "codex"
+    }
+   },
+   "domains_source": {
+    "sources": [
+     {
+      "url": "https://api.github.com/repos/openai/codex",
+      "capture_sha256": "7099492a7e4e8204d791b349672f31dad8db0650f4831491cc5655bfd328b8ec",
+      "description": "Lightweight coding agent that runs in your terminal",
+      "topics": ""
+     }
+    ],
+    "matched": [
+     {
+      "tag": "coding",
+      "rule": "coding agent",
+      "in": "description"
+     }
+    ],
+    "retrieved": "2026-11-03"
    }
   },
   {
@@ -618,6 +769,31 @@
       ]
      }
     }
+   },
+   "domains": [
+    "coding"
+   ],
+   "source_url": "https://dev.meta.ai/docs/muse-code",
+   "retrieved": "2026-10-30",
+   "evidence_state": "hypothesis",
+   "evidence_note": "only the vendor page was read; the CLI was never installed or run here, and its license is not stated",
+   "domains_source": {
+    "sources": [
+     {
+      "url": "https://dev.meta.ai/docs/muse-code",
+      "capture_sha256": "58c300f07c98e06df6e69214a1c44d1d1800300b05a88e75aa7253c840f7251c",
+      "description": "Muse Code is Meta's coding agent for the terminal and CI, built for Muse Spark, with approvals, sandboxing, sessions, and multi-agent orchestration.",
+      "topics": ""
+     }
+    ],
+    "matched": [
+     {
+      "tag": "coding",
+      "rule": "coding agent",
+      "in": "description"
+     }
+    ],
+    "retrieved": "2026-11-03"
    }
   },
   {
@@ -992,6 +1168,32 @@
      "undo": "nothing to undo"
     },
     "status": "DATA ONLY: the pins (release v1.19.5, per-OS SHA-256 and size) and the steps are recorded; the plan builder for a tool install and the verify_program step are not built, so nothing installs OpenCode yet (UNTESTED)"
+   },
+   "domains": [
+    "coding"
+   ],
+   "source_url": "https://github.com/anomalyco/opencode",
+   "pin": "810c0eba1a7348036f8bdf61e6632d0c36c6876c",
+   "retrieved": "2026-10-30",
+   "evidence_state": "verified",
+   "evidence_note": "LICENSE read at the pinned tag's commit; release asset digests read from the GitHub API; nothing was run through the Meta access yet",
+   "domains_source": {
+    "sources": [
+     {
+      "url": "https://api.github.com/repos/anomalyco/opencode",
+      "capture_sha256": "8d100c87a60d6e3e30ec6396049f8b14e86ab200cd8806d66025eda71d373aa7",
+      "description": "The open source coding agent.",
+      "topics": ""
+     }
+    ],
+    "matched": [
+     {
+      "tag": "coding",
+      "rule": "coding agent",
+      "in": "description"
+     }
+    ],
+    "retrieved": "2026-11-03"
    }
   },
   {
@@ -1178,6 +1380,32 @@
       ]
      }
     }
+   },
+   "domains": [
+    "coding"
+   ],
+   "source_url": "https://github.com/earendil-works/pi",
+   "pin": "4a080252f06caf63a525d7873c5d94d3c23887e0",
+   "retrieved": "2026-10-30",
+   "evidence_state": "verified",
+   "evidence_note": "LICENSE read at the pinned commit; it runs only inside our sandbox",
+   "domains_source": {
+    "sources": [
+     {
+      "url": "https://api.github.com/repos/earendil-works/pi",
+      "capture_sha256": "8ee415413059f9468abdc10588f93218ff3f5d0d06bf63db51e4d27477677a97",
+      "description": "AI agent toolkit: unified LLM API, agent loop, TUI, coding agent CLI",
+      "topics": ""
+     }
+    ],
+    "matched": [
+     {
+      "tag": "coding",
+      "rule": "coding agent",
+      "in": "description"
+     }
+    ],
+    "retrieved": "2026-11-03"
    }
   },
   {
@@ -1239,6 +1467,10 @@
     "cloud": {
      "label": "verified by code",
      "source": "the address is an https host outside the network; check_catalog refuses a base_url on an access that is not cloud: true"
+    },
+    "models_list": {
+     "label": "declared by the project",
+     "source": "https://dev.meta.ai/docs/api-reference/models/list-models and /schemas; NOT yet run against the live API (UNTESTED: the key is on the Lenovo)"
     }
    },
    "accesses": [
@@ -1291,8 +1523,409 @@
       "name": "chat",
       "confinement": "none_needed"
      }
+    },
+    "models_list": {
+     "path": "/models",
+     "rows": "data",
+     "id_field": "id",
+     "chat_pattern": "^muse-(spark|wonder)-[0-9][0-9.]*$",
+     "timeout_s": 30,
+     "max_bytes": 400000,
+     "note": "GET /models (https://dev.meta.ai/docs/api-reference/models/list-models, read 2026-11-02): Authorization Bearer; the model object has id, object, created, owned_by (https://dev.meta.ai/docs/api-reference/models/schemas), no capabilities. The pattern says which listed ids are chat models of the Spark and Wonder families in Standard mode (the docs list a -contributor mode and image and voice models separately); it names no version."
     }
+   },
+   "domains": [
+    "coding",
+    "image-generation",
+    "speech-recognition"
+   ],
+   "source_url": "https://dev.meta.ai/docs",
+   "retrieved": "2026-10-30",
+   "evidence_state": "tested",
+   "evidence_note": "the first real call through the router returned 1,619 characters (2026-11-01); the exact response fields are still UNTESTED",
+   "domains_source": {
+    "sources": [
+     {
+      "url": "https://dev.meta.ai/docs",
+      "capture_sha256": "41d4dda2f5518010fc914a0e44e2495a6f2039a526e19903cb8fb8335d91cf0e",
+      "description": "Build with Meta Model API and Muse Code: call Muse Wonder for complex coding and long-horizon agentic work or Muse Spark for agentic and coding work at scale, generate and edit images with Muse Image, transcribe speech with Muse Voice Trans",
+      "topics": ""
+     }
+    ],
+    "matched": [
+     {
+      "tag": "coding",
+      "rule": "for complex coding",
+      "in": "description"
+     },
+     {
+      "tag": "image-generation",
+      "rule": "edit images",
+      "in": "description"
+     },
+     {
+      "tag": "speech-recognition",
+      "rule": "transcribe speech",
+      "in": "description"
+     }
+    ],
+    "retrieved": "2026-11-03"
    }
+  },
+  {
+   "id": "goose",
+   "title": "Goose",
+   "subtype": "own_harness",
+   "cloud": false,
+   "task_types": [
+    "code",
+    "text",
+    "summarize",
+    "extraction",
+    "data-cleaning",
+    "numeric-analysis"
+   ],
+   "os": [
+    "darwin",
+    "linux",
+    "windows"
+   ],
+   "needs": {
+    "sandbox": true,
+    "docker": false,
+    "gui": false
+   },
+   "license": {
+    "spdx": "Apache-2.0",
+    "note": "GitHub SPDX Apache-2.0 for aaif-goose/goose (the repository block/goose redirects to)"
+   },
+   "upstream": {
+    "kind": "repo",
+    "url": "https://github.com/aaif-goose/goose",
+    "commit": "30bba95105e59bc3e7df624cf6b4d433690cfe12",
+    "release": "v1.57.0",
+    "pin": "resolved",
+    "pin_note": "release v1.57.0 published 2026-10-28 (GET /repos/block/goose/releases/latest, 301 to aaif-goose/goose; capture tests/fixtures/github_releases/goose.json, original sha256 a0d205c69a43231a\u2026). Asset SHA-256 is the `digest` GitHub reports; the darwin-arm64 asset was REALLY downloaded on 2026-11-02 and its SHA-256 matched. There is no Windows arm64 build in the release.",
+    "assets": {
+     "darwin-arm64": {
+      "name": "goose-aarch64-apple-darwin.tar.gz",
+      "sha256": "80d43c49b77302777e9d2fe32faf3c40c1028dafbea1e0a39b0378404a8a074b",
+      "bytes": 56524572,
+      "url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-aarch64-apple-darwin.tar.gz"
+     },
+     "darwin-x64": {
+      "name": "goose-x86_64-apple-darwin.tar.gz",
+      "sha256": "5ad5594246841c759b34966e09ca421c09151b589183a8f1720e15e8395834ae",
+      "bytes": 58733497,
+      "url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-x86_64-apple-darwin.tar.gz"
+     },
+     "linux-arm64": {
+      "name": "goose-aarch64-unknown-linux-musl.tar.gz",
+      "sha256": "00a32522f0421ed72fc06f36bfc44c8e51cffefb4daf22a81bb84ccd29d1a1ce",
+      "bytes": 48676441,
+      "url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-aarch64-unknown-linux-musl.tar.gz"
+     },
+     "linux-x64": {
+      "name": "goose-x86_64-unknown-linux-musl.tar.gz",
+      "sha256": "6c3a05e30e1a425dc06a410dbe24b3f3697c9721b1ea2340434ddda6b64267ae",
+      "bytes": 50110998,
+      "url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-x86_64-unknown-linux-musl.tar.gz"
+     },
+     "windows-x64": {
+      "name": "goose-x86_64-pc-windows-msvc.zip",
+      "sha256": "1ab2117ceec37f95be4d3ad0cdb921d3e97fd8b0fa244046631ecf4b7619d502",
+      "bytes": 53045496,
+      "url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-x86_64-pc-windows-msvc.zip"
+     }
+    }
+   },
+   "automated_use": "n/a",
+   "installed_by_us": true,
+   "labels": {
+    "license": {
+     "label": "verified by code",
+     "source": "GitHub repository API: aaif-goose/goose license.spdx_id Apache-2.0 (2026-11-02)"
+    },
+    "non_interactive": {
+     "label": "declared by the project",
+     "source": "documentation/docs/guides/goose-cli-commands.md of aaif-goose/goose: `goose run`, -t/--text, --no-session, -q/--quiet, --provider, --model, --max-turns"
+    },
+    "provider_config": {
+     "label": "declared by the project",
+     "source": "documentation/docs/getting-started/providers.md: the OpenAI provider takes OPENAI_API_KEY, OPENAI_HOST and OPENAI_BASE_PATH (an OpenAI-compatible endpoint)"
+    },
+    "confinement": {
+     "label": "declared by the project",
+     "source": "no flag that removes its shell tool was found in the docs read: every mode is unverified and needs our sandbox backend"
+    },
+    "pin": {
+     "label": "verified by code",
+     "source": "GitHub releases API v1.57.0 asset digests; darwin-arm64 downloaded and hashed on 2026-11-02"
+    }
+   },
+   "accesses": [
+    {
+     "id": "goose:local",
+     "kind": "local",
+     "cost_class": "local",
+     "plan_group": null,
+     "env_names": []
+    }
+   ],
+   "adapter": {
+    "kind": "cli",
+    "exe": {
+     "darwin": "goose",
+     "linux": "goose",
+     "windows": "goose"
+    },
+    "prompt_via": "arg",
+    "timeout_s": 900,
+    "needs_model_endpoint": true,
+    "env_pass": [],
+    "env_set": {
+     "HOME": "{workspace}/.home",
+     "USERPROFILE": "{workspace}/.home",
+     "OPENAI_HOST": "http://{endpoint}",
+     "OPENAI_BASE_PATH": "v1/chat/completions",
+     "OPENAI_API_KEY": "local"
+    },
+    "output": {
+     "kind": "stdout"
+    },
+    "modes": {
+     "code": {
+      "name": "sandbox_only",
+      "confinement": "unverified",
+      "argv": [
+       "run",
+       "--no-session",
+       "-q",
+       "--provider",
+       "openai",
+       "--model",
+       "{model}",
+       "-t",
+       "{prompt}"
+      ]
+     },
+     "text": {
+      "name": "sandbox_only",
+      "confinement": "unverified",
+      "argv": [
+       "run",
+       "--no-session",
+       "-q",
+       "--provider",
+       "openai",
+       "--model",
+       "{model}",
+       "-t",
+       "{prompt}"
+      ]
+     },
+     "summarize": {
+      "name": "sandbox_only",
+      "confinement": "unverified",
+      "argv": [
+       "run",
+       "--no-session",
+       "-q",
+       "--provider",
+       "openai",
+       "--model",
+       "{model}",
+       "-t",
+       "{prompt}"
+      ]
+     },
+     "extraction": {
+      "name": "sandbox_only",
+      "confinement": "unverified",
+      "argv": [
+       "run",
+       "--no-session",
+       "-q",
+       "--provider",
+       "openai",
+       "--model",
+       "{model}",
+       "-t",
+       "{prompt}"
+      ]
+     },
+     "data-cleaning": {
+      "name": "sandbox_only",
+      "confinement": "unverified",
+      "argv": [
+       "run",
+       "--no-session",
+       "-q",
+       "--provider",
+       "openai",
+       "--model",
+       "{model}",
+       "-t",
+       "{prompt}"
+      ]
+     },
+     "numeric-analysis": {
+      "name": "sandbox_only",
+      "confinement": "unverified",
+      "argv": [
+       "run",
+       "--no-session",
+       "-q",
+       "--provider",
+       "openai",
+       "--model",
+       "{model}",
+       "-t",
+       "{prompt}"
+      ]
+     }
+    }
+   },
+   "domains": [],
+   "source_url": "https://github.com/aaif-goose/goose",
+   "pin": "30bba95105e59bc3e7df624cf6b4d433690cfe12",
+   "retrieved": "2026-11-02",
+   "evidence_state": "hypothesis",
+   "evidence_note": "install pinned and the program started on the Mac; no task was run through it here",
+   "install": {
+    "recipe": "github-release-tool",
+    "sequence": [
+     "fetch_check",
+     "unpack_archive",
+     "verify_program"
+    ],
+    "binary": {
+     "darwin-arm64": "goose",
+     "darwin-x64": "goose",
+     "linux-arm64": "goose",
+     "linux-x64": "goose",
+     "windows-x64": "goose-package/goose.exe"
+    },
+    "asset_keys": {
+     "macos": {
+      "arm64": "darwin-arm64",
+      "x86_64": "darwin-x64"
+     },
+     "linux": {
+      "arm64": "linux-arm64",
+      "x86_64": "linux-x64"
+     },
+     "windows": {
+      "x86_64": "windows-x64"
+     }
+    },
+    "verify": {
+     "argv": [
+      "--version"
+     ],
+     "timeout_s": 30,
+     "expect_exit": 0
+    }
+   },
+   "domains_source": {
+    "sources": [
+     {
+      "url": "https://api.github.com/repos/aaif-goose/goose",
+      "capture_sha256": "83b6716f679bfc0750535539aa60f7e152f7e78328bf6b12a83691a82031f26f",
+      "description": "an open source, extensible AI agent that goes beyond code suggestions - install, execute, edit, and test with any LLM",
+      "topics": "acp ai ai-agents mcp"
+     }
+    ],
+    "matched": [],
+    "retrieved": "2026-11-03",
+    "states_no_domain": "its sources state no work domain that a rule of the data names"
+   }
+  },
+  {
+   "id": "legal-contract-review-skill",
+   "title": "Contract review skill (file-based pack)",
+   "subtype": "skill_pack",
+   "cloud": false,
+   "task_types": [],
+   "os": [
+    "darwin",
+    "linux",
+    "windows"
+   ],
+   "pack_for": [
+    "claude-code",
+    "codex"
+   ],
+   "license": {
+    "spdx": "MIT",
+    "note": "LICENSE read at the pinned commit (file in the pack); GitHub SPDX MIT for evolsb/claude-legal-skill"
+   },
+   "upstream": {
+    "kind": "repo",
+    "url": "https://github.com/evolsb/claude-legal-skill",
+    "commit": "bca0d2e9d5ec81298ddfbfde78fa4f38fb4589b0",
+    "pin": "resolved",
+    "pin_note": "main at 2026-11-02 (commit bca0d2e9); the three files are pinned by raw address AT that commit and by SHA-256 computed from the bytes fetched on 2026-11-02 (REAL). The repository's README says it works with Claude Code, Codex, Cursor and others; this entry lists only the two the catalog has as pack_for.",
+    "files": {
+     "skill.md": {
+      "url": "https://raw.githubusercontent.com/evolsb/claude-legal-skill/bca0d2e9d5ec81298ddfbfde78fa4f38fb4589b0/skill.md",
+      "sha256": "82e890a13fe0219d0852b2815a778d906ee3c197c3db277337802dce625be5ea",
+      "bytes": 14501
+     },
+     "LICENSE": {
+      "url": "https://raw.githubusercontent.com/evolsb/claude-legal-skill/bca0d2e9d5ec81298ddfbfde78fa4f38fb4589b0/LICENSE",
+      "sha256": "a26fb63ec9f3b94576ca618144671fa79d7208170c8dc9be6c90742d540fac09",
+      "bytes": 1076
+     },
+     "README.md": {
+      "url": "https://raw.githubusercontent.com/evolsb/claude-legal-skill/bca0d2e9d5ec81298ddfbfde78fa4f38fb4589b0/README.md",
+      "sha256": "3d58a1d0807f7b25eb11820daf7ce3ec4cbcacdd63468c759c7d2b27413e4db5",
+      "bytes": 7853
+     }
+    }
+   },
+   "install": {
+    "recipe": "skill-pack-files",
+    "folder": "packs"
+   },
+   "automated_use": "n/a",
+   "installed_by_us": true,
+   "labels": {
+    "license": {
+     "label": "verified by code",
+     "source": "GitHub repository API: evolsb/claude-legal-skill license.spdx_id MIT (2026-11-02); LICENSE file hashed in the pack"
+    },
+    "pin": {
+     "label": "verified by code",
+     "source": "commit bca0d2e9d5ec81298ddfbfde78fa4f38fb4589b0; per-file SHA-256 from the bytes fetched at that commit"
+    }
+   },
+   "domains": [
+    "legal"
+   ],
+   "domains_source": {
+    "sources": [
+     {
+      "url": "https://api.github.com/repos/evolsb/claude-legal-skill",
+      "capture_sha256": "056e1bd4323df6b6bc05c053eaee383fa70228159f4dcda06dea0a168b188ecf",
+      "description": "AI-powered contract review skill with CUAD risk detection, market benchmarks, and lawyer-ready redlines. Works with Claude Code, Codex, Cursor, and 26+ tools.",
+      "topics": "agent-skills ai-tools anthropic claude claude-code claude-skills codex contract-analysis contract-review cuad cursor due-diligence legal legal-ai legal-tech llm mergers-and-acquisitions nda risk-detection"
+     }
+    ],
+    "matched": [
+     {
+      "tag": "legal",
+      "rule": "legal",
+      "in": "topics"
+     }
+    ],
+    "retrieved": "2026-11-03"
+   },
+   "source_url": "https://github.com/evolsb/claude-legal-skill",
+   "pin": "bca0d2e9d5ec81298ddfbfde78fa4f38fb4589b0",
+   "retrieved": "2026-11-02",
+   "evidence_state": "hypothesis",
+   "evidence_note": "files pinned and hashed; no task was run with this pack"
   }
  ]
 }

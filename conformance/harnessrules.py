@@ -63,3 +63,75 @@ def card_external_sites(path: Path) -> list[str]:
         if EXTERNAL.search(code):
             out.append(f"{Path(path).name}:{i}: {line.strip()[:80]}")
     return out
+
+
+# HA11. Every decision of the owner is a choice, never free text. An intent of kind `text`, `progress` or `show_data` that puts a question or asks him to pick is a decision that nobody can answer
+# with a tool: it must be an `ask_choice` (a native question where the host has one, numbered options otherwise) or a `confirm`.
+ASK_PATTERNS = (re.compile(r"\?(\s|$)"), re.compile(r"(^|[.!:]\s+)(pick|choose|select|decide|tell me which|say which)\b", re.I))
+FREE_TEXT_KINDS = {"text", "progress", "show_data"}
+
+
+def asks_owner(text: str) -> bool:
+    return any(p.search(text) for p in ASK_PATTERNS)
+
+
+def _string_tables(paths: list[Path]) -> dict[str, str]:
+    """Every English owner-facing string the given modules define, by its key or constant name: `STR["en"]` entries (also those added with `.update`) and module-level string constants. Read from source, never imported."""
+    out: dict[str, str] = {}
+
+    def literal(node):
+        try:
+            return ast.literal_eval(node)
+        except (ValueError, SyntaxError):
+            return None
+
+    def take(d: ast.Dict):
+        for k, v in zip(d.keys, d.values):
+            kk, vv = literal(k) if k is not None else None, literal(v)
+            if isinstance(kk, str) and isinstance(vv, str):
+                out[kk] = vv
+            elif isinstance(kk, str) and isinstance(vv, dict):
+                out.update({a: b for a, b in vv.items() if isinstance(a, str) and isinstance(b, str)}) if kk == "en" else None
+            elif isinstance(v, ast.Dict) and kk == "en":
+                take(v)
+
+    for path in paths:
+        for n in ast.parse(Path(path).read_text(encoding="utf-8")).body:
+            if isinstance(n, ast.Assign) and isinstance(n.value, ast.Dict):
+                take(n.value)
+            elif isinstance(n, ast.Assign) and isinstance(n.value, ast.Constant) and isinstance(n.value.value, str):
+                out.update({tg.id: n.value.value for tg in n.targets if isinstance(tg, ast.Name)})
+            elif isinstance(n, ast.Expr) and isinstance(n.value, ast.Call) and isinstance(n.value.func, ast.Attribute) and n.value.func.attr == "update" and n.value.args and isinstance(n.value.args[0], ast.Dict):
+                take(n.value.args[0])
+    return out
+
+
+def decision_without_choice_violations(source_files: list[Path], string_files: list[Path]) -> list[str]:
+    """Where code emits an intent that is not a choice and whose words ask the owner to decide. The words are read from the call (a string, a `t(lang, "key")` or a constant of a strings module)."""
+    table = _string_tables(string_files)
+    out = []
+    for path in source_files:
+        tree = ast.parse(Path(path).read_text(encoding="utf-8"), filename=str(path))
+        for call in (n for n in ast.walk(tree) if isinstance(n, ast.Call)):
+            name = call.func.attr if isinstance(call.func, ast.Attribute) else call.func.id if isinstance(call.func, ast.Name) else ""
+            if name == "_add" and len(call.args) >= 6:
+                kind, text = call.args[1], call.args[5]
+            elif name == "Intent":
+                kw = {k.arg: k.value for k in call.keywords}
+                kind, text = kw.get("kind"), kw.get("text_fallback")
+            else:
+                continue
+            if not (isinstance(kind, ast.Constant) and kind.value in FREE_TEXT_KINDS) or text is None:
+                continue
+            words = []
+            for n in ast.walk(text):
+                if isinstance(n, ast.Constant) and isinstance(n.value, str):
+                    words.append(table.get(n.value, n.value))
+                elif isinstance(n, ast.Name) and n.id in table:
+                    words.append(table[n.id])
+                elif isinstance(n, ast.Attribute) and n.attr in table:
+                    words.append(table[n.attr])
+            hit = next((w for w in words if asks_owner(w)), None)
+            if hit:
+                out.append(f"{Path(path).name}:{call.lineno}: a {kind.value} intent asks the owner to decide ({hit[:70]!r}): it must be an ask_choice")
+    return out

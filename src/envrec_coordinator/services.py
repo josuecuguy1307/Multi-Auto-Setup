@@ -12,10 +12,20 @@ import json
 import secrets
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
+from envrec_coordinator import recommend_strings as RC
 from envrec_coordinator import services_strings as S
+from envrec_coordinator import chain_strings as CS
+from envrec_coordinator.chain import ChainTools, load_kinds
+from envrec_coordinator.judge import JudgeTools
+from envrec_coordinator.model_lists import ModelLists
+from envrec_coordinator.measure_tools import MeasureTools
+from envrec_coordinator.model_list_tools import ModelListTools
+from envrec_coordinator.tool_install import ToolInstallTools
 from envrec_coordinator.profile_tools import ProfileTools
+from envrec_coordinator.recommend import RecommendTools, normalize_domain
 from envrec_coordinator.admission import router_bridge as bridge
 from envrec_coordinator.admission.decision import AdmissionDesk
 from envrec_coordinator.admission.decision import Refusal as AdmissionRefusal
@@ -24,11 +34,14 @@ from envrec_coordinator.admission.facts import AdmissionFacts, Combo
 from envrec_coordinator.admission.suite import SuiteRefused, load_suite
 from envrec_coordinator.router import EntryChat, MemoryOutputs, Policy, Refusal, Route, RouteDecision, Router, Task, filter_outbound
 from envrec_coordinator.router import grading
-from envrec_coordinator.router.catalog import build_candidates
+from envrec_coordinator.router.catalog import build_candidates, knows_task_type
+from envrec_coordinator.router.model import Exclude
 from envrec_coordinator.live_facts import CoordinatorFacts
 from envrec_net import envrun as E
 from envrec_net import task as T
 
+BUSY_RETRIES = 6  # an exam prompt that the node turned away as busy is asked again this many times before the exam is given up as the machine's problem
+BUSY_WAIT_S = 3.0
 MAX_TEXT = 100_000
 MAX_CHECK = 200_000
 CHECK_KINDS = grading.TEXT_KINDS + grading.EXECUTING_KINDS
@@ -90,14 +103,24 @@ def _digest(*parts: Any) -> str:
     return hashlib.sha256(json.dumps(parts, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
 
 
-class Services(ProfileTools):
+class Services(ProfileTools, RecommendTools, ChainTools, JudgeTools, ToolInstallTools, ModelListTools, MeasureTools):
     def __init__(self, coord, *, envs: dict[str, dict] | None = None, policy: Policy | None = None, sandbox_ready=None, sandbox_runner=None) -> None:
         self.coord = coord
-        self.envs = envs if envs is not None else E.load_environments()
+        self.rejected_leads: dict[str, list[str]] = {}
+        self.intent_jobs: dict[str, str] = {}  # a question's intent id -> the job (or chain) whose next step it belongs to, so an answer can say what it started
+        self.chains: dict[str, dict] = {}  # id -> the state of a chain (skill harness-chains)
+        self.held: dict[str, dict] = {}  # id -> an input the HARNESS holds (a folder listing): its text, the names to mask, what the chat is told. Never in a tool result
+        self.recommend_runs: dict[str, dict] = {}  # id -> the store, adapter and researcher of a recommendation run (protocol-recommend)
+        if envs is not None:
+            self.catalog = envs
+        else:  # the shipped entries and the leads research recorded in the state dir, merged by one loader and held to one guard; the router sees only what can be run
+            self.catalog, self.rejected_leads = E.load_catalog(extra_dir=Path(coord.state) / E.RESEARCHED_DIR_NAME)
+        self.envs = E.runnable(self.catalog) if envs is None else envs
         self.policy = policy or Policy.defaults()
         self._loop_log = LoopLog(coord.log)
         self.store = AdmissionFacts(self._loop_log, coord.clock)
         self.facts = CoordinatorFacts(coord, self.store, self.envs)
+        self.model_lists = self.facts.model_lists = ModelLists(Path(coord.state) / "model_lists")  # the models an API lists, read through its node, kept dated
         self.outputs = MemoryOutputs()
         self.payloads: dict[str, str] = {}
         self.jobs: dict[str, Job] = {}
@@ -135,6 +158,40 @@ class Services(ProfileTools):
         job = self.jobs[job_id] = Job(job_id, kind, state, **kw)
         return job
 
+    TERMINAL = ("done", "aborted", "refused", "declined", "failed", "exhausted", "route_changed", "unchecked", "done_unchecked", "task_created", "cancelled")
+
+    def job_line(self, intent_id: str) -> str:
+        """What an approved (or answered) question started or belongs to, in one line a chat can follow with mas_job: `job id for mas_job: <id> (<kind>: <state>)`. A task, an exam, an access change and a chain
+        are jobs; a setup, an undo or a connection is a run, and mas_job reads a run's id too."""
+        jid = self.intent_jobs.get(intent_id)
+        job = self.jobs.get(jid) if jid else next((j for j in self.jobs.values() if j.intent_id == intent_id), None)
+        if job is not None:
+            return S.JOB_LINE.format(job_id=job.id, kind=job.kind, state=job.state)
+        i = self.coord.harness._find(intent_id)
+        run = self.coord.runs.runs.get(i.run_id) if i is not None and i.run_id else None
+        return S.JOB_LINE.format(job_id=run.id, kind=f"{run.kind} run", state=run.status) if run is not None else ""
+
+    def open_lines(self) -> list[str]:
+        """The exams, tasks, chains and runs that are open or going now, one line each (mas_activity)."""
+        out = [f"{j.kind} {j.id}: {j.state}" for j in self.jobs.values() if j.state not in self.TERMINAL]
+        out += [f"{r.kind} run {r.id}: {r.status}" for r in self.coord.runs.runs.values() if r.finished is None]
+        return out
+
+    def run_status(self, run_id: str) -> dict | None:
+        """A run (analysis, setup, undo, connection, draft) as `mas_job` shows it: its state, the reason it ended, its last steps with who acted, and the question it waits on."""
+        run = self.coord.runs.runs.get(run_id)
+        if run is None:
+            return None
+        view = self.coord.runs.view(run.id) or {}
+        lines = [S.JOB_STATE.format(job_id=run.id, kind=f"{run.kind} run", state=run.status)]
+        if run.reason:
+            lines.append(run.reason)
+        lines += [f"[{e['tag']}] {e['text']}" for e in view.get("events", [])[-6:]]
+        waiting = [x for x in self.coord.harness._logs.get(run.id, []) if x.extra.get("state") == "pending" and x.kind in ("confirm", "ask_choice")]
+        for x in waiting:
+            lines.append(f"Waiting for you: {x.text_fallback.splitlines()[0][:160]} (intent_id {x.id})")
+        return {"text": "\n".join(lines), "state": run.status, "kind": run.kind, "waiting": [x.id for x in waiting]}
+
     def _confirmation_mechanism(self, plan_hash: str) -> str | None:
         return next((e.payload.get("mechanism") for e in reversed(self.coord.log.events("owner_confirmation")) if e.payload.get("plan_hash") == plan_hash and e.payload.get("approved")), None)
 
@@ -169,7 +226,7 @@ class Services(ProfileTools):
         trace = [s.model_dump() for s in res.rule_trace]
         costs = next((s["values"] for s in trace if s["step"] == "cost_class"), {})
         return {"task_type": task_type, "sensitivity": sensitivity, "effective_sensitivity": res.effective_sensitivity, "entry_chat": chat.kind, "candidates": list(res.rule_trace[0].candidates_in),
-                "left_out": dict(res.left_out), "filters": trace, "chosen": res.route.key, "cost_class": costs.get(res.route.key), "evidence": res.evidence_label, "provisional": res.provisional,
+                "left_out": dict(res.left_out), "filters": trace, "chosen": res.route.key, "cost_class": costs.get(res.route.key), "evidence": res.evidence_label, "evidence_line": res.evidence.get("text", ""), "evidence_tier": res.evidence.get("tier"), "provisional": res.provisional,
                 "escalation_step": res.escalation_step, "refusal": None}
 
     def _explain_text(self, data: dict) -> str:
@@ -193,7 +250,24 @@ class Services(ProfileTools):
         else:
             lines.append(S.EXPLAIN_CHOSEN.format(route=self._key_text(data["chosen"]), cost_class=data["cost_class"], evidence=data["evidence"], provisional=S.PROVISIONAL if data["provisional"] else "",
                                                  step=data["escalation_step"]))
+            if data.get("evidence_line"):
+                lines.append(data["evidence_line"][0].upper() + data["evidence_line"][1:] + ".")
+            lines.append(self.facts_age_line(data["chosen"].split("|")[-1]))  # the facts this choice rests on, dated: nothing is presented as fresher than it is
         return "\n".join(lines)
+
+    @staticmethod
+    def _age(seconds: float) -> str:
+        s = max(0, int(seconds))
+        return f"{s} s" if s < 90 else f"{s // 60} min" if s < 5400 else f"{round(s / 3600)} hours" if s < 172800 else f"{round(s / 86400)} days"
+
+    def facts_age_line(self, machine_id: str) -> str:
+        """How old what a route rests on is: the stored analysis of the machine and the last check of its key names. The facts are not refreshed here (an analysis takes minutes); they are dated."""
+        doc = self.coord.runs.stored_analysis(machine_id)
+        creds = self._creds_at.get(machine_id)
+        age_c = self._age(time.monotonic() - creds) if creds is not None else S.FACTS_UNKNOWN
+        if doc is None or "stored_at" not in doc:
+            return S.FACTS_NO_ANALYSIS.format(machine=self._name(machine_id), creds=age_c)
+        return S.FACTS_AGE.format(machine=self._name(machine_id), age=self._age(time.time() - float(doc["stored_at"])), creds=age_c)
 
     def _chat(self, ch) -> EntryChat:
         return EntryChat(kind="cloud" if ch.cloud else "local", name=ch.name)  # the channel's own property: never an argument
@@ -215,21 +289,27 @@ class Services(ProfileTools):
             task = Task(task_id="explain-" + secrets.token_hex(3), task_type=task_type[:40], sensitivity=sensitivity, entry_chat=chat, created_by="OWNER", payload_ref="explain")
         res = self.router.explain(task)
         data = self._explain_data(res, task_type=task.task_type, sensitivity=task.sensitivity, chat=task.entry_chat)
-        return self._out(True, self._explain_text(data), **data)
+        proofs = [a["proof"]["line"] for a in (self.tasks.get(task_id) or {}).get("attempts", []) if a.get("proof")] if task_id else []
+        return self._out(True, self._explain_text(data) + ("".join("\n" + x for x in proofs)), **data, **({"proofs": proofs} if proofs else {}))
 
-    def create_task(self, ch, *, text: str, task_type: str, touches=None, check: dict | None = None, sensitivity: str | None = None) -> dict:
+    def create_task(self, ch, *, text: str, task_type: str, touches=None, check: dict | None = None, sensitivity: str | None = None, domain=None, inputs=None) -> dict:
         """Create a task. Its level comes from the owner's profile and what the text touches (`touches`: his categories, `none` or `unsure`); when the harness cannot tell it asks him. A chat's model never gives a
         level: only the owner's own screens (panel, terminal) state one. Nothing runs: the owner approves the exact route first."""
         if sensitivity is not None:
             if ch.model_in_middle:
                 return self._out(False, S.TASK_LEVEL_NOT_YOURS)
-            return self._create(ch, text=text, task_type=task_type, sensitivity=sensitivity, check=check)
+            return self._create(ch, text=text, task_type=task_type, sensitivity=sensitivity, check=check, domain=domain, inputs=inputs)
         if not isinstance(text, str) or not text.strip() or len(text) > MAX_TEXT:
             return self._create(ch, text=text, task_type=task_type, sensitivity="internal", check=check)  # the refusal for the size is the same one, with the size in it
-        level, res = self._level_or_question(ch, text, task_type, touches, check)
-        return res if level is None else self._create(ch, text=text, task_type=task_type, sensitivity=level, check=check)
+        cats = [t for t in (touches if isinstance(touches, list) else []) if isinstance(t, str) and t in self.profile.categories()]  # the owner's own category names: the only words a confidential request may research with
+        kinds = load_kinds()
+        eff = list(touches) if isinstance(touches, list) else ([] if touches is None else [touches])
+        if inputs:  # what the harness will read also touches the owner's categories (data, per kind): the level is derived from all of them
+            eff += [c for i in inputs if isinstance(i, dict) for c in kinds.get(i.get("kind"), {}).get("categories", [])]
+        level, res = self._level_or_question(ch, text, task_type, eff, check, domain, cats, inputs)
+        return res if level is None else self._create(ch, text=text, task_type=task_type, sensitivity=level, check=check, domain=domain, categories=cats, inputs=inputs)
 
-    def _create(self, ch, *, text: str, task_type: str, sensitivity: str, check: dict | None = None) -> dict:
+    def _create(self, ch, *, text: str, task_type: str, sensitivity: str, check: dict | None = None, domain=None, only_env: str | None = None, categories=None, inputs=None, held: dict | None = None, offered: bool = False) -> dict:
         self._stale_credentials()
         task_id = "t-" + secrets.token_hex(4)
         if not isinstance(text, str) or not text.strip() or len(text) > MAX_TEXT:
@@ -242,10 +322,24 @@ class Services(ProfileTools):
             if len(json.dumps(check, default=str)) > MAX_CHECK:
                 return self._out(False, S.TASK_REFUSED.format(task_id=task_id, reason="the check is too large"))
             spec = dict(check)
+        if inputs and held is None and not (ch.cloud and set(categories or []) & set(self.profile.get("confidential"))):  # a cloud chat that itself says the task is confidential still gets the router's refusal; otherwise the harness carries the inputs
+            return self.chain_task(ch, text=text, task_type=str(task_type), sensitivity=sensitivity, check=check, domain=domain, categories=categories, inputs=inputs)
+        if only_env is None and held is None and not knows_task_type(self.envs, str(task_type)) and sensitivity in ("public", "internal", "confidential"):
+            return self.recommend(ch, text=text, description=str(task_type), domain=domain, sensitivity=sensitivity, check=check, categories=categories)  # no catalog type names this work: protocol-recommend, not a dead end
+        tags = normalize_domain(domain, None) if domain else []
+        if tags is None:
+            return self._out(False, S.TASK_REFUSED.format(task_id=task_id, reason=RC.REC_BAD_DOMAIN))
+        if not offered and only_env is None and held is None:
+            asked = self._clearance_offer(ch, args={"text": text, "task_type": task_type, "sensitivity": sensitivity, "check": check, "domain": domain, "categories": categories, "inputs": inputs}, task_type=str(task_type)[:40], sensitivity=sensitivity, tags=tags)
+            if asked is not None:
+                return asked
         chat = self._chat(ch)
         ref = f"payload:{task_id}"
         self.payloads[ref] = text
-        task = Task(task_id=task_id, task_type=str(task_type)[:40], sensitivity=sensitivity if isinstance(sensitivity, str) else None, entry_chat=chat, created_by="OWNER", payload_ref=ref)
+        others = [r.node_id for r in self.coord.registry.all() if held and r.node_id != held["machine"]]  # a task on a computer the owner named: every other computer is out
+        pin = Exclude(environment_ids=sorted(k for k in self.envs if k != only_env)[:64] if only_env else [], machine_ids=others[:64]) if (only_env or others) else None  # the owner chose this environment: the rule still picks the access and the machine
+        task = Task(task_id=task_id, task_type=str(task_type)[:40], sensitivity=sensitivity if isinstance(sensitivity, str) else None, entry_chat=chat, created_by="OWNER", payload_ref=ref, domain=tags, exclude=pin,
+                    held_inputs=list(held["ids"]) if held else [])
         res = self.router.explain(task)
         data = self._explain_data(res, task_type=task.task_type, sensitivity=task.sensitivity, chat=chat)
         if isinstance(res, Refusal):
@@ -256,8 +350,9 @@ class Services(ProfileTools):
         plan_hash = "sha256:" + _digest(task_id, res.route.key, res.effective_sensitivity, spec and spec.get("kind"), spec and _digest(spec.get("value"), spec.get("files")))
         pending = self.coord.harness.request_confirmation(
             None, summary=f"Run task {task_id} ({task.task_type}, {res.effective_sensitivity}) on {self._key_text(res.route.key)}?", plan_hash=plan_hash,
-            command=f"run it there (evidence: {res.evidence_label}{', provisional' if res.provisional else ''})", undo="nothing to undo: it works in a folder that is deleted when it ends", sensitivity=res.effective_sensitivity)
-        self.tasks[task_id] = {"task": task, "check": spec, "plan_hash": plan_hash, "approved_route": res.route.key, "attempts": [], "intent_id": pending.intent.id}
+            command=self._run_command(res, bool(spec)), undo="nothing to undo: it works in a folder that is deleted when it ends", sensitivity="internal" if held else res.effective_sensitivity, kind="task_run")  # the question names the route, never the held input
+        self.tasks[task_id] = {"task": task, "check": spec, "plan_hash": plan_hash, "approved_route": res.route.key, "attempts": [], "intent_id": pending.intent.id,
+                               "mask": sorted({n for h in (held["ids"] if held else []) for n in self.held[h]["names"]}, key=len, reverse=True), "answer_travels": bool(held) and all(self.held[h]["answer_travels"] for h in held["ids"])}
         if spec:
             self.router.set_grader(task_id, spec)
         self._job(task_id, "task", "awaiting_approval", intent_id=pending.intent.id, sensitivity=res.effective_sensitivity, data=data)
@@ -268,8 +363,15 @@ class Services(ProfileTools):
             check_line = S.CHECK_SET.format(kind=spec["kind"])
             if spec["kind"] in grading.EXECUTING_KINDS:  # the answer comes back as text; any code in it runs only in this computer's sandbox, never on the machine that answered
                 check_line += " " + (S.CHECK_SANDBOX if self.router.sandbox_ready() else S.CHECK_NO_SANDBOX).format(machine=self._name(res.route.machine_id))
-        return self._out(True, S.TASK_CREATED.format(task_id=task_id, task_type=task.task_type, sensitivity=res.effective_sensitivity, route_line=route_line, intent_id=pending.intent.id, check_line=check_line)
-                         + "\n" + S.TEXT_RECEIVED.format(n=len(text), tail=" ".join(text.split())[-50:]) + "\n" + self._explain_text(data), task_id=task_id, intent_id=pending.intent.id, **data)
+        return self._out(True, S.TASK_CREATED.format(task_id=task_id, task_type=task.task_type, sensitivity=res.effective_sensitivity, route_line=route_line, intent_id=pending.intent.id, answer=self.coord.harness.answer_how(pending.intent.id), what=self._run_command(res, bool(spec)), check_line=check_line)
+                         + "\n" + S.TEXT_RECEIVED.format(n=len(held["chat_text"] if held else text), tail=" ".join((held["chat_text"] if held else text).split())[-50:]) + "\n" + self._explain_text(data), task_id=task_id, intent_id=pending.intent.id, **data)
+
+    def _run_command(self, res: RouteDecision, has_check: bool) -> str:
+        """What the owner is told runs, where, and how many calls it can make (the question's text): the route, its place (a computer, or the cloud), the calls, and what a failed check may add."""
+        entry = self.envs[res.route.environment_id]
+        where = f"on {self._name(res.route.machine_id)}, " + ("leaving your computers (cloud)" if E.is_cloud(entry, res.route.access_id) else "staying on your computers")
+        more = f" If its code check fails the rule may try up to {self.policy.max_escalation} more routes, each one a further call that you are told of." if has_check else " No code check was given, so there is one call and nothing escalates."
+        return f"1 call to {self._key_text(res.route.key)}, {where}, in a folder deleted afterwards (evidence: {res.evidence_label}{', provisional' if res.provisional else ''}).{more}"
 
     def _approved(self, task_id: str, ok: bool) -> None:
         job = self.jobs[task_id]
@@ -306,6 +408,7 @@ class Services(ProfileTools):
                 attempt = {"step": decision.escalation_step, "route": decision.route.key, "state": rec.status, "reason": rec.reason or None, "graded": None}
                 st["attempts"].append(attempt)
                 if rec.status == "done":
+                    attempt["proof"] = self._proof_of(rec.result)
                     out = self.router.result_of(handle)
                     attempt["output_ref"] = out["output_ref"]
                     job.data["output"] = self.outputs.get(out["output_ref"]).text
@@ -329,21 +432,47 @@ class Services(ProfileTools):
         except Exception as exc:  # noqa: BLE001 - a job that cannot go on says so; it never takes the coordinator down
             job.state, job.text = "failed", f"The run stopped: {type(exc).__name__}."
 
+    @staticmethod
+    def _mask(text: str, names: list[str]) -> str:
+        """Every name from a held listing, wherever the answer repeats it (any case), replaced: the longest first, so a name inside a longer one is not left half visible."""
+        import re
+        for n in names:
+            text = re.sub(re.escape(n), CS.WITHHELD, text, flags=re.I)
+        return text
+
+    @staticmethod
+    def _proof_of(result: dict) -> dict:
+        """What the node recorded about a run, checked by the coordinator before it is shown (it never writes one): {ok, why, line, summary}. `summary` is the verified part that may be kept in an event."""
+        proof = result.get("proof")
+        ok, why = E.verify_proof(proof, str(result.get("output_text", "")))
+        api = (proof.get("api") or {}) if ok else {}
+        return {"ok": ok, "why": why, "line": E.proof_line(proof or {}, ok, why),
+                "summary": ({"node_host": proof["node_host"], "started_at": proof["started_at"], "ended_at": proof["ended_at"], "response_id": api.get("response_id"), "model_returned": api.get("model"),
+                             "model_requested": proof.get("model_requested"), "usage": api.get("usage"), "bytes_sent": proof["bytes_sent"], "bytes_received": proof["bytes_received"]} if ok else None)}
+
     def job_status(self, ch, job_id: str) -> dict:
         job = self.jobs.get(job_id)
         if job is None:
-            return self._out(False, S.STATUS_UNKNOWN.format(job_id=job_id))
+            rs = self.run_status(job_id)
+            return self._out(True, rs["text"], job_id=job_id, state=rs["state"], waiting=rs["waiting"]) if rs is not None else self._out(False, S.STATUS_UNKNOWN.format(job_id=job_id))
         lines = [S.JOB_STATE.format(job_id=job.id, kind=job.kind, state=job.state)]
         if job.text:
             lines.append(job.text)
         if job.intent_id and job.state in ("awaiting_approval", "awaiting_owner"):
-            lines.append(f"Waiting for you: call mas_request_approval with intent_id {job.intent_id}.")
+            lines.append(f"Waiting for you: {self.coord.harness.answer_how(job.intent_id)}.")
         st = self.tasks.get(job.id)
         if st:
             for a in st["attempts"]:
                 lines.append(f"Step {a['step']}: {self._key_text(a['route'])}: {a['state']}" + (f" ({a['reason']})" if a["reason"] else "") + (f", code check {'passed' if a['graded'] else 'failed'}" if isinstance(a["graded"], bool) else ""))
+                if a.get("proof"):
+                    lines.append("  " + a["proof"]["line"])
         data = {k: v for k, v in job.data.items() if k != "output"}
-        if "output" in job.data:
+        if "output" in job.data and st and st.get("answer_travels"):  # a task whose level came from inputs the harness holds: the ANSWER comes back, with every name from the listing masked, and the route that produced it
+            masked = self._mask(job.data["output"], st["mask"])
+            route = self._key_text(st["attempts"][-1]["route"]) if st["attempts"] else "the route the owner approved"
+            lines.append(CS.ANSWER_HEAD.format(route=route) + "\n" + masked[:6000])
+            data["output"] = masked
+        elif "output" in job.data:
             shown = filter_outbound({"kind": "text", "actor": "GUARD", "sensitivity": job.sensitivity, "payload": {"output": job.data["output"], "task_id": job.id},
                                      "text_fallback": job.data["output"]}, {"kind": "cloud" if ch.cloud else "local", "name": ch.name}, outbound_policy=self.policy.outbound)
             if shown.get("redacted"):
@@ -382,10 +511,10 @@ class Services(ProfileTools):
         aid = pending["id"]
         plan_hash = "sha256:" + hashlib.sha256(aid.encode()).hexdigest()
         conf = self.coord.harness.request_confirmation(None, summary=pending["text"], plan_hash=plan_hash, command=f"run the {suite.suite_id} exam on {self._key_text(r.key)}",
-                                                       undo="nothing to undo: it only records a measurement", sensitivity="public")
+                                                       undo="nothing to undo: it only records a measurement", sensitivity="public", kind="admission")
         self._job(aid, "admission", "awaiting_owner", intent_id=conf.intent.id, sensitivity="public", data={"combo": combo.key, "suite": suite.suite_id, "suite_hash": suite.hash})
         conf.future.add_done_callback(lambda f, a=aid, c=combo, s=suite, ph=plan_hash, chn=ch.name: self._admission_decided(a, c, s, ph, chn, f.result()))
-        return self._out(True, S.ADMISSION_ASK.format(text=pending["text"], intent_id=conf.intent.id), job_id=aid, intent_id=conf.intent.id, combo=combo.key)
+        return self._out(True, S.ADMISSION_ASK.format(text=pending["text"], answer=self.coord.harness.answer_how(conf.intent.id)), job_id=aid, intent_id=conf.intent.id, combo=combo.key)
 
     def _admission_decided(self, aid: str, combo: Combo, suite, plan_hash: str, channel: str, ok: bool) -> None:
         job = self.jobs[aid]
@@ -412,6 +541,11 @@ class Services(ProfileTools):
             label = self.store.view(combo, suite, out.threshold).label
             job.state, job.text = "done", S.ADMISSION_DONE.format(environment=combo.environment_id, task_type=combo.task_type, label=label)
             job.data["passed"], job.data["of"], job.data["admitted"] = out.passed, out.of, out.admitted
+            replies = [e.payload for e in self.coord.log.events("admission_reply") if e.payload.get("fact") == combo.key]  # what the node recorded for each prompt of this exam (verified before it was kept)
+            proofs = [p_["proof"] for p_ in replies if p_.get("proof")]
+            job.data["node_proofs"] = {"replies": len(replies), "with_proof": len(proofs), "hosts": sorted({p_["node_host"] for p_ in proofs}), "models_returned": sorted({p_["model_returned"] for p_ in proofs if p_.get("model_returned")})}
+            job.text += " " + S.ADMISSION_PROOFS.format(with_proof=len(proofs), replies=len(replies), hosts=", ".join(job.data["node_proofs"]["hosts"]) or "none",
+                                                        models=", ".join(job.data["node_proofs"]["models_returned"]) or "none reported")
         except ExamAborted as exc:
             job.state, job.text = "aborted", S.ADMISSION_ABORTED.format(environment=combo.environment_id, task_type=combo.task_type, reason=exc.reason)
         except AdmissionRefusal as exc:
@@ -421,16 +555,25 @@ class Services(ProfileTools):
         task = Task(task_id=f"{aid}:{suite_task}", task_type=combo.task_type, sensitivity="public", entry_chat=EntryChat(kind="local", name="admission"), created_by="OWNER", payload_ref="admission")
         route = Route(environment_id=combo.environment_id, subtype=self.envs[combo.environment_id]["subtype"], model_id=combo.model_id, access_id=combo.access_id, machine_id=combo.machine_id)
         t0 = time.monotonic()
-        handle = self.router.run_prompt(task, route, prompt)
-        if isinstance(handle, Refusal):
-            raise RunnerAborted(handle.code)
-        rec = self.coord.tasks.tasks[handle.node_task_id]
-        try:
-            await asyncio.wait_for(rec.done.wait(), timeout_s + 60)
-        except TimeoutError:
-            return Reply("", time.monotonic() - t0, timed_out=True)
+        for attempt in range(BUSY_RETRIES + 1):
+            handle = self.router.run_prompt(task, route, prompt)
+            if isinstance(handle, Refusal):
+                if handle.code == "busy" and attempt < BUSY_RETRIES:
+                    await asyncio.sleep(BUSY_WAIT_S)  # the node was still finishing something of its own: asking again a moment later is not the model's failure and not a reason to end the exam
+                    continue
+                raise RunnerAborted(handle.code)
+            rec = self.coord.tasks.tasks[handle.node_task_id]
+            try:
+                await asyncio.wait_for(rec.done.wait(), timeout_s + 60)
+            except TimeoutError:
+                await self.coord.tasks.cancel(handle.node_task_id)  # the environment is still thinking: stop waiting for it AND free its place on the node, so the next prompt of the exam is not turned away as busy
+                return Reply("", time.monotonic() - t0, timed_out=True)
+            if rec.reason == "busy" and attempt < BUSY_RETRIES:
+                await asyncio.sleep(BUSY_WAIT_S)  # the node was still finishing something of its own: asking again a moment later is not the model's failure and not a reason to end the exam
+                continue
+            break
         if rec.status == "done":
-            return Reply(str(rec.result.get("output_text", "")), time.monotonic() - t0)
+            return Reply(str(rec.result.get("output_text", "")), time.monotonic() - t0, proof=self._proof_of(rec.result)["summary"])
         if rec.reason in ("node_offline", "no_owner_origin", "busy", "sandbox_missing", "not_installed", "access_missing", "unknown_environment", "stale_recipe"):
             raise RunnerAborted(rec.reason)  # the exam's problem, not the model's: nothing is counted
         return Reply("", time.monotonic() - t0, timed_out=rec.status == "timed_out")  # the environment failed on this prompt: the model's failure, counted as one
@@ -453,9 +596,9 @@ class Services(ProfileTools):
                 return self._out(False, S.DRAFT_NOTHING_PROPOSED)
             plan_hash = "sha256:" + _digest(cur)
             pending = self.coord.harness.request_confirmation(None, summary=S.DRAFT_APPROVE_SUMMARY.format(machines=len(cur.get("machines", []))), plan_hash=plan_hash,
-                                                              command="make this the draft in force (it opens or closes subtypes per machine for the router)", undo="the owner can correct it and approve a new round")
+                                                              command="make this the draft in force (it opens or closes subtypes per machine for the router)", undo="the owner can correct it and approve a new round", kind="draft_approve")
             pending.future.add_done_callback(lambda f, rid=cur["run"]: f.result() and self.coord.approve_draft(rid, "owner"))
-            return self._out(True, S.DRAFT_ASK.format(intent_id=pending.intent.id), intent_id=pending.intent.id, run_id=cur["run"])
+            return self._out(True, S.DRAFT_ASK.format(answer=self.coord.harness.answer_how(pending.intent.id)), intent_id=pending.intent.id, run_id=cur["run"])
         return self._out(False, S.DRAFT_BAD_ACTION)
 
     # ---- what has been measured: every admission fact for a task type, ranked by the written rule's own order, and nothing else --------------------------------------------------
@@ -651,9 +794,9 @@ class Services(ProfileTools):
             return self._out(False, S.BOARD_WITHHELD)
         plan_hash = d["hash"]
         pending = self.coord.harness.request_confirmation(None, summary=d["summary"], plan_hash=plan_hash, command="approve exactly this on the board", undo="the board shows what it did and how to stop it",
-                                                          sensitivity=b["sensitivity"])
+                                                          sensitivity=b["sensitivity"], kind="board")
         pending.future.add_done_callback(lambda f, bid=board_id, did=decision_id, ph=plan_hash: self._board_decided(bid, did, ph, f.result()))
-        return self._out(True, S.BOARD_ASK.format(summary=d["summary"], intent_id=pending.intent.id), board_id=board_id, decision_id=decision_id, intent_id=pending.intent.id)
+        return self._out(True, S.BOARD_ASK.format(summary=d["summary"], answer=self.coord.harness.answer_how(pending.intent.id)), board_id=board_id, decision_id=decision_id, intent_id=pending.intent.id)
 
     def _board_decided(self, board_id: str, decision_id: str, plan_hash: str, ok: bool) -> None:
         b = self.boards[board_id]
@@ -673,12 +816,14 @@ class Services(ProfileTools):
             props = t["inputSchema"]["properties"]
             if t["name"] in ("mas_add_access", "mas_remove_access") and "access" in props:
                 props["access"] = {**props["access"], "enum": accesses}
+            if t["name"] == "mas_create_task" and "inputs" in props:
+                props["inputs"] = {**props["inputs"], "items": {**props["inputs"]["items"], "properties": {**props["inputs"]["items"]["properties"], "kind": {"type": "string", "enum": sorted(load_kinds())}}}}
             if t["name"] == "mas_create_task":
-                props["task_type"] = {**props["task_type"], "enum": types}
+                props["task_type"] = {**props["task_type"], "description": props["task_type"]["description"] + " Catalog types now: " + ", ".join(types) + "."}  # a free description is allowed: it is never squeezed into one of these
                 props["touches"] = {**props["touches"], "items": {"type": "string", "enum": [*self.profile.categories(), "none", "unsure"]}}
         return tools
 
-    TOOLS = ("create_task", "explain_route", "run_admission", "job_status", "add_access", "remove_access", "board_start", "board_show", "board_approve", "measurements", "draft", "profile_tool", "propose", "cancel")
+    TOOLS = ("create_task", "explain_route", "run_admission", "job_status", "add_access", "remove_access", "board_start", "board_show", "board_approve", "measurements", "draft", "profile_tool", "propose", "cancel", "install_tool", "refresh_models", "measure_recommender")
 
     def call(self, ch, name: str, args: dict) -> dict:
         """The tool door: a registered tool, its arguments as the chat sent them. The channel is the token's, and `args` can never carry the entry chat."""

@@ -63,6 +63,8 @@ def authorize(params: T.EnvironmentRunParams, token: dict, ctx: dict) -> tuple[d
     if adapter.get("base_url"):  # an API access names its own https address in the data; it takes no endpoint from the coordinator and no model server of ours
         if params.endpoint:
             raise T.TokenRejected("bad_parameters")
+        if adapter.get("models_list") and params.model_id and not E.listed_model_ok(entry, params.access_id, params.model_id):
+            raise T.TokenRejected("bad_parameters")  # the model must be one the data accepts as a chat model of this API
     elif params.endpoint or E.uses_local_endpoint(entry, params.access_id):
         try:
             E.parse_endpoint(params.endpoint or "")  # N5: the model server of this node is a loopback literal, whatever the coordinator says
@@ -73,10 +75,56 @@ def authorize(params: T.EnvironmentRunParams, token: dict, ctx: dict) -> tuple[d
     if mode.get("confinement") in E.NEEDS_SANDBOX and not _backends(ctx):
         raise T.TokenRejected("sandbox_missing")
     if adapter.get("kind") == "cli":
-        find = ctx.get("find_exe") or procs.find_exe
+        find = finder(ctx)
         if not find(adapter["exe"][fam]):
             raise T.TokenRejected("not_installed")
     return entry, mode
+
+
+def finder(ctx: dict):
+    """How this node finds a program: on its PATH first, then among the tools it installed itself (`<mas>/tools/*/.mas-exe.json` says which file answers to which name)."""
+    base = ctx.get("find_exe") or procs.find_exe
+
+    def find(name: str) -> str | None:
+        got = base(name)
+        if got or ctx.get("mas_home") is None:
+            return got
+        for rec in sorted((Path(ctx["mas_home"]) / "tools").glob("*/.mas-exe.json")):
+            try:
+                doc = json.loads(rec.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            target = rec.parent / str(doc.get("binary", ""))
+            if doc.get("exe") == name and target.is_file():
+                return str(target)
+        return None
+    return find
+
+
+def list_models(params: T.ModelListParams, ctx: dict) -> tuple[dict, list[dict]]:
+    """One GET of the models an API lists, using the credential this computer holds BY NAME. The address, path and credential name are the catalog's data on this node; nothing comes from the task but the
+    environment and access. The result is the public list (bytes capped); the key is never returned or logged."""
+    entry = (ctx.get("envs") or {}).get(params.environment_id)
+    adapter = E.adapter_of(entry, params.access_id) if entry else {}
+    ml = adapter.get("models_list")
+    if not ml or not adapter.get("base_url"):
+        raise EnvFailed("unknown_environment", "this environment has no list of models to read")
+    headers: dict[str, str] = {}
+    auth = adapter.get("auth") or {}
+    if auth:
+        value = _secret(ctx, auth["env_name"])
+        if value is None:
+            raise EnvFailed("access_missing", f"access missing: {auth['env_name']}")
+        headers[auth.get("header", "Authorization")] = f"{auth.get('scheme', 'Bearer')} {value}".strip()
+    try:
+        with httpx.Client(timeout=float(ml.get("timeout_s", 30)), transport=ctx.get("transport")) as c:
+            r = c.get(str(adapter["base_url"]).rstrip("/") + ml["path"], headers=headers)
+    except httpx.HTTPError as exc:
+        raise EnvFailed("environment_failed", type(exc).__name__) from None
+    if r.status_code != 200:
+        raise EnvFailed("environment_failed", f"HTTP {r.status_code}")
+    body = r.content[: int(ml.get("max_bytes", 400_000))]
+    return {"status": 200, "body": body.decode("utf-8", "replace"), "bytes": len(body), "sha256": hashlib.sha256(body).hexdigest(), "url": str(adapter["base_url"]).rstrip("/") + ml["path"]}, [{"provider": "httpx", "tool": "GET models"}]
 
 
 def _snapshot(root: Path, skip: str) -> dict[str, tuple[int, int]]:
@@ -159,6 +207,7 @@ def run_environment(params: T.EnvironmentRunParams, entry: dict, mode: dict, ctx
         sandboxed = mode["confinement"] in E.NEEDS_SANDBOX
         values = {"workspace": "/work" if sandboxed else str(ws), "model": params.model_id or "", "endpoint": params.endpoint or ""}  # inside a sandbox the tool sees the workspace where the backend mounts it
         text = params.input_text
+        started = (ctx.get("wall") or time.time)()  # the node's own clock
         run: dict[str, Any]
         if adapter["kind"] == "http_chat":
             run = _http_chat(params, adapter, ctx)
@@ -183,7 +232,7 @@ def run_environment(params: T.EnvironmentRunParams, entry: dict, mode: dict, ctx
             env.update({k: E.expand(v, values) for k, v in extra.items()})
             prompt_arg = "Task:\n" + text  # a leading dash can never be read as a flag
             argv = [E.expand(a, {**values, "prompt": prompt_arg}) for a in mode["argv"]]
-            find = ctx.get("find_exe") or procs.find_exe
+            find = finder(ctx)
             exe = find(adapter["exe"][fam]) or adapter["exe"][fam]
             full = [exe] + argv
             if sandboxed:
@@ -207,10 +256,16 @@ def run_environment(params: T.EnvironmentRunParams, entry: dict, mode: dict, ctx
         if run["exit"] != 0:
             raise EnvFailed("environment_failed", f"it ended with exit code {run['exit']}: {run['stderr'].strip()[-160:]}")
         files = _list_files(ws, {".home", ".last-message.txt"}, limits)
+        shown = answer[: int(limits["max_output_chars"])]
+        proof = {"recorded_by": "node", "node_host": envrec_os.card()["hostname"], "started_at": round(started, 3), "ended_at": round((ctx.get("wall") or time.time)(), 3), "wall_s": run["duration_s"],
+                 "environment": entry["id"], "access": params.access_id, "model_requested": params.model_id, "api": run.get("api"), "bytes_sent": run.get("bytes_sent", len(text.encode())),
+                 "bytes_received": run.get("bytes_received", len(str(run.get("stdout", "")).encode())), "input_sha256": hashlib.sha256(text.encode()).hexdigest(), "output_sha256": hashlib.sha256(shown.encode()).hexdigest()}
+        proof["digest"] = E.proof_digest(proof)
         result = {"environment": entry["id"], "mode": mode["name"], "confinement": mode["confinement"], "sandboxed": sandboxed, "exit_code": run["exit"], "duration_s": run["duration_s"],
-                  "output_text": answer[: int(limits["max_output_chars"])], "files": files, "notes": notes}
+                  "output_text": shown, "files": files, "notes": notes, "proof": proof}
         evidence = [{"provider": entry["id"], "tool": "exit code", "status": "tested"}, {"provider": "envrec_node.envrun", "tool": "workspace listing", "status": "tested",
                     "limitations": ["the check for writes outside the workspace is detective and covers the folder of workspaces only"]},
+                    {"provider": "envrec_node.envrun", "tool": "proof of execution", "status": "tested", "limitations": ["written by this node inside its signed reply: its clock, its host name, the API's own answer fields, the bytes it sent and received"]},
                     {"provider": entry["id"], "tool": "model output", "status": "hypothesis", "limitations": ["the text is the environment's own; nothing graded it here"] + notes}]
         return result, evidence
     finally:
@@ -254,9 +309,14 @@ def _http_chat(params: T.EnvironmentRunParams, adapter: dict, ctx: dict) -> dict
             r = c.post(url, json=body, headers=headers)
         if r.status_code != 200:
             raise EnvFailed("environment_failed", f"HTTP {r.status_code}")
-        answer = str(r.json()["choices"][0]["message"]["content"]).strip()
+        doc = r.json()
+        answer = str(doc["choices"][0]["message"]["content"]).strip()
+        usage = doc.get("usage") if isinstance(doc.get("usage"), dict) else {}
+        api = {"response_id": str(doc.get("id"))[:120] if doc.get("id") is not None else None, "model": str(doc.get("model"))[:160] if doc.get("model") is not None else None,
+               "usage": {k: usage[k] for k in ("prompt_tokens", "completion_tokens", "total_tokens") if isinstance(usage.get(k), int)} or None}
+        sent, received = len(json.dumps(body).encode()), len(r.content)
     except httpx.HTTPError as exc:
         raise EnvFailed("environment_failed", type(exc).__name__) from None
     except (ValueError, KeyError, IndexError, TypeError):
         raise EnvFailed("environment_failed", "the answer did not have the agreed form") from None
-    return {"exit": 0, "stdout": answer, "stderr": "", "timed_out": False, "duration_s": round(ctx.get("clock", time.monotonic)() - t0, 2)}
+    return {"exit": 0, "stdout": answer, "stderr": "", "timed_out": False, "duration_s": round(ctx.get("clock", time.monotonic)() - t0, 2), "api": api, "bytes_sent": sent, "bytes_received": received}

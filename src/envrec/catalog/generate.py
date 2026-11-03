@@ -107,7 +107,8 @@ def generate(manifest: Manifest, meta: MetadataSource, rules: Rules | None = Non
         if src.get("status") != "approve":
             continue
         only = {r.lower() for r in src.get("repos", [])}  # a source may name the repos it approves (a quantizer is approved for the one model, not for everything it publishes)
-        for repo in meta.model_repos(src["author"]):
+        listing = [meta.model_repo(r) for r in src["repos"]] if src.get("repos") and hasattr(meta, "model_repo") else meta.model_repos(src["author"])  # named repos are read one by one
+        for repo in listing:
             name = repo["repo"]
             if only and name.lower() not in only:
                 continue

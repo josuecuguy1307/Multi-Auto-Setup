@@ -223,6 +223,65 @@ def cmd_task_list(a) -> int:
     return 0
 
 
+def cmd_runs(a) -> int:
+    """Read-only: every run and job the coordinator knows, newest last: so a run is followed from a terminal without opening a protected folder."""
+    from envrec_coordinator.control import control_dir, read_json
+    d = read_json(control_dir(_state(a) / "coordinator") / "runs.json")
+    if d is None:
+        print("The coordinator is not running here, or nothing has run yet.", file=sys.stderr)
+        return 1
+    print(f"{'ID':<14} {'KIND':<18} {'STATE':<22} WHAT")
+    for r in d.get("runs", []):
+        print(f"{r['id']:<14} {r['kind'] + ' run':<18} {r['status']:<22} {r['node']}" + (f": {r['reason'][:90]}" if r.get("reason") else ""))
+    for j in d.get("jobs", []):
+        print(f"{j['id']:<14} {j['kind']:<18} {j['state']:<22} {(j.get('text') or '').splitlines()[0][:100] if j.get('text') else ''}")
+    return 0
+
+
+def cmd_config(a) -> int:
+    """Show or set the owner's verbosity (brief, normal, detailed): the profile's `verbosity` field, the same place the chat's question and the panel write to. Presentation only; typed by the owner at his terminal."""
+    from envrec_coordinator.profile import Profile, ProfileError
+    from envrec_harness.formatter import LEVELS
+    from envrec_mas import strings as S
+    prof = Profile(_state(a) / "coordinator" / "profile.json")
+    old = prof.get("verbosity")
+    if a.setting is None:
+        print(S.CONFIG_SHOW.format(level=old))
+        return 0
+    if a.setting != "verbosity" or a.value is None:
+        print(S.CONFIG_BAD.format(levels=", ".join(LEVELS)), file=sys.stderr)
+        return 2
+    try:
+        prof.set("verbosity", a.value, by="owner")
+    except ProfileError:
+        print(S.CONFIG_BAD.format(levels=", ".join(LEVELS)), file=sys.stderr)
+        return 2
+    print(S.CONFIG_SET.format(level=a.value))
+    print(S.CONFIG_UNDO.format(old=old))
+    return 0
+
+
+def cmd_run(a) -> int:
+    """Read-only: one run or job in full: its state, its reason, and for a run every recorded step with who acted (MODEL, GUARD, SCRIPT, OWNER)."""
+    from envrec_coordinator.control import control_dir, read_json
+    state = _state(a)
+    d = read_json(control_dir(state / "coordinator") / "runs.json") or {}
+    hit = next((x for x in d.get("runs", []) if x["id"].startswith(a.id)), None) or next((x for x in d.get("jobs", []) if x["id"].startswith(a.id)), None)
+    if hit is None:
+        print(f"No run or job matches {a.id!r}. See `mas runs`.", file=sys.stderr)
+        return 1
+    print(json.dumps({k: v for k, v in hit.items()}, indent=1, default=str))
+    store_dir = state / "coordinator" / "runs" / hit["id"]
+    if store_dir.is_dir() and (store_dir / "envrec.db").is_file():
+        from envrec.store import Store
+        with Store(store_dir) as st:
+            events = [e for e in st.events() if e.type not in ("model_call", "view")][-60:]
+            print(f"\nLast {len(events)} steps:")
+            for e in events:
+                print(f"  [{e.effective_tag}] {e.type} {json.dumps(e.payload, default=str)[:140]}")
+    return 0
+
+
 def connect_session(core, goal: str, host: str | None, *, read, write, wait: float = 8.0) -> int:
     """`mas connect` / `mas disconnect` at the owner's terminal: start the run, show the plan as text, ask the closed question, and for every write show it and take the owner's typed `yes` as the answer. The typed answer
     is the owner's gesture (the terminal is their own); a script cannot give it. Returns 0 when the run ended done or rolled back."""
@@ -245,9 +304,13 @@ def connect_session(core, goal: str, host: str | None, *, read, write, wait: flo
                 core.decide(i["id"], read("Your answer: ").strip())
             elif kind == "confirm" and i.get("state") == "pending":
                 write(i["text_fallback"])
-                yes = read("Approve this step? Type yes to approve, anything else to decline: ").strip().lower() == "yes"
-                b = core.begin_confirmation(i["id"], "cli_typed")
-                core.complete_confirmation(b["ticket"], b["plan_hash"], "accept" if yes else "decline")
+                whole = bool(i["payload"].get("chat_choice"))  # approval-policy.json: a whole plan is ONE question (the owner's typed yes at his own terminal answers it); a single step keeps its typed confirmation
+                yes = read(f"Approve this {'plan' if whole else 'step'}? Type yes to approve, anything else to decline: ").strip().lower() == "yes"
+                if whole:
+                    core.decide(i["id"], "approve" if yes else "reject")
+                else:
+                    b = core.begin_confirmation(i["id"], "cli_typed")
+                    core.complete_confirmation(b["ticket"], b["plan_hash"], "accept" if yes else "decline")
         if out["run"]["finished"] and not out["waiting"]:
             break
     write(f"The run ended: {status}.")
@@ -428,7 +491,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--state-dir", default=None, help="where keys, pins and the log live (default: the operating system's usual place, from the os-state-paths skill)")
     p.add_argument("--log-file", default=None, help="append everything this command prints to this file (what a service uses)")
     p.add_argument("--version", action="version", version=_version_text())
-    sub = p.add_subparsers(dest="cmd", required=True)
+    sub = p.add_subparsers(dest="cmd")  # no command: the first-run menu at a terminal, plain help otherwise
     coord = sub.add_parser("coordinator", help="the coordinator").add_subparsers(dest="sub", required=True)
     c = coord.add_parser("start", help="listen on one port")
     ri = coord.add_parser("rotate-identity", help="make a new coordinator identity (every node must pair again)")
@@ -443,6 +506,14 @@ def main(argv: list[str] | None = None) -> int:
     pr.add_argument("--code", default=None, help="the code (prefer typing it when asked: it stays out of your shell history)")
     pr.add_argument("--name", default=None, help="the name this node shows the owner (default: its host name)")
     pr.set_defaults(fn=lambda a: cmd_pair_node(a) if (a.address or a.coordinator) else cmd_pair_coordinator(a))
+    sub.add_parser("runs", help="read-only: the runs and jobs the coordinator knows and what state each is in").set_defaults(fn=cmd_runs)
+    cf = sub.add_parser("config", help="show or set how much detail is shown: mas config verbosity brief|normal|detailed")
+    cf.add_argument("setting", nargs="?", default=None)
+    cf.add_argument("value", nargs="?", default=None)
+    cf.set_defaults(fn=cmd_config)
+    rr = sub.add_parser("run", help="read-only: one run or job in full, step by step")
+    rr.add_argument("id")
+    rr.set_defaults(fn=cmd_run)
     sub.add_parser("waiting", help="computers that found this coordinator and wait for the owner to pair them").set_defaults(fn=cmd_waiting)
     cn = sub.add_parser("connect", help="connect a chat you already use (Open WebUI, Claude Desktop, a terminal agent); you see the plan and approve each step")
     cn.add_argument("host", nargs="?", default=None, help="openwebui, claude-desktop, claude-code, codex, opencode or muse-code; without it you are asked which of the chats found here")
@@ -496,6 +567,13 @@ def main(argv: list[str] | None = None) -> int:
     fg.add_argument("--yes", action="store_true", help="answer yes to the question that was shown")
     fg.set_defaults(fn=lifecycle.cmd_forget)
     a = p.parse_args(argv)
+    if a.cmd is None:
+        from envrec_mas import menu
+        from envrec_style import term
+        code = menu.main_for_terminal(_state(a), ["--state-dir", a.state_dir] if a.state_dir else [])
+        if code == 2:  # no terminal to answer on: say what `mas` can do and never wait for input
+            print(term.plain_text() + "\n\n" + p.format_help())
+        return code
     if a.log_file:
         _redirect_output(Path(a.log_file))
     return a.fn(a)

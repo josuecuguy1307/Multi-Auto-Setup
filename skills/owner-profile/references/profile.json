@@ -6,13 +6,34 @@
    "kind": "multi",
    "question": "What counts as confidential for you? Tasks that touch any of these never leave your own computers. Pick all that apply.",
    "options": [
-    {"id": "personal", "label": "Personal data about people (names, addresses, ID numbers)"},
-    {"id": "health", "label": "Health information"},
-    {"id": "finance", "label": "Money: accounts, invoices, payroll"},
-    {"id": "legal", "label": "Legal documents and contracts"},
-    {"id": "credentials", "label": "Passwords, keys and tokens"},
-    {"id": "source_code", "label": "Private source code"},
-    {"id": "business", "label": "Business or client documents"}
+    {
+     "id": "personal",
+     "label": "Personal data about people (names, addresses, ID numbers)"
+    },
+    {
+     "id": "health",
+     "label": "Health information"
+    },
+    {
+     "id": "finance",
+     "label": "Money: accounts, invoices, payroll"
+    },
+    {
+     "id": "legal",
+     "label": "Legal documents and contracts"
+    },
+    {
+     "id": "credentials",
+     "label": "Passwords, keys and tokens"
+    },
+    {
+     "id": "source_code",
+     "label": "Private source code"
+    },
+    {
+     "id": "business",
+     "label": "Business or client documents"
+    }
    ],
    "none_label": "Nothing in particular: I will say so when something is confidential",
    "default": []
@@ -22,9 +43,18 @@
    "kind": "single",
    "question": "For a task that touches none of those, what should I assume?",
    "options": [
-    {"id": "ask", "label": "Ask me each time whether it is public, internal or confidential"},
-    {"id": "internal", "label": "Treat it as internal"},
-    {"id": "public", "label": "Treat it as public"}
+    {
+     "id": "ask",
+     "label": "Ask me each time whether it is public, internal or confidential"
+    },
+    {
+     "id": "internal",
+     "label": "Treat it as internal"
+    },
+    {
+     "id": "public",
+     "label": "Treat it as public"
+    }
    ],
    "default": "ask"
   },
@@ -33,9 +63,18 @@
    "kind": "single",
    "question": "Cloud models (an API or a subscription) can cost money. What is your stance?",
    "options": [
-    {"id": "never", "label": "Never use them"},
-    {"id": "only_if_local_cannot", "label": "Only when no local model can do the task"},
-    {"id": "allowed", "label": "Allowed, local first"}
+    {
+     "id": "never",
+     "label": "Never use them"
+    },
+    {
+     "id": "only_if_local_cannot",
+     "label": "Only when no local model can do the task"
+    },
+    {
+     "id": "allowed",
+     "label": "Allowed, local first"
+    }
    ],
    "default": "only_if_local_cannot"
   },
@@ -46,25 +85,80 @@
    "min": 0,
    "max": 2,
    "default": 2,
-   "asked_when": {"field": "cloud_spend", "not": "never"}
+   "asked_when": {
+    "field": "cloud_spend",
+    "not": "never"
+   }
+  },
+  {
+   "id": "automated_subscriptions",
+   "kind": "multi",
+   "question": "Which of your subscriptions may I use automatically? Using one this way runs its command-line tool through your plan without you at the keyboard. The harness does not evaluate the vendor's terms for automated use; reading them is yours. Pick all that apply.",
+   "options_from": "subscription_tools",
+   "none_label": "None: ask me each time",
+   "default": [],
+   "stores": "automated_use_cleared",
+   "skip_when_no_options": true,
+   "asked_when": {
+    "field": "cloud_spend",
+    "not": "never"
+   }
   },
   {
    "id": "local_first",
    "kind": "single",
    "question": "When a local model and a cloud model are equally good, which do you prefer?",
    "options": [
-    {"id": "local", "label": "The local one"},
-    {"id": "any", "label": "No preference: the best measured one"}
+    {
+     "id": "local",
+     "label": "The local one"
+    },
+    {
+     "id": "any",
+     "label": "No preference: the best measured one"
+    }
    ],
    "default": "local"
+  },
+  {
+   "id": "verbosity",
+   "kind": "single",
+   "question": "How much detail do you want in what Multi Auto Setup shows you?",
+   "options": [
+    {"id": "brief", "label": "Brief: the short version"},
+    {"id": "normal", "label": "Normal: the facts and what to do next"},
+    {"id": "detailed", "label": "Detailed: everything, with ids and hashes"}
+   ],
+   "default": "normal",
+   "ask_first_run": false
+  },
+  {
+   "id": "preferred_publisher",
+   "kind": "single",
+   "question": "When local models are otherwise level, whose models should come first in your setup options? The list is the publishers of the models the catalog has verified. This release's default is the owner's own choice.",
+   "options_from": "model_publishers",
+   "none_label": "No preference",
+   "default": "meta-llama"
   }
  ],
  "machine_roles": {
   "question": "What is {machine} for?",
   "options": [
-   {"id": "general", "label": "General: any task may run there", "closes": "none"},
-   {"id": "local_only", "label": "Private: only local models may run there, never a cloud one", "closes": "cloud"},
-   {"id": "not_for_tasks", "label": "Not for tasks: keep it out of the router", "closes": "all"}
+   {
+    "id": "general",
+    "label": "General: any task may run there",
+    "closes": "none"
+   },
+   {
+    "id": "local_only",
+    "label": "Private: only local models may run there, never a cloud one",
+    "closes": "cloud"
+   },
+   {
+    "id": "not_for_tasks",
+    "label": "Not for tasks: keep it out of the router",
+    "closes": "all"
+   }
   ],
   "default": "general"
  },

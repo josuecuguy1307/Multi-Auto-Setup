@@ -1,0 +1,39 @@
+{
+ "provenance": "builtin",
+ "protocol": "recommend",
+ "tier": "observe",
+ "ring": 0,
+ "platforms": ["any"],
+ "signature": {},
+ "states": {
+  "kinds": ["recommend"],
+  "start": "recommend",
+  "states": {
+   "recommend": {
+    "goal": "Prepare the recommendation for a kind of work no catalog task type names. First read what is already known (read_known). Choose, from the closed list, the catalog task type the work would run and be measured as, or none_fits only when the work needs something no listed type does (choose_type). Only when known data names no verified environment tagged for the domain, look at public sources (fetch_source) and record what is worth showing as an unverified lead (record_candidate). Then finish_recommendation. You never rank and never choose the default: code asks the owner.",
+    "tags": [],
+    "tools": ["read_known", "choose_type", "fetch_source", "record_candidate", "decline_leads", "finish_recommendation"],
+    "actions": [],
+    "skills": ["environment-research"],
+    "advance": [
+     {"to": "done", "needs": [
+       {"fact": "known.read", "at_least": "tested"},
+       {"fact": "recommend.type", "at_least": "tested"},
+       {"fact": "recommend.finished", "at_least": "tested"}]},
+     {"to": "none_fits", "needs": [
+       {"fact": "known.read", "at_least": "tested"},
+       {"fact": "recommend.none_fits", "at_least": "tested"},
+       {"fact": "recommend.finished", "at_least": "tested"}]}
+    ],
+    "close_on": ["finish_recommendation"],
+    "terminal": false,
+    "reason": "",
+    "show": ["request.*", "known.*", "research.*", "recommend.*"]
+   },
+   "done": {"goal": "", "tags": [], "tools": [], "actions": [], "skills": [], "advance": [], "close_on": [], "terminal": true,
+            "reason": "the recommendation is ready and the owner is asked one question; nothing was installed or run"},
+   "none_fits": {"goal": "", "tags": [], "tools": [], "actions": [], "skills": [], "advance": [], "close_on": [], "terminal": true,
+                 "reason": "no catalog task type fits this work, so nothing can be recommended to run; the leads, if any, are shown to the owner"}
+  }
+ }
+}

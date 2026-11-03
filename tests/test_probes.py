@@ -91,7 +91,7 @@ def test_model_runtimes_installed_running_loopback_exposure_and_models():
     answers = {11434: text("runtimes", "ollama_tags.json"), 8080: text("runtimes", "openai_models.json")}
     res = P.model_runtimes(which=lambda b: "/usr/bin/" + b if b in ("ollama",) else None, processes=lambda: running, get=lambda port, path: answers.get(port), exposed=lambda port: port == 8080)
     by = {r["id"]: r for r in res["facts"]["machine.runtimes"]}
-    assert by["ollama"]["installed"] and by["ollama"]["running"] and [m["name"] for m in by["ollama"]["models"]] == ["llama3.2:3b", "qwen2.5:7b"] and by["ollama"]["exposed_beyond_loopback"] is False
+    assert by["ollama"]["installed"] and by["ollama"]["running"] and [m["name"] for m in by["ollama"]["models"]] == ["llama3.2:3b", "local-7b"] and by["ollama"]["exposed_beyond_loopback"] is False
     assert by["llama.cpp"]["installed"] is False and by["llama.cpp"]["running"] and by["llama.cpp"]["exposed_beyond_loopback"] is True  # bound beyond loopback: said
     assert "lm-studio" not in by
     nothing = P.model_runtimes(which=lambda b: None, processes=lambda: set(), get=lambda p, q: None)

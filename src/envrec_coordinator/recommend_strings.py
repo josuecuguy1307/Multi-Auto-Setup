@@ -1,0 +1,66 @@
+"""Owner-facing text of the recommendation and of the automated-use clearance, in English, in one place (language rule). Kept apart from `services_strings` so the two can change independently."""
+
+from __future__ import annotations
+
+PROFILE_NEEDS_CLEAR = "Say which environment: one of {ids}."
+PROFILE_CLEAR_ASK = ("Allow the router to use {id} automatically? It runs the command-line tool you are signed in to, through your plan, without you at the keyboard. The vendor's terms for automated use are yours to read; "
+                     "the harness has not cleared them. Your answer is recorded as yours and you can take it back with mas_profile (action unclear).")
+PROFILE_CLEAR_YES = "Yes, allow {id} to be used automatically"
+PROFILE_CLEAR_NO = "No, keep it as an option I approve each time"
+PROFILE_CLEARED = "Recorded: {id} may be used automatically. Undo it with mas_profile (action unclear, id {id})."
+PROFILE_CLEAR_KEPT = "Nothing changed: {id} stays an option that is never used automatically."
+PROFILE_UNCLEARED = "{id} is no longer cleared for automated use."
+PROFILE_NOT_CLEARED = "{id} was not cleared, so nothing changed."
+
+REC_HEAD = "Recommendation for {what}, {level}:"
+REC_AS_TYPE = ("No environment in the catalog is tagged for \"{domain}\" and no admission suite exists for it. If you accept, it runs as plain `{task_type}` work (text in, text out) and is measured as that, not as \"{domain}\". "
+               "If it needs audio, images, files or tools, answer Neither.")
+REC_DEFAULT = "Recommended: {route} (cost class {cost_class}, {where}). {evidence}. Access present: {access}."
+REC_DEFAULT_CLEAR = "Recommended once you allow it: {env} on {machine} (cost class {cost_class}, {where}). It is your subscription; the vendor's terms for automated use are yours to read."
+REC_RUNNER = "Runner-up: {route} (cost class {cost_class}, {where}). {evidence}."
+REC_DOMAIN_FIT = "It is tagged for: {tags}."
+REC_LEADS_HEAD = "Also found by research, unverified, never proposed as the default ({n}):"
+REC_LEAD = "- {title} ({id}): {domains}; license {license}; {state}; source {source}"
+REC_SETUP_HEAD = "Not usable yet (it needs setup first):"
+REC_SETUP = "- {env} on {machine}: {reason}"
+REC_NO_INSTALLER = "no_installer: this entry cannot be installed by the harness yet (its install is pinned data only)"
+REC_ASK = "Plan {hash}. Use the recommended one, the runner-up, or neither? Nothing runs until you approve the exact route afterwards."
+REC_USE_DEFAULT = "Use the recommended one"
+REC_USE_RUNNER = "Use the runner-up"
+REC_USE_CLEAR = "Allow {env} for automated use, then use it"
+REC_NEITHER = "Neither"
+REC_NEITHER_DONE = "Recorded: you took neither, so no task was created."
+REC_STALE = "The facts changed while the question was open, so this answer was not used. Here is the new recommendation:\n{text}"
+REC_NOTHING = "Nothing can be proposed for {what} right now. {reason}"
+REC_DECISION = "Recorded: {choice} (plan {hash})."
+REC_BAD_DOMAIN = "A domain is a short plain tag (1 to 40 letters, digits, spaces or hyphens); the task text itself is never used as one."
+REC_NO_TYPE = "No environment serves the general type `{task_type}`, so the harness cannot measure or route this kind of work yet."
+REC_RESEARCHING = "No environment in the catalog is tagged for this kind of work, so the harness is looking at public sources for it with its own model (job id for mas_job: {job}). It will ask you ONE question when it is done; nothing is installed or run."
+REC_RESEARCH_SKIPPED = "Research was skipped: {why}."
+REC_NO_MODEL = "no harness model is available on the coordinator"
+REC_MODEL_CLOUD = "the harness model is not on this computer, and a confidential request is never researched through a cloud model"
+REC_NO_TAGS = "a confidential request is researched only with your own category names, and this one named none"
+REC_RESEARCH_STOPPED = "The research did not finish ({why}), so this recommendation rests on known data only."
+REC_NONE_FITS = "The harness found no catalog task type that fits this work honestly, so it cannot be run or measured here yet, and nothing was created."
+REC_RESEARCH_DONE = "Research recorded {n} unverified lead(s)."
+REC_JOB_QUESTION = "Waiting for your answer to the recommendation question (call mas_answer with the intent_id)."
+REC_CLEAR_HINT = "if you use it, allow it with mas_profile (action clear, id {id}) once you accept the vendor's terms for automated use"
+REC_TYPE_CHOSEN = "The harness's model chose `{task_type}` as the kind of work this runs and is measured as, saying: \"{why}\". That is its choice, not a fact. If it is wrong, answer Neither."
+REC_DECLINED = " The harness model saw items it could have recorded and said none was worth showing: \"{why}\"."
+REC_NONE_FITS_WHY = " Its reason: \"{why}\"."
+REC_MEASURE_HINT = "What would unblock it: measure a local combination on `{task_type}` first (mas_run_admission), for example {keys}. Confidential work goes only to a combination measured here."
+
+REC_TYPE_ASK = ("I could not settle which kind of work this is: independent answers disagreed ({picks}). It decides how the work is measured and which environments can take it. Which kind is it?")
+REC_TYPE_OPTION = "{type}: {label}"
+REC_TYPE_NONE = "None of these: it needs audio, images, files or tools that no kind has"
+REC_TYPE_DECIDED = "Recorded: you chose {type}."
+
+CLEAR_OFFER = ("This task could also run on {id}, through your subscription, but {id} is never used automatically until you allow it. The harness does not evaluate the vendor's terms for automated use: reading them is yours. "
+               "Allow {id} to be used automatically from now on? Your answer is recorded as yours and you can take it back with mas_profile (action unclear). Not now keeps things as they are, and I will not ask about {id} again on my own.")
+CLEAR_OFFER_YES = "Yes, allow {id}, then continue"
+CLEAR_OFFER_NOT_NOW = "Not now: continue without it"
+CLEAR_OFFER_KEPT = "Nothing changed: {id} stays an option that is never used automatically, and I will not ask about it again on my own."
+
+REC_CAN_INSTALL = "the harness can install it after you approve a plan (mas_install_tool, environment {id})"
+
+REC_RESEARCH_UNREADABLE = "The public sources could not be read ({n} page(s) failed), so no research was done for this request; what follows rests on known data only."

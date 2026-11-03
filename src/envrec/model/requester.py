@@ -62,7 +62,8 @@ async def request_action(
             result.latency_s += done.latency_s
             emit("model_call", {"attempt": attempt, "latency_s": round(done.latency_s, 3),
                                 "prompt_tokens": done.prompt_tokens,
-                                "completion_tokens": done.completion_tokens})
+                                "completion_tokens": done.completion_tokens,
+                                **({"model_returned": done.model_returned} if done.model_returned else {})})
             try:
                 result.action, note = parse_action_repairing(done.text, repair_tools)
                 result.used_fallback = False

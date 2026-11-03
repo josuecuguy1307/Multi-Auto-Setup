@@ -1,0 +1,21 @@
+{
+ "_note": "The first-run menu as data. `done` and `action` name closed registries in envrec_mas/menu.py. `needs` is a step id that must be done first, per role. `command` and `undo` are shown to the owner before the step runs; `{bind}` is the address the owner chose.",
+ "roles": {
+  "coordinator": {
+   "steps": [
+    {"id": "service", "action": "service", "done": "service_installed", "label": "menu_step_service_coordinator", "needs": null,
+     "command": "mas service install --role coordinator --bind {bind}", "undo": "mas service uninstall --role coordinator", "asks_address": true},
+    {"id": "connect", "action": "connect", "done": "claude_desktop_connected", "label": "menu_step_connect", "needs": "service",
+     "command": "mas connect claude-desktop", "undo": "mas disconnect claude-desktop", "then": "menu_restart_claude"}
+   ]
+  },
+  "node": {
+   "steps": [
+    {"id": "join", "action": "join", "done": "joined", "label": "menu_step_join", "needs": null,
+     "command": "mas join", "undo": "mas forget"},
+    {"id": "service", "action": "service", "done": "service_installed", "label": "menu_step_service_node", "needs": "join",
+     "command": "mas service install --role node", "undo": "mas service uninstall --role node"}
+   ]
+  }
+ }
+}

@@ -1,0 +1,11 @@
+{
+ "fixed": "2026-11-02, before any measurement run (recommender-v2, V6). The four domains of the v1 held-out cases and two new ones, fixed now and never edited to pass. 'tags' are the domain tags a request would carry.",
+ "domains": [
+  {"id": "legal", "tags": ["legal"], "origin": "v1 held-out"},
+  {"id": "data-science", "tags": ["data science"], "origin": "v1 held-out"},
+  {"id": "grant-writing", "tags": ["grant writing"], "origin": "v1 held-out"},
+  {"id": "finance", "tags": ["finance"], "origin": "v1 sample"},
+  {"id": "accessibility", "tags": ["accessibility"], "origin": "new in v2"},
+  {"id": "supply-chain", "tags": ["supply chain"], "origin": "new in v2"}
+ ]
+}

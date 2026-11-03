@@ -54,8 +54,18 @@ def exclusion_step(cands: list[Candidate], exclude) -> tuple[list[Candidate], di
                                 note=f"machines {sorted(machines)}, environments {sorted(envs)}; never relaxed")
 
 
-def run_rule(cands: list[Candidate], facts: Facts, task_type: str, policy: Policy) -> tuple[Candidate, list[Step], str]:
-    """Steps 2-6 over candidates the sensitivity step let through (never empty). Returns the choice, the trace of these steps and the evidence label."""
+def domain_step(cands: list[Candidate], domains: list[str]) -> tuple[list[Candidate], Step]:
+    """Step 1c, only for a task that names a domain. An environment whose catalog tags (`domains`) meet the task's is preferred over the untagged ones. It runs after the sensitivity step, so it can only choose
+    among what that step let through. When no environment is tagged for the domain the others stay, and the step says so: the filter never leaves the task without a candidate by itself."""
+    tagged = [c for c in cands if set(c.entry.get("domains", [])) & set(domains)]
+    kept = tagged or cands
+    return kept, Step(step="domain_fit", candidates_in=[c.route.key for c in cands], candidates_out=[c.route.key for c in kept],
+                      values={c.route.key: sorted(set(c.entry.get("domains", [])) & set(domains)) for c in cands}, note=f"domains {sorted(domains)}" + ("" if tagged else "; no environment is tagged for them, the untagged ones stay"))
+
+
+def run_rule(cands: list[Candidate], facts: Facts, task_type: str, policy: Policy, tiers: dict[str, int] | None = None) -> tuple[Candidate, list[Step], str]:
+    """Steps 2-6 over candidates the sensitivity step let through (never empty). Returns the choice, the trace of these steps and the evidence label. `tiers` (route key -> evidence rank, 0 measured .. 3 none)
+    is given only when public evidence exists in the data; it ranks candidates that no measurement separates."""
     trace: list[Step] = []
     keys = lambda cs: [c.route.key for c in cs]  # noqa: E731
     meas = {c.route.key: measured(c, facts, task_type, policy) for c in cands}
@@ -82,6 +92,11 @@ def run_rule(cands: list[Candidate], facts: Facts, task_type: str, policy: Polic
         rated = cost
     trace.append(Step(step="admission_rate", candidates_in=keys(cost), candidates_out=keys(rated), values={k: (strings.EVIDENCE_MEASURED.format(passed=meas[k][0], of=meas[k][1]) if isinstance(meas[k], tuple) else strings.EVIDENCE_NONE) for k in rates},
                       margin=policy.tie_margin, note="measured here ranks above no data; differences inside the margin are a tie"))
+    if tiers and not have:  # nothing measured separates them: the most specific PUBLIC evidence does (it never overrides a measurement, and levels are not averaged)
+        top_tier = min(tiers[c.route.key] for c in rated)
+        by_tier = [c for c in rated if tiers[c.route.key] == top_tier]
+        trace.append(Step(step="evidence_tier", candidates_in=keys(rated), candidates_out=keys(by_tier), values={c.route.key: tiers[c.route.key] for c in rated}, note="0 measured here, 1 public for the combination, 2 public for the model only, 3 none"))
+        rated = by_tier
     times = {c.route.key: facts.time(c.route.key) for c in rated}
     known = [t for t in times.values() if t is not None]
     fastest = [c for c in rated if times[c.route.key] == min(known)] if known else rated

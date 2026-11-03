@@ -26,7 +26,8 @@ def run(coro):
 
 def test_the_shipped_policy_names_who_answers_what():
     doc = approval.load()
-    assert doc["kinds"] == {"pairing": "os_dialog", "access_add": "os_dialog", "access_remove": "os_dialog", "install": "chat_choice", "uninstall": "chat_choice"}
+    assert doc["kinds"] == {"pairing": "os_dialog", "access_add": "os_dialog", "access_remove": "os_dialog", "install": "chat_choice", "uninstall": "chat_choice",
+                              "connect": "chat_choice", "task_run": "chat_choice", "admission": "chat_choice", "board": "chat_choice", "draft_approve": "chat_choice", "unpair": "chat_choice", "tool_install": "chat_choice", "tool_uninstall": "chat_choice", "measurement": "chat_choice"}  # owner decision 2: the native dialog is only for pairing and for storing or removing a key
     assert [o["id"] for o in approval.options(doc)] == ["approve", "reject"]
 
 
@@ -37,7 +38,7 @@ def test_a_setup_is_one_question_for_the_whole_plan_and_one_answer_runs_every_st
             await until(lambda: confirm_intent(c, CLAUDE, r) is not None)
             q = confirm_intent(c, CLAUDE, r)
             plan = c.runs.view(r.id)["plan"]
-            assert q["payload"]["chat_choice"] and q["payload"]["plan_hash"] == plan["hash"] and plan["hash"] in q["text_fallback"]
+            assert q["payload"]["chat_choice"] and q["payload"]["plan_hash"] == plan["hash"] and plan["hash"].removeprefix("sha256:")[:8] in q["text_fallback"]  # the question shows the plan hash by its first 8 characters (the formatter); the binding is the full hash in the payload
             for s in plan["steps"]:  # every step with its exact command, and its undo
                 assert D(s["command"]) in q["text_fallback"] and D(s["undo"]) in q["text_fallback"]
             assert len(c.log.events("setup_step_approved")) == 0 and tree(agent.state.dir / "mas") == []  # nothing ran before the answer

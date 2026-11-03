@@ -48,16 +48,16 @@ def test_the_owner_connects_and_disconnects_claude_desktop_at_their_terminal_typ
         async with coordinator(tmp_path / "c", web=True) as c:
             c.connect_env = make_env(tmp_path, home)
             script(c)
-            term = Terminal(["yes", "yes", "yes"])
+            term = Terminal(["yes"])  # approval-policy.json: a connection is ONE question for the whole plan, and his typed yes at his terminal answers it
             assert await session(c, "connect_host", "claude-desktop", term) == 0
             said = "\n".join(term.said)
             assert "Plan to connect Claude Desktop to Multi Auto Setup" in said and "Step 1 of 3" in said and "The run ended: done." in said
             assert said.index("Plan to connect") < said.index("[GUARD]") or "Plan to connect" in said  # the plan is printed before any step is asked
-            assert len(term.asked) == 3 and all("Type yes" in q for q in term.asked)
+            assert len(term.asked) == 1 and all("Type yes" in q and "plan" in q for q in term.asked)
             assert json.loads(cfg.read_text())["mcpServers"][SERVER]["args"][-1] == "claude-desktop"
             ev = [e.payload for e in c.log.events("owner_confirmation")]
-            assert len(ev) == 3 and all(p["channel"] == "cli" and p["mechanism"] == "cli_typed" and p["approved"] for p in ev)
-            assert "mas_request_approval" not in said and "call mas_request" not in "\n".join(term.asked) and said.count("Type yes below to approve this step") == 3  # the terminal shows its own instruction, never the chat's
+            assert len(ev) == 1 and all(p["channel"] == "cli" and p["mechanism"] == "chat_choice" and p["approved"] for p in ev)  # recorded as the one plan question it was
+            assert "mas_request_approval" not in said and "call mas_request" not in "\n".join(term.asked) and said.count("Type yes below to approve this plan") == 1  # the terminal shows its own instruction, never the chat's
             term = Terminal(["yes", "yes", "yes"])
             assert await session(c, "disconnect_host", "claude-desktop", term) == 0
             assert cfg.read_text() == original and "Plan to undo" in "\n".join(term.said)

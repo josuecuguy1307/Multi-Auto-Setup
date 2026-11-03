@@ -37,8 +37,8 @@ class ControlWatcher:
     """Runs inside the coordinator: picks up pairing offers, asks the owner through files, and reports each outcome back through a file."""
 
     def __init__(self, state: Path, layer, on_offer: Callable[[str, str], None], on_task: Callable[[str, str, str], None] | None = None,
-                 on_unpair: Callable[[str, str], None] | None = None) -> None:
-        self.dir, self.layer, self.on_offer, self.on_task, self.on_unpair = control_dir(state), layer, on_offer, on_task, on_unpair
+                 on_unpair: Callable[[str, str], None] | None = None, on_tick: Callable[[], None] | None = None) -> None:
+        self.dir, self.layer, self.on_offer, self.on_task, self.on_unpair, self.on_tick = control_dir(state), layer, on_offer, on_task, on_unpair, on_tick
 
     async def run(self) -> None:
         while True:
@@ -46,6 +46,8 @@ class ControlWatcher:
             await asyncio.sleep(POLL_S)
 
     def poll(self) -> None:
+        if self.on_tick is not None:
+            self.on_tick()  # the coordinator publishes what its runs and jobs are doing, for `mas runs`
         if self.on_task is not None:
             for tf in sorted(self.dir.glob("task-req-*.json")):  # the owner asked for a task at the terminal (`mas task run`)
                 req = read_json(tf)

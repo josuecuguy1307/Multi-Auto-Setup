@@ -1,0 +1,67 @@
+{
+ "note": "Where each catalog entry's domain tags come from, as data. A tag is written ONLY when a rule below matches text that the entry's own source states (the description and topics of its repository, or the description of its documentation page), read by code from a stored capture. An entry whose sources state no work domain keeps an empty list and says so; nothing is guessed.",
+ "text_rules": [
+  {
+   "contains": "coding agent",
+   "tag": "coding"
+  },
+  {
+   "contains": "coding tool",
+   "tag": "coding"
+  },
+  {
+   "contains": "coding assistant",
+   "tag": "coding"
+  },
+  {
+   "contains": "agentic coding",
+   "tag": "coding"
+  },
+  {
+   "contains": "for complex coding",
+   "tag": "coding"
+  },
+  {
+   "contains": "legal",
+   "tag": "legal",
+   "in": "topics"
+  },
+  {
+   "contains": "edit images",
+   "tag": "image-generation"
+  },
+  {
+   "contains": "transcribe speech",
+   "tag": "speech-recognition"
+  }
+ ],
+ "entries": {
+  "opencode": [
+   "https://api.github.com/repos/anomalyco/opencode"
+  ],
+  "codex": [
+   "https://api.github.com/repos/openai/codex"
+  ],
+  "pi": [
+   "https://api.github.com/repos/earendil-works/pi"
+  ],
+  "goose": [
+   "https://api.github.com/repos/aaif-goose/goose"
+  ],
+  "llamacpp-local": [
+   "https://api.github.com/repos/ggml-org/llama.cpp"
+  ],
+  "claude-code": [
+   "https://api.github.com/repos/anthropics/claude-code"
+  ],
+  "muse-code": [
+   "https://dev.meta.ai/docs/muse-code"
+  ],
+  "meta-model-api": [
+   "https://dev.meta.ai/docs"
+  ],
+  "legal-contract-review-skill": [
+   "https://api.github.com/repos/evolsb/claude-legal-skill"
+  ]
+ }
+}

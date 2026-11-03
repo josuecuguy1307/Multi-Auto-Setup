@@ -20,9 +20,20 @@ COST_RANK = {"free_local": 0, "subscription": 1, "metered_api": 2}
 WRITTEN_ORDER = {"installed_runtime": 0, "catalog_runtime": 1, "installed_cli": 2, "api_key": 3}
 ORDER_TEXT = ("cost class (free and local, then subscription, then metered API); then measured pass rate and measured time when they exist (none are measured yet, so they are skipped); then the written "
               "order (an installed runtime before a download, an installed command-line tool, an API key), one that is already set up or whose key variable was found before one that is not; then the larger model that fits; then the name. "
-              "A model published in several quantizations is one option (the preferred quantization that fits), and up to twelve options are shown, with the count of those not shown")
+              "If the owner named a preferred publisher (his profile), the models it made come first among otherwise level options. A model published in several quantizations is one option (the preferred quantization that fits), and up to twelve options are shown, with the count of those not shown")
 PROVISIONAL = "provisional, not measured here"
 ARCHES = {"x86_64": "amd64", "amd64": "amd64", "arm64": "arm64", "aarch64": "arm64"}
+
+
+def model_publisher(row: dict) -> str:
+    """Who made a model, lower case: the organisation of its base model (a quantizer's repository hosts the file, it did not make the model), else the organisation that hosts it. Data from the catalog row."""
+    org = str(row.get("base_model") or row.get("publisher") or str(row.get("repo", "")).split("/")[0]).split("/")[0]
+    return org.strip().lower()
+
+
+def publishers(catalog: dict) -> list[str]:
+    """Every publisher the catalog has a verified local model from, for the profile's question (data, never a list in code)."""
+    return sorted({model_publisher(m) for m in catalog.get("model_files", []) if m.get("verified") and m.get("kind", "chat") == "chat"} - {""})
 
 
 def load_catalog(path: Path | None = None) -> dict:
@@ -137,7 +148,7 @@ def candidates(facts: dict, catalog: dict, harnesses: dict, *, rules: R.Rules | 
                         "label": "verified-by-code (license and checksum read from the source)", "source": m["license_source"], "memory_needed_gib": est["total_gib"],
                         "memory_estimate": est, "disk_needed_gib": R.disk_need_gib({**m, "companions": companions}, asset["bytes"], rules, with_companions=True), "needs_download": True, "limits": [],
                         "build": {"cell": sel["cell"], "backend": sel["backend"], "memory": sel["memory"], "asset_id": asset.get("id"), "file": asset.get("file"), "sha256": asset.get("sha256"), "bytes": asset["bytes"]},
-                        "model_id": m.get("id"), "model_kind": m.get("kind", R.KIND_CHAT), "model_file": m.get("file"), "model_revision": m.get("revision"), "model_sha256": m.get("sha256"), "model_bytes": m.get("bytes"),
+                        "publisher": model_publisher(m), "model_id": m.get("id"), "model_kind": m.get("kind", R.KIND_CHAT), "model_file": m.get("file"), "model_revision": m.get("revision"), "model_sha256": m.get("sha256"), "model_bytes": m.get("bytes"),
                         "quantization": m.get("quantization"), "params_active_b": m.get("params_active_b"), "architecture": m.get("architecture"), "labels": labels, "requires_task": dict(m.get("requires_task", {})),
                         "unverified": not m.get("verified"), "not_default": list(m.get("not_default_reasons", [])), "runtime_supports_architecture": supports, "companions": companions, "conflicts": list(m.get("conflicts", []))})
     for cli in n["clis"]:
@@ -197,11 +208,16 @@ def apply_filters(options: list[dict], facts: dict, choice: str, sensitivity: st
     return kept, removed
 
 
-def order_options(options: list[dict]) -> list[dict]:
-    """The written rule (ORDER_TEXT). Measured pass rate and time would come first within a cost class; none exist yet, so every option is provisional."""
+def order_options(options: list[dict], prefer: str | None = None) -> list[dict]:
+    """The written rule (ORDER_TEXT). Measured pass rate and time would come first within a cost class; none exist yet, so every option is provisional. `prefer` is the owner's preferred publisher (his
+    profile): among options the earlier criteria leave level, those from it come first, then the larger model that fits. It never lifts an option over a cheaper cost class, a measured one or the written order."""
+    want = (prefer or "").strip().lower()
+
     def key(o: dict):
         measured = o.get("measured") or {}
-        return (COST_RANK[o["cost_class"]], -(measured.get("pass_rate") or 0.0), measured.get("seconds") or 0.0, WRITTEN_ORDER[o["origin"]], 0 if (o.get("set_up") or o.get("key_variable_found") or o["origin"] in ("installed_runtime", "catalog_runtime")) else 1, -float(o.get("params_b") or 0.0), o["title"])
+        return (COST_RANK[o["cost_class"]], -(measured.get("pass_rate") or 0.0), measured.get("seconds") or 0.0, WRITTEN_ORDER[o["origin"]],
+                0 if (o.get("set_up") or o.get("key_variable_found") or o["origin"] in ("installed_runtime", "catalog_runtime")) else 1, 0 if want and str(o.get("publisher", "")).lower() == want else 1,
+                -float(o.get("params_b") or 0.0), o["title"])
     return sorted(options, key=key)
 
 
@@ -248,7 +264,7 @@ def relabel_measured(options: list[dict], lookup) -> list[dict]:
 
 def build_options(facts: dict, *, choice: str, sensitivity: str = "internal", chosen_cli: str | None = None, chosen_provider: str | None = None, catalog: dict | None = None,
                   harnesses: dict | None = None, evidence: dict | None = None, rules: R.Rules | None = None, runtime_arches: dict | None = None, task_needs: tuple[str, ...] | None = None,
-                  admission_lookup=None) -> dict:
+                  admission_lookup=None, prefer_publisher: str | None = None) -> dict:
     catalog = catalog if catalog is not None else load_catalog()
     harnesses = harnesses or load_harnesses()
     evidence = evidence if evidence is not None else load_evidence()
@@ -267,7 +283,7 @@ def build_options(facts: dict, *, choice: str, sensitivity: str = "internal", ch
         failed = [o for o in kept if o.get("admission_state") == "not_admitted"]  # measured below the mark here: not approved (spec 8.1), said in `removed`
         kept = [o for o in kept if o not in failed]
         removed = removed + [{**o, "removed_by": f"not admitted: {o['admission_label']}"} for o in failed]
-    ordered = order_options(kept)
+    ordered = order_options(kept, prefer_publisher)
     if choice == "mix":  # one of each kind that applies, in the written order
         seen, picked = set(), []
         for o in ordered:

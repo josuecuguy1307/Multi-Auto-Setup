@@ -15,7 +15,7 @@ FORBIDDEN_IMPORTS = ("envrec.model", "envrec.loop", "envrec.agent", "envrec.prot
 
 def _machine(mid: str, *, paired: bool = True, local: bool = True) -> MachineFacts:
     return MachineFacts(machine_id=mid, os_family="darwin", paired=paired, installed={"claude-code", "codex", "muse-code", "opencode", "pi"}, signed_in={"claude-code:plan", "codex:plan", "muse-code:plan"},
-                        env_names={"META_API_KEY"}, sandbox_backends=["docker"], model_endpoint="127.0.0.1:8080" if local else None, model_id="qwen3-8b")
+                        env_names={"META_API_KEY"}, sandbox_backends=["docker"], model_endpoint="127.0.0.1:8080" if local else None, model_id="local-8b")
 
 
 def _policy(**kw) -> Policy:

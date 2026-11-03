@@ -15,8 +15,9 @@ class DocSources:
     hosts: frozenset[str]
     max_bytes: int
     timeout_s: float
+    ceiling_bytes: int = 0  # the most any ONE source row may raise its own cap to (data); 0 means no source may raise it
 
 
 def load_sources(path: Path = FILE) -> DocSources:
     raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    return DocSources(frozenset(str(h).lower() for h in raw.get("hosts", [])), int(raw.get("max_bytes", 400000)), float(raw.get("timeout_s", 20)))
+    return DocSources(frozenset(str(h).lower() for h in raw.get("hosts", [])), int(raw.get("max_bytes", 400000)), float(raw.get("timeout_s", 20)), int(raw.get("max_bytes_ceiling", 0)))

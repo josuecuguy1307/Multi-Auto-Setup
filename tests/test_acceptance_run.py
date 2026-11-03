@@ -10,7 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from acceptance_world import MODEL, SENTINEL, build, set_server, wait_job, TOUCHES
+from envrec_coordinator.router import EntryChat, Task
+from acceptance_world import MODEL, SENTINEL, build, owner_yes, set_server, wait_job, TOUCHES
 from envrec.skills import sbx
 
 FX = Path(__file__).parent / "fixtures" / "acceptance"
@@ -58,7 +59,7 @@ async def measure(w, host, env, access, task_type, passed, machine=None):
     w.script.accuracy[(env, access, task_type)] = passed
     r = await host.tool("mas_run_admission", environment=env, task_type=task_type, access=access, **({"machine": machine} if machine else {}))
     assert sc(r)["ok"], text(r)
-    await host.tool("mas_request_approval", intent_id=sc(r)["intent_id"])
+    await owner_yes(host, sc(r)["intent_id"])
     j = await wait_job(host, sc(r)["job_id"], until=("done", "aborted", "refused", "declined"), timeout=180)
     assert sc(j)["state"] == "done", text(j)
     return j
@@ -70,7 +71,7 @@ async def create(host, name, task_type, sensitivity, *, check=True, input_text=N
 
 
 async def execute(host, created, timeout=120):
-    await host.tool("mas_request_approval", intent_id=sc(created)["intent_id"])
+    await owner_yes(host, sc(created)["intent_id"])
     return await wait_job(host, sc(created)["task_id"], timeout=timeout)
 
 
@@ -318,14 +319,17 @@ def test_ex6_a_stopped_server_leaves_only_the_api_for_public_work_and_a_typed_re
 
 # ===================================================================== Example 7: nothing declares the task type ====================================================================================
 
-def test_ex7_an_unknown_task_type_is_a_refusal_with_zero_candidates_and_nothing_invented(tmp_path):
+def test_ex7_an_unknown_task_type_is_a_recommendation_and_one_question_and_nothing_is_chosen_or_sent(tmp_path):
     async def go():
         w, c, nid, host, teardown = await build(tmp_path)
         try:
             r = await host.tool("mas_create_task", text="audio.wav", task_type="transcribe-audio", touches=TOUCHES["public"])
             d = sc(r)
-            assert d["ok"] is False and d["refusal"]["code"] == "no_candidate" and d["refusal"]["why"] == "unknown_task_type" and d["candidates"] == [] and "intent_id" not in d
-            assert not w.script.calls and not c.log.events("escalation")
+            assert d["ok"] is True and d["question"] is True and "Recommendation for" in text(r) and "If it needs audio, images, files or tools, answer Neither" in text(r)  # amendment 5: the harness proposes, it does not dead-end
+            assert not c.services.tasks and not c.services.jobs and "intent_id" in d and d["intent_id"].startswith("recommend:")  # no task, no route approved, nothing to run
+            assert not w.script.calls and not c.log.events("escalation") and not c.log.events("dispatch") and not c.log.events("route_decision")  # nothing invented: no model asked, nothing dispatched, no route decided
+            direct = c.services.router.explain(Task(task_id="direct", task_type="transcribe-audio", sensitivity="public", entry_chat=EntryChat(kind="local", name="x"), created_by="OWNER", payload_ref="r"))
+            assert direct.code == "no_candidate" and direct.details["why"] == "unknown_task_type" and direct.details["candidates"] == []  # the router itself still refuses an unknown type
             record("ex7", reasoning=text(r), actors=actors(c))
         finally:
             await teardown()

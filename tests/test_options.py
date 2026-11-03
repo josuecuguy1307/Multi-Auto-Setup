@@ -43,7 +43,7 @@ def test_a_gpu_path_budgets_by_vram_not_by_ram():
 
 
 def test_a_runtime_already_installed_that_has_no_setup_recipe_is_not_offered_it_gets_a_typed_no_recipe_yet():
-    facts = {**WIN, "machine.runtimes": [{"id": "ollama", "name": "Ollama", "models": [{"name": "qwen2.5:7b"}], "exposed_beyond_loopback": True}]}
+    facts = {**WIN, "machine.runtimes": [{"id": "ollama", "name": "Ollama", "models": [{"name": "local-7b"}], "exposed_beyond_loopback": True}]}
     r = build(facts, choice="local")
     assert "use-ollama" not in titles(r) and titles(r)[0] == "catalog-7.0b-Mid-7B-GGUF-q4_k_m"  # only what a recipe can set up is offered
     why = {x["id"]: x["reason"] for x in r["removed"]}

@@ -1,0 +1,42 @@
+{
+ "note": "The recommender's model slots as data. A slot is one judgment the harness asks a model for: it names what may be sent, which model answers first and where a second opinion may come from. The first model is always the harness model of this coordinator (or the named profile); a cloud model is asked only when a signal below fires, the owner's own answer allows it and the work is not confidential. A new slot or another destination is a row here, no code.",
+ "slots": {
+  "task_type": {
+   "input": "task_text",
+   "local_profile": null,
+   "escalate": true,
+   "instruction": "You choose which kind of work a request is, from a closed list. Reply with one JSON object {\"choice\": \"<one name from the list>\"} and nothing else. Use none_fits only when the work needs audio, images, files or tools that no listed kind has."
+  },
+  "relevance": {
+   "input": "domain_tags_only",
+   "local_profile": null,
+   "escalate": true,
+   "instruction": "You judge which public repositories are relevant to the domain words you are given, from a closed numbered list. Reply with one JSON object {\"choice\": \"<one number from the list>\"} and nothing else, or {\"choice\": \"none\"} when none is relevant."
+  }
+ },
+ "escalation": {
+  "environment_id": "meta-model-api",
+  "task_type": "text",
+  "timeout_s": 90,
+  "max_calls_per_run": 4
+ },
+ "authority": {
+  "profile_field": "cloud_spend",
+  "question_prefix": "profile:cloud_spend:",
+  "refused_values": [
+   "never"
+  ]
+ },
+ "low_confidence": [
+  "picks_disagree",
+  "none_fits",
+  "check_failed"
+ ],
+ "leak_shingle_words": 4,
+ "resolution": "independent_pair",
+ "resolution_note": "independent_pair: a pick counts when the cloud model and at least one local pick gave it; otherwise the owner is asked.",
+ "measurement": {
+  "max_calls": 200,
+  "note": "the most cloud calls ONE measurement of the recommender may make (the owner is told this number before he answers)"
+ }
+}

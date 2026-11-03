@@ -35,7 +35,7 @@ def facts(tmp_path):
 
 
 def combo(**kw) -> Combo:
-    base = dict(task_type="text", machine_id="m1", environment_id="llamacpp", model_id="qwen3", access_id="local", model_sha256="aa" * 32, environment_version="b1")
+    base = dict(task_type="text", machine_id="m1", environment_id="llamacpp", model_id="local-model", access_id="local", model_sha256="aa" * 32, environment_version="b1")
     return Combo(**{**base, **kw})
 
 
@@ -191,7 +191,7 @@ def test_a_nine_of_ten_environment_is_admitted_and_the_fact_is_the_routers_shape
     f = facts.current(combo().key)
     assert (out.passed, out.admitted, f["passed"], f["of"], f["threshold"], f["graded_by"], f["early_stop"]) == (9, True, 9, 10, 8, "code", False)
     assert f["label"] == "measured here: 9/10" and f["suite_hash"] == s.hash and f["tasks"] == [t.id for t in s.tasks]
-    assert combo().key == "admission.text.m1.llamacpp.qwen3.local" and facts.view(combo(), s, 8).admitted
+    assert combo().key == "admission.text.m1.llamacpp.local-model.local" and facts.view(combo(), s, 8).admitted
 
 
 def test_the_fact_carries_the_status_and_identity_the_routers_reader_compares(facts):
@@ -362,7 +362,7 @@ def test_a_human_gesture_approves_and_the_start_runs_the_exam(facts, gesture):
     out = d.start(combo(), s, Env(s))
     assert out.admitted and [e.effective_tag for e in facts.log.events("admission_approved")] == ["OWNER"]
     assert [i["kind"] for i in sent] == ["confirm", "progress"] + ["progress"] * 10 + ["show_data"]
-    assert sent[1]["text_fallback"].startswith("Measuring llamacpp with qwen3 on m1: 10 tasks") and sent[-1]["text_fallback"].endswith("measured here: 10/10. It can receive text tasks, including confidential ones.")
+    assert sent[1]["text_fallback"].startswith("Measuring llamacpp with local-model on m1: 10 tasks") and sent[-1]["text_fallback"].endswith("measured here: 10/10. It can receive text tasks, including confidential ones.")
 
 
 def test_an_approval_is_for_that_combination_suite_and_threshold_only_and_is_used_once(facts):
@@ -388,7 +388,7 @@ def test_reject_closes_the_decision_and_an_aborted_start_keeps_the_approval(fact
     d.answer(p["id"], "approve", gesture="panel")
     with pytest.raises(ExamAborted):
         d.start(combo(), s, Env(s, abort_after=0))
-    assert sent[-1]["text_fallback"] == "The exam for llamacpp with qwen3 on m1 did not finish: the environment could not be reached. Nothing was stored, so it still counts as not measured."
+    assert sent[-1]["text_fallback"] == "The exam for llamacpp with local-model on m1 did not finish: the environment could not be reached. Nothing was stored, so it still counts as not measured."
     assert d.start(combo(), s, Env(s)).admitted  # the approval was not used up: nothing had been asked yet
 
 

@@ -171,5 +171,167 @@
     "marker": ".mas-unpacked"
    }
   }
+ ],
+ "tool_recipes": [
+  {
+   "id": "github-release-tool",
+   "kind": "tool",
+   "note": "Install a command-line tool from the assets of a GitHub release into a folder of our own (no administrator): download and check the SHA-256 the catalog pinned, unpack safely, run the program once to see that it starts. Every address, size, hash and file name is the catalog entry's (upstream.assets, install.binary); the OS and architecture pick the asset from install.asset_keys.",
+   "ops": {
+    "fetch_check": {
+     "writes": [
+      "<mas>/downloads/"
+     ],
+     "title": "Download a file and check its SHA-256"
+    },
+    "unpack_archive": {
+     "writes": [
+      "<mas>/tools/"
+     ],
+     "title": "Unpack the tool"
+    },
+    "verify_program": {
+     "writes": [
+      "<mas>/tools/"
+     ],
+     "title": "Run the program once and record where it is"
+    }
+   },
+   "sequence": [
+    "fetch_check",
+    "unpack_archive",
+    "verify_program"
+   ],
+   "repeat": [],
+   "archive_formats": {
+    ".tar.gz": "tar.gz",
+    ".zip": "zip"
+   },
+   "download": {
+    "schemes": [
+     "https"
+    ],
+    "hosts": {
+     "github.com": [
+      ".githubusercontent.com",
+      "github.com"
+     ]
+    },
+    "max_redirects": 5,
+    "disk_margin": 1.05
+   },
+   "unpack": {
+    "max_unpacked_gib": 8,
+    "marker": ".mas-unpacked"
+   },
+   "verify": {
+    "timeout_s": 30,
+    "record": ".mas-exe.json"
+   },
+   "commands": {
+    "fetch_check": {
+     "macos": "curl -L --fail -o {dest} {url} && shasum -a 256 {dest}  (must print {sha256})",
+     "linux": "curl -L --fail -o {dest} {url} && sha256sum {dest}  (must print {sha256})",
+     "windows": "Invoke-WebRequest -Uri {url} -OutFile {dest}; (Get-FileHash -Algorithm SHA256 {dest}).Hash  (must be {sha256})"
+    },
+    "unpack_archive": {
+     "tar.gz": {
+      "macos": "tar -xzf {archive} -C {dest}",
+      "linux": "tar -xzf {archive} -C {dest}",
+      "windows": "tar -xzf {archive} -C {dest}"
+     },
+     "zip": {
+      "macos": "unzip -q {archive} -d {dest}",
+      "linux": "unzip -q {archive} -d {dest}",
+      "windows": "Expand-Archive -LiteralPath {archive} -DestinationPath {dest}"
+     }
+    },
+    "verify_program": {
+     "macos": "{binary} {argv}  (run once, no network; exit code 0)",
+     "linux": "{binary} {argv}  (run once, no network; exit code 0)",
+     "windows": "{binary} {argv}  (run once, no network; exit code 0)"
+    }
+   },
+   "undo": {
+    "fetch_check": {
+     "macos": "rm -rf {path}",
+     "linux": "rm -rf {path}",
+     "windows": "Remove-Item -LiteralPath {path} -Recurse -Force"
+    },
+    "unpack_archive": {
+     "macos": "rm -rf {path}",
+     "linux": "rm -rf {path}",
+     "windows": "Remove-Item -LiteralPath {path} -Recurse -Force"
+    },
+    "verify_program": {
+     "macos": "delete the small record of where the program is (the folder itself is removed by the previous step's undo)",
+     "linux": "delete the small record of where the program is (the folder itself is removed by the previous step's undo)",
+     "windows": "delete the small record of where the program is (the folder itself is removed by the previous step's undo)"
+    }
+   },
+   "arch_aliases": {
+    "amd64": [
+     "x86_64",
+     "x64"
+    ],
+    "x86_64": [
+     "amd64",
+     "x64"
+    ],
+    "arm64": [
+     "aarch64"
+    ]
+   }
+  },
+  {
+   "id": "skill-pack-files",
+   "kind": "skill_pack",
+   "note": "Put the files of a skill pack (instructions an agent reads) into a folder of our own: each file is downloaded from an address pinned to a commit and checked against its SHA-256. Nothing is run and nothing is placed inside an environment; the files wait in the pack's folder.",
+   "ops": {
+    "fetch_check": {
+     "writes": [
+      "<mas>/packs/"
+     ],
+     "title": "Download a file and check its SHA-256"
+    }
+   },
+   "sequence": [
+    "fetch_check"
+   ],
+   "repeat": [
+    "fetch_check"
+   ],
+   "archive_formats": {},
+   "download": {
+    "schemes": [
+     "https"
+    ],
+    "hosts": {
+     "raw.githubusercontent.com": [
+      "raw.githubusercontent.com"
+     ]
+    },
+    "max_redirects": 3,
+    "disk_margin": 1.05
+   },
+   "unpack": {
+    "max_unpacked_gib": 1,
+    "marker": ".mas-unpacked"
+   },
+   "commands": {
+    "fetch_check": {
+     "macos": "curl -L --fail -o {dest} {url} && shasum -a 256 {dest}  (must print {sha256})",
+     "linux": "curl -L --fail -o {dest} {url} && sha256sum {dest}  (must print {sha256})",
+     "windows": "Invoke-WebRequest -Uri {url} -OutFile {dest}; (Get-FileHash -Algorithm SHA256 {dest}).Hash  (must be {sha256})"
+    }
+   },
+   "undo": {
+    "fetch_check": {
+     "macos": "rm -f {path}",
+     "linux": "rm -f {path}",
+     "windows": "Remove-Item -LiteralPath {path} -Force"
+    }
+   }
+  }
  ]
 }

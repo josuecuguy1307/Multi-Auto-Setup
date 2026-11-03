@@ -87,6 +87,19 @@ class CredentialPresenceParams(TaskParams):
     names: list[str] = Field(max_length=32)
 
 
+class ListDirParams(TaskParams):
+    """Read-only: the names, kinds, sizes and dates of the entries of ONE folder (a well-known name or an absolute path). Never contents."""
+    folder: str = Field(min_length=1, max_length=400)  # named `folder` on purpose: a read-only task carries no field called `path` (conformance W3)
+    limit: int = Field(default=500, ge=1, le=500)
+
+
+class ModelListParams(TaskParams):
+    """Read-only: ask an API environment, from the node that holds its credential, which models it lists now (the catalog's data names the address and the path; the coordinator names only the environment and
+    the access). The answer is the public list; the key is never part of it."""
+    environment_id: str = Field(min_length=1, max_length=48, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    access_id: str = Field(max_length=64, pattern=r"^[A-Za-z0-9._:-]+$")
+
+
 class CredentialStepParams(TaskParams):
     """The third task that writes. A credential `set` carries its value (the only place a value travels, inside the sealed session, never logged); `remove` moves it aside inside the store and `restore`
     brings it back. It is tied to the owner's approval of one plan hash, name and action."""
@@ -126,10 +139,10 @@ class EnvironmentRunParams(TaskParams):
 
 WRITE_TYPES = ("setup_step", "environment_run", "credential_step")  # every other task type is read-only; this is the only one the coordinator sends with a scoped token and the node runs after the checks of `envrec_node.setup`
 
-PARAMS: dict[str, type[TaskParams]] = {"setup_step": SetupStepParams, "environment_run": EnvironmentRunParams, "credential_step": CredentialStepParams, "credential_presence": CredentialPresenceParams, "node_report": NodeReportParams, "machine_analysis": MachineAnalysisParams, "os_details": NoParams, "installed_programs": ProgramsParams, "gpus": NoParams,
+PARAMS: dict[str, type[TaskParams]] = {"setup_step": SetupStepParams, "environment_run": EnvironmentRunParams, "credential_step": CredentialStepParams, "credential_presence": CredentialPresenceParams, "list_dir": ListDirParams, "model_list": ModelListParams, "node_report": NodeReportParams, "machine_analysis": MachineAnalysisParams, "os_details": NoParams, "installed_programs": ProgramsParams, "gpus": NoParams,
                                         "model_runtimes": NoParams, "ai_clis": NoParams, "memory_for_models": NoParams}
 PROBES = ("os_details", "installed_programs", "gpus", "model_runtimes", "ai_clis", "memory_for_models")  # the read-only probes a model can pick, one by one
-TIMEOUTS_S = {"setup_step": 1800.0, "environment_run": 1200.0, "credential_step": 60.0, "credential_presence": 20.0, "node_report": 30.0, "machine_analysis": 240.0, "os_details": 20.0, "installed_programs": 60.0, "gpus": 30.0, "model_runtimes": 30.0, "ai_clis": 20.0, "memory_for_models": 30.0}
+TIMEOUTS_S = {"setup_step": 1800.0, "environment_run": 1200.0, "credential_step": 60.0, "credential_presence": 20.0, "list_dir": 30.0, "model_list": 40.0, "node_report": 30.0, "machine_analysis": 240.0, "os_details": 20.0, "installed_programs": 60.0, "gpus": 30.0, "model_runtimes": 30.0, "ai_clis": 20.0, "memory_for_models": 30.0}
 
 
 class TaskResult(BaseModel):

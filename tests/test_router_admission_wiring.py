@@ -87,7 +87,7 @@ def _facts(store, current):
 
 def _measure(store, **kw):
     s = load_suite("code")
-    c = combo(task_type="code", machine_id="mac", environment_id="llamacpp-local", model_id="qwen3-8b", access_id="local-hardware", model_sha256=SHA, environment_version=VER, **kw)
+    c = combo(task_type="code", machine_id="mac", environment_id="llamacpp-local", model_id="local-8b", access_id="local-hardware", model_sha256=SHA, environment_version=VER, **kw)
     run_exam(c, s, Env(s), store, code_runner=lambda sol, checks, n, t: {"ok": True, "kind": "passed", "checked": n, "detail": ""})
     return c
 
@@ -96,7 +96,7 @@ def test_the_router_sees_an_admission_only_while_the_model_environment_and_suite
     c = _measure(store)
     route_key = "|".join((c.environment_id, c.model_id, c.access_id, c.machine_id))
     fresh = _facts(store, lambda k: (SHA, VER))
-    fact = fresh.admission(admission_key("code", type("R", (), {"machine_id": "mac", "environment_id": "llamacpp-local", "model_id": "qwen3-8b", "access_id": "local-hardware"})()))
+    fact = fresh.admission(admission_key("code", type("R", (), {"machine_id": "mac", "environment_id": "llamacpp-local", "model_id": "local-8b", "access_id": "local-hardware"})()))
     assert fact["status"] == "tested" and fresh.identity(route_key) == fact["identity"]
     for now in ((("bb" * 32), VER), (SHA, "b2")):  # the model file or the environment changed since the measurement
         assert _facts(store, lambda k, now=now: now).identity(route_key) != fact["identity"]
@@ -145,7 +145,7 @@ def test_two_task_types_measured_on_one_route_are_both_fresh_the_identity_is_per
     """The identity of a measurement includes its suite, so it is asked per task type: the latest fact of ANOTHER type must not make this type's fact look stale."""
     c = _measure(store)
     s = load_suite("text")
-    t = Combo("text", "mac", "llamacpp-local", "qwen3-8b", "local-hardware", SHA, VER)
+    t = Combo("text", "mac", "llamacpp-local", "local-8b", "local-hardware", SHA, VER)
     run_exam(t, s, Env(s), store)
     route_key = "|".join((c.environment_id, c.model_id, c.access_id, c.machine_id))
     fresh = _facts(store, lambda k: (SHA, VER))

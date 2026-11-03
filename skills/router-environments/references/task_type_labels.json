@@ -1,0 +1,11 @@
+{
+ "note": "a short label for each catalog task type, as the harness model sees it when it has to choose one (the suites' own descriptions say how a type is measured, not what it is for). A type without a line here is shown by its suite's description. Data only: editing this changes no admission suite and no measurement.",
+ "labels": {
+  "code": "write or fix program code",
+  "data-cleaning": "clean messy tabular data",
+  "extraction": "pull fields out of given text",
+  "numeric-analysis": "sums, rates and statistics",
+  "summarize": "shorten a long text",
+  "text": "general text in, text out"
+ }
+}

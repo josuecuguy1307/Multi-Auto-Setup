@@ -81,7 +81,7 @@ def test_claude_desktop_is_connected_from_the_chat_plan_first_each_step_in_the_s
             plan_txt = next(i["text_fallback"] for i in out if "Plan to connect Claude Desktop" in i["text_fallback"])
             assert plan_txt.index("Plan to connect") < plan_txt.index("Step 1 of 3") and "Cmd+Q" in plan_txt and "has not been run on this computer yet" in plan_txt
             assert "SECRET-VALUE-123" not in plan_txt and "API_KEY" not in plan_txt and "<" not in plan_txt and str(home) not in plan_txt
-            assert "Step 3 of 3" in plan_txt and r.adapter.plan["plan_hash"] in plan_txt
+            assert "Step 3 of 3" in plan_txt and r.adapter.plan["plan_hash"].removeprefix("sha256:")[:8] + "…" in plan_txt and r.adapter.plan["plan_hash"] not in plan_txt  # the plan shows its first 8 characters; the whole hash is in the detailed view
             assert [(s, a) for s, a, _, _ in shown] == [(1, "run"), (2, "run"), (3, "run")]
             for step, action, text, dialog in shown:
                 cmd = D(r.adapter.plan["steps"][step - 1]["exact_command"])
@@ -121,9 +121,10 @@ def test_no_chat_door_approves_a_connection_step_and_the_gesture_rule_holds_here
             qid = pending(r).qid
             assert c.answer_run(r.id, qid, "approve") is False and c.answer_run(r.id, qid, "approve", "owner", "claude-desktop") is False
             i = next(x for x in c.harness.intents(CLAUDE, r.id)["intents"] if x["kind"] == "confirm" and x.get("state") == "pending")
+            assert i["payload"]["chat_choice"] and i["payload"]["approval_kind"] == "connect"  # approval-policy.json: a connection is ONE chat question for the whole plan
             with pytest.raises(Refused) as exc:
-                c.harness.decide(CLAUDE, i["id"], "approve")
-            assert exc.value.reason == "confirmation_required"
+                c.harness.begin_confirmation(CLAUDE, i["id"], "os_dialog")
+            assert exc.value.reason == "answer_in_chat"  # a system dialog is for pairing and keys only
             assert cfg.read_text() == original and not list(cfg.parent.glob("*.mas-backup-*"))  # nothing ran
             assert c.answer_run(r.id, qid, "approve", "claude-code") is True  # the operator: recorded apart, runs nothing
             await until(lambda: any(e.type == "setup_step" and e.payload.get("state") == "rejected" for e in r.store.events()))
@@ -144,6 +145,7 @@ def test_connecting_while_claude_desktop_runs_ends_with_the_reason_and_tells_the
             assert r.status == "nothing_to_connect"
             facts = {f.key: f.value for f in r.store.current_facts(r.target.id)}
             assert facts["setup.refused"]["reason"] == "app_running" and "Cmd+Q" in facts["setup.refused"]["text"]
+            assert "Cmd+Q" in r.reason and "ask for the connection again" in r.reason  # the run ends WITH what to do, not with a bare status
             assert not (home / "Library/Application Support/Claude/claude_desktop_config.json").exists()
     run(go())
 
@@ -159,7 +161,7 @@ def test_without_a_named_host_the_owner_is_asked_which_chats_with_only_the_ones_
             q = next(i for i in c.harness.intents(CLAUDE, r.id)["intents"] if i["kind"] == "ask_choice")
             assert "Which chats do you want to use Multi Auto Setup in?" in q["text_fallback"] and q["payload"]["writes"] is False
             assert [o["id"] for o in q["payload"]["options"]] == ["claude-code", "codex"]  # only what was found
-            assert "Reply with the number or the id" in q["text_fallback"]
+            assert "Next: reply with the number of your choice." in q["text_fallback"]
             c.harness.decide(CLAUDE, q["id"], "2")
             await until(lambda: r.adapter.host == "codex")
             r.task.cancel()

@@ -2,6 +2,7 @@
 # Reading a manual or release metadata is allowed; scanning the internet is not, so everything else is refused with the reason.
 # What is fetched is untrusted text: it is stored by hash with its URL, cleaned by the privacy gate, quoted when shown, and never obeyed.
 max_bytes: 400000
+max_bytes_ceiling: 16000000      # a source row in the evidence data may ask for more than max_bytes for ITS pages, never more than this
 timeout_s: 20
 hosts:
   - raw.githubusercontent.com     # raw files of public repositories (READMEs, docs)
@@ -11,3 +12,7 @@ hosts:
   - docs.python.org
   - man7.org
   - huggingface.co
+  - pypi.org                      # package metadata (JSON), read to record a researched lead
+  - registry.npmjs.org            # package metadata (JSON), read to record a researched lead
+  - gorilla.cs.berkeley.edu       # the Berkeley Function Calling Leaderboard's own score table (CSV) and its page; read for public evidence
+  - dev.meta.ai                   # Meta's own API and Muse Code documentation, read for what the catalog's Meta entries say they are for

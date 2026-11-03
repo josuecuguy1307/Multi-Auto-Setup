@@ -52,6 +52,13 @@ def build_menu(adapters: list[Adapter], target: Target, store: Store, menu_max: 
     return entries[:menu_max]
 
 
+PARAM_DESC_CHARS = 1200  # a parameter's description may carry the list of values it accepts (a long id list); what is cut is counted, never dropped silently
+
+
+def _shown(text: str) -> str:
+    return text if len(text) <= PARAM_DESC_CHARS else text[:PARAM_DESC_CHARS] + f" [{len(text) - PARAM_DESC_CHARS} more characters not shown]"
+
+
 def _arg_lines(spec: ToolSpec) -> list[str]:
     """One line per argument the tool takes: what to put there and where the value comes from. The model is told its arguments; it cannot fill what it cannot see."""
     props = spec.input_model.get("properties") or {}
@@ -62,7 +69,7 @@ def _arg_lines(spec: ToolSpec) -> list[str]:
         closed = p.get("enum") or (p.get("items") or {}).get("enum")  # a closed set of values: the model picks from it, it does not invent one
         if closed:
             where = ("one of" if p.get("enum") else "a list of values from") + " the values below"
-        lines.append(f"      {name} ({'required' if name in required else 'optional'}, {where}): {str(p.get('description', ''))[:240]}")
+        lines.append(f"      {name} ({'required' if name in required else 'optional'}, {where}): {_shown(str(p.get('description', '')))}")
         if closed:
             lines.append("        values: " + " | ".join(str(x) for x in closed))
     return lines

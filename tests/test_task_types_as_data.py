@@ -95,6 +95,8 @@ def test_the_router_routes_each_shipped_new_type_and_a_type_added_only_to_the_ca
     from tests.test_router import machine, policy, task
     envs = copy.deepcopy(ENVS)
     for e in envs.values():  # a type that exists nowhere in this repository: one catalog row per environment, nothing in code
+        if e.get("subtype") == "skill_pack":  # a pack is files an environment reads: no adapter, no task types, never routed (it stays in the catalog to show the router passes it by)
+            continue
         e["task_types"].append("zz-novel-type")
         e["adapter"]["modes"]["zz-novel-type"] = copy.deepcopy(e["adapter"]["modes"]["text"])
     for t in ("summarize", "extraction", "data-cleaning", "numeric-analysis", "zz-novel-type"):

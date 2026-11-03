@@ -43,7 +43,7 @@ def test_an_answer_may_name_the_option_by_id_by_number_or_by_label_and_a_wrong_o
                     holder["run"] = o
                     await settle(lambda: o.adapter is not None and o.adapter.pending is not None)
                     q = next(i for i in c.harness.intents(CLAUDE, o.id)["intents"] if i["kind"] == "ask_choice")
-                    assert "1. Open-source local" in q["text_fallback"] and "[id: local]" in q["text_fallback"] and "Reply with the number or the id" in q["text_fallback"]
+                    assert "1. Open-source local" in q["text_fallback"] and "[id:" not in q["text_fallback"] and "Next: reply with the number of your choice." in q["text_fallback"]  # a number answers; the id stays in the log and the detailed view
                     if given == "local":
                         with pytest.raises(Refused) as e:  # a wrong answer says what is valid
                             c.harness.decide(CLAUDE, q["id"], "7")
@@ -140,7 +140,7 @@ def test_the_map_opens_the_whole_machine_card_of_a_machine_that_was_analysed_and
 def test_the_confidential_lock_is_a_lock_and_amber_is_only_for_the_cloud():
     d = {"nodes": [{"id": "a", "name": "A", "status": "online", "confidential": True}, {"id": "b", "name": "B", "status": "busy", "route": "cloud"}], "clouds": [{"name": "x"}]}
     m = cards.network(d)
-    assert "lockl" in m and "lock-badge" in m and "&#9679;" not in m  # no amber dot standing for "confidential"
+    assert "lg-lock" in m and "lock-badge" in m and "<title>confidential</title>" in m and "&#9679;" not in m  # no amber dot standing for "confidential"
     css = cards.CSS
     for rule in re.findall(r"[^{}]*lock[^{}]*\{[^}]*\}", css):
         assert "amber" not in rule, rule

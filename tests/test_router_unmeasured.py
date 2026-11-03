@@ -27,8 +27,8 @@ def test_a_measured_admitted_candidate_beats_a_cheaper_unmeasured_one():
     d = route([admission("text", API_ISH, passed=8)])  # the local one has no measurement
     assert d.route.environment_id == API_ISH and not d.provisional and d.evidence_label == "measured here 8/10"
     step = next(s for s in d.rule_trace if s.step == "admission_filter")
-    assert step.values["llamacpp-local|qwen3-8b|local-hardware|mac"] == "unmeasured" and set(step.values.values()) == {"unmeasured"} and step.candidates_out == [d.route.key]
-    assert "llamacpp-local|qwen3-8b|local-hardware|mac" not in step.candidates_out
+    assert step.values["llamacpp-local|local-8b|local-hardware|mac"] == "unmeasured" and set(step.values.values()) == {"unmeasured"} and step.candidates_out == [d.route.key]
+    assert "llamacpp-local|local-8b|local-hardware|mac" not in step.candidates_out
 
 
 def test_a_measured_local_one_still_wins_on_cost_class_among_measured_ones():
@@ -39,7 +39,7 @@ def test_a_measured_local_one_still_wins_on_cost_class_among_measured_ones():
 def test_a_failed_measurement_is_dropped_as_before_and_does_not_make_the_unmeasured_ones_lose():
     d = route([admission("text", LOCAL, passed=6)])  # measured and below 8/10: dropped; nothing else is measured, so the cheapest unmeasured one is next
     step = next(s for s in d.rule_trace if s.step == "admission_filter")
-    assert step.values["llamacpp-local|qwen3-8b|local-hardware|mac"] == "not_admitted" and d.route.environment_id != LOCAL and d.provisional
+    assert step.values["llamacpp-local|local-8b|local-hardware|mac"] == "not_admitted" and d.route.environment_id != LOCAL and d.provisional
 
 
 def test_with_nothing_measured_the_cheapest_unmeasured_wins_and_is_flagged_provisional():

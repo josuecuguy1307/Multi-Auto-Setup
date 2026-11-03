@@ -1,0 +1,81 @@
+{
+ "note": "The order of the steps the harness takes by itself when a task needs more than one decision. Each step names what it does (`do`) and where each outcome leads (`on`); an outcome nobody lists ends the chain. A step may be visited only `max_visits` times, so nothing loops. Every question to the owner is one chat question; nothing here approves anything for him.",
+ "chains": {
+  "task_with_inputs": {
+   "start": "approve_inputs",
+   "max_visits": {
+    "approve_inputs": 16,
+    "install": 1,
+    "measure": 1,
+    "route": 4,
+    "propose_setup": 2,
+    "analyze": 1
+   },
+   "steps": {
+    "approve_inputs": {
+     "do": "approve_inputs",
+     "on": {
+      "more": "approve_inputs",
+      "done": "read_inputs",
+      "declined": "end"
+     }
+    },
+    "read_inputs": {
+     "do": "read_inputs",
+     "on": {
+      "done": "route",
+      "failed": "end"
+     }
+    },
+    "route": {
+     "do": "route",
+     "on": {
+      "routed": "create_task",
+      "no_local_candidate": "propose_setup",
+      "no_candidate": "propose_setup",
+      "provisional_only": "measure",
+      "refused": "end"
+     }
+    },
+    "propose_setup": {
+     "do": "propose_setup",
+     "on": {
+      "chosen": "install",
+      "declined": "end",
+      "unavailable": "end",
+      "no_analysis": "analyze"
+     }
+    },
+    "install": {
+     "do": "install",
+     "on": {
+      "done": "route",
+      "failed": "end"
+     }
+    },
+    "measure": {
+     "do": "measure",
+     "on": {
+      "done": "route",
+      "failed": "end"
+     }
+    },
+    "create_task": {
+     "do": "create_task",
+     "on": {
+      "created": "end"
+     }
+    },
+    "analyze": {
+     "do": "analyze",
+     "on": {
+      "done": "propose_setup",
+      "failed": "end"
+     }
+    }
+   },
+   "analysis_max_age_s": 604800,
+   "analysis_note": "a stored analysis older than this (7 days) is read again before the chain proposes a setup; the analysis is read-only and is started by the harness, never as the owner"
+  }
+ }
+}

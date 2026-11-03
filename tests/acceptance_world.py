@@ -121,7 +121,9 @@ class World:
         status, text = self.script.reply(env, access, prompt, model=body.get("model"))
         if status != 200:
             return httpx.Response(status, text="error")
-        return httpx.Response(200, json={"choices": [{"message": {"content": text}}]})
+        if local:  # a local server answers with the text only
+            return httpx.Response(200, json={"choices": [{"message": {"content": text}}]})
+        return httpx.Response(200, json={"id": "chatcmpl-test-0001", "model": "muse-spark-1.3-returned", "usage": {"prompt_tokens": 17, "completion_tokens": 5, "total_tokens": 22}, "choices": [{"message": {"content": text}}]})  # an API's answer carries its own id, model field and usage
 
     def run_cli(self, argv, cwd, env, timeout_s, stdin_text=None):
         exe = (cwd and str(argv[0]).rsplit("/", 1)[-1]) or "opencode"
@@ -138,6 +140,7 @@ async def build(tmp: Path, *, key: bool = True, server: bool = True, web: bool =
     cm = coordinator(tmp / "c", web=web)
     c = await cm.__aenter__()
     agent, tsk, nid = await agent_up(c, tmp, name="lenovo")
+    w.agent = agent  # the node's runner, for tests that change what this computer has
     if key:
         C.set("MODEL_API_KEY", SENTINEL)
     envs = envs or ENVS
@@ -151,7 +154,7 @@ async def build(tmp: Path, *, key: bool = True, server: bool = True, web: bool =
     c.harness.native_confirm = w.dialog.confirm
     c.harness.native_secret = w.dialog.secret
     c.harness.raise_dialogs = False  # this world plays the owner through mas_request_approval; tests/test_harness_dialogs.py is where the harness opens the dialogs by itself
-    c.services.envs = c.services.router.envs = c.services.facts.envs = envs  # the catalog this world runs on (the shipped one unless a test hands another)
+    c.services.envs = c.services.catalog = c.services.router.envs = c.services.facts.envs = envs  # the catalog this world runs on (the shipped one unless a test hands another)
     c.services.policy.open_subtypes = set(subtypes)
     p = c.services.profile  # the owner's answers, given up front (this world plays him): finance is confidential, a task that touches nothing is public, local first, any cloud step allowed up to two escalations
     p.set("confidential", ["finance"]); p.set("default_sensitivity", "public"); p.set("cloud_spend", "allowed"); p.set("cloud_steps", 2); p.set("local_first", "local"); p.set_role(nid, "general")
@@ -194,10 +197,14 @@ def set_server(c, nid, *, up: bool, model: str = MODEL) -> None:
                                                        "status": {"1": "done" if up else "undone", "2": "done"}}))  # stopping the server undoes its start step; the minimal call has nothing to undo
 
 
+async def owner_yes(host, intent_id: str):
+    """The owner answers ONE chat question 'approve' (approval-policy.json: a task's route, an exam, a board decision, a draft, an unpair, a connection are chat_choice). This world plays him: the chat only relays."""
+    return await host.tool("mas_answer", intent_id=intent_id, option="approve")
+
+
 async def approve(host, c, job_or_intent: str | None = None, *, intent_id: str | None = None):
-    """The owner presses Approve in his own system dialog (the tool asks; the dialog is the gesture)."""
-    r = await host.tool("mas_request_approval", intent_id=intent_id)
-    return r
+    """The owner presses Approve in his own system dialog (the tool asks; the dialog is the gesture): pairing and storing or removing a key are the only decisions that open one."""
+    return await host.tool("mas_request_approval", intent_id=intent_id)
 
 
 async def wait_job(host, job_id, *, until=("done", "refused", "declined", "failed", "exhausted", "aborted", "route_changed", "done_unchecked", "unchecked"), timeout=60):

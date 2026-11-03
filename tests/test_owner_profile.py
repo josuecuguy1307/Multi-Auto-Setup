@@ -33,7 +33,7 @@ def answer(c, ch, intent, option):
 
 def fresh(c, tmp):
     """A profile nobody answered yet, as on a first run."""
-    c.services.profile = Profile(tmp / "fresh-profile.json")
+    c.services.profile = Profile(tmp / "fresh-profile.json", dynamic=c.services.profile.dynamic)
     c.services.profile.apply(c.services.policy)
 
 
@@ -211,7 +211,8 @@ def test_the_tools_offer_the_catalogs_own_choices_not_a_models_memory(tmp_path):
             assert "sensitivity" not in specs["mas_create_task"]["inputSchema"]["properties"]
             assert specs["mas_create_task"]["inputSchema"]["properties"]["touches"]["items"]["enum"] == [*c.services.profile.categories(), "none", "unsure"]
             assert "meta-model-api:api-key" in specs["mas_add_access"]["inputSchema"]["properties"]["access"]["enum"]
-            assert "summarize" in specs["mas_create_task"]["inputSchema"]["properties"]["task_type"]["enum"]
+            tt = specs["mas_create_task"]["inputSchema"]["properties"]["task_type"]
+            assert "enum" not in tt and "summarize" in tt["description"]  # the catalog's own types are listed, and a free description of the work is allowed (it is recommended for, never squeezed into one of them)
         finally:
             await teardown()
     run(go())
@@ -227,7 +228,9 @@ def test_the_proposal_comes_from_the_catalog_and_what_is_detected_and_is_one_que
             r = await host.tool("mas_propose")
             t = text(r)
             assert f"{CLOUD_ENV} via meta-model-api:api-key on" in t and "(cloud)" in t and "summarize" in t and "llamacpp-local via local-hardware" in t
-            assert "Not usable yet" in t and "claude-code on lenovo" in t and "automated use not cleared by the owner" in t and "pi on lenovo" in t and "not installed" in t  # what each other environment needs first, from the catalog's typed reasons
+            assert "Not usable yet" in t and "claude-code on lenovo" in t and "pi on lenovo" in t and "not installed" in t  # what each other environment needs first, from the catalog's typed reasons
+            assert "automated use not cleared" not in t  # finding E: none of the subscription tools is installed on this computer, so each says "not installed", not "not authorized"
+            assert all(f"{x} on lenovo ({'code'}" not in t or "not installed" in t for x in ("claude-code", "codex", "muse-code"))
             (q,) = pending(c, "proposal:")
             assert [o["id"] for o in q.payload["options"]] == ["ok", "change"]
             assert len(pending(c, "proposal:")) == 1 and "Present this to the owner as it is" in t

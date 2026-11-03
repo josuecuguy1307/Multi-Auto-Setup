@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from acceptance_world import build, wait_job
+from acceptance_world import build, owner_yes, wait_job
 from test_acceptance_run import E1, E2, E3A, E3B, actors, answers, create, docker, execute, filt, fx, measure, no_secret_anywhere, record, run, sc, text
 
 PI = [{"id": "opencode", "name": "OpenCode", "set_up": True}, {"id": "pi", "name": "Pi", "set_up": True}]
@@ -364,7 +364,7 @@ def test_ex9_a_board_plans_routes_checks_and_asks_the_owner_once(tmp_path):
             assert sc(shown)["pending"] and sc(shown)["pending"][0]["kind"] == "decompose" and "Waiting for you" in text(shown)
             did = sc(shown)["pending"][0]["decision_id"]
             r = await host.tool("mas_board_approve", board_id=bid, decision_id=did)
-            await host.tool("mas_request_approval", intent_id=sc(r)["intent_id"])
+            await owner_yes(host, sc(r)["intent_id"])
             for _ in range(600):
                 shown = await host.tool("mas_board_show", board_id=bid)
                 if sc(shown)["state"] not in ("running", "waiting_for_owner"):
@@ -402,7 +402,7 @@ async def finish_board(host, c, bid, *, owner_host=None, rounds=600):
         if d["pending"]:
             p = d["pending"][0]
             r = await owner_host.tool("mas_board_approve", board_id=bid, decision_id=p["decision_id"])
-            await owner_host.tool("mas_request_approval", intent_id=sc(r)["intent_id"])
+            await owner_yes(owner_host, sc(r)["intent_id"])
             approved.append(p)
             await asyncio.sleep(0.3)
             continue
@@ -443,7 +443,7 @@ def test_f6_the_month_end_close_board_stays_local_every_subtask_is_checked_and_t
             derived = {str(len(got[0])), str(len(got[1])), str(sum(got[2]["net"]))}  # what a checker computes from them: the report's three figures
             written = {x for x in __import__("re").findall(r"-?\d+", report)}
             assert written == derived, (written, derived)  # every number in the report is computed from a verified subtask output
-            assert text(await host.tool("mas_board_show", board_id=bid)).startswith("This board is confidential")  # a cloud chat is shown nothing of it
+            assert text(await host.tool("mas_board_show", board_id=bid)).lstrip("◈ ").startswith("This board is confidential")  # a cloud chat is shown nothing of it
             record("f6", board=text(shown), actors=actors(c))
         finally:
             await teardown()
@@ -490,7 +490,7 @@ def test_m14_three_local_models_are_measured_one_at_a_time_and_the_recommendatio
                 w.script.model_accuracy[(m, "text")] = k
                 r = await host.tool("mas_run_admission", environment="llamacpp-local", task_type="text", access="local-hardware")
                 assert sc(r)["ok"], text(r)
-                await host.tool("mas_request_approval", intent_id=sc(r)["intent_id"])
+                await owner_yes(host, sc(r)["intent_id"])
                 j = await wait_job(host, sc(r)["job_id"], until=("done", "aborted", "refused", "declined"), timeout=120)
                 assert sc(j)["state"] == "done", text(j)
             set_server(c, nid, up=True, model="model-d-7b-q4")  # a fourth model is being served now and has never been measured

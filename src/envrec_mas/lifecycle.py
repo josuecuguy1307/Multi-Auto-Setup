@@ -175,6 +175,7 @@ def cmd_update(a, *, fetch: rel.Fetch = rel.http_get, run=_run, runner: svc.Runn
         print(f"You already have the latest version ({cur}).")
         return 0
     old_services = [r for r in ("node", "coordinator") if _service_note(r).is_file()]
+    chat_env, stale = _chat_env(a)
     print(f"Installed version: {cur}\nLatest version:    {m['tag']}  (SHA-256 {m['sha256'][:16]}...)")
     if m["notes"]:
         print("\nWhat it brings (text from the release author):\n" + "\n".join("  " + ln for ln in m["notes"].splitlines()))
@@ -182,6 +183,8 @@ def cmd_update(a, *, fetch: rel.Fetch = rel.http_get, run=_run, runner: svc.Runn
           f"  - `current` moves from {cur} to {m['tag']} (atomic switch; if anything fails it goes back to {cur})\n  - versions older than {layout.previous or cur} are deleted")
     for r in old_services:
         print(f"  - the {r} service is registered again with the new program and restarted")
+    for row in stale:
+        print(f"  - the entry of {row['label']} in its settings is rewritten to run the stable command (a copy of its settings file is kept): {row['detail'].split('; ')[-1]}")
     print("  - your keys, pairings and logs are not touched")
     if a.check:
         return 0
@@ -203,11 +206,31 @@ def cmd_update(a, *, fetch: rel.Fetch = rel.http_get, run=_run, runner: svc.Runn
         src = layout.release_dir(m["tag"]) / name
         if src.is_file():
             shutil.copy2(src, layout.home / name)
+    for row in (_repair_chats(chat_env) if stale and chat_env is not None else []):
+        print("  " + row["text"], file=sys.stderr if row["state"] != "repaired" else sys.stdout)
     gone = rel.prune(layout)
     print(f"Updated to {m['tag']}." + (f" Old versions deleted: {', '.join(gone)}." if gone else ""))
     if not old_services:
         print("If you have a `mas node run` or a coordinator running by hand, restart it to use the new version.")
     return 0
+
+
+def _chat_env(a):
+    """(the chat-connection environment, the chats whose entry of ours is dead or names a release folder). Nothing is read from a settings file but our entry's command."""
+    try:
+        from envrec_coordinator import connect as C
+        env = C.Env.system(Path(a.state_dir).expanduser() if getattr(a, "state_dir", None) else envrec_os.default_state_dir())
+        return env, [r for r in C.detect(env) if r["state"] == "repair"]
+    except Exception:  # noqa: BLE001 - a chat check must never stop an update
+        return None, []
+
+
+def _repair_chats(env) -> list[dict]:
+    from envrec_coordinator import connect as C
+    try:
+        return C.repair_entries(env)
+    except Exception as exc:  # noqa: BLE001
+        return [{"state": "not_repaired", "text": f"Could not repair a chat's entry ({type(exc).__name__}). Run `mas connect` for it."}]
 
 
 def _smoke_current(layout: rel.Layout, run) -> bool:

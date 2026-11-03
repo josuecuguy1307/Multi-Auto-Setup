@@ -94,12 +94,12 @@ def test_install_status_uninstall_round_trip_and_the_update_note(tmp_path, capsy
 def test_the_coordinator_service_takes_every_setting_a_real_coordinator_needs_and_writes_them_as_data(tmp_path, capsys):
     import json
     f = Fake()
-    assert lifecycle.cmd_service(ns(tmp_path, "install", role="coordinator", bind="192.0.2.7", port=7500, discovery_port=7501, name="Mac", model_profile="qwen-local",
+    assert lifecycle.cmd_service(ns(tmp_path, "install", role="coordinator", bind="192.0.2.7", port=7500, discovery_port=7501, name="Mac", model_profile="local-profile",
                                     models_file="/x/models.yaml", web_port=8090), runner=f) == 0
     cfg = json.loads((tmp_path / "state" / "coordinator.json").read_text())
-    assert cfg == {"bind": "192.0.2.7", "discovery_port": 7501, "model_profile": "qwen-local", "models_file": "/x/models.yaml", "name": "Mac", "port": 7500, "web": True, "web_port": 8090}
+    assert cfg == {"bind": "192.0.2.7", "discovery_port": 7501, "model_profile": "local-profile", "models_file": "/x/models.yaml", "name": "Mac", "port": 7500, "web": True, "web_port": 8090}
     unit = files(tmp_path)[0].read_text()
-    assert "--state-dir" in unit and str(tmp_path / "state") in unit and all(x not in unit for x in ("7500", "qwen-local", "models.yaml", "--web"))
+    assert "--state-dir" in unit and str(tmp_path / "state") in unit and all(x not in unit for x in ("7500", "local-profile", "models.yaml", "--web"))
 
 
 def test_installing_again_changes_only_what_was_given_and_no_web_turns_the_chat_bridge_off(tmp_path):

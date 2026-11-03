@@ -1,0 +1,10 @@
+{
+ "provenance": "builtin",
+ "protocol": "connect",
+ "tier": "observe",
+ "ring": 3,
+ "platforms": [
+  "any"
+ ],
+ "signature": {}
+}

@@ -72,15 +72,15 @@ TOOLS = {  # name: (description, schema, shows cards)
                  "(the name of a waiting computer, as listed): show its 6-digit code for the owner to type on THAT computer. You cannot complete a pairing: when a computer has typed the code, the harness itself opens a confirmation dialog on the owner's screen "
                  "(name and key fingerprint); the owner answers there and you call nothing. Ask again for the outcome. If no dialog could be opened this returns the confirmation with its intent_id for mas_request_approval. wait_s waits for the state to change.",
                  {"type": "object", "properties": {"machine": {"type": "string"}, "wait_s": {"type": "number", "minimum": 0, "maximum": 20}}}, True),
-    "mas_unpair": ("Ask the owner to unpair a paired computer (machine: its name). Nothing is removed by this call: it returns a confirmation; call mas_request_approval with its intent_id and the owner answers in a "
-                   "system dialog. Only that approval removes the computer's key.", {"type": "object", "properties": {"machine": {"type": "string"}}, "required": ["machine"]}, True),
+    "mas_unpair": ("Ask the owner to unpair a paired computer (machine: its name). Nothing is removed by this call: it returns ONE question; relay HIS answer with mas_answer (its intent_id, option approve or reject). "
+                   "Only his approval removes the computer's key.", {"type": "object", "properties": {"machine": {"type": "string"}}, "required": ["machine"]}, True),
     "mas_status": ("What happened in a run since the last call: progress, a question for the owner, the machine card, the options. It WAITS (up to wait_s, default 20) until something needs the owner, a result arrives or the run ends, "
                    "and returns the progress that piled up meanwhile: call it once, then act on what it says; do not call it again in a row to check progress.",
                    {"type": "object", "properties": {"run_id": {"type": "string"}, "wait_s": {"type": "number", "minimum": 0, "maximum": 20}}, "required": ["run_id"]}, True),
     "mas_answer": ("Give the owner's answer to a closed question the harness asked (his profile, a proposal, a task's level, the whole plan of a setup or an undo): intent_id from the question, and option = the option's id or its number in the question's numbered list. "
                    "Only after the OWNER has answered in the chat; never for him. The options are an unordered set that he chooses from; do not recommend or rank them. It cannot approve a pairing or a key (those are system dialogs).",
                    {"type": "object", "properties": {"intent_id": {"type": "string"}, "option": {"type": "string", "description": "an option id exactly as printed after 'id:', or its number (1, 2, 3...)"}}, "required": ["intent_id", "option"]}, True),
-    "mas_request_approval": ("Ask the owner to approve a pending plan that writes to a machine. The owner answers in his own screen, not through you; you only learn the outcome.",
+    "mas_request_approval": ("Ask the owner to approve, in his own system dialog, a pending decision that is answered there: pairing a computer, and storing or removing a key. Every other decision is ONE chat question answered with mas_answer. The owner answers on his own screen, not through you; you only learn the outcome.",
                              {"type": "object", "properties": {"intent_id": {"type": "string"}}, "required": ["intent_id"]}, True),
 }
 APP_ONLY = {  # called by the card's own view, never offered to the chat's model (MCP Apps tool visibility)
@@ -256,7 +256,9 @@ class McpAdapter:
         out = self.core.activity(self.activity_cursor)
         self.activity_cursor = out["seq"]
         lines = [f"[{i['actor']}] {i['text_fallback']}" for i in out["intents"]]
-        return {"content": [{"type": "text", "text": "\n".join(lines) or t("en", "act_nothing")}], "structuredContent": {"lines": len(lines), "busy": out["busy"]},
+        if out.get("open"):  # the exams, tasks and runs that are going now, one line each, whatever happened since the last call
+            lines = [t("en", "act_open_head"), *out["open"], *lines]
+        return {"content": [{"type": "text", "text": "\n".join(lines) or t("en", "act_nothing")}], "structuredContent": {"lines": len(lines), "busy": out["busy"], "open": out.get("open", [])},
                 "_meta": {"mas/cards": [], "mas/live": {"active": bool(out["busy"]), "every_s": LIVE_EVERY_S}}}
 
     def tool_connect(self, a: dict) -> dict:
@@ -312,7 +314,8 @@ class McpAdapter:
 
     def tool_answer(self, a: dict) -> dict:
         r = self.core.decide(str(a.get("intent_id", "")), str(a.get("option", "")))
-        return {"content": [{"type": "text", "text": (t("en", "mcp_recorded") + "\n\n" + r["next"]) if r.get("next") else t("en", "mcp_answered").format(channel=r["channel"])}], "structuredContent": {**r}, "_meta": {"mas/cards": []}}
+        body = (t("en", "mcp_recorded") + "\n\n" + r["next"]) if r.get("next") else t("en", "mcp_answered").format(channel=r["channel"])
+        return {"content": [{"type": "text", "text": body + (("\n" + r["job_line"]) if r.get("job_line") and r["job_line"] not in body else "")}], "structuredContent": {**r}, "_meta": {"mas/cards": []}}
 
     def tool_request_approval(self, a: dict) -> dict:
         """Obtain the owner's answer from something a model does not drive, in the order the core lists them. The prompt is the core's text, never ours."""
@@ -334,13 +337,13 @@ class McpAdapter:
                     return self._approval_text(t("en", "ap_dismissed"))
                 done = self.core.complete_confirmation(b["ticket"], b["plan_hash"], action)
                 state = done["state"]
-                return self._approval_text(t("en", "ap_host_answer").format(state=done["state_text"]), state=state, mechanism=mech, plan_hash=b["plan_hash"])
+                return self._approval_text(t("en", "ap_host_answer").format(state=done["state_text"]) + (("\n" + done["job_line"]) if done.get("job_line") else ""), state=state, mechanism=mech, plan_hash=b["plan_hash"])
             if mech == "os_dialog":
                 b = self.core.begin_confirmation(intent_id, mech)
                 state = self._wait_ticket(b["ticket"])
                 tk = self.core.ticket(b["ticket"])
                 weak = tk.get("assurance") == "weak"
-                return self._approval_text(t("en", "ap_os_answer").format(state=tk["state_text"]) + (t("en", "ap_weak_note") if weak else "") + t("en", "ap_if_not"),
+                return self._approval_text(t("en", "ap_os_answer").format(state=tk["state_text"]) + (t("en", "ap_weak_note") if weak else "") + t("en", "ap_if_not") + (("\n" + tk["job_line"]) if tk.get("job_line") else ""),
                                            state=state, mechanism=mech, plan_hash=b["plan_hash"], **({"assurance": "weak"} if weak else {}))
         return self._approval_text(t("en", "ap_none"), state="unavailable")
 

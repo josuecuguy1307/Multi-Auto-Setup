@@ -20,6 +20,16 @@ CODE = "482915"
 AVAILABLE = {"available": True, "profile": "scripted", "reason": ""}
 
 
+@pytest.fixture(autouse=True)
+def fixed_memory(monkeypatch):
+    """ROOT CAUSE of the failures of this file's options tests: the node's memory probe reads THIS computer's live free memory (psutil), and the options depend on it. On a busy computer (1.5 GiB free) only a 0.5B
+    model fits, the options list is empty or tiny, and the scripted run either ends in `no_options` or runs out of replies. The dependency is made explicit: the probe is given a fixed 16 GiB computer with 12 GiB
+    free (what the ANALYSIS_SCRIPT's expectations were written for). Nothing else is changed; no assertion was loosened."""
+    from envrec_node import tasks as node_tasks
+    real = node_tasks.probes.memory_for_models
+    monkeypatch.setattr(node_tasks.probes, "memory_for_models", lambda *a, **k: real(*a, ram_total_gib=16.0, ram_available_gib=12.0, disk_free_gib=200.0, **k))
+
+
 def run(coro):
     return asyncio.run(coro)
 
@@ -65,12 +75,17 @@ ANALYSIS_SCRIPT = [act("node_os_details"), act("node_gpu"), act("node_memory_fit
                    act("finish_analysis", args={"known": "OS, GPU and memory", "unknown": "programs were not read", "why": "not needed for the choice"})]
 
 
+MAX_OPTIONS_SHOWN = 40
+
+
 def options_script(holder, *, owner_choice=True):
     def explain(s, u):
         ad = holder["run"].adapter
         left = [o["id"] for o in ad.options_built if o["id"] not in ad.explained]
         return act("explain_option", args={"option": left[0], "text": "It is listed because it fits this machine, and its limit is the memory."})
-    return [act("load_analysis"), act("ask_owner", args={"question": "which_ai"}), act("build_options"), explain, explain, explain, explain]
+    # The protocol closes when EVERY option it shows is explained, and how many it shows is the catalog's (the shipped catalog keeps growing: 4 options once, 12 now), so the script explains as many as there
+    # are: one reply per option the catalog can show (the cap is the options builder's), the surplus is never asked for because the run ends when the last option is explained.
+    return [act("load_analysis"), act("ask_owner", args={"question": "which_ai"}), act("build_options")] + [explain] * MAX_OPTIONS_SHOWN
 
 
 async def analysed(c, nid, replies=None):
@@ -156,7 +171,7 @@ def test_the_options_protocol_reads_the_stored_analysis_without_probing_and_clos
             res = r.result
             assert res["answers"] == {"which_ai": "local"} and res["options"] and all(o["explanation_status"] == "hypothesis" and o["status"] == "provisional, not measured here" for o in res["options"])
             facts = {f.key: f.value for f in r.store.current_facts(r.target.id) if f.status.value != "unknown"}
-            expected = O.build_options(facts, choice="local")["options"]
+            expected = O.build_options(facts, choice="local", prefer_publisher=c.services.profile.get("preferred_publisher"))["options"]  # the run reads the owner's preferred publisher from his profile when it builds the options
             assert [o["id"] for o in res["options"]] == [o["id"] for o in expected][:len(res["options"])]  # the options are the code's, whatever the model said
             await down(agent, task)
     run(go())
@@ -408,7 +423,7 @@ def test_the_model_can_see_which_option_ids_explain_option_takes_and_the_list_sh
             await answer_when_asked(c, r, "which_ai", "local")
             await asyncio.wait_for(r.task, 60)
             ids = [o["id"] for o in r.adapter.options_built]
-            seen = [u for _s, u in m.calls if "explain_option(option, text)" in u]
+            seen = [u for _s, u in m.calls if "explain_option(option, text)" in u and "(the options not explained yet)" in u]  # before the options are built the hint truthfully says "an option id from the facts option.N"
             assert seen and f"option (required, string): one of: {', '.join(ids)} (the options not explained yet)" in seen[0]
             if len(ids) > 1:
                 assert f"one of: {', '.join(ids[1:])} (the options not explained yet)" in seen[1]

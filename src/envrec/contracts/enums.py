@@ -27,6 +27,7 @@ class TargetKind(StrEnum):
     chat_connect = "chat_connect"  # the coordinator connecting a chat host (Open WebUI, Claude Desktop, a terminal agent) to Multi Auto Setup: detects, asks the owner, builds the plan from the recipes, each step approved (protocol-connect-chats)
     uninstall = "uninstall"  # the coordinator undoing, later and in a new run, what a recorded setup wrote on one machine: only its done steps, newest first, each undo approved by the owner (protocol-undo)
     network = "network"  # the coordinator drafting the whole setup of the owner's network from the stored analyses: tasks, environment per machine, team, freedom, rhythm (protocol-draft)
+    recommend = "recommend"  # the coordinator preparing a recommendation for work no catalog task type names: known data, the closed choice of a type, public sources as unverified leads (protocol-recommend)
     lan = "lan"  # the coordinator's own network: waiting machines and pairing offers the OWNER picked (protocol-lan)
     media = "media"  # this computer's own Bluetooth, audio output and media apps, enrolled in targets.yaml as a `local` entry
     scope = "scope"  # the candidates a goal covers: the model picks one of them (protocol-choose)

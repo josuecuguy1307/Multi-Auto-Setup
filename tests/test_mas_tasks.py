@@ -210,7 +210,7 @@ def test_the_not_allowed_tool_is_refused_before_anything_runs(tmp_path):
         r, coord, me = make_runner(tmp_path)
         sent = await offer_task(r, coord, me, "write_file", {"path": "x"}, tools=["write_file"])
         assert [(m[0], m[1]["state"], m[1]["reason"]) for m in sent] == [("task_update", "rejected", "tool_not_allowed")] and r.running == 0
-        assert set(node_tasks.ALLOWED) == {"node_report", "machine_analysis", "credential_presence", *T.PROBES, "setup_step", "environment_run", "credential_step"}  # the report, the analysis, the six read-only probes and the TWO write tasks (tests/test_setup_write.py, tests/test_environment_run.py)
+        assert set(node_tasks.ALLOWED) == {"node_report", "machine_analysis", "credential_presence", "list_dir", "model_list", *T.PROBES, "setup_step", "environment_run", "credential_step"}  # the report, the analysis, the six read-only probes and the TWO write tasks (tests/test_setup_write.py, tests/test_environment_run.py)
     run(go())
 
 

@@ -33,7 +33,7 @@ class Collector(Protocol):
 
     def run(self, cmd: Cmd) -> Capture: ...
     def read_file(self, name: str, path: str) -> Capture: ...
-    def http_get(self, name: str, url: str, timeout_s: float = 3.0) -> Capture: ...
+    def http_get(self, name: str, url: str, timeout_s: float = 3.0, max_bytes: int | None = None) -> Capture: ...
     def serial_exchange(self, name: str, port: str, plan: dict) -> Capture: ...
 
 
@@ -74,7 +74,7 @@ class LocalCollector:
             return Capture(cmd.name, src, data, done.returncode, self.origin, self.platform, why, done.stderr.decode("utf-8", "replace")[:160])
         return Capture(cmd.name, src, data, 0, self.origin, self.platform)
 
-    def http_get(self, name: str, url: str, timeout_s: float = 3.0) -> Capture:
+    def http_get(self, name: str, url: str, timeout_s: float = 3.0, max_bytes: int | None = None) -> Capture:
         """One GET. A server on this computer (loopback) is read as before; an official documentation host from config/doc_sources.yaml is read over https with a size cap and a time cap.
         Anything else is refused. Redirects are followed only to hosts on the same list. The body is untrusted data: it is stored as a capture whose source is the URL."""
         import urllib.error
@@ -90,7 +90,7 @@ class LocalCollector:
             if u.scheme != "https" or host not in src.hosts:
                 return Capture(name, url, b"", None, self.origin, self.platform, Reason.denied,
                                f"only loopback and the official documentation hosts in config/doc_sources.yaml may be read ({', '.join(sorted(src.hosts))}), over https")
-            limit, timeout, allowed = src.max_bytes, src.timeout_s, src.hosts
+            limit, timeout, allowed = (min(max_bytes, src.ceiling_bytes) if max_bytes and src.ceiling_bytes else src.max_bytes), src.timeout_s, src.hosts  # a row may raise ITS cap, to the data's ceiling and no further
 
         class Guard(urllib.request.HTTPRedirectHandler):
             def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -237,7 +237,7 @@ class ReplayCollector:
             return Capture(cmd.name, src, f.read_bytes(), code, self.origin, self.platform, classify_failure(code, f.read_text(errors="replace")), "recorded failure")
         return Capture(cmd.name, src, f.read_bytes(), 0, self.origin, self.platform)
 
-    def http_get(self, name: str, url: str, timeout_s: float = 3.0) -> Capture:
+    def http_get(self, name: str, url: str, timeout_s: float = 3.0, max_bytes: int | None = None) -> Capture:
         f = self.dir / f"{name}.out"
         if not f.is_file():
             return Capture(name, f"GET {url}", b"", None, self.origin, self.platform, Reason.unavailable, "no recording")
@@ -289,7 +289,7 @@ class RemoteCollector:
     def read_file(self, name: str, path: str) -> Capture:
         return self.run(Cmd(name, ("cat", path)))
 
-    def http_get(self, name: str, url: str, timeout_s: float = 3.0) -> Capture:
+    def http_get(self, name: str, url: str, timeout_s: float = 3.0, max_bytes: int | None = None) -> Capture:
         return Capture(name, f"GET {url}", b"", None, self.origin, self.platform, Reason.not_applicable, "no local HTTP identify on remote targets")
 
     def serial_exchange(self, name: str, port: str, plan: dict) -> Capture:

@@ -76,3 +76,15 @@ def test_the_rule_is_by_shape_not_by_key_the_same_string_is_whole_under_any_fact
     f = lambda key: Fact(target_id="t", key=key, value=LONG_ID, status=FactStatus.tested, created_by=CreatedBy.probe,  # noqa: E731
                          evidence=[Evidence(provider="p", probe="x", confidence=1.0)])
     assert LONG_ID in fact_line(f("machine.anything")) and LONG_ID in fact_line(f("draft.whatever"))
+
+
+def test_a_long_parameter_description_keeps_its_list_of_values_and_a_cut_is_counted_never_silent():
+    from envrec.loop import menu as M
+    from envrec.contracts import ToolSpec
+    ids = ", ".join(f"catalog-{i}b-some-long-model-name-GGUF-q4_k_m" for i in range(12))
+    spec = ToolSpec.model_construct(input_model={"properties": {"option": {"type": "string", "description": f"one of: {ids} (the options not explained yet)"}}, "required": ["option"]})
+    lines = M._arg_lines(spec)
+    assert ids in lines[0] and lines[0].endswith("(the options not explained yet)")  # twelve long ids all reach the model
+    huge = "x" * (M.PARAM_DESC_CHARS + 77)
+    spec2 = ToolSpec.model_construct(input_model={"properties": {"a": {"type": "string", "description": huge}}, "required": []})
+    assert M._arg_lines(spec2)[0].endswith("[77 more characters not shown]")

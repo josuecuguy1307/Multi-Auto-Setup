@@ -26,6 +26,7 @@ class Reply:
     text: str
     seconds: float
     timed_out: bool = False  # the environment did not answer in time: the model's failure, counted as one
+    proof: dict | None = None  # what the NODE recorded about this call, verified by the coordinator before it got here (envrec_net.envrun.verify_proof): host, times, the API's response id and model field, bytes
 
 
 class RunnerAborted(Exception):
@@ -77,7 +78,7 @@ def run_exam(combo: Combo, suite: Suite, runner: Runner, facts: AdmissionFacts, 
             facts.aborted(combo, exc.reason, len(results))
             raise ExamAborted(exc.reason, len(results)) from None
         ref = facts.log.store.put_raw(reply.text).sha256
-        facts.log.add("admission_reply", {"fact": combo.key, "n": n, "task": task.id, "reply_ref": ref, "seconds": round(reply.seconds, 2), "timed_out": reply.timed_out})
+        facts.log.add("admission_reply", {"fact": combo.key, "n": n, "task": task.id, "reply_ref": ref, "seconds": round(reply.seconds, 2), "timed_out": reply.timed_out, **({"proof": reply.proof} if reply.proof else {})})
         if reply.timed_out:
             res = TaskResult(task.id, False, task.grader_kind, "timeout", reply.seconds, ref)
         else:

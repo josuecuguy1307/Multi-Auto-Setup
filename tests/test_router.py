@@ -8,12 +8,17 @@ from envrec_coordinator.router import DictFacts, EntryChat, MachineFacts, Policy
 from envrec_coordinator.router.facts import admission_key
 from envrec_net import envrun as E
 
+from envrec_coordinator.router.strings import REASONS  # noqa: E402
+
 ENVS = E.load_environments()
+
+
+TESTED_MUSE = {**ENVS, "muse-code": {**ENVS["muse-code"], "evidence_state": "tested"}}
 
 
 def machine(mid="mac", **kw) -> MachineFacts:
     base = dict(machine_id=mid, os_family="darwin", installed={"claude-code", "codex", "opencode", "muse-code", "pi"}, signed_in={"claude-code:plan", "codex:plan"}, env_names=set(),
-                sandbox_backends=["docker"], model_endpoint="127.0.0.1:8080", model_id="qwen3-8b")
+                sandbox_backends=["docker"], model_endpoint="127.0.0.1:8080", model_id="local-8b")
     base.update(kw)
     return MachineFacts(**base)
 
@@ -32,17 +37,17 @@ def task(tid="t1", ttype="code", sens="public", chat="cloud", by="OWNER") -> Tas
     return Task(task_id=tid, task_type=ttype, sensitivity=sens, entry_chat=EntryChat(kind=chat, name="claude-desktop" if chat == "cloud" else "owner-panel"), created_by=by, payload_ref="ref-" + tid)
 
 
-def admission(ttype, env, mach="mac", model="qwen3-8b", access=None, passed=9, **kw) -> tuple[str, dict]:
+def admission(ttype, env, mach="mac", model="local-8b", access=None, passed=9, **kw) -> tuple[str, dict]:
     access = access or {"llamacpp-local": "local-hardware", "opencode": "opencode:local", "pi": "pi:local", "claude-code": "claude-code:plan", "codex": "codex:plan"}[env]
     model = model if env in ("llamacpp-local", "opencode", "pi") else "default"
     key = f"admission.{ttype}.{mach}.{env}.{model}.{access}"
     return key, {"status": "tested", "graded_by": "code", "passed": passed, "of": 10, "identity": {}, **kw}
 
 
-def router(machines=None, pol=None, adm=None, **kw) -> tuple[Router, list]:
+def router(machines=None, pol=None, adm=None, envs=None, **kw) -> tuple[Router, list]:
     log = []
     facts = DictFacts(machines or [machine()], admission=dict(adm or []), **kw)
-    return Router(envs=ENVS, facts=facts, policy=pol or policy(), log=lambda t, p, a: log.append((t, a, p))), log
+    return Router(envs=envs or ENVS, facts=facts, policy=pol or policy(), log=lambda t, p, a: log.append((t, a, p))), log
 
 
 # ---- sensitivity, in code ---------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -82,7 +87,7 @@ def test_a_confidential_task_with_no_local_environment_at_all_is_refused_as_no_l
 
 def test_a_stale_admission_fact_is_not_a_measurement_so_confidential_is_refused():
     key, fact = admission("text", "llamacpp-local", identity={"model": "old-sha"})
-    r, _ = router(adm=[(key, fact)], identity={"llamacpp-local|qwen3-8b|local-hardware|mac": {"model": "new-sha"}})
+    r, _ = router(adm=[(key, fact)], identity={"llamacpp-local|local-8b|local-hardware|mac": {"model": "new-sha"}})
     assert r.route(task(ttype="text", sens="confidential", chat="local")).code == "provisional_only"
 
 
@@ -117,9 +122,21 @@ def test_cost_class_comes_first_local_before_api_before_subscription():
 
 def test_with_only_providers_the_api_access_ranks_before_the_subscription_access():
     m = machine(model_endpoint=None, installed={"muse-code", "claude-code"}, signed_in={"claude-code:plan"}, env_names={"META_API_KEY"})
-    r, _ = router(machines=[m], pol=policy(open_subtypes={"provider"}))
+    r, _ = router(machines=[m], pol=policy(open_subtypes={"provider"}), envs=TESTED_MUSE)  # the shipped Muse CLI is a hypothesis (never run here), which a test of the cost order does not want
     d = r.route(task(ttype="text"))
     assert d.route.access_id == "muse-code:api-key"  # cost class api < subscription
+
+
+def test_a_hypothesis_is_never_the_default_and_the_reason_says_so():
+    m = machine(model_endpoint=None, installed={"muse-code", "claude-code"}, signed_in={"claude-code:plan"}, env_names={"META_API_KEY"})
+    r, _ = router(machines=[m], pol=policy(open_subtypes={"provider"}))
+    d = r.route(task(ttype="text"))
+    assert d.route.environment_id == "claude-code"  # the Muse CLI would be cheaper (api) but its evidence is a hypothesis
+    assert d.left_out["muse-code@mac"] == REASONS["not_verified"] and "hypothesis" in REASONS["not_verified"]
+    for state in ("unknown", "contradicted"):
+        r2, _ = router(machines=[m], pol=policy(open_subtypes={"provider"}), envs={"claude-code": {**ENVS["claude-code"], "evidence_state": state}, "muse-code": {**ENVS["muse-code"], "evidence_state": state}})
+        out = r2.route(task(ttype="text"))
+        assert out.code == "no_candidate" and set(out.details["codes"].values()) == {"not_verified"}, state
 
 
 def test_a_measured_rate_ranks_above_no_data_and_differences_inside_the_margin_are_a_tie():
@@ -127,7 +144,7 @@ def test_a_measured_rate_ranks_above_no_data_and_differences_inside_the_margin_a
     r, _ = router(adm=adm, pol=policy(tie_margin=0.1))
     d = r.route(task())
     step = next(s for s in d.rule_trace if s.step == "admission_rate")
-    assert set(step.candidates_out) == {"llamacpp-local|qwen3-8b|local-hardware|mac", "opencode|qwen3-8b|opencode:local|mac"} and step.margin == 0.1  # 10/10 and 9/10 tie, 8/10 does not
+    assert set(step.candidates_out) == {"llamacpp-local|local-8b|local-hardware|mac", "opencode|local-8b|opencode:local|mac"} and step.margin == 0.1  # 10/10 and 9/10 tie, 8/10 does not
     r2, _ = router(adm=adm, pol=policy(tie_margin=0.0))
     assert r2.route(task()).route.environment_id == "llamacpp-local"
 
@@ -136,7 +153,7 @@ def test_a_combination_that_failed_the_admission_exam_is_not_approved_even_if_it
     adm = [admission("code", "llamacpp-local", passed=3), admission("code", "opencode", passed=9)]
     r, _ = router(adm=adm)
     d = r.route(task())
-    assert d.route.environment_id == "opencode" and {k: v for k, v in d.rule_trace[1].values.items() if v == "not_admitted"} == {"llamacpp-local|qwen3-8b|local-hardware|mac": "not_admitted"}  # (measured_first also lists the unmeasured ones it dropped, as "unmeasured")
+    assert d.route.environment_id == "opencode" and {k: v for k, v in d.rule_trace[1].values.items() if v == "not_admitted"} == {"llamacpp-local|local-8b|local-hardware|mac": "not_admitted"}  # (measured_first also lists the unmeasured ones it dropped, as "unmeasured")
 
 
 def test_measured_time_then_fewer_tasks_then_the_shared_plan_quota_break_remaining_ties():
@@ -210,7 +227,7 @@ def test_muse_code_has_two_accesses_a_plan_and_an_api_key_found_by_either_variab
     assert muse["cloud"] is True and muse["automated_use"] == "to review"
     base = dict(model_endpoint=None, installed={"muse-code"}, signed_in=set())
     pol = policy(open_subtypes={"provider"})
-    only_muse = {"muse-code": muse}  # the Meta Model API environment is enabled by the same variable; this test is about the CLI's accesses
+    only_muse = {"muse-code": {**muse, "evidence_state": "tested"}}  # the Meta Model API environment is enabled by the same variable; this test is about the CLI's accesses (as if the CLI had been run)
 
     def route_with(names, tid):
         return Router(envs=only_muse, facts=DictFacts([machine(env_names=names, **base)]), policy=pol).route(task(tid))
@@ -294,3 +311,13 @@ def test_internal_to_a_cloud_chat_drops_content_keys_and_caps_size():
 def test_the_router_filter_method_uses_the_owner_policy():
     r, _ = router()
     assert "SECRET" not in repr(r.filter_outbound(INTENT, {"kind": "cloud"}))
+
+
+def test_a_tool_that_is_not_installed_says_so_before_the_owners_terms_and_an_installed_one_still_waits_for_them():
+    absent = machine(installed=set(), signed_in=set(), model_endpoint=None)
+    out = router(machines=[absent], pol=policy(open_subtypes={"provider"}, automated_use_cleared=set()))[0].route(task(ttype="text"))
+    providers = {k: v for k, v in out.details["codes"].items() if k.split("@")[0] in ("claude-code", "codex", "muse-code")}
+    assert out.code == "no_candidate" and set(providers.values()) == {"not_installed"} and len(providers) == 3  # finding E: "not installed", never "not authorized", for what is not there
+    present = machine(installed={"claude-code"}, signed_in={"claude-code:plan"}, model_endpoint=None)
+    out = router(machines=[present], pol=policy(open_subtypes={"provider"}, automated_use_cleared=set()))[0].route(task(ttype="text"))
+    assert out.code == "automated_use_unreviewed" and out.details["codes"]["claude-code@mac"] == "automated_use_unreviewed"

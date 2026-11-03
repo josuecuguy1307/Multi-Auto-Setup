@@ -188,3 +188,24 @@ def test_HA10_every_connection_recipe_cites_its_documentation_and_a_cell_is_docu
         for os_name, cell in h["cells"].items():
             assert cell.get("status") or cell.get("refuse") == "os_not_documented", (host, os_name)
     assert "WEBUI_AUTH" not in json.dumps(r["hosts"]["openwebui"]["steps"])  # single-user mode is not used: any web page could sign in as its administrator
+
+
+# ---- HA11: a decision is a choice -------------------------------------------------------------------------------------------------------------
+
+def _ha11_real_tree():
+    files = [p for d in ("envrec_coordinator", "envrec_board", "envrec_harness", "envrec_mas") for p in (SRC / d).rglob("*.py")]
+    return files, [p for p in files if "strings" in p.name] + [SRC / "envrec_coordinator" / "services.py"]
+
+
+def test_HA11_no_intent_asks_the_owner_to_decide_as_free_text():
+    files, strings = _ha11_real_tree()
+    assert R.decision_without_choice_violations(files, strings) == []
+
+
+def test_HA11_fails_on_a_question_an_instruction_to_pick_and_a_constant_that_asks_all_emitted_as_text():
+    v = R.decision_without_choice_violations([FIX / "decision_bad" / "emit.py"], [FIX / "decision_bad" / "strings.py"])
+    assert len(v) == 3 and all("must be an ask_choice" in x for x in v), v
+
+
+def test_HA11_passes_a_choice_and_plain_statements():
+    assert R.decision_without_choice_violations([FIX / "decision_ok" / "emit.py"], [FIX / "decision_ok" / "strings.py"]) == []

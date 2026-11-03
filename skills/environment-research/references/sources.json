@@ -1,0 +1,214 @@
+{
+ "label": "declared by the project: how a fetched page is read. WHICH hosts may be fetched at all is config/doc_sources.yaml (one data file); this file only says what a page from an allowed host means. Every page is untrusted data.",
+ "kinds": {
+  "search": {
+   "host": "api.github.com",
+   "path": "^/search/repositories$",
+   "address": "https://api.github.com/search/repositories",
+   "query_param": "q",
+   "allowed_params": [
+    "q",
+    "per_page",
+    "sort",
+    "order"
+   ],
+   "max_per_page": 10,
+   "items": "items",
+   "fields": {
+    "id": "full_name",
+    "description": "description",
+    "license": "license.spdx_id",
+    "url": "html_url",
+    "pushed_at": "pushed_at",
+    "archived": "archived",
+    "stars": "stargazers_count",
+    "topics": "topics"
+   },
+   "example": "https://api.github.com/search/repositories?q=<domain tag words>+agent&per_page=5",
+   "readme": {
+    "url": "https://api.github.com/repos/{id}/readme",
+    "content": "content",
+    "encoding": "encoding"
+   }
+  },
+  "repo": {
+   "host": "api.github.com",
+   "path": "^/repos/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+   "allowed_params": [],
+   "fields": {
+    "id": "full_name",
+    "description": "description",
+    "license": "license.spdx_id",
+    "url": "html_url",
+    "pushed_at": "pushed_at",
+    "archived": "archived",
+    "stars": "stargazers_count",
+    "topics": "topics"
+   },
+   "example": "https://api.github.com/repos/<owner>/<name>",
+   "readme": {
+    "url": "https://api.github.com/repos/{id}/readme",
+    "content": "content",
+    "encoding": "encoding"
+   }
+  },
+  "pypi": {
+   "host": "pypi.org",
+   "path": "^/pypi/[A-Za-z0-9_.-]+/json$",
+   "allowed_params": [],
+   "fields": {
+    "id": "info.name",
+    "description": "info.summary",
+    "url": "info.package_url",
+    "version": "info.version"
+   },
+   "license_paths": [
+    "info.license_expression",
+    "info.license"
+   ],
+   "license_classifiers": "info.classifiers",
+   "example": "https://pypi.org/pypi/<package>/json"
+  },
+  "npm": {
+   "host": "registry.npmjs.org",
+   "path": "^/(?:%40[A-Za-z0-9_.-]+%2[Ff])?[A-Za-z0-9_.-]+/latest$",
+   "allowed_params": [],
+   "fields": {
+    "id": "name",
+    "description": "description",
+    "url": "homepage",
+    "version": "version"
+   },
+   "license_paths": [
+    "license"
+   ],
+   "example": "https://registry.npmjs.org/<package>/latest (a scoped package is %40scope%2Fname)"
+  },
+  "readme": {
+   "host": "api.github.com",
+   "path": "^/repos/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/readme$",
+   "allowed_params": [],
+   "fields": {
+    "content": "content",
+    "encoding": "encoding"
+   },
+   "example": "https://api.github.com/repos/<owner>/<name>/readme",
+   "not_an_item": true
+  }
+ },
+ "query_qualifiers": {
+  "words": [
+   "topic",
+   "in",
+   "language"
+  ],
+  "numbers": [
+   "stars",
+   "forks"
+  ],
+  "dates": [
+   "pushed",
+   "created"
+  ],
+  "flags": [
+   "archived",
+   "fork"
+  ],
+  "license": [
+   "license"
+  ]
+ },
+ "query_vocabulary": [
+  "awesome",
+  "agent",
+  "agents",
+  "framework",
+  "harness",
+  "cli",
+  "toolkit",
+  "assistant",
+  "automation",
+  "workflow",
+  "workflows",
+  "open",
+  "source",
+  "tool",
+  "tools",
+  "skill",
+  "skills",
+  "library",
+  "llm",
+  "model",
+  "models",
+  "mcp",
+  "analysis",
+  "review",
+  "drafting",
+  "writing",
+  "research",
+  "data",
+  "pipeline",
+  "readme",
+  "name",
+  "description",
+  "topics",
+  "mit",
+  "apache",
+  "bsd",
+  "isc",
+  "python",
+  "typescript",
+  "rust",
+  "go"
+ ],
+ "query_limits": {
+  "max_terms": 8,
+  "max_chars": 100
+ },
+ "leak_min_word": 4,
+ "digest_limits": {
+  "items": 10,
+  "description_chars": 140
+ },
+ "thresholds": {
+  "_note": "What a researched lead must pass, checked by code from the fields of the page. The owner can lower or raise any number: edit this file, or put the same keys in <state>/researched/thresholds.json, which wins. An empty or NOASSERTION license is never permissive (the list is policy.json: permissive_licenses).",
+  "max_age_days": 730,
+  "min_stars": 10,
+  "max_queries": 4,
+  "readme_min_tags": 1,
+  "readme_chars": 60000,
+  "reuse_days": 1,
+  "min_searches_when_empty": 2,
+  "max_fetch_failures": 2,
+  "_note2": "min_searches_when_empty: finishing is refused until this many searches were read when no page offered an item that passes the checks; max_fetch_failures: after this many pages that could not be read (a rate limit, an outage) finishing is allowed and the owner is told the research could not be done."
+ },
+ "query_templates": {
+  "_note": "The shapes of a search, built from one domain tag. {tag} is the tag as written, {words} the same with hyphens as spaces, {slug} the same with hyphens for spaces (a Hub or GitHub topic). GitHub cannot OR several licenses in one query, so the license is not in the query; the code re-checks it on every item.",
+  "topic": "topic:{slug}",
+  "awesome": "\"awesome {words}\"",
+  "agent_skills": "\"{words} agent skills\" in:readme"
+ },
+ "auto_qualifiers": {
+  "_note": "Added to every search by code unless the query already has that qualifier; {pushed_after} is today minus thresholds.max_age_days.",
+  "list": [
+   "archived:false",
+   "pushed:>={pushed_after}",
+   "stars:>={min_stars}"
+  ]
+ },
+ "rejection_reasons": [
+  "license_missing",
+  "license_not_permissive",
+  "archived",
+  "stale",
+  "below_min_stars",
+  "no_domain_in_readme",
+  "no_domain_in_description"
+ ],
+ "license_shape": "^[A-Za-z0-9.+-]+(?: (?:AND|OR|WITH) [A-Za-z0-9.+-]+)*$",
+ "license_classifier_table": {
+  "License :: OSI Approved :: MIT License": "MIT",
+  "License :: OSI Approved :: ISC License (ISCL)": "ISC"
+ },
+ "license_classifier_note": "A trove classifier names a license FAMILY, not an SPDX identifier. Only the ones that name exactly one SPDX license are listed (MIT, ISC); 'Apache Software License' covers more than one version and 'BSD License' more than one clause count, so a package that states its license only that way is license_missing, never guessed. A package that states an SPDX id in license_expression or license is read from there."
+}

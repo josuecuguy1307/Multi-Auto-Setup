@@ -33,6 +33,9 @@ class OsLayer(Protocol):
     def make_executable(self, path: Path) -> None:
         """Let the current user run this file as a program (the execute bit; a no-op where the system has none)."""
 
+    def enable_ansi(self) -> None:
+        """Let this terminal show color escape codes and UTF-8 text (needed on Windows; a no-op elsewhere)."""
+
     def spawn_detached(self, argv: list[str], cwd: Path, log_path: Path, env: dict[str, str] | None = None) -> int:
         """Start a program that outlives its parent, with no console and no input, its output going to `log_path`. Returns its process id. No shell: `argv` is the whole command."""
 

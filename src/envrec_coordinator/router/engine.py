@@ -8,12 +8,13 @@ import re
 from collections.abc import Callable
 from typing import Any
 
+from envrec_coordinator.router import evidence as EV
 from envrec_coordinator.router import grading, strings
 from envrec_coordinator.router.catalog import build_candidates, knows_task_type
-from envrec_coordinator.router.facts import Facts, Policy
+from envrec_coordinator.router.facts import Facts, Policy, admission_key
 from envrec_coordinator.router.model import GradeResult, Refusal, Route, RouteDecision, Task, TaskHandle
 from envrec_coordinator.router.outputs import MemoryOutputs, Outputs
-from envrec_coordinator.router.rule import exclusion_step, run_rule, sensitivity_step
+from envrec_coordinator.router.rule import domain_step, exclusion_step, measured, run_rule, sensitivity_step
 from envrec_coordinator.router.sensitivity import creation_refusal, filter_outbound, highest
 from envrec_net import envrun as E
 
@@ -25,8 +26,10 @@ INSTRUCTION = "instr:"
 
 class Router:
     def __init__(self, *, envs: dict[str, dict], facts: Facts, policy: Policy, log: Log | None = None, sender: Any = None, payloads: Callable[[str], str | None] | None = None,
-                 outputs: Outputs | None = None, instructions: dict[str, str] | None = None, sandbox_ready: Callable[[], bool] | None = None, sandbox_runner: grading.SandboxRunner | None = None) -> None:
+                 outputs: Outputs | None = None, instructions: dict[str, str] | None = None, sandbox_ready: Callable[[], bool] | None = None, sandbox_runner: grading.SandboxRunner | None = None,
+                 evidence: dict | None = None) -> None:
         self.envs, self.facts, self.policy = envs, facts, policy
+        self.evidence = EV.load() if evidence is None else evidence  # public evidence as data; the router only reads it
         self.outputs: Outputs = outputs if outputs is not None else MemoryOutputs()
         self.sandbox_ready, self.sandbox_runner = sandbox_ready or (lambda: False), sandbox_runner
         self._graders: dict[str, dict] = {}
@@ -46,7 +49,7 @@ class Router:
 
     def explain(self, task: Task) -> RouteDecision | Refusal:
         """What `route` would decide right now, with nothing recorded: no state, no event, no dispatch. The same code path on a throwaway copy, so the explanation can never differ from the decision."""
-        twin = Router(envs=self.envs, facts=self.facts, policy=self.policy, log=lambda t, p, a: None, outputs=self.outputs, instructions=self.instructions)
+        twin = Router(envs=self.envs, facts=self.facts, policy=self.policy, log=lambda t, p, a: None, outputs=self.outputs, instructions=self.instructions, evidence=self.evidence)
         twin._state = {k: v for k, v in self._state.items() if k != task.task_id}  # the levels of earlier tasks, for `result-of` inputs
         return twin.route(task)
 
@@ -122,16 +125,35 @@ class Router:
             else:
                 code = "no_candidate"
             return self._refuse(task, code, environments=reasons, dropped={k: strings.REASONS.get(v, v) for k, v in dropped.items()}, candidates=cand_keys)
-        chosen, trace, label = run_rule(kept, self.facts, task.task_type, self.policy)
+        dom_trace = []
+        if task.domain:
+            kept, dom_step = domain_step(kept, task.domain)
+            dom_trace = [dom_step]
+        tiers = self._tiers(kept, task)
+        chosen, trace, label = run_rule(kept, self.facts, task.task_type, self.policy, tiers)
         if chosen is None:
             if st["step"] > 0:
                 return self._exhausted(st, left_out, dropped)
             return self._refuse(task, "no_candidate", environments=reasons, trace=[s.model_dump() for s in trace], candidates=cand_keys)
-        decision = RouteDecision(task_id=task.task_id, route=chosen.route, rule_trace=[first, *ex_trace, *trace], escalation_step=st["step"], evidence_label=label, provisional=label == strings.EVIDENCE_NONE, left_out=dict(reasons), effective_sensitivity=eff)  # type: ignore[arg-type]
+        decision = RouteDecision(task_id=task.task_id, route=chosen.route, rule_trace=[first, *ex_trace, *dom_trace, *trace], escalation_step=st["step"], evidence_label=label, provisional=label == strings.EVIDENCE_NONE, left_out=dict(reasons), effective_sensitivity=eff,
+                                 evidence=self._evidence_of(chosen, task))  # type: ignore[arg-type]
         st["decision"] = decision
         st["tried"].append(chosen.route.key)
         self.log("route_decision", {**decision.model_dump(), "sensitivity": eff, "entry_chat": task.entry_chat.model_dump(), "left_out": left_out}, "ROUTER")
         return decision
+
+    def _evidence_of(self, c, task: Task) -> dict:
+        """Tier, source and date of what is known about this combination for this task (router/evidence.py): a valid measurement first, then public data, else none."""
+        m = measured(c, self.facts, task.task_type, self.policy)
+        fact = self.facts.admission(admission_key(task.task_type, c.route)) if isinstance(m, tuple) else None
+        return EV.describe(c.route, task.task_type, task.domain, fact, m if isinstance(m, tuple) else None, self.evidence)
+
+    def _tiers(self, cands, task: Task) -> dict[str, int] | None:
+        """Evidence rank of each candidate, only when the data holds public evidence for at least one of them; otherwise None and the rule runs exactly as before."""
+        if not self.evidence.get("entries"):
+            return None
+        rank = {c.route.key: EV.RANK[self._evidence_of(c, task)["tier"]] for c in cands}
+        return rank if any(r in (1, 2) for r in rank.values()) else None
 
     # ---- escalation --------------------------------------------------------------------------------------------------------------------------------------------------------------
     def report_result(self, task_id: str, escalation_step: int, grader_result: dict) -> RouteDecision | Refusal | None:
@@ -208,7 +230,7 @@ class Router:
         local = E.uses_local_endpoint(entry, route.access_id)  # the node's loopback model server; an API access names its own address in the data
         params = {"environment_id": entry["id"], "task_type": task.task_type, "sensitivity": level, "mode": mode["name"], "workspace_id": re.sub(r"[^a-z0-9-]", "-", f"{task.task_id}-{step}".lower())[:48].strip("-") or "task",
                   "recipe_sha256": E.recipe_sha256(entry), "access_id": route.access_id, "input_text": text, "endpoint": machine.model_endpoint if local else None,
-                  "model_id": E.declared_model(entry, route.access_id) or (machine.model_id if local else None)}
+                  "model_id": (route.model_id if E.listed_model_ok(entry, route.access_id, route.model_id) else None) or E.declared_model(entry, route.access_id) or (machine.model_id if local else None)}
         rec = self.sender.start_environment_run(machine.machine_id, task.task_id, entry, params, {"task_id": task.task_id, "step": step, "route": route.key})
         self.log("dispatch", {"task_id": task.task_id, "route": route.key, "node_task": rec.id, "state": rec.status, "reason": rec.reason, "workspace": params["workspace_id"]}, "GUARD")
         if rec.status == "rejected":

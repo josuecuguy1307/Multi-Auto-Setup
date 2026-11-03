@@ -70,12 +70,12 @@ def build_candidates(task: Task, envs: dict[str, dict], facts: Facts, policy: Po
                 reason = "unsupported_os"
             elif entry["subtype"] not in policy.open_subtypes or entry["id"] in policy.closed_environments or policy.machine_closes.get(m.machine_id) == "all":
                 reason = "closed_by_owner"
-            elif entry.get("automated_use") == "to review" and entry["id"] not in policy.automated_use_cleared:
-                reason = "automated_use_unreviewed"
             elif entry["subtype"] == "local_model":
                 reason = None if m.model_endpoint else ("server_not_running" if entry["id"] in m.installed else "not_installed")  # installed but its loopback server is not up is not "not installed"
             elif entry.get("needs_program", True) and entry["id"] not in m.installed:
-                reason = "not_installed"
+                reason = "not_installed"  # said before the owner's terms: a tool that is not there is not "not authorized"
+            elif entry.get("automated_use") == "to review" and entry["id"] not in policy.automated_use_cleared:
+                reason = "automated_use_unreviewed"
             if reason is not None:
                 left_out[tag] = reason
                 continue
@@ -99,10 +99,16 @@ def build_candidates(task: Task, envs: dict[str, dict], facts: Facts, policy: Po
                     partial[part] = (why, {"missing": _missing_names(acc, m), "any": bool(acc.get("env_names_any"))} if why == "no_access" and acc["kind"] == "api_key" else None)
                     first_fail = first_fail or why
                     continue
+                if entry.get("evidence_state") in E.NOT_DEFAULT_STATES:  # a hypothesis, an unknown or a contradicted entry is never used, so it can never be the default (skill router-environments); an access it lacks is reported first
+                    first_fail = "not_verified"  # an access that works but whose entry is not verified enough: that is the reason to give, not one about an access that does not work
+                    partial[f"{entry['id']} via {acc['id']}@{m.machine_id}"] = ("not_verified", None)
+                    continue
                 found = True
                 declared = E.declared_model(entry, acc["id"])  # a model the data names (an API's model); else the machine's own local model
                 model = declared or ((m.model_id or "unknown") if entry["subtype"] in ("local_model", "own_harness") else "default")
-                out.append(Candidate(Route(environment_id=entry["id"], subtype=entry["subtype"], model_id=model, access_id=acc["id"], machine_id=m.machine_id), entry, mode, m, acc))
+                listed = getattr(facts, "selectable_models", lambda *_: None)(entry["id"], acc["id"])  # an API whose models come from its own live list: one route per listed chat model, the declared one first
+                for mid in (listed or [model]):
+                    out.append(Candidate(Route(environment_id=entry["id"], subtype=entry["subtype"], model_id=mid, access_id=acc["id"], machine_id=m.machine_id), entry, mode, m, acc))
             if not found:
                 left_out[tag] = first_fail or "no_access"
             else:  # some access works: the ones that do not are still reported, one line each

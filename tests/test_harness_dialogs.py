@@ -134,7 +134,7 @@ def test_when_no_dialog_can_be_raised_the_chat_is_still_shown_the_id_to_use(tmp_
             monkeypatch.setattr(H.osconfirm, "available", lambda *a, **k: {"available": False, "mechanism": None})
             if flow == "unpair":
                 r = await host.tool("mas_unpair", machine="lenovo")
-                assert "intent_id for mas_request_approval:" in text(r)
+                assert "intent_id for mas_answer:" in text(r)  # an unpair is ONE chat question (approval-policy.json): the id it is answered with is shown
             else:
                 j = sc(await host.tool("mas_add_access", node="lenovo", access="meta-model-api:api-key"))["job_id"]
                 for _ in range(100):

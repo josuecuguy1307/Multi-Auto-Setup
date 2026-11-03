@@ -1,0 +1,17 @@
+{
+ "fixed": "2026-11-02, before any run. The gold set of the task-type measurement (recommender-v2, V3/V6). Never edited to pass: a task that turns out to be badly chosen is reported as it is and replaced only in a new file with a new date. 'type' is the catalog task type a person would name for the work.",
+ "tasks": [
+  {"id": "g01", "type": "code", "text": "Write a Python function that returns the n-th Fibonacci number and handles n = 0."},
+  {"id": "g02", "type": "code", "text": "This function raises IndexError when the list is empty; change it so that it returns None instead."},
+  {"id": "g03", "type": "data-cleaning", "text": "In these 40 customer rows the dates are written as 03/04/2025, 2025-4-3 and 'April 3rd'. Make them all ISO format and drop the exact duplicate rows."},
+  {"id": "g04", "type": "data-cleaning", "text": "Normalize the country column (USA, U.S., United States) to one spelling and strip the stray spaces in the name field."},
+  {"id": "g05", "type": "extraction", "text": "From this email, pull out the invoice number, the due date and the total amount."},
+  {"id": "g06", "type": "extraction", "text": "List every person's name and phone number that appears in the following meeting notes."},
+  {"id": "g07", "type": "numeric-analysis", "text": "Given monthly sales of 120, 135, 150, 128 and 160, compute the average, the standard deviation and the month-over-month growth rate."},
+  {"id": "g08", "type": "numeric-analysis", "text": "What share of 2,400 respondents is 18 percent, and what is the margin of error at 95 percent confidence for that proportion?"},
+  {"id": "g09", "type": "summarize", "text": "Condense this six-page policy memo into five bullet points for the board."},
+  {"id": "g10", "type": "summarize", "text": "Give me a two-sentence summary of this article about coastal erosion."},
+  {"id": "g11", "type": "text", "text": "Write a polite email asking my landlord to repair the heating."},
+  {"id": "g12", "type": "text", "text": "Rewrite this paragraph so that it sounds friendlier but keeps the same meaning."}
+ ]
+}

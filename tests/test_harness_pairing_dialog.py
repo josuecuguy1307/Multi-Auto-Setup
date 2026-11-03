@@ -139,8 +139,9 @@ def test_every_pending_confirmation_a_chat_can_be_asked_to_approve_carries_its_i
             plain = c.harness.request_confirmation(None, summary="Do a thing", plan_hash="sha256:" + "ab" * 32, command="x", undo="y")
             for pending in c.harness._pending.values():
                 shown = c.harness.for_channel(pending.intent, CLAUDE)
-                assert f"intent_id for mas_request_approval: {pending.intent.id}" in shown["text_fallback"], pending.intent.payload["summary"]
-            assert f"intent_id for mas_request_approval: {un['structuredContent']['intents'][0]['id']}" in un["content"][0]["text"]
+                label = "mas_answer" if pending.intent.payload.get("chat_choice") else "mas_request_approval"  # a chat question is answered with mas_answer; a dialog decision with mas_request_approval
+                assert f"intent_id for {label}: {pending.intent.id}" in shown["text_fallback"], pending.intent.payload["summary"]
+            assert f"intent_id for mas_answer: {un['structuredContent']['intents'][0]['id']}" in un["content"][0]["text"]
             assert plain.intent.id in c.harness.for_channel(plain.intent, CLAUDE)["text_fallback"]
             assert "intent_id" not in c.harness.for_channel(plain.intent, CHANNELS["cli"])["text_fallback"]  # the owner's own terminal types yes: it is not told to call a tool
     run(go())

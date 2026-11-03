@@ -5,7 +5,7 @@
    "name": "mas_create_task",
    "tool": "create_task",
    "readOnly": false,
-   "description": "Create a task from the owner's request. Nothing runs yet: you get the route the written rule picked, with the reasoning, and an intent_id for the owner's approval of that exact route, and the task then runs and is checked by code. You never give the task's level: the harness derives it from the owner's profile and what the text touches (touches), and asks the owner when it cannot tell. The first time it also asks him a few profile questions: relay them, never answer them. The text is the owner's, whole: if it is long, do not shorten it; the result says how many characters arrived.",
+   "description": "Create a task from the owner's request. Nothing runs yet: you get the route the written rule picked, with the reasoning, and an intent_id for the ONE chat question in which the owner approves that exact route (relay HIS answer with mas_answer), and the task then runs and is checked by code. You never give the task's level: the harness derives it from the owner's profile and what the text touches (touches), and asks the owner when it cannot tell. The first time it also asks him a few profile questions: relay them, never answer them. The text is the owner's, whole: if it is long, do not shorten it; the result says how many characters arrived. For work no catalog task type names, the result is a recommendation and ONE question for the owner (relay it, never answer it); the task is created only after his answer. To work on the contents of a folder of one of his computers, pass it in inputs; the harness asks him, reads it, finds or proposes a local model if none is ready, and resumes the task by itself.",
    "inputSchema": {
     "type": "object",
     "properties": {
@@ -15,7 +15,7 @@
      },
      "task_type": {
       "type": "string",
-      "description": "one of the task types the catalog serves, for example summarize, extraction, data-cleaning, numeric-analysis, text, code"
+      "description": "the kind of work. A catalog task type when one fits (see the list below); otherwise a short plain description of the kind of work (for example `contract review`, at most 40 characters, never the task text). A description no catalog type names does not fail: the harness recommends an environment from what it knows and asks the owner one question."
      },
      "check": {
       "type": "object",
@@ -27,6 +27,35 @@
        "type": "string"
       },
       "description": "which of the owner's categories the text concerns (the values come from his profile), \"none\" if it concerns none of them, \"unsure\" if you cannot tell. This is a statement about the text, not a level."
+     },
+     "domain": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "optional free tags for the field the work belongs to (for example `legal`, `finance`, `grant writing`); short plain words, never the task text. An environment tagged for it is preferred."
+     },
+     "inputs": {
+      "type": "array",
+      "description": "optional things the HARNESS reads from one of the owner's computers for this task, after he approves each one (for example {kind: folder, machine: the computer's name, folder: Desktop}). You never see what is read: only the model's answer comes back to you. Use this instead of asking for the folder's contents.",
+      "items": {
+       "type": "object",
+       "properties": {
+        "kind": {
+         "type": "string"
+        },
+        "machine": {
+         "type": "string"
+        },
+        "folder": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "kind",
+        "machine"
+       ]
+      }
      }
     },
     "required": [
@@ -64,7 +93,7 @@
    "name": "mas_run_admission",
    "tool": "run_admission",
    "readOnly": false,
-   "description": "Measure one environment on a task type's 10-task suite (graded by code, pass mark 8/10). It spends the owner's machine time, so you get an intent_id and the owner approves in his own system dialog (mas_request_approval). Name the environment and the task type; add machine or access if more than one combination fits.",
+   "description": "Measure one environment on a task type's 10-task suite (graded by code, pass mark 8/10). It spends the owner's machine time, so you get an intent_id and the owner answers ONE chat question (relay HIS answer with mas_answer). Name the environment and the task type; add machine or access if more than one combination fits.",
    "inputSchema": {
     "type": "object",
     "properties": {
@@ -207,7 +236,7 @@
    "name": "mas_board_approve",
    "tool": "board_approve",
    "readOnly": false,
-   "description": "Ask the owner to approve one pending decision of a board (the plan, or an escalation beyond what he allowed). You get an intent_id; the owner answers in his own system dialog (mas_request_approval). You cannot approve for him.",
+   "description": "Ask the owner to approve one pending decision of a board (the plan, or an escalation beyond what he allowed). You get an intent_id; the owner answers ONE chat question (relay HIS answer with mas_answer). You cannot approve for him.",
    "inputSchema": {
     "type": "object",
     "properties": {
@@ -274,7 +303,7 @@
    "name": "mas_profile",
    "tool": "profile_tool",
    "readOnly": false,
-   "description": "The owner's profile: what is confidential for him, his stance on cloud spend, local-first, what each machine is for, and what he closed. show reads it (and the next question if answers are missing); ask puts the next question; set, role, close and open change it with HIS words. Closing something is a question to him; open undoes it. Never fill an answer in yourself.",
+   "description": "The owner's profile: what is confidential for him, his stance on cloud spend, local-first, what each machine is for, and what he closed. show reads it (and the next question if answers are missing); ask puts the next question; set, role, close and open change it with HIS words. Closing something is a question to him; open undoes it. Never fill an answer in yourself. clear asks him whether a subscription tool he has (named in id) may be used automatically; unclear takes that back.",
    "inputSchema": {
     "type": "object",
     "properties": {
@@ -286,7 +315,9 @@
        "set",
        "role",
        "close",
-       "open"
+       "open",
+       "clear",
+       "unclear"
       ]
      },
      "field": {
@@ -338,6 +369,67 @@
     "required": [
      "run_id"
     ]
+   }
+  },
+  {
+   "name": "mas_install_tool",
+   "tool": "install_tool",
+   "readOnly": false,
+   "description": "Install a command-line tool from the catalog (for example a coding harness) on a paired computer, or remove it again (action undo). The harness builds the plan from the catalog's pinned files (address, size, SHA-256 per system) and the computer's analysis; you get an intent_id and the owner answers ONE chat question showing the whole plan (relay HIS answer with mas_answer). An entry whose install data is not verified is refused with its reason (no_installer or unverified_entry). The computer must have a stored analysis.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "environment": {
+      "type": "string"
+     },
+     "machine": {
+      "type": "string"
+     },
+     "action": {
+      "type": "string",
+      "enum": [
+       "install",
+       "undo"
+      ]
+     }
+    },
+    "required": [
+     "environment"
+    ]
+   }
+  },
+  {
+   "name": "mas_refresh_models",
+   "tool": "refresh_models",
+   "readOnly": true,
+   "description": "Read the models an API environment lists now (for example the Meta API), through the paired computer that holds its key: no key passes through the coordinator or the chat. The harness keeps the dated list and says which chat models the router may then offer for that environment. The result arrives as a job (mas_job).",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "environment": {
+      "type": "string"
+     },
+     "machine": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "environment"
+    ]
+   }
+  },
+  {
+   "name": "mas_measure_recommender",
+   "tool": "measure_recommender",
+   "readOnly": false,
+   "description": "Measure the recommender with the cloud model (the Meta API), reached through the paired computer that holds its key: the 12 fixed gold tasks and the 6 fixed domains, with and without the harness, bounded by a call cap. You get an intent_id and the owner answers ONE chat question showing what will be spent (relay HIS answer with mas_answer). It needs his recorded answer on cloud use. The numbers arrive as a job (mas_job).",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "machine": {
+      "type": "string"
+     }
+    }
    }
   }
  ]

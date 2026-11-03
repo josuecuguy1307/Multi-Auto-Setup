@@ -120,8 +120,8 @@ def test_result_of_returns_the_state_and_a_capture_ref_and_a_verification_receiv
             try:
                 (tmp_path / "log").mkdir(exist_ok=True)
                 node_up(agent, tmp_path, transport=httpx.MockTransport(lambda req: httpx.Response(200, json={"choices": [{"message": {"content": "SECRET SUMMARY"}}]})))
-                m = MachineFacts(machine_id=nid, os_family="darwin", installed={"claude-code"}, signed_in={"claude-code:plan"}, model_endpoint="127.0.0.1:8080", model_id="qwen3-8b")
-                adm = [(f"admission.text.{nid}.llamacpp-local.qwen3-8b.local-hardware", {"status": "tested", "graded_by": "code", "passed": 9, "of": 10, "identity": {}})]
+                m = MachineFacts(machine_id=nid, os_family="darwin", installed={"claude-code"}, signed_in={"claude-code:plan"}, model_endpoint="127.0.0.1:8080", model_id="local-8b")
+                adm = [(f"admission.text.{nid}.llamacpp-local.local-8b.local-hardware", {"status": "tested", "graded_by": "code", "passed": 9, "of": 10, "identity": {}})]
                 r, log, _ = build(c, nid, machine=m, adm=adm)
                 c.own_task("src")
                 h = r.dispatch(r.route(task("src", "text", "confidential", "local")))
@@ -156,7 +156,7 @@ def test_a_public_result_can_be_verified_by_a_provider_and_the_text_reaches_it(t
             try:
                 (tmp_path / "log").mkdir(exist_ok=True)
                 node_up(agent, tmp_path, transport=httpx.MockTransport(lambda req: httpx.Response(200, json={"choices": [{"message": {"content": "public draft"}}]})))
-                m = MachineFacts(machine_id=nid, os_family="darwin", installed={"claude-code"}, signed_in={"claude-code:plan"}, model_endpoint="127.0.0.1:8080", model_id="qwen3-8b")
+                m = MachineFacts(machine_id=nid, os_family="darwin", installed={"claude-code"}, signed_in={"claude-code:plan"}, model_endpoint="127.0.0.1:8080", model_id="local-8b")
                 r, _, _ = build(c, nid, machine=m)
                 c.own_task("p1")
                 h = r.dispatch(r.route(task("p1", "text", "public", "cloud")))
@@ -374,7 +374,7 @@ def test_a_verifier_receives_the_stored_instructions_then_the_output_it_verifies
             try:
                 (tmp_path / "log").mkdir(exist_ok=True)
                 node_up(agent, tmp_path, transport=httpx.MockTransport(lambda req: httpx.Response(200, json={"choices": [{"message": {"content": "public draft"}}]})))
-                m = MachineFacts(machine_id=nid, os_family="darwin", installed={"claude-code"}, signed_in={"claude-code:plan"}, model_endpoint="127.0.0.1:8080", model_id="qwen3-8b")
+                m = MachineFacts(machine_id=nid, os_family="darwin", installed={"claude-code"}, signed_in={"claude-code:plan"}, model_endpoint="127.0.0.1:8080", model_id="local-8b")
                 r, _, _ = build(c, nid, machine=m)
                 c.own_task("p1")
                 h = r.dispatch(r.route(task("p1", "text", "public", "cloud")))

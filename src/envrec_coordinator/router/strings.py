@@ -49,6 +49,7 @@ REASONS: dict[str, str] = {  # why an environment was left out on a machine (typ
     "excluded_machine": "excluded by the task (this machine)",
     "excluded_environment": "excluded by the task (this environment)",
     "not_admitted": "did not pass the admission exam for this task type",
+    "not_verified": "not verified enough to be used (its evidence is a hypothesis, unknown or contradicted)",
 }
 
 OWNER_NOTICE = "Task {task_id} could not be completed: it failed on {tried} environment(s) and no further one is allowed. It needs you."
@@ -72,3 +73,8 @@ def refusal_text(code: str) -> str:
     return REFUSALS.get(code, REFUSALS["no_candidate"])
 
 CUT_MARK = " […cut: {cap} of {total} characters shown]"
+
+EVIDENCE_LINE = "evidence: {tier}, {source}, {date}"
+EVIDENCE_NONE_LINE = "evidence: none (not measured here, no public result for this combination)"
+EVIDENCE_TIER_TEXT = {"public_combination": "public for the combination", "public_model_only": "public for the model only, full precision; the quantization and the harness are not measured here"}
+EVIDENCE_OLD = "Warning: this result was published on {date}, {days} days ago; it may not describe the model now."

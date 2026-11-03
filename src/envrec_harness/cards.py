@@ -14,27 +14,42 @@ import math
 import re
 
 from envrec_harness import icons
+from envrec_style import svg as style_svg
+from envrec_style import tokens
+from envrec_style.tokens import semantic
 from envrec_harness.strings import STR, t
 
+def _mix(a: str, b: str, w: float) -> str:
+    """`a` with a share `w` of `b`: every surface and ink of the cards is made from the style tokens' own colors (brand, teal, amber), never typed here."""
+    ca, cb = tokens.hex_to_rgb(a), tokens.hex_to_rgb(b)
+    return "#" + "".join(f"{round(x * (1 - w) + y * w):02x}" for x, y in zip(ca, cb))
+
+
+_BRAND, _LIGHT = tokens.logo_colors("dark"), tokens.logo_colors("light")
+_BG, _WHITE = _BRAND["background"], "#ffffff"
 PALETTE = {  # (name: hex). tests/test_harness_cards.py checks every text/background pair below at 4.5:1 or better
-    "navy": "#0f1b2d", "navy2": "#16243a", "navy3": "#22324d", "cream": "#f5f2ea", "cream2": "#ebe8dc", "card": "#faf8f3", "line": "#d9d4c4", "ink": "#0f1b2d", "muted": "#475569",
-    "teal": "#0d7a6b", "teal_ink": "#0a5c50", "teal_lite": "#d3ebe4", "teal_bright": "#2dd4b0", "amber": "#9a4509", "amber_ink": "#7c3606", "amber_lite": "#f7dcc3", "amber_bright": "#f5a15a",
-    "sub_on_navy": "#a9b8cf", "offline": "#8b98ad",
+    "navy": _BG, "navy2": _mix(_BG, _BRAND["letters"], .12), "navy3": _mix(_BG, _BRAND["letters"], .32), "cream": _mix(_WHITE, _BG, .04), "cream2": _mix(_WHITE, _LIGHT["letters"], .10),
+    "card": _mix(_WHITE, _LIGHT["letters"], .03), "line": _mix(_WHITE, _BG, .22), "ink": _BG, "muted": _mix(_BG, _WHITE, .34),
+    "teal": semantic("teal", dark=False), "teal_bright": semantic("teal", dark=True), "amber": semantic("amber", dark=False), "amber_bright": semantic("amber", dark=True),
+    "blue": _LIGHT["letters"], "blue_b": _BRAND["letters"], "mag": _LIGHT["tagline_color"], "mag_b": _BRAND["tagline_color"], "shadow": _BRAND["shadow"],
+    "sub_on_navy": _mix(_WHITE, _BG, .32), "offline": _mix(_WHITE, _BG, .5),
 }
+PALETTE |= {"teal_ink": _mix(PALETTE["teal"], _BG, .5), "teal_lite": _mix(PALETTE["teal"], _WHITE, .86), "amber_ink": _mix(PALETTE["amber"], _BG, .5), "amber_lite": _mix(PALETTE["amber"], _WHITE, .85)}
 CONTRAST_PAIRS = [("ink", "card"), ("muted", "card"), ("teal", "card"), ("amber", "card"), ("teal_ink", "teal_lite"), ("amber_ink", "amber_lite"), ("cream", "navy"), ("cream", "navy2"),
-                  ("sub_on_navy", "navy"), ("sub_on_navy", "navy2"), ("teal_bright", "navy"), ("teal_bright", "navy2"), ("amber_bright", "navy"), ("amber_bright", "navy2"), ("cream", "teal"), ("ink", "cream2")]
+                  ("sub_on_navy", "navy"), ("sub_on_navy", "navy2"), ("teal_bright", "navy"), ("teal_bright", "navy2"), ("amber_bright", "navy"), ("amber_bright", "navy2"), ("cream", "teal"), ("ink", "cream2"),
+                  ("cream", "blue"), ("blue", "card"), ("mag", "card"), ("mag_b", "navy"), ("blue_b", "navy"), ("muted", "cream2")]
 
 CSS = """
 :root{--navy:%(navy)s;--navy2:%(navy2)s;--navy3:%(navy3)s;--cream:%(cream)s;--cream2:%(cream2)s;--card:%(card)s;--line:%(line)s;--ink:%(ink)s;--muted:%(muted)s;--teal:%(teal)s;--teal-ink:%(teal_ink)s;
---teal-lite:%(teal_lite)s;--teal-b:%(teal_bright)s;--amber:%(amber)s;--amber-ink:%(amber_ink)s;--amber-lite:%(amber_lite)s;--amber-b:%(amber_bright)s;--sub:%(sub_on_navy)s;--off:%(offline)s;
+--blue:%(blue)s;--blue-b:%(blue_b)s;--mag:%(mag)s;--mag-b:%(mag_b)s;--shadow:%(shadow)s;--teal-lite:%(teal_lite)s;--teal-b:%(teal_bright)s;--amber:%(amber)s;--amber-ink:%(amber_ink)s;--amber-lite:%(amber_lite)s;--amber-b:%(amber_bright)s;--sub:%(sub_on_navy)s;--off:%(offline)s;
 --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 *{box-sizing:border-box}html,body{margin:0;background:transparent;font:14px/1.45 var(--font);color:var(--ink)}
 .mas{margin:0 0 12px}.mas:last-child{margin-bottom:0}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.card{background:var(--card);border:2px solid var(--ink);padding:14px 16px;box-shadow:4px 4px 0 var(--shadow);margin-right:4px}
 .card h3{margin:0 0 2px;font-size:16px}.card .sub{margin:0 0 10px;color:var(--muted);font-size:13px}
-.k{font:600 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--teal)}
-.dark{background:var(--navy);border-color:var(--navy3);color:var(--cream)}.dark .k{color:var(--teal-b)}.dark .sub{color:var(--sub)}
-.pill{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12px;font-weight:600;background:var(--teal-lite);color:var(--teal-ink);white-space:nowrap}
+.k{font:600 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--mag)}
+.dark{background:var(--navy);border-color:var(--blue-b);color:var(--cream)}.dark .k{color:var(--mag-b)}.dark .sub{color:var(--sub)}
+.pill{display:inline-block;padding:1px 8px;border-radius:0;box-shadow:inset 0 0 0 1px currentColor;font-size:12px;font-weight:600;background:var(--teal-lite);color:var(--teal-ink);white-space:nowrap}
 .pill.st-unknown,.pill.st-hypothesis,.pill.st-none{background:var(--amber-lite);color:var(--amber-ink)}.pill.st-inferred,.pill.st-declared{background:var(--cream2);color:var(--ink)}
 .pill.cloud{background:var(--amber-lite);color:var(--amber-ink)}.pill.local{background:var(--teal-lite);color:var(--teal-ink)}
 .rows{width:100%%;border-collapse:collapse}.rows td{padding:5px 0;border-top:1px solid var(--line);vertical-align:top}.rows tr:first-child td{border-top:0}
@@ -43,37 +58,48 @@ CSS = """
 .ic{display:block}.ic .body,.map .body{fill:var(--cream);stroke:var(--navy);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.ic .old,.map .old{fill:#e8dcc0}
 .ic .scr,.map .scr{fill:var(--navy)}.ic .txt,.map .txt{stroke:var(--teal-b);stroke-width:1.6;stroke-linecap:round;fill:none}.ic .dot,.map .dot{fill:var(--teal)}.ic .line,.map .line{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ic .ring,.map .ring{fill:var(--navy2);stroke:var(--teal-b);stroke-width:2}.ic .bars,.map .bars{stroke:var(--teal-b);stroke-width:3;stroke-linecap:round;fill:none}
-.sym{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%%;border:2px solid;flex:none}.sym.local{color:var(--teal);background:var(--teal-lite);border-color:var(--teal)}
+.sym{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border:2px solid;flex:none}.px{fill:currentColor}.pxs{fill:var(--shadow)}.pix{display:inline-block;vertical-align:-3px;flex:none}.logo{float:right;width:84px;height:auto}.sym.local{color:var(--teal);background:var(--teal-lite);border-color:var(--teal)}
 .sym.cloud{color:var(--amber);background:var(--amber-lite);border-color:var(--amber)}
 .map{display:block;width:100%%;height:auto}.mas-node{cursor:pointer;outline:none}.mas-node:focus-visible .halo,.mas-node:hover .halo{stroke:var(--teal-b);stroke-width:2}
 .halo{fill:transparent;stroke:transparent}.nm{fill:var(--cream);font:600 13px var(--font);text-anchor:middle}.os{fill:var(--sub);font:12px var(--font);text-anchor:middle}.act{fill:var(--teal-b);font:600 11px var(--mono);text-anchor:middle}.act .who{fill:var(--cream)}
 .mas-link{fill:none;stroke-width:2;stroke:var(--teal-b);opacity:.55}.mas-link.route-cloud{stroke:var(--amber-b);stroke-dasharray:3 5}.mas-link.offline{stroke:var(--off);stroke-dasharray:2 6;opacity:.5}
 .mas-link.active{opacity:1;stroke-dasharray:7 7;animation:flow 1s linear infinite}@keyframes flow{to{stroke-dashoffset:-14}}
-.st-dot{stroke:var(--navy);stroke-width:2}.st-dot.online{fill:var(--teal-b)}.st-dot.busy{fill:var(--cream);animation:pulse 1.2s ease-in-out infinite}.st-dot.offline{fill:var(--navy);stroke:var(--off)}
+.dev{color:var(--blue-b)}.mas-node:hover .dev,.mas-node:focus-visible .dev{color:var(--mag-b)}.dev .pxs{fill:var(--shadow)}.lockg .px{color:var(--cream)}.st-dot{stroke:var(--navy);stroke-width:2}.st-dot.online{fill:var(--teal-b)}.st-dot.busy{fill:var(--cream);animation:pulse 1.2s ease-in-out infinite}.st-dot.offline{fill:var(--navy);stroke:var(--off)}
 @keyframes pulse{50%%{opacity:.35}}@media (prefers-reduced-motion:reduce){.mas-link.active,.st-dot.busy{animation:none}}
-.lock-badge{fill:var(--navy);stroke:var(--cream);stroke-width:2}.lock-ic{stroke:var(--cream);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.lockl{display:inline-block;vertical-align:-3px;color:var(--cream)}
+.lock-badge{fill:var(--navy);stroke:var(--cream);stroke-width:2}.cloudc .px{color:var(--amber-b)}.lock-ic{stroke:var(--cream);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.lockl{display:inline-block;vertical-align:-3px;color:var(--cream)}
 .legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:8px;font-size:12px;color:var(--sub)}.legend i{display:inline-block;width:18px;height:0;border-top:3px solid var(--teal-b);vertical-align:middle;margin-right:6px}
-.legend i.c{border-top:3px dotted var(--amber-b)}
-.mas-detail{margin-top:10px;background:var(--navy2);border:1px solid var(--navy3);border-radius:12px;padding:10px 14px;color:var(--cream)}.mas-detail h4{margin:0 0 4px;font-size:14px}
+.legend i.c{border-top:3px dotted var(--amber-b)}.lg-local .px{color:var(--teal-b)}.lg-cloud .px{color:var(--amber-b)}.lg-lock .px{color:var(--cream)}.legend .pix{margin-right:6px;vertical-align:-2px}
+.mas-detail{margin-top:12px;background:var(--navy2);border:2px solid var(--blue-b);box-shadow:3px 3px 0 var(--shadow);padding:10px 14px;color:var(--cream)}.mas-detail h4{margin:0 0 4px;font-size:14px}
 .mas-detail .rows td:first-child{color:var(--sub)}.mas-detail .rows td{border-color:var(--navy3)}.mas-detail .pill{background:var(--teal-b);color:var(--navy)}
 .mas-detail .pill.st-unknown{background:var(--amber-b);color:var(--navy)}.mas-detail .pill.st-inferred,.mas-detail .pill.st-declared{background:var(--navy3);color:var(--cream)}
-.opt{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}.opt:first-of-type{border-top:0}.opt.picked{background:var(--teal-lite);margin:0 -16px;padding:12px 16px}
+.opt{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}.opt:first-of-type{border-top:0}.opt.picked{background:var(--cream2);margin:0 -16px;padding:12px 16px;border-left:4px solid var(--blue)}
 .opt .b{flex:1;min-width:0}.opt h4{margin:0 0 3px;font-size:14px}.opt p{margin:3px 0 0;color:var(--muted);font-size:13px}.opt .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}.opt .tags .pill{white-space:normal}
-.btn{font:600 13px var(--font);padding:6px 14px;border-radius:9px;border:2px solid var(--navy);background:var(--card);color:var(--navy);cursor:pointer;margin-top:6px}.btn:hover{background:var(--cream2)}
+.btn{font:600 13px var(--font);padding:6px 14px;border-radius:0;border:2px solid var(--ink);background:var(--blue);color:var(--cream);cursor:pointer;margin:6px 3px 0 0;box-shadow:3px 3px 0 var(--shadow)}.btn:hover{transform:translate(1px,1px);box-shadow:2px 2px 0 var(--shadow)}.btn:active{transform:translate(3px,3px);box-shadow:none}.btn:focus-visible{outline:3px solid var(--mag);outline-offset:2px}
 .step{display:grid;grid-template-columns:28px 1fr;gap:4px 10px;padding:10px 0;border-top:1px solid var(--line)}.step:first-of-type{border-top:0}
-.step .n{width:24px;height:24px;border-radius:50%%;background:var(--teal);color:var(--cream);font:700 12px/24px var(--mono);text-align:center}.step.needs .n{background:var(--amber)}
-.step h4{margin:0;font-size:14px}pre{margin:5px 0 0;padding:8px 10px;background:var(--navy);color:var(--cream);border-radius:8px;font:12px/1.4 var(--mono);white-space:pre-wrap;word-break:break-all}
+.step .n{width:24px;height:24px;border-radius:0;background:var(--blue);color:var(--cream);font:700 12px/24px var(--mono);text-align:center}.step.needs .n{background:var(--mag)}
+.step h4{margin:0;font-size:14px}pre{margin:5px 0 0;padding:8px 10px;background:var(--navy);color:var(--cream);border-radius:0;border-left:4px solid var(--blue-b);font:12px/1.4 var(--mono);white-space:pre-wrap;word-break:break-all}
 .step .meta{color:var(--muted);font-size:12px;margin-top:3px}.step .undo{color:var(--amber-ink);font-size:12px;margin-top:2px}
 .ev{display:flex;gap:8px;align-items:baseline;padding:4px 0;border-top:1px solid var(--line);font-size:13px}.ev span:last-child{min-width:0;overflow-wrap:anywhere}.ev:first-of-type{border-top:0}
-.tag{font:700 10px/1 var(--mono);letter-spacing:.06em;padding:3px 6px;border-radius:5px;flex:none;min-width:58px;text-align:center;background:var(--navy);color:var(--cream)}
+.tag{font:700 10px/1 var(--mono);letter-spacing:.06em;padding:3px 6px;border-radius:0;flex:none;min-width:58px;text-align:center;background:var(--navy);color:var(--cream)}
 .tag.MODEL{background:var(--teal);color:var(--cream)}.tag.OWNER{background:var(--teal-lite);color:var(--teal-ink)}.tag.SCRIPT,.tag.CLAUDE-CODE{background:var(--amber-lite);color:var(--amber-ink)}
-.bar{display:block;width:100%%;height:10px;border-radius:5px;margin:8px 0 4px}.bar .bg{fill:var(--cream2)}
+.bar{display:block;width:100%%;height:10px;border-radius:0;margin:8px 0 4px}.bar .bg{fill:var(--cream2)}
 .bar .MODEL{fill:var(--teal)}.bar .GUARD{fill:var(--navy)}.bar .SCRIPT{fill:var(--amber)}.bar .OWNER{fill:var(--teal-b)}.bar .CLAUDE-CODE{fill:var(--amber-b)}.tight{margin:4px 0}.cloudc{color:var(--amber-b)}
-.note{margin-top:10px;padding:8px 12px;border-radius:10px;background:var(--teal-lite);color:var(--teal-ink);font-size:13px}.note.warn{background:var(--amber-lite);color:var(--amber-ink)}
-.framed{overflow:hidden}.fit{margin:6px 0 0;font-size:13px}.fit b{font-weight:700}.fitrow{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}.live{display:inline-block;width:8px;height:8px;border-radius:50%%;background:var(--teal-b);margin-right:6px;animation:pulse 1.2s ease-in-out infinite}.nested{margin-top:8px}.nested .card{background:var(--cream);color:var(--ink)}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.note{margin-top:10px;padding:8px 12px;border-radius:0;border-left:4px solid currentColor;background:var(--cream2);color:var(--ink);border-left-color:var(--blue);font-size:13px}.note.warn{background:var(--cream2);color:var(--ink);border-left-color:var(--mag)}
+.framed{overflow:hidden}.fit{margin:6px 0 0;font-size:13px}.fit b{font-weight:700}.fitrow{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}.live{display:inline-block;width:8px;height:8px;border-radius:0;background:var(--teal-b);margin-right:6px;animation:pulse 1.2s ease-in-out infinite}.nested{margin-top:8px}.nested .card{background:var(--cream);color:var(--ink)}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 """ % PALETTE
 
 ACTOR_ORDER = ("MODEL", "GUARD", "SCRIPT", "OWNER", "CLAUDE-CODE")
+ACTOR_SYMBOL = {"MODEL": "model", "GUARD": "guard", "SCRIPT": "script", "OWNER": "owner"}
+MODE_SYMBOL = {"local": "chip", "api": "key", "cli": "terminal"}
+DEVICE_SYMBOL = {"laptop": "laptop", "desktop": "desktop", "server": "server", "oldpc": "oldpc", "computer": "desktop"}  # (a kind we were not told is drawn as a plain desktop, never guessed)
+
+
+def pix(sym_id: str, cell: int = 3, shadow: bool = True) -> str:
+    """A symbol of the style set as flat rectangles with the half-cell shadow, for an HTML page: no namespace (the cards hold no URL at all) and no inline color (a class takes it, so the panel's strict policy holds)."""
+    raw = style_svg.symbol_svg(sym_id, cell=cell, color="#000001", shadow="#000002" if shadow else None)
+    raw = raw.replace(f' xmlns="{style_svg.NS}"', "").replace('fill="#000001"', 'class="px"').replace('fill="#000002"', 'class="pxs"')
+    return raw.replace("<svg ", '<svg class="pix" ', 1)  # (its <title> is the word, so a screen reader reads the shape too)
+
 
 
 def esc(v) -> str:
@@ -144,23 +170,23 @@ def network(data: dict, lang: str = "en", actions: bool = True) -> str:
         svg.append(f'<path class="{" ".join(cls)}" d="M{cx} {cy}L{x:.1f} {y:.1f}"/>')
     if data.get("clouds"):
         names = ", ".join(str(c.get("name", "")) for c in data["clouds"])
-        svg.append(f'<g class="cloudc" transform="translate({W - 80} 8)"><rect x="-6" y="-2" width="76" height="52" rx="10" fill="none" stroke="var(--amber-b)" stroke-dasharray="4 4"/>'
-                   f'<g transform="translate(6 6)">{icons.cloud()}</g><text class="os" x="32" y="46">{esc(names[:14])}</text></g>')
-    svg.append(f'<g transform="translate({cx - 30} {cy - 30}) scale(1.5)" role="img" aria-label="{esc(t(lang, "coordinator"))}">{icons.coordinator()}</g><text class="nm" x="{cx}" y="{cy + 54}">{esc(data.get("coordinator", {}).get("name") or t(lang, "coordinator"))}</text>')
+        svg.append(f'<g class="cloudc" transform="translate({W - 80} 8)"><rect x="-6" y="-2" width="76" height="52" fill="none" stroke="var(--amber-b)" stroke-width="2" stroke-dasharray="4 4"/>'
+                   f'<g transform="translate(18 2)">{pix("cloud", 3)}</g><text class="os" x="32" y="46">{esc(names[:14])}</text></g>')
+    svg.append(f'<g transform="translate({cx - 28} {cy - 32})" role="img" aria-label="{esc(t(lang, "coordinator"))}">{pix("coordinator", 7).replace("<svg ", '<svg x="0" y="0" ', 1)}</g><text class="nm" x="{cx}" y="{cy + 54}">{esc(data.get("coordinator", {}).get("name") or t(lang, "coordinator"))}</text>')
     for n, (x, y) in zip(nodes, pos):
         st = n.get("status") if n.get("status") in ("online", "busy", "offline") else "offline"
-        kind = n.get("kind") if n.get("kind") in icons.DEVICE_KINDS else "computer"
+        kind = n.get("kind") if n.get("kind") in DEVICE_SYMBOL else "computer"
         tab = ' tabindex="0" role="button"'
         svg.append(f'<g class="mas-node" data-node="{esc(n.get("id", ""))}"{tab} aria-label="{esc(n.get("name", "?"))}, {esc(t(lang, st))}" transform="translate({x - 40:.1f} {y - 30:.1f}) scale(1.25)">'
-                   f'<rect class="halo" x="-8" y="-6" width="80" height="84" rx="12"/>{icons.device(kind)}'
-                   f'<circle class="st-dot {st}" cx="62" cy="4" r="6"><title>{esc(t(lang, st))}</title></circle>'
-                   + (f'<g transform="translate(-6 28)"><circle class="lock-badge" cx="8" cy="8" r="10"/><g transform="translate(-3 -1) scale(.62)" class="lock-ic">{icons.lock()}</g></g>' if n.get("confidential") else "")
+                   f'<rect class="halo" x="-8" y="-6" width="80" height="84"/><g transform="translate(8 -4)" class="dev {esc(kind)}">{pix(DEVICE_SYMBOL[kind], 6)}</g>'
+                   f'<rect class="st-dot {st}" x="56" y="-2" width="12" height="12"><title>{esc(t(lang, st))}</title></rect>'
+                   + (f'<g transform="translate(-4 26)" class="lockg"><rect class="lock-badge" x="-3" y="-3" width="22" height="22"/><g transform="translate(0 0)">{pix("confidential", 2, False)}</g></g>' if n.get("confidential") else "")
                    + f'<text class="nm" x="32" y="62">{esc(str(n.get("name", "?"))[:22])}</text><text class="os" x="32" y="77">{esc(str(n.get("os", ""))[:22])}</text>'
                    + (f'<text class="act" x="32" y="93"><tspan class="who">{esc(str(n["activity"].get("actor", ""))[:11])}</tspan> {esc(str(n["activity"].get("text", ""))[:20])}</text>' if n.get("activity") else "") + "</g>")
     svg.append("</svg>")
     parts.append("".join(svg))
-    parts.append(f'<div class="legend"><span><i></i>{esc(t(lang, "legend_local"))}</span><span><i class="c"></i>{esc(t(lang, "legend_cloud"))}</span><span>{icons.svg(icons.lock(), 28, 28, "lockl", "").replace('width="28" height="28"', 'width="16" height="16"')} {esc(t(lang, "legend_lock"))}</span>'
-                 f'<span>{esc(t(lang, "click"))}</span></div>')
+    parts.append(f'<div class="legend"><span class="lg-local">{pix("local", 2, False)}<i></i>{esc(t(lang, "legend_local"))}</span><span class="lg-cloud">{pix("cloud", 2, False)}<i class="c"></i>{esc(t(lang, "legend_cloud"))}</span>'
+                 f'<span class="lg-lock">{pix("confidential", 2, False)} {esc(t(lang, "legend_lock"))}</span><span>{esc(t(lang, "click"))}</span></div>')
     for n in nodes:
         rows = "".join(f'<tr><td>{esc(f.get("label", ""))}</td><td><span class="val">{esc(fmt_value(f.get("value")))}</span> {pill(str(f.get("status", "unknown")), lang)}</td></tr>' for f in (n.get("facts") or [])[:8])
         seen = f' · {esc(t(lang, "last_seen"))}: {esc(n["last_seen"])}' if n.get("last_seen") else ""
@@ -177,7 +203,7 @@ def network(data: dict, lang: str = "en", actions: bool = True) -> str:
 # ---- machine ------------------------------------------------------------------------------------------------------------------------------------
 
 def machine(data: dict, lang: str = "en", actions: bool = True) -> str:
-    out = [f'<div class="mas card" data-card="machine"><div class="k">{esc(t(lang, "machine"))}</div><h3>{esc(data.get("name", "?"))}</h3><p class="sub">{esc(data.get("os", ""))}'
+    out = [f'<div class="mas card" data-card="machine"><div class="k">{esc(t(lang, "machine"))}</div><h3>{pix("node", 3)} {esc(data.get("name", "?"))}</h3><p class="sub">{esc(data.get("os", ""))}'
            + (f' · {esc(data["label"])}' if data.get("label") else "") + "</p>"]
     for g in ("system", "hardware", "ai"):
         rows = (data.get("groups") or {}).get(g) or []
@@ -222,8 +248,8 @@ def options(data: dict, lang: str = "en", actions: bool = True) -> str:
     for o in data.get("options") or []:
         mode = o.get("kind") if o.get("kind") in icons.MODE_ICON else "local"
         cloud = bool(o.get("cloud"))
-        sym = icons.svg(icons.MODE_ICON[mode](), 32, 32, "", "")
-        tags = [f'<span class="pill {"cloud" if cloud else "local"}">{esc(t(lang, mode))}</span>']
+        sym = pix(MODE_SYMBOL[mode], 4)
+        tags = [f'<span class="pill {"cloud" if cloud else "local"}">{pix("cloud" if cloud else "local", 2, False)} {esc(t(lang, mode))} · {esc(t(lang, "legend_cloud" if cloud else "legend_local"))}</span>']
         if o.get("provisional", True):
             tags.append(f'<span class="pill st-unknown">{esc(t(lang, "provisional"))}</span>')
         if o.get("label"):
@@ -279,7 +305,7 @@ def run(data: dict, lang: str = "en", actions: bool = True) -> str:
     out.append("</svg><div class=\"sub\">" + " · ".join(f"{a} {int(actors.get(a, 0))}" for a in ACTOR_ORDER) + "</div>")
     for e in (data.get("events") or [])[-12:]:
         tag = e.get("tag") if e.get("tag") in ACTOR_ORDER else "GUARD"
-        out.append(f'<div class="ev"><span class="tag {tag}">{esc(tag)}</span><span>{esc(fmt_value(e.get("text"), 200))}</span></div>')
+        out.append(f'<div class="ev"><span class="tag {tag}">{pix(ACTOR_SYMBOL[tag], 2, False) if tag in ACTOR_SYMBOL else ""} {esc(tag)}</span><span>{esc(fmt_value(e.get("text"), 200))}</span></div>')
     out.append("</div>")
     return "".join(out)
 

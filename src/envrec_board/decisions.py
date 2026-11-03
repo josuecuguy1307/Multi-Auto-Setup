@@ -15,7 +15,7 @@ from envrec_board import strings
 from envrec_board.board import Board, canonical_hash
 from envrec_board.vocab import BoardError, Entry
 
-HUMAN_CHANNELS = ("os_dialog", "host_dialog", "panel")  # where a person's gesture happens; the adapters (T2b) pass one of these only after a real click
+HUMAN_CHANNELS = ("os_dialog", "host_dialog", "panel", "chat_choice")  # where a person's gesture happens; the adapters (T2b) pass one of these only after a real click
 KINDS = ("reassign", "escalate_beyond_preapproved", "machine_write", "decompose")
 TTL_S = 900.0
 

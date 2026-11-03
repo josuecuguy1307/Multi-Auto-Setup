@@ -1,7 +1,7 @@
 """Board changes as intents for the owner's chat (docs/SETUP_API.md, T2b's intent schema: kind, run_id, actor, sensitivity, payload, text_fallback).
 
 Every board change becomes intents: `progress` (task posted, routed, taken, running, done, failed, freed), `show_data` with `data_kind: "board"` (compact state), `confirm` / `ask_choice` only when the
-owner must decide, and `text` for refusals. Every intent has a Spanish `text_fallback` that is enough on its own; nothing depends on cards.
+owner must decide, and `text` for refusals. Every intent has an English `text_fallback` that is enough on its own; nothing depends on cards.
 
 Delivery is per sink. A `cloud` sink (Claude Desktop, Meta AI later) is fail-closed: confidential intents never reach it (the owner gets a content-free notice), and with no outbound filter installed only
 `public` ones do. T4a's outbound filter plugs in as `outbound_filter` (SEAM, not built here). The validator below mirrors T2b's `intents.validate`; when T2b merges, `validate=` takes theirs.

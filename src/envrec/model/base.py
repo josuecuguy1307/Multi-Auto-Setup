@@ -19,6 +19,7 @@ class Completion:
     completion_tokens: int = 0
     latency_s: float = 0.0
     cost_usd: float | None = None
+    model_returned: str | None = None  # the `model` field of the backend's own answer, when it reports one (proof of which model answered)
 
 
 class ModelAdapter(ABC):

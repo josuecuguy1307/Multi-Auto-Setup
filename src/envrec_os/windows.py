@@ -25,6 +25,16 @@ class WindowsLayer:
     def make_executable(self, path: Path) -> None:
         return None  # Windows has no execute bit: a file runs by its extension
 
+    def enable_ansi(self) -> None:
+        """Turn on virtual terminal processing for stdout and UTF-8 output, so the banner's colors and blocks show. UNTESTED here (needs Windows)."""
+        import ctypes
+        kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
+        handle = kernel32.GetStdHandle(-11)
+        mode = ctypes.c_uint32()
+        if kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+            kernel32.SetConsoleMode(handle, mode.value | 0x0004)
+        kernel32.SetConsoleOutputCP(65001)
+
     def spawn_detached(self, argv: list[str], cwd: Path, log_path: Path, env: dict[str, str] | None = None) -> int:
         flags = 0x00000008 | 0x00000200 | 0x08000000  # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW: no console, not killed with the node's
         with open(log_path, "ab") as log:

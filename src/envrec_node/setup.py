@@ -34,7 +34,7 @@ def load_recipes(path: Path | None = None) -> dict[str, dict]:
     if not p.is_file():
         return {}
     doc = json.loads(p.read_text(encoding="utf-8"))
-    return {r["id"]: r for r in doc.get("recipes", [])}
+    return {r["id"]: r for r in [*doc.get("recipes", []), *doc.get("tool_recipes", [])]}
 
 
 def _covered(path: str, declared: list[str]) -> bool:

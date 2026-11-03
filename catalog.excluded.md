@@ -1,6 +1,6 @@
 # catalog.excluded
 
-136 things were left out of the catalog automatically. Reason for each:
+138 things were left out of the catalog automatically. Reason for each:
 
 - **source llamafile**: status is propose-off: needs the APE loader on the target and is a different execution model; worth enabling only if you want a third runtime in the comparison
 - **source ollama**: status is propose-off: archives are 1.5 GB each (over max_artifact_gb), it is a daemon with its own model registry (a source outside this manifest), and needs zstd
@@ -138,3 +138,5 @@
 - **Qwen/Qwen3-VL-30B-A3B-Thinking-GGUF/mmproj-Qwen3VL-30B-A3B-Thinking-Q8_0.gguf**: a vision projector with no model of its repository in the catalog (the model file is over the size cap)
 - **Qwen/Qwen3-VL-32B-Instruct-GGUF/mmproj-Qwen3VL-32B-Instruct-Q8_0.gguf**: a vision projector with no model of its repository in the catalog (the model file is over the size cap)
 - **Qwen/Qwen3-VL-32B-Thinking-GGUF/mmproj-Qwen3VL-32B-Thinking-Q8_0.gguf**: a vision projector with no model of its repository in the catalog (the model file is over the size cap)
+- **nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB**: license 'other' is not in the allowlist: it is not a known license whose class is offered
+- **LiquidAI/LFM3-1.7B-GGUF**: license 'other' is not in the allowlist: it is not a known license whose class is offered

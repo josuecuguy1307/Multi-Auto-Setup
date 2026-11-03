@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 
-from acceptance_world import build, wait_job, TOUCHES
+from acceptance_world import build, owner_yes, wait_job, TOUCHES
 from test_acceptance_run import answers, create, execute, fx, measure, sc, text
 
 from envrec_coordinator.services import Services
@@ -70,6 +70,8 @@ def test_the_tool_door_is_a_closed_list_and_an_unknown_name_is_refused(tmp_path)
             from envrec_coordinator.harness import CHANNELS
             assert c.services.call(CHANNELS["claude-desktop"], "run_shell", {"cmd": "ls"})["ok"] is False
             assert {t["tool"] for t in c.services.specs()} == set(Services.TOOLS)
+            for t in c.services.specs():  # a tool the chat is offered must not be refused at the door as unknown
+                assert "There is no tool" not in c.services.call(CHANNELS["claude-desktop"], t["tool"], {}).get("text", ""), t["tool"]
         finally:
             await teardown()
     run(go())
@@ -84,7 +86,7 @@ def test_if_the_facts_change_after_approval_the_task_stops_instead_of_running_so
             assert sc(r)["chosen"].startswith("llamacpp-local")
             from acceptance_world import set_server
             set_server(c, nid, up=False)  # between the proposal and the owner's approval the server went away
-            await host.tool("mas_request_approval", intent_id=sc(r)["intent_id"])
+            await owner_yes(host, sc(r)["intent_id"])
             j = await wait_job(host, sc(r)["task_id"])
             assert sc(j)["state"] == "route_changed" and "Create the task again" in text(j) and not [x for x in w.script.calls if "article" in x[2]]
         finally:

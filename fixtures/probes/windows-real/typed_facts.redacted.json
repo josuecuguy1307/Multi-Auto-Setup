@@ -1,5 +1,5 @@
 {
- "label": "REAL: typed results of the six-probe analysis of one real Windows 11 laptop (amd64), run through a paired node on 2026-10-30, qwen-local choosing the probes. Typed facts, NOT raw tool output: the node returns parsed results, so the raw PowerShell/CIM text was not captured. Redacted: no host name, no user name, no addresses (none are in these facts). The captured machine.os.version is the edition code 'Core' (a probe bug, fixed after this capture: it now reads '11 Home').",
+ "label": "REAL: typed results of the six-probe analysis of one real Windows 11 laptop (amd64), run through a paired node on 2026-10-30, local-profile choosing the probes. Typed facts, NOT raw tool output: the node returns parsed results, so the raw PowerShell/CIM text was not captured. Redacted: no host name, no user name, no addresses (none are in these facts). The captured machine.os.version is the edition code 'Core' (a probe bug, fixed after this capture: it now reads '11 Home').",
  "facts": {
   "machine.ai_cli_count": {
    "value": 1,

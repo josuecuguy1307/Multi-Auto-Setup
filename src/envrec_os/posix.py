@@ -21,6 +21,9 @@ class PosixLayer:
     def make_executable(self, path: Path) -> None:
         os.chmod(path, (os.stat(path).st_mode & 0o7777) | stat.S_IXUSR)
 
+    def enable_ansi(self) -> None:
+        """Terminals here already show escape codes and UTF-8."""
+
     def spawn_detached(self, argv: list[str], cwd: Path, log_path: Path, env: dict[str, str] | None = None) -> int:
         with open(log_path, "ab") as log:
             proc = subprocess.Popen(argv, cwd=str(cwd), stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True, close_fds=True, env={**os.environ, **env} if env else None)  # its own session: it does not die with the node's terminal

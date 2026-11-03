@@ -1,0 +1,10 @@
+{
+ "note": "the well-known folders of a user, by name and operating system family. A name the owner says (\"Desktop\") is looked up here; an absolute path is also accepted. The template may use ~, %NAME% and ${NAME:-default}. Add a folder or a family by adding a row.",
+ "folders": {
+  "desktop": {"darwin": "~/Desktop", "linux": "${XDG_DESKTOP_DIR:-~/Desktop}", "windows": "%USERPROFILE%\\Desktop"},
+  "documents": {"darwin": "~/Documents", "linux": "~/Documents", "windows": "%USERPROFILE%\\Documents"},
+  "downloads": {"darwin": "~/Downloads", "linux": "~/Downloads", "windows": "%USERPROFILE%\\Downloads"},
+  "pictures": {"darwin": "~/Pictures", "linux": "~/Pictures", "windows": "%USERPROFILE%\\Pictures"}
+ },
+ "limits": {"max_entries": 500, "max_name_chars": 200}
+}

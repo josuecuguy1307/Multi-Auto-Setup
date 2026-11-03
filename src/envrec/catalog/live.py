@@ -72,6 +72,12 @@ class LiveMetadata:
                                         "sha256": (a.get("digest") or "").removeprefix("sha256:") or None} for a in r.get("assets", [])]})
         return out
 
+    def model_repo(self, repo: str) -> dict[str, Any]:
+        """One repository the manifest names (a source approved for specific repos): its license from its own page, without listing everything its author publishes."""
+        info = self._get(f"https://huggingface.co/api/models/{repo}")
+        lic = next((t.split(":", 1)[1] for t in info.get("tags", []) if t.startswith("license:")), None)
+        return {"repo": info.get("id", repo), "license": lic}
+
     def model_repos(self, author: str) -> list[dict[str, Any]]:
         data = self._get("https://huggingface.co/api/models", author=author, filter="gguf", limit=100, full="false")
         out = []

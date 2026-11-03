@@ -16,7 +16,7 @@
    "sources": [
     "https://modelcontextprotocol.io/docs/develop/connect-local-servers"
    ],
-   "quits_to_edit": "Claude Desktop rewrites its settings file when it quits, so it must be fully quit (Cmd+Q on macOS) before the file is edited, and started again afterwards.",
+   "quits_to_edit": "Quit it completely now (Cmd+Q on macOS), then ask for the connection again; nothing was changed. It rewrites its settings file when it quits, so the file is edited only while it is quit, and it must be started again afterwards.",
    "process": {
     "macos": "Claude",
     "windows": "Claude.exe",

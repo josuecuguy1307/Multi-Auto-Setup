@@ -14,7 +14,7 @@ from collections.abc import Awaitable, Callable
 import envrec_os
 from envrec_net import task as T
 from envrec_net.envrun import load_environments
-from envrec_os import probes
+from envrec_os import folders, probes
 from envrec_node import analysis, credentials, envrun, setup
 from envrec_node.executors import EXECUTORS as STEP_FUNCTIONS
 
@@ -82,10 +82,21 @@ def _credential_presence(params: T.CredentialPresenceParams, ctx: dict) -> tuple
     return credentials.present(list(params.names)), [{"provider": "envrec_node.credentials", "tool": "credential presence", "status": "tested"}]
 
 
+def _list_dir(params: T.ListDirParams, ctx: dict) -> tuple[dict, list[dict]]:
+    out = folders.list_dir(params.folder, limit=params.limit)  # a refusal is a FolderRefused: its code is the task's typed failure reason
+    return out, [{"provider": "envrec_os.folders", "tool": "list_dir", "status": "tested", "limitations": ["names, kinds, sizes and dates only: no file was opened"]}]
+
+
+def _model_list(params: T.ModelListParams, ctx: dict) -> tuple[dict, list[dict]]:
+    return envrun.list_models(params, ctx)
+
+
 ALLOWED: dict[str, Callable[[T.TaskParams, dict], tuple[dict, list[dict]]]] = {
     "setup_step": _setup_step,
     "credential_step": _credential_step,
     "credential_presence": _credential_presence,
+    "list_dir": _list_dir,
+    "model_list": _model_list,
     "environment_run": _environment_run,
     "node_report": _node_report,
     "machine_analysis": _machine_analysis,
@@ -162,7 +173,7 @@ class TaskRunner:
                 result, evidence = await asyncio.to_thread(ALLOWED[task_type], params, {**self.ctx, "token": token})
                 res = T.TaskResult(task_id=task_id, status="done", result=result, evidence=evidence, duration_s=round(self.mono() - t0, 2))
             except Exception as exc:  # a failing task is reported, never fatal to the node
-                reason = exc.code if isinstance(exc, (envrun.EnvFailed, credentials.CredentialError)) else f"{type(exc).__name__}: {str(exc)[:120]}"
+                reason = exc.code if isinstance(exc, (envrun.EnvFailed, credentials.CredentialError, folders.FolderRefused)) else f"{type(exc).__name__}: {str(exc)[:120]}"
                 res = T.TaskResult(task_id=task_id, status="failed", reason=reason, duration_s=round(self.mono() - t0, 2))
             if state["cancelled"]:
                 return  # the coordinator cancelled it and was already told
@@ -175,4 +186,5 @@ class TaskRunner:
         st = self._running.get(task_id)
         if st is not None:
             st["cancelled"] = True  # a task already running in its worker thread finishes on its own; its result is dropped
+            self._running.pop(task_id, None)  # and it no longer takes a place: a cancelled call that is still waiting on a slow API must not make the next task "busy"
             await send("result", T.TaskResult(task_id=task_id, status="cancelled", reason="cancelled by the coordinator").model_dump())

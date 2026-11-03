@@ -20,6 +20,11 @@ class CoordinatorFacts(RouterAdmissionFacts):
         self.aliases = aliases if aliases is not None else E.load_policy().get("os_family_aliases", {})
         self.credential_names: dict[str, set[str]] = {}  # node id -> credential NAMES the node reported present (a presence probe or an access added/removed through the harness)
         self._leases = leases
+        self.model_lists = None  # set by Services: the models an API lists (selectable_models)
+
+    def selectable_models(self, env_id: str, access_id: str) -> list[str] | None:
+        entry = self.envs.get(env_id)
+        return self.model_lists.selectable(entry, access_id) if (self.model_lists is not None and entry is not None) else None
 
     # ---- machines ----------------------------------------------------------------------------------------------------------------------------------
 
@@ -44,6 +49,7 @@ class CoordinatorFacts(RouterAdmissionFacts):
                 signed_in |= {a["id"] for a in e.get("accesses", []) if a.get("kind") == "plan" and exe.lower() in signed}
         if self.coord.runs.stored_setup(nid) is not None:  # a setup left something on this machine: a local model environment is installed there, whether or not its server is up now
             installed |= {e["id"] for e in self.envs.values() if e.get("subtype") == "local_model"}
+        installed |= set(self.coord.runs.stored_tools(nid))  # tools the harness itself installed here (the owner approved the plan; the node recorded where they are)
         names = {str(k.get("name")) for k in (val("machine.api_key_variable_names") or []) if k.get("name")} | self.credential_names.get(nid, set())
         endpoint, model = self._local_server(nid)
         return MachineFacts(machine_id=nid, os_family=fam, online=nid in self.coord._sessions, installed=installed, signed_in=signed_in, env_names=names,

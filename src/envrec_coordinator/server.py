@@ -7,6 +7,7 @@ envelopes, and anything unsigned, badly signed, replayed, stale, from an unknown
 from __future__ import annotations
 
 import asyncio
+import json
 import ipaddress
 import time
 import uuid
@@ -102,7 +103,7 @@ class Coordinator:
         self.registry = Registry(self.state, self.layer)
         self.log = EventLog(self.state / "log")  # opened on this thread: the store belongs to it
         self.ctx = tls.server_context(self.state / "identity", self.registry.trusted_certs())
-        self.watcher = ControlWatcher(self.state, self.layer, self._on_cli_offer, self._on_cli_task, self._on_cli_unpair)
+        self.watcher = ControlWatcher(self.state, self.layer, self._on_cli_offer, self._on_cli_task, self._on_cli_unpair, self._publish_runs)
         self.tasks = TaskDesk(clock=self.clock, log=lambda t, p, owner=False: self.log.add(t, p, owner=owner), sessions=lambda nid: self._sessions.get(nid), approvals=self._owner_approval, origins=self._owner_origin, credential_approvals=self._owner_credential_approval)
         self.tasks.on_result = self._on_task_result
         self.tasks.on_change = self._publish_tasks
@@ -296,6 +297,23 @@ class Coordinator:
         except OSError:
             pass
 
+    def _publish_runs(self) -> None:
+        """What every run and job is doing, as a file `mas runs` and `mas run <id>` read: so the owner (or someone supervising him) follows a run without opening a protected folder. Written only when it changed."""
+        svc, runs = getattr(self, "services", None), getattr(self, "runs", None)
+        if svc is None or runs is None:
+            return
+        try:
+            doc = {"runs": [{"id": r.id, "kind": r.kind, "node": r.node_name, "status": r.status, "reason": (r.reason or "")[:300], "started": r.started, "finished": r.finished,
+                             "model_calls": (r.summary or {}).get("model_calls")} for r in runs.runs.values()][-40:],
+                   "jobs": [{"id": j.id, "kind": j.kind, "state": j.state, "text": (j.text or "")[:400], "intent_id": j.intent_id, "sensitivity": j.sensitivity} for j in svc.jobs.values()][-60:]}
+            key = json.dumps(doc, sort_keys=True, default=str)
+            if key == getattr(self, "_runs_published", None):
+                return
+            self._runs_published = key
+            write_json(self.layer, self.watcher.dir / "runs.json", {**doc, "at": self.clock()})
+        except OSError:
+            pass
+
     def analysis_of(self, node_id: str) -> dict | None:
         return self.registry.load_analysis(node_id) if self.registry.get(node_id) else None
 
@@ -443,10 +461,27 @@ class Coordinator:
         if task_id.startswith("adm-"):  # a task of an admission exam: its origin is the owner's approval of that exam (`adm-<id>:<suite task>`)
             aid = task_id.split(":", 1)[0]
             return next((e.id for e in reversed(self.log.events("admission_approved")) if e.effective_tag == "OWNER" and e.payload.get("admission") == aid), None)
+        if task_id.startswith("hj-"):  # a second opinion the harness asks its cloud access for (a recommender slot): its origin is the owner's recorded answer on cloud use, never for confidential work
+            if sensitivity == "confidential":
+                return None
+            from envrec_coordinator.slots import load_slots
+            answer, event = self.cloud_use_answer()
+            return event if answer and answer not in load_slots()["authority"]["refused_values"] else None
         for e in reversed(self.log.events("environment_task_origin")):
             if e.effective_tag == "OWNER" and e.payload.get("task") == task_id:
                 return e.id
         return self._decomposition_origin(task_id, task_type, sensitivity)
+
+    def cloud_use_answer(self) -> tuple[str | None, str | None]:
+        """(the owner's answer on cloud use, the id of the OWNER event that recorded it). The answer counts only when an OWNER-tagged chat answer to that profile question is in the log and the profile still holds
+        exactly that value (so a later change by a tool call, which is not an owner event, cancels it); the default of an unanswered question is never an answer."""
+        from envrec_coordinator.slots import load_slots
+        spec = load_slots()["authority"]
+        for e in reversed(self.log.events("harness_decision")):
+            p = e.payload
+            if e.effective_tag == "OWNER" and str(p.get("question", "")).startswith(spec["question_prefix"]):
+                return (p.get("option"), e.id) if self.services.profile.get(spec["profile_field"]) == p.get("option") else (None, None)
+        return None, None
 
     def _owner_decision(self, event_id: str, parent: str, subtasks: list[dict]):
         """The OWNER event `event_id` if it is a human decision (a gesture of the OS dialog, the chat host's dialog or the panel) for exactly this decomposition, else None. The authority is the recorded event:

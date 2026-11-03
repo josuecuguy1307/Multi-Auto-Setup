@@ -1,0 +1,20 @@
+{
+ "note": "What a task may take from one of the owner's computers besides the owner's own words. The HARNESS reads it, after the owner approves each one, and holds it: the chat model never sees it. A kind names the node task that reads it, the owner's categories it touches (the level comes from the owner's profile), the question put to him, and what the chat is told.",
+ "kinds": {
+  "folder": {
+   "node_task": "list_dir",
+   "params": {"folder": "folder"},
+   "args": {"machine": "the computer's name as the owner calls it", "folder": "a well-known folder name such as Desktop, or an absolute path"},
+   "categories": ["personal"],
+   "question": "Approve listing {folder} on {machine}? The harness reads only the NAMES, kinds, sizes and dates of what is in it, never inside a file. The listing stays on your computers: this chat never gets it. Only the model's answer and which machine, environment and model gave it come back here.",
+   "yes": "Yes, list it (names, sizes and dates only)",
+   "no": "No, do not list it",
+   "rows": "entries",
+   "columns": ["name", "kind", "bytes", "modified"],
+   "payload_header": "Contents of the folder {folder} on {machine} (names, kinds, sizes in bytes and modification dates only):",
+   "summary": "Listed {folder} on {machine}: {count} entries ({cut} not shown), {total_bytes} bytes in files. The names stay on your computers.",
+   "name_field": "name",
+   "answer_travels": true
+  }
+ }
+}

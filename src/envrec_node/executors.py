@@ -4,12 +4,14 @@ Everything here is bounded by what the recipe says (`ctx["recipe"]` is this comp
 server's arguments and endpoints are. Every path is obtained from the `WriteScope`, which refuses anything outside the step's declared paths; nothing here knows an operating system (the per-OS layer
 starts the process and sets the execute bit). The server is only ever started on a loopback address, is checked after it starts, and is stopped by its recorded identity (id AND creation time).
 
-Operations (and their undo, `undo_<name>`): fetch_check, unpack_archive, write_server_config, start_server, minimal_call."""
+Operations (and their undo, `undo_<name>`): fetch_check, unpack_archive, write_server_config, start_server, minimal_call, verify_program."""
 
 from __future__ import annotations
 
 import hashlib
 import json
+import os
+import re
 import shutil
 import stat
 import tarfile
@@ -22,6 +24,7 @@ from urllib.parse import urlparse
 import httpx
 
 import envrec_os
+from envrec_net import envrun as E
 from envrec_net import setup as P
 from envrec_node.setup import WriteRefused, WriteScope
 from envrec_os import procs
@@ -254,6 +257,38 @@ def undo_unpack_archive(args: dict, scope: WriteScope, ctx: dict) -> tuple[dict,
     return {"removed": [dest.name], "left": [str(dest)] if dest.exists() else []}, [{"provider": "local file", "tool": "remove folder"}]
 
 
+# ---- verify_program ------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+FLAG = re.compile(r"^(-{1,2}[A-Za-z][A-Za-z0-9-]{0,30}|version)$")
+
+
+def verify_program(args: dict, scope: WriteScope, ctx: dict) -> tuple[dict, list[dict]]:
+    """Run a program the previous steps unpacked, once, with flags only (no shell, a minimal environment, a time limit), see that it exits 0 and, if the plan says what to expect, that the text appears;
+    then record where it is (`.mas-exe.json` in its folder) so the environment runs of this node find it by its name. The program must lie inside the step's declared folder."""
+    rec = _recipe(ctx)
+    tool_dir, binary = scope.path(str(args["tool_dir"])), scope.path(str(args["binary_path"]))
+    argv = [str(a) for a in args.get("argv", [])]
+    if not argv or not all(FLAG.match(a) for a in argv):
+        raise StepFailed("bad_arguments", "a verification passes flags only (for example --version)")
+    if not binary.is_file() or not _inside(tool_dir, binary):
+        raise StepFailed("program_missing", "the program is not where the plan says: the unpack step comes first")
+    run = (ctx.get("run") or procs.run_capture)([str(binary), *argv], binary.parent, {**{k: os.environ[k] for k in E.load_policy()["env_base"] if k in os.environ}, "HOME": str(tool_dir), "USERPROFILE": str(tool_dir)}, timeout_s=float(rec["verify"]["timeout_s"]))
+    out = (str(run.get("stdout", "")) + str(run.get("stderr", ""))).strip()
+    if run.get("timed_out") or run.get("exit") != 0:
+        raise StepFailed("program_failed", f"exit {run.get('exit')}: {out[:160]}")
+    expect = str(args.get("expect") or "")
+    if expect and expect not in out:
+        raise StepFailed("program_unexpected", f"the output does not contain {expect!r}: {out[:120]}")
+    (tool_dir / rec["verify"]["record"]).write_text(json.dumps({"exe": str(args["exe"]), "binary": binary.relative_to(tool_dir).as_posix()}), encoding="utf-8")
+    return {"ok": True, "exit": 0, "output": out[:160], "binary": binary.name}, [{"provider": "local file", "tool": "run program once", "argv": argv}]
+
+
+def undo_verify_program(args: dict, scope: WriteScope, ctx: dict) -> tuple[dict, list[dict]]:
+    rec = _recipe(ctx)
+    (scope.path(str(args["tool_dir"])) / rec["verify"]["record"]).unlink(missing_ok=True)
+    return {"removed": [rec["verify"]["record"]]}, [{"provider": "local file", "tool": "unlink"}]
+
+
 # ---- write_server_config -----------------------------------------------------------------------------------------------------------------------------------------------------------
 
 def write_server_config(args: dict, scope: WriteScope, ctx: dict) -> tuple[dict, list[dict]]:
@@ -408,4 +443,5 @@ EXECUTORS = {
     "write_server_config": write_server_config, "undo_write_server_config": undo_write_server_config,
     "start_server": start_server, "undo_start_server": undo_start_server,
     "minimal_call": minimal_call, "undo_minimal_call": undo_minimal_call,
+    "verify_program": verify_program, "undo_verify_program": undo_verify_program,
 }

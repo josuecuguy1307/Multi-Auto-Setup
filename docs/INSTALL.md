@@ -58,7 +58,7 @@ Shows what will be removed and asks. It removes the user services, the program f
 
 ```bash
 mas service install            # a paired node
-mas service install --role coordinator --bind 192.0.2.10 --model-profile qwen-local --models-file ~/models.yaml
+mas service install --role coordinator --bind 192.0.2.10 --model-profile local-profile --models-file ~/models.yaml
 mas service status
 mas service uninstall
 ```

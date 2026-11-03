@@ -195,7 +195,7 @@ Only the door changes. A new chat needs: (1) a translator for the calls above; (
 |---|---|
 | intents, cards, core rules, tickets, the gesture rule, the OS-dialog flow with a fake dialog | unit tests, SIMULATED-LOCAL (real coordinator and node on loopback) |
 | setup, undo, activity through the real MCP adapter (a subprocess) with the simulated node, scripted setup model, loopback origin and fake runtime | SIMULATED-LOCAL |
-| Open WebUI: Pipe, menu, cards, analysis with the real `qwen3.5:9b`, options, pick, prepare plan text, a step approved in the chat's own dialog, undo | **REAL** (Open WebUI); node and setup model simulated |
+| Open WebUI: Pipe, menu, cards, analysis with the real `local-9b`, options, pick, prepare plan text, a step approved in the chat's own dialog, undo | **REAL** (Open WebUI); node and setup model simulated |
 | Claude Desktop: handshake, tool calls, OS dialog | **REAL**; cards not shown (gap above) |
 | terminal agents | SIMULATED-LOCAL; real agent UNTESTED |
 | native macOS dialog | **REAL**; the Touch ID prompt itself: UNTESTED in the owner-visible sense |

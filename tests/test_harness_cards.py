@@ -83,7 +83,7 @@ NET = {"coordinator": {"name": "Mac"}, "clouds": [{"name": "Claude"}], "nodes": 
 MACHINE = {"name": "Lenovo", "os": "Windows 11", "label": "agent analysis", "groups": {"system": [{"label": "OS", "value": "Windows 11", "status": "tested"}],
            "hardware": [{"label": "RAM", "value": 19.7, "status": "tested"}, {"label": "GPU", "value": [], "status": "unknown"}], "ai": [{"label": "Runtimes", "value": ["ollama"], "status": "inferred"}]},
            "findings": [{"text": "CPU only", "status": "hypothesis"}]}
-OPTIONS = {"intent_id": "r1:pick", "pickable": True, "options": [{"id": "o1", "title": "llama.cpp + Qwen", "kind": "local", "cloud": False, "memory_basis": "needs 8 GiB", "limits": ["slow"], "explanation": "fits"},
+OPTIONS = {"intent_id": "r1:pick", "pickable": True, "options": [{"id": "o1", "title": "llama.cpp + local model", "kind": "local", "cloud": False, "memory_basis": "needs 8 GiB", "limits": ["slow"], "explanation": "fits"},
            {"id": "o2", "title": "Claude CLI", "kind": "cli", "cloud": True}, {"id": "o3", "title": "API", "kind": "api", "cloud": True}]}
 PLAN = {"plan_id": "p1", "plan_hash": HASH, "machine_id": "m1", "option_id": "o1", "sensitivity": "internal", "fit": {"fits": True}, "steps": [
         {"n": 1, "title": "Download", "kind": "download", "exact_command": "curl -L X", "writes": ["~/mas/a"], "bytes": 5_000_000, "undo": "rm ~/mas/a", "needs_owner_approval": True, "status": "pending"}],
@@ -160,7 +160,7 @@ def test_names_facts_and_findings_that_come_from_machines_and_models_are_escaped
 
 def test_an_unknown_device_kind_is_drawn_as_a_plain_computer_never_guessed():
     d = {"nodes": [{"id": "x", "name": "X", "kind": "toaster", "status": "online"}]}
-    assert icons.device("computer") in cards.network(d)
+    assert cards.pix("desktop", 6) in cards.network(d)
 
 
 # ---- the map ------------------------------------------------------------------------------------------------------------------------------------
@@ -168,8 +168,8 @@ def test_an_unknown_device_kind_is_drawn_as_a_plain_computer_never_guessed():
 def test_the_map_draws_each_machine_as_its_own_icon_and_marks_status_activity_and_locks():
     m = cards.network(NET, "en")
     for kind in ("laptop", "oldpc", "server", "desktop"):
-        assert icons.device(kind) in m
-    assert m.count('class="mas-node"') == 4 and m.count("<circle class=\"st-dot online\"") == 2
+        assert cards.pix(kind, 6) in m  # each machine is its own pixel symbol of the style set
+    assert m.count('class="mas-node"') == 4 and m.count('<rect class="st-dot online"') == 2
     assert 'st-dot busy' in m and 'st-dot offline' in m
     assert 'mas-link route-local active' in m  # a running task animates its line
     assert 'route-cloud' in m and 'lock-badge' in m  # amber: it goes to the cloud; lock: confidential
@@ -189,7 +189,7 @@ def test_a_machine_card_shows_the_evidence_state_of_every_fact():
 
 def test_the_options_card_compares_with_symbols_and_labels_what_was_not_measured():
     o = cards.options(OPTIONS, "en")
-    assert icons.chip() in o and icons.terminal() in o and icons.key() in o
+    assert cards.pix("chip", 4) in o and cards.pix("terminal", 4) in o and cards.pix("key", 4) in o
     assert o.count("provisional, not measured here") == 3
     assert o.count('class="sym cloud"') == 2 and o.count('class="sym local"') == 1  # teal stays here, amber leaves
     assert o.count("data-choose=") == 3 and cards.options(OPTIONS, "en", actions=False).count("data-choose=") == 0  # a host that cannot call back shows no button
@@ -209,7 +209,7 @@ def test_the_run_card_counts_who_decided():
 def test_every_card_has_a_text_fallback_that_names_what_the_card_shows(kind, data):
     txt = cards.fallback_text(kind, data, "en")
     assert txt.strip()
-    must = {"network": ["Lenovo", "Old PC", "Box", "Desk"], "machine": ["Windows 11", "19.7", "CPU only"], "options": ["llama.cpp + Qwen", "Claude CLI", "API", "id: o1"], "plan": ["curl -L X", "rm ~/mas/a"], "run": ["MODEL 16", "analysis"]}[kind]
+    must = {"network": ["Lenovo", "Old PC", "Box", "Desk"], "machine": ["Windows 11", "19.7", "CPU only"], "options": ["llama.cpp + local model", "Claude CLI", "API", "id: o1"], "plan": ["curl -L X", "rm ~/mas/a"], "run": ["MODEL 16", "analysis"]}[kind]
     for s in must:
         assert s in txt
 

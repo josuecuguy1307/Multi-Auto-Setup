@@ -1,0 +1,43 @@
+"""Owner-facing text of the chains (skill `harness-chains`), in English, in one place."""
+
+from __future__ import annotations
+
+CHAIN_STARTED = "Chain {chain}: {text}"
+NEEDS_MACHINE = "Say which of your computers the {kind} is on (a paired computer's name). Paired: {names}."
+BAD_INPUT = "An input is {{kind, machine, {args}}}; the kinds are {kinds}."
+UNKNOWN_KIND = "There is no input kind {kind!r}; the kinds are {kinds}."
+AMBIGUOUS = "More than one computer matches {name!r}; say which: {names}."
+NOT_CONNECTED = "{machine} is not connected right now, so nothing can be read from it."
+DECLINED = "Recorded: you did not approve listing {folder} on {machine}, so nothing was read and no task was created."
+LISTING_STARTED = "Recorded. The harness is reading {what} on {machine} (job id for mas_job: {job}). It will not show it here."
+LISTING_FAILED = "The {what} on {machine} could not be read: {why}. Nothing was created."
+LISTING_REASONS = {"not_a_folder": "that is not a folder on that computer", "not_absolute": "that is not a folder name the computer knows; say one of: {names}, or an absolute path",
+                   "bad_path": "that is not an accepted path", "permission": "the computer did not let the software read it", "unreadable": "it could not be read", "node_offline": "the computer went offline",
+                   "no_such_folder_name": "that name has no known place on that computer", "timed_out": "it took too long"}
+ROUTED_TO = "The listing is held by the harness. The task will run on {route}."
+NO_ROUTE = "No route is possible: {reason}"
+SETUP_NO_ANALYSIS = "{machine} has no local model that can take a confidential task, and the harness has no stored analysis of it to propose one from. Analyse the computer first (mas_start with analyze), then ask again."
+SETUP_NO_FIT = "{machine} has no local model that can take a confidential task, and no model in the catalog fits it ({why})."
+SETUP_HEAD = "{machine} has no local model ready for this {level} task, and a {level} task never leaves your computers. The harness proposes setting one up:"
+SETUP_DEFAULT = "Recommended: {title}. {facts}"
+SETUP_RUNNER = "Runner-up: {title}. {facts}"
+SETUP_FACTS = "{status}; {size} to download; needs {need} GiB of the {budget} GiB it can use here; licence {licence}."
+SETUP_ASK = "Plan {hash}. Your pick starts the setup plan, which shows you every step and asks ONE more question before anything is written; then the harness measures it and resumes your task."
+SETUP_USE_DEFAULT = "Set up the recommended one"
+SETUP_USE_RUNNER = "Set up the runner-up"
+SETUP_NEITHER = "Neither"
+SETUP_DECLINED = "Recorded: you took neither, so nothing was set up and no task was created."
+SETUP_PICKED = "Recorded: you chose {title} (plan {hash}). The harness is starting its setup plan."
+SETUP_RUN_FAILED = "The setup could not start or did not finish: {why}. Nothing else was done."
+INSTALL_STARTED = "Setup run {run} started on {machine}. It asks ONE question showing the whole plan (call mas_status); when it ends the harness measures the model and resumes your task."
+MEASURE_NONE = "A local combination exists but none can be measured: {why}"
+MEASURE_STARTED = "The harness resumed your task: the local model now needs a measurement on this kind of work before a {level} task may use it. Approve the exam (intent_id {intent}); then the task resumes (job id for mas_job: {job})."
+MEASURE_FAILED = "The measurement did not finish ({state}), so the local model cannot take a {level} task yet."
+TOO_MANY = "The chain stopped: the step {step} would have run again, and nothing here repeats without you."
+CHAIN_ERROR = "The chain stopped: {why}."
+TASK_NEXT = "Your task is ready. {text}"
+ANSWER_HEAD = "Answer from {route}. The folder listing stayed on your computers; names in it are shown as [name withheld]."
+WITHHELD = "[name withheld]"
+
+ANALYZE_STARTED = "There is no usable analysis of {machine}, so the harness is reading it now (read-only; run {run}). The chain goes on by itself when it ends."
+ANALYZE_FAILED = "The analysis of {machine} did not finish: {why}. The chain stops here; nothing was changed."

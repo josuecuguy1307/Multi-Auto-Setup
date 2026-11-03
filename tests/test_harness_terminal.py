@@ -44,7 +44,7 @@ def test_a_terminal_agent_reads_the_network_as_text_and_its_handshake_is_kept_as
                 await host.start()
                 res = await host.tool("mas_network")
                 text = res["content"][0]["text"]
-                assert "node1 — paired machine" in text and "Coordinator" in text and "<svg" not in text  # words only: a terminal shows no cards
+                assert "**node1**" in text and "Coordinator:" in text and "<svg" not in text  # words only: a terminal shows no cards
                 assert c.harness.capabilities(TERMINAL)["confirmations"] == ["os_dialog"]  # no elicitation declared, so the system dialog
                 assert c.harness.caps["terminal"]["elicitation"] is False
                 assert (c.harness.dir / "handshake-terminal-fake-terminal-agent.json").exists() or any(c.harness.dir.glob("handshake-terminal*"))

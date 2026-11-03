@@ -1,4 +1,1128 @@
 {
- "label": "public evidence entries (source, tier, date); none yet",
- "entries": []
+ "label": "public evidence entries (source, tier, date); none seeded: an entry is added only after the page it comes from was fetched and checked",
+ "tiers_order": [
+  "measured here",
+  "public for the combination",
+  "public for the model only",
+  "none"
+ ],
+ "source_tiers": {
+  "1": "independent and reproducible",
+  "2": "independent, less reproducible",
+  "3": "submitted by one party (the project team or one person), not independently reproduced",
+  "vendor": "vendor-reported: may be shown, never used to rank or filter"
+ },
+ "entry_shape": {
+  "id": "str",
+  "applies": {
+   "environment": "id (optional)",
+   "model": "model id (required)",
+   "access": "id (optional)",
+   "models": "route model ids this entry applies to (optional, with or instead of model)"
+  },
+  "task_types": [
+   "..."
+  ],
+  "domains": [
+   "..."
+  ],
+  "benchmark": "str",
+  "result": "str",
+  "source": "str",
+  "source_url": "https https",
+  "source_tier": "1|2|3|vendor",
+  "retrieved": "YYYY-MM-DD",
+  "capture_sha256": "sha256 of the fetched page",
+  "source_date": "YYYY-MM-DD: when the result was published, from the source",
+  "hub_id": "the public model id the result is about (optional)"
+ },
+ "excluded_benchmarks": [],
+ "excluded_note": "saturated or contaminated benchmarks, with the reason; adding one is the project owner's decision, not code's (RECOMMENDATION_SPEC 4.1). None named yet.",
+ "entries": [
+  {
+   "id": "bfcl-overall-meta-llama-llama-3-1-8b-instruct",
+   "applies": {
+    "model": "meta-llama/Llama-3.1-8B-Instruct",
+    "models": [
+     "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+     "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "meta-llama/Llama-3.1-8B-Instruct",
+   "task_types": [
+    "code"
+   ],
+   "domains": [
+    "tool-use"
+   ],
+   "benchmark": "BFCL (function calling) / overall",
+   "dataset": "bfcl",
+   "task": "overall",
+   "value": 25.83,
+   "result": "25.83",
+   "source": "Berkeley Function Calling Leaderboard (Berkeley Function Calling Leaderboard, overall accuracy)",
+   "source_url": "https://gorilla.cs.berkeley.edu/leaderboard.html",
+   "source_tier": "2",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-04-12",
+   "source_row": "bfcl_overall",
+   "capture_sha256": "ede5081a24bc5ac7f9b3b09a52af6bcfcd35aa0f1709239fed979db77a8159a6",
+   "card_capture_sha256": null,
+   "note": "Model: Llama-3.1-8B-Instruct (Prompt); rank 85"
+  },
+  {
+   "id": "bfcl-overall-meta-llama-llama-3-2-3b-instruct",
+   "applies": {
+    "model": "meta-llama/Llama-3.2-3B-Instruct",
+    "models": [
+     "Llama-3.2-3B-Instruct-Q4_0.gguf",
+     "Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+     "Llama-3.2-3B-Instruct-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "meta-llama/Llama-3.2-3B-Instruct",
+   "task_types": [
+    "code"
+   ],
+   "domains": [
+    "tool-use"
+   ],
+   "benchmark": "BFCL (function calling) / overall",
+   "dataset": "bfcl",
+   "task": "overall",
+   "value": 21.95,
+   "result": "21.95",
+   "source": "Berkeley Function Calling Leaderboard (Berkeley Function Calling Leaderboard, overall accuracy)",
+   "source_url": "https://gorilla.cs.berkeley.edu/leaderboard.html",
+   "source_tier": "2",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-04-12",
+   "source_row": "bfcl_overall",
+   "capture_sha256": "ede5081a24bc5ac7f9b3b09a52af6bcfcd35aa0f1709239fed979db77a8159a6",
+   "card_capture_sha256": null,
+   "note": "Model: Llama-3.2-3B-Instruct (FC); rank 98"
+  },
+  {
+   "id": "hf-audio-open-asr-leaderboard-ami-wer-ibm-granite-granite-4-0-1b-speech",
+   "applies": {
+    "model": "ibm-granite/granite-4.0-1b-speech",
+    "models": [
+     "granite-4.0-1b-speech-Q4_K_M.gguf",
+     "granite-4.0-1b-speech-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-4.0-1b-speech",
+   "task_types": [],
+   "domains": [
+    "speech-recognition"
+   ],
+   "benchmark": "Open ASR leaderboard (speech recognition) / ami_wer",
+   "dataset": "hf-audio/open-asr-leaderboard",
+   "task": "ami_wer",
+   "value": 8.44,
+   "result": "8.44",
+   "source": "open-asr-leaderboard (listed on the Hugging Face Hub for ibm-granite/granite-4.0-1b-speech)",
+   "source_url": "https://huggingface.co/hf-audio",
+   "source_tier": "3",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-02-27",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "7a92b807b839a54a35b9a0d77a613c7aaec249cccd9123e889a3b0442f49d998",
+   "card_capture_sha256": "08c3f560c314f1bf2d5b39992e975144a00ae08f89d5886f55fe3b14ab2752b7",
+   "note": ""
+  },
+  {
+   "id": "hf-audio-open-asr-leaderboard-earnings22-wer-ibm-granite-granite-4-0-1b-speech",
+   "applies": {
+    "model": "ibm-granite/granite-4.0-1b-speech",
+    "models": [
+     "granite-4.0-1b-speech-Q4_K_M.gguf",
+     "granite-4.0-1b-speech-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-4.0-1b-speech",
+   "task_types": [],
+   "domains": [
+    "speech-recognition"
+   ],
+   "benchmark": "Open ASR leaderboard (speech recognition) / earnings22_wer",
+   "dataset": "hf-audio/open-asr-leaderboard",
+   "task": "earnings22_wer",
+   "value": 8.48,
+   "result": "8.48",
+   "source": "open-asr-leaderboard (listed on the Hugging Face Hub for ibm-granite/granite-4.0-1b-speech)",
+   "source_url": "https://huggingface.co/hf-audio",
+   "source_tier": "3",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-02-27",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "7a92b807b839a54a35b9a0d77a613c7aaec249cccd9123e889a3b0442f49d998",
+   "card_capture_sha256": "08c3f560c314f1bf2d5b39992e975144a00ae08f89d5886f55fe3b14ab2752b7",
+   "note": ""
+  },
+  {
+   "id": "hf-audio-open-asr-leaderboard-gigaspeech-wer-ibm-granite-granite-4-0-1b-speech",
+   "applies": {
+    "model": "ibm-granite/granite-4.0-1b-speech",
+    "models": [
+     "granite-4.0-1b-speech-Q4_K_M.gguf",
+     "granite-4.0-1b-speech-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-4.0-1b-speech",
+   "task_types": [],
+   "domains": [
+    "speech-recognition"
+   ],
+   "benchmark": "Open ASR leaderboard (speech recognition) / gigaspeech_wer",
+   "dataset": "hf-audio/open-asr-leaderboard",
+   "task": "gigaspeech_wer",
+   "value": 10.14,
+   "result": "10.14",
+   "source": "open-asr-leaderboard (listed on the Hugging Face Hub for ibm-granite/granite-4.0-1b-speech)",
+   "source_url": "https://huggingface.co/hf-audio",
+   "source_tier": "3",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-02-27",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "7a92b807b839a54a35b9a0d77a613c7aaec249cccd9123e889a3b0442f49d998",
+   "card_capture_sha256": "08c3f560c314f1bf2d5b39992e975144a00ae08f89d5886f55fe3b14ab2752b7",
+   "note": ""
+  },
+  {
+   "id": "hf-audio-open-asr-leaderboard-librispeech-clean-wer-ibm-granite-granite-4-0-1b-speech",
+   "applies": {
+    "model": "ibm-granite/granite-4.0-1b-speech",
+    "models": [
+     "granite-4.0-1b-speech-Q4_K_M.gguf",
+     "granite-4.0-1b-speech-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-4.0-1b-speech",
+   "task_types": [],
+   "domains": [
+    "speech-recognition"
+   ],
+   "benchmark": "Open ASR leaderboard (speech recognition) / librispeech_clean_wer",
+   "dataset": "hf-audio/open-asr-leaderboard",
+   "task": "librispeech_clean_wer",
+   "value": 1.42,
+   "result": "1.42",
+   "source": "open-asr-leaderboard (listed on the Hugging Face Hub for ibm-granite/granite-4.0-1b-speech)",
+   "source_url": "https://huggingface.co/hf-audio",
+   "source_tier": "3",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-02-27",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "7a92b807b839a54a35b9a0d77a613c7aaec249cccd9123e889a3b0442f49d998",
+   "card_capture_sha256": "08c3f560c314f1bf2d5b39992e975144a00ae08f89d5886f55fe3b14ab2752b7",
+   "note": ""
+  },
+  {
+   "id": "hf-audio-open-asr-leaderboard-librispeech-other-wer-ibm-granite-granite-4-0-1b-speech",
+   "applies": {
+    "model": "ibm-granite/granite-4.0-1b-speech",
+    "models": [
+     "granite-4.0-1b-speech-Q4_K_M.gguf",
+     "granite-4.0-1b-speech-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-4.0-1b-speech",
+   "task_types": [],
+   "domains": [
+    "speech-recognition"
+   ],
+   "benchmark": "Open ASR leaderboard (speech recognition) / librispeech_other_wer",
+   "dataset": "hf-audio/open-asr-leaderboard",
+   "task": "librispeech_other_wer",
+   "value": 2.85,
+   "result": "2.85",
+   "source": "open-asr-leaderboard (listed on the Hugging Face Hub for ibm-granite/granite-4.0-1b-speech)",
+   "source_url": "https://huggingface.co/hf-audio",
+   "source_tier": "3",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-02-27",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "7a92b807b839a54a35b9a0d77a613c7aaec249cccd9123e889a3b0442f49d998",
+   "card_capture_sha256": "08c3f560c314f1bf2d5b39992e975144a00ae08f89d5886f55fe3b14ab2752b7",
+   "note": ""
+  },
+  {
+   "id": "hf-audio-open-asr-leaderboard-mean-wer-ibm-granite-granite-4-0-1b-speech",
+   "applies": {
+    "model": "ibm-granite/granite-4.0-1b-speech",
+    "models": [
+     "granite-4.0-1b-speech-Q4_K_M.gguf",
+     "granite-4.0-1b-speech-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-4.0-1b-speech",
+   "task_types": [],
+   "domains": [
+    "speech-recognition"
+   ],
+   "benchmark": "Open ASR leaderboard (speech recognition) / mean_wer",
+   "dataset": "hf-audio/open-asr-leaderboard",
+   "task": "mean_wer",
+   "value": 5.52,
+   "result": "5.52",
+   "source": "open-asr-leaderboard (listed on the Hugging Face Hub for ibm-granite/granite-4.0-1b-speech)",
+   "source_url": "https://huggingface.co/hf-audio",
+   "source_tier": "3",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-02-27",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "7a92b807b839a54a35b9a0d77a613c7aaec249cccd9123e889a3b0442f49d998",
+   "card_capture_sha256": "08c3f560c314f1bf2d5b39992e975144a00ae08f89d5886f55fe3b14ab2752b7",
+   "note": ""
+  },
+  {
+   "id": "hf-audio-open-asr-leaderboard-rtfx-ibm-granite-granite-4-0-1b-speech",
+   "applies": {
+    "model": "ibm-granite/granite-4.0-1b-speech",
+    "models": [
+     "granite-4.0-1b-speech-Q4_K_M.gguf",
+     "granite-4.0-1b-speech-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-4.0-1b-speech",
+   "task_types": [],
+   "domains": [
+    "speech-recognition"
+   ],
+   "benchmark": "Open ASR leaderboard (speech recognition) / rtfx",
+   "dataset": "hf-audio/open-asr-leaderboard",
+   "task": "rtfx",
+   "value": 280.02,
+   "result": "280.02",
+   "source": "open-asr-leaderboard (listed on the Hugging Face Hub for ibm-granite/granite-4.0-1b-speech)",
+   "source_url": "https://huggingface.co/hf-audio",
+   "source_tier": "3",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-02-27",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "7a92b807b839a54a35b9a0d77a613c7aaec249cccd9123e889a3b0442f49d998",
+   "card_capture_sha256": "08c3f560c314f1bf2d5b39992e975144a00ae08f89d5886f55fe3b14ab2752b7",
+   "note": ""
+  },
+  {
+   "id": "hf-audio-open-asr-leaderboard-spgispeech-wer-ibm-granite-granite-4-0-1b-speech",
+   "applies": {
+    "model": "ibm-granite/granite-4.0-1b-speech",
+    "models": [
+     "granite-4.0-1b-speech-Q4_K_M.gguf",
+     "granite-4.0-1b-speech-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-4.0-1b-speech",
+   "task_types": [],
+   "domains": [
+    "speech-recognition"
+   ],
+   "benchmark": "Open ASR leaderboard (speech recognition) / spgispeech_wer",
+   "dataset": "hf-audio/open-asr-leaderboard",
+   "task": "spgispeech_wer",
+   "value": 3.89,
+   "result": "3.89",
+   "source": "open-asr-leaderboard (listed on the Hugging Face Hub for ibm-granite/granite-4.0-1b-speech)",
+   "source_url": "https://huggingface.co/hf-audio",
+   "source_tier": "3",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-02-27",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "7a92b807b839a54a35b9a0d77a613c7aaec249cccd9123e889a3b0442f49d998",
+   "card_capture_sha256": "08c3f560c314f1bf2d5b39992e975144a00ae08f89d5886f55fe3b14ab2752b7",
+   "note": ""
+  },
+  {
+   "id": "hf-audio-open-asr-leaderboard-tedlium-wer-ibm-granite-granite-4-0-1b-speech",
+   "applies": {
+    "model": "ibm-granite/granite-4.0-1b-speech",
+    "models": [
+     "granite-4.0-1b-speech-Q4_K_M.gguf",
+     "granite-4.0-1b-speech-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-4.0-1b-speech",
+   "task_types": [],
+   "domains": [
+    "speech-recognition"
+   ],
+   "benchmark": "Open ASR leaderboard (speech recognition) / tedlium_wer",
+   "dataset": "hf-audio/open-asr-leaderboard",
+   "task": "tedlium_wer",
+   "value": 3.1,
+   "result": "3.1",
+   "source": "open-asr-leaderboard (listed on the Hugging Face Hub for ibm-granite/granite-4.0-1b-speech)",
+   "source_url": "https://huggingface.co/hf-audio",
+   "source_tier": "3",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-02-27",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "7a92b807b839a54a35b9a0d77a613c7aaec249cccd9123e889a3b0442f49d998",
+   "card_capture_sha256": "08c3f560c314f1bf2d5b39992e975144a00ae08f89d5886f55fe3b14ab2752b7",
+   "note": ""
+  },
+  {
+   "id": "hf-audio-open-asr-leaderboard-voxpopuli-wer-ibm-granite-granite-4-0-1b-speech",
+   "applies": {
+    "model": "ibm-granite/granite-4.0-1b-speech",
+    "models": [
+     "granite-4.0-1b-speech-Q4_K_M.gguf",
+     "granite-4.0-1b-speech-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-4.0-1b-speech",
+   "task_types": [],
+   "domains": [
+    "speech-recognition"
+   ],
+   "benchmark": "Open ASR leaderboard (speech recognition) / voxpopuli_wer",
+   "dataset": "hf-audio/open-asr-leaderboard",
+   "task": "voxpopuli_wer",
+   "value": 5.84,
+   "result": "5.84",
+   "source": "open-asr-leaderboard (listed on the Hugging Face Hub for ibm-granite/granite-4.0-1b-speech)",
+   "source_url": "https://huggingface.co/hf-audio",
+   "source_tier": "3",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-02-27",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "7a92b807b839a54a35b9a0d77a613c7aaec249cccd9123e889a3b0442f49d998",
+   "card_capture_sha256": "08c3f560c314f1bf2d5b39992e975144a00ae08f89d5886f55fe3b14ab2752b7",
+   "note": ""
+  },
+  {
+   "id": "lexam-benchmark-lexam-mcq-4-choices-meta-llama-llama-3-1-8b-instruct",
+   "applies": {
+    "model": "meta-llama/Llama-3.1-8B-Instruct",
+    "models": [
+     "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+     "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "meta-llama/Llama-3.1-8B-Instruct",
+   "task_types": [
+    "text"
+   ],
+   "domains": [
+    "legal"
+   ],
+   "benchmark": "LEXam (law exam questions) / mcq_4_choices",
+   "dataset": "LEXam-Benchmark/LEXam",
+   "task": "mcq_4_choices",
+   "value": 24.04,
+   "result": "24.04",
+   "source": "LEXam Leaderboard (listed on the Hugging Face Hub for meta-llama/Llama-3.1-8B-Instruct)",
+   "source_url": "https://lexam-benchmark.github.io/",
+   "source_tier": "2",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-06-02",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "2faa6d8818f4291a3fcd9f3131074f28ecc38327d448e8a8fcd7530e725716ca",
+   "card_capture_sha256": "b72b2861e35dc041b5170de7e703d5b23ce9af82b1c3e9caa4ac191228e70a86",
+   "note": ""
+  },
+  {
+   "id": "lexam-benchmark-lexam-open-question-meta-llama-llama-3-1-8b-instruct",
+   "applies": {
+    "model": "meta-llama/Llama-3.1-8B-Instruct",
+    "models": [
+     "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+     "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "meta-llama/Llama-3.1-8B-Instruct",
+   "task_types": [
+    "text"
+   ],
+   "domains": [
+    "legal"
+   ],
+   "benchmark": "LEXam (law exam questions) / open_question",
+   "dataset": "LEXam-Benchmark/LEXam",
+   "task": "open_question",
+   "value": 10,
+   "result": "10",
+   "source": "LEXam Leaderboard (listed on the Hugging Face Hub for meta-llama/Llama-3.1-8B-Instruct)",
+   "source_url": "https://lexam-benchmark.github.io/",
+   "source_tier": "2",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-06-02",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "2faa6d8818f4291a3fcd9f3131074f28ecc38327d448e8a8fcd7530e725716ca",
+   "card_capture_sha256": "b72b2861e35dc041b5170de7e703d5b23ce9af82b1c3e9caa4ac191228e70a86",
+   "note": ""
+  },
+  {
+   "id": "liquidai-ifstruct-v1-0-ifstruct-v1-ibm-granite-granite-4-0-h-350m",
+   "applies": {
+    "model": "ibm-granite/granite-4.0-h-350m",
+    "models": [
+     "granite-4.0-h-350m-Q4_0.gguf",
+     "granite-4.0-h-350m-Q4_K_M.gguf",
+     "granite-4.0-h-350m-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-4.0-h-350m",
+   "task_types": [
+    "extraction",
+    "text"
+   ],
+   "domains": [
+    "structured-output"
+   ],
+   "benchmark": "IFStruct (structured-output compliance) / ifstruct_v1",
+   "dataset": "LiquidAI/ifstruct-v1.0",
+   "task": "ifstruct_v1",
+   "value": 1.7,
+   "result": "1.7",
+   "source": "Liquid AI — IFStruct v1.0 blog (granite-4.0-h-350m) (listed on the Hugging Face Hub for ibm-granite/granite-4.0-h-350m)",
+   "source_url": "https://www.liquid.ai/blog/ifstruct-v1.0",
+   "source_tier": "2",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-06-30",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "21247e597aff4f1ce612f703bf8b512f46da0fca169efa7cbc44a67037d913a7",
+   "card_capture_sha256": "cb51cdb9058c1d0b05b9b5aebd17c2c514f837d536d703aaa04ab66e2d147564",
+   "note": ""
+  },
+  {
+   "id": "liquidai-ifstruct-v1-0-ifstruct-v1-ibm-granite-granite-4-0-h-tiny",
+   "applies": {
+    "model": "ibm-granite/granite-4.0-h-tiny",
+    "models": [
+     "granite-4.0-h-tiny-Q4_0.gguf",
+     "granite-4.0-h-tiny-Q4_K_M.gguf",
+     "granite-4.0-h-tiny-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-4.0-h-tiny",
+   "task_types": [
+    "extraction",
+    "text"
+   ],
+   "domains": [
+    "structured-output"
+   ],
+   "benchmark": "IFStruct (structured-output compliance) / ifstruct_v1",
+   "dataset": "LiquidAI/ifstruct-v1.0",
+   "task": "ifstruct_v1",
+   "value": 38.75,
+   "result": "38.75",
+   "source": "Liquid AI — IFStruct v1.0 blog (granite-4.0-h-tiny) (listed on the Hugging Face Hub for ibm-granite/granite-4.0-h-tiny)",
+   "source_url": "https://www.liquid.ai/blog/ifstruct-v1.0",
+   "source_tier": "2",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-06-30",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "196e3475e509cb01af2f51bf92d25a81dffa1a232ffe31e44aca84eba780d38b",
+   "card_capture_sha256": "cb51cdb9058c1d0b05b9b5aebd17c2c514f837d536d703aaa04ab66e2d147564",
+   "note": ""
+  },
+  {
+   "id": "liquidai-ifstruct-v1-0-ifstruct-v1-ibm-granite-granite-4-1-8b",
+   "applies": {
+    "model": "ibm-granite/granite-4.1-8b",
+    "models": [
+     "granite-4.1-8b-Q4_0.gguf",
+     "granite-4.1-8b-Q4_K_M.gguf",
+     "granite-4.1-8b-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-4.1-8b",
+   "task_types": [
+    "extraction",
+    "text"
+   ],
+   "domains": [
+    "structured-output"
+   ],
+   "benchmark": "IFStruct (structured-output compliance) / ifstruct_v1",
+   "dataset": "LiquidAI/ifstruct-v1.0",
+   "task": "ifstruct_v1",
+   "value": 68.45,
+   "result": "68.45",
+   "source": "Liquid AI — IFStruct v1.0 blog (granite-4.1-8b) (listed on the Hugging Face Hub for ibm-granite/granite-4.1-8b)",
+   "source_url": "https://www.liquid.ai/blog/ifstruct-v1.0",
+   "source_tier": "2",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-06-30",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "30317ba1b8d0d74f2722a0116e0a036776d5ed2ae1c2747a5bd074983adc8caa",
+   "card_capture_sha256": "cb51cdb9058c1d0b05b9b5aebd17c2c514f837d536d703aaa04ab66e2d147564",
+   "note": ""
+  },
+  {
+   "id": "llamaindex-parsebench-chart-ibm-granite-granite-vision-4-1-4b",
+   "applies": {
+    "model": "ibm-granite/granite-vision-4.1-4b",
+    "models": [
+     "granite-vision-4.1-4b-Q4_K_M.gguf",
+     "granite-vision-4.1-4b-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-vision-4.1-4b",
+   "task_types": [],
+   "domains": [
+    "document-parsing"
+   ],
+   "benchmark": "ParseBench (document parsing) / chart",
+   "dataset": "llamaindex/ParseBench",
+   "task": "chart",
+   "value": 47.47,
+   "result": "47.47",
+   "source": "ParseBench (listed on the Hugging Face Hub for ibm-granite/granite-vision-4.1-4b)",
+   "source_url": "https://huggingface.co/datasets/llamaindex/ParseBench",
+   "source_tier": "3",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-05-01",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "7898be1d6a7a8e2dc11d0c1be4291c2f52bf35f8dbc5e93bc625b661cb274f0f",
+   "card_capture_sha256": "286183af25d8e7b685bedde6d3e159e5416119d681e34e66a2cdef3b6f87be97",
+   "note": "Pipeline name: granite_vision_4_1_4b"
+  },
+  {
+   "id": "llamaindex-parsebench-layout-ibm-granite-granite-vision-4-1-4b",
+   "applies": {
+    "model": "ibm-granite/granite-vision-4.1-4b",
+    "models": [
+     "granite-vision-4.1-4b-Q4_K_M.gguf",
+     "granite-vision-4.1-4b-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-vision-4.1-4b",
+   "task_types": [],
+   "domains": [
+    "document-parsing"
+   ],
+   "benchmark": "ParseBench (document parsing) / layout",
+   "dataset": "llamaindex/ParseBench",
+   "task": "layout",
+   "value": 0,
+   "result": "0",
+   "source": "ParseBench (listed on the Hugging Face Hub for ibm-granite/granite-vision-4.1-4b)",
+   "source_url": "https://huggingface.co/datasets/llamaindex/ParseBench",
+   "source_tier": "3",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-05-01",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "7898be1d6a7a8e2dc11d0c1be4291c2f52bf35f8dbc5e93bc625b661cb274f0f",
+   "card_capture_sha256": "286183af25d8e7b685bedde6d3e159e5416119d681e34e66a2cdef3b6f87be97",
+   "note": "Pipeline name: granite_vision_4_1_4b"
+  },
+  {
+   "id": "llamaindex-parsebench-mean-ibm-granite-granite-vision-4-1-4b",
+   "applies": {
+    "model": "ibm-granite/granite-vision-4.1-4b",
+    "models": [
+     "granite-vision-4.1-4b-Q4_K_M.gguf",
+     "granite-vision-4.1-4b-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-vision-4.1-4b",
+   "task_types": [],
+   "domains": [
+    "document-parsing"
+   ],
+   "benchmark": "ParseBench (document parsing) / mean",
+   "dataset": "llamaindex/ParseBench",
+   "task": "mean",
+   "value": 39.45,
+   "result": "39.45",
+   "source": "ParseBench (listed on the Hugging Face Hub for ibm-granite/granite-vision-4.1-4b)",
+   "source_url": "https://huggingface.co/datasets/llamaindex/ParseBench",
+   "source_tier": "3",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-05-01",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "7898be1d6a7a8e2dc11d0c1be4291c2f52bf35f8dbc5e93bc625b661cb274f0f",
+   "card_capture_sha256": "286183af25d8e7b685bedde6d3e159e5416119d681e34e66a2cdef3b6f87be97",
+   "note": "Pipeline name: granite_vision_4_1_4b"
+  },
+  {
+   "id": "llamaindex-parsebench-table-ibm-granite-granite-vision-4-1-4b",
+   "applies": {
+    "model": "ibm-granite/granite-vision-4.1-4b",
+    "models": [
+     "granite-vision-4.1-4b-Q4_K_M.gguf",
+     "granite-vision-4.1-4b-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-vision-4.1-4b",
+   "task_types": [],
+   "domains": [
+    "document-parsing"
+   ],
+   "benchmark": "ParseBench (document parsing) / table",
+   "dataset": "llamaindex/ParseBench",
+   "task": "table",
+   "value": 63.81,
+   "result": "63.81",
+   "source": "ParseBench (listed on the Hugging Face Hub for ibm-granite/granite-vision-4.1-4b)",
+   "source_url": "https://huggingface.co/datasets/llamaindex/ParseBench",
+   "source_tier": "3",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-05-01",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "7898be1d6a7a8e2dc11d0c1be4291c2f52bf35f8dbc5e93bc625b661cb274f0f",
+   "card_capture_sha256": "286183af25d8e7b685bedde6d3e159e5416119d681e34e66a2cdef3b6f87be97",
+   "note": "Pipeline name: granite_vision_4_1_4b"
+  },
+  {
+   "id": "llamaindex-parsebench-text-content-ibm-granite-granite-vision-4-1-4b",
+   "applies": {
+    "model": "ibm-granite/granite-vision-4.1-4b",
+    "models": [
+     "granite-vision-4.1-4b-Q4_K_M.gguf",
+     "granite-vision-4.1-4b-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-vision-4.1-4b",
+   "task_types": [],
+   "domains": [
+    "document-parsing"
+   ],
+   "benchmark": "ParseBench (document parsing) / text_content",
+   "dataset": "llamaindex/ParseBench",
+   "task": "text_content",
+   "value": 64.43,
+   "result": "64.43",
+   "source": "ParseBench (listed on the Hugging Face Hub for ibm-granite/granite-vision-4.1-4b)",
+   "source_url": "https://huggingface.co/datasets/llamaindex/ParseBench",
+   "source_tier": "3",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-05-01",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "7898be1d6a7a8e2dc11d0c1be4291c2f52bf35f8dbc5e93bc625b661cb274f0f",
+   "card_capture_sha256": "286183af25d8e7b685bedde6d3e159e5416119d681e34e66a2cdef3b6f87be97",
+   "note": "Pipeline name: granite_vision_4_1_4b"
+  },
+  {
+   "id": "llamaindex-parsebench-text-formatting-ibm-granite-granite-vision-4-1-4b",
+   "applies": {
+    "model": "ibm-granite/granite-vision-4.1-4b",
+    "models": [
+     "granite-vision-4.1-4b-Q4_K_M.gguf",
+     "granite-vision-4.1-4b-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "ibm-granite/granite-vision-4.1-4b",
+   "task_types": [],
+   "domains": [
+    "document-parsing"
+   ],
+   "benchmark": "ParseBench (document parsing) / text_formatting",
+   "dataset": "llamaindex/ParseBench",
+   "task": "text_formatting",
+   "value": 21.52,
+   "result": "21.52",
+   "source": "ParseBench (listed on the Hugging Face Hub for ibm-granite/granite-vision-4.1-4b)",
+   "source_url": "https://huggingface.co/datasets/llamaindex/ParseBench",
+   "source_tier": "3",
+   "official_benchmark": true,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-05-01",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "7898be1d6a7a8e2dc11d0c1be4291c2f52bf35f8dbc5e93bc625b661cb274f0f",
+   "card_capture_sha256": "286183af25d8e7b685bedde6d3e159e5416119d681e34e66a2cdef3b6f87be97",
+   "note": "Pipeline name: granite_vision_4_1_4b"
+  },
+  {
+   "id": "thamilvendhan-signalbench-access-deny-meta-llama-llama-3-1-8b-instruct",
+   "applies": {
+    "model": "meta-llama/Llama-3.1-8B-Instruct",
+    "models": [
+     "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+     "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "meta-llama/Llama-3.1-8B-Instruct",
+   "task_types": [],
+   "domains": [
+    "prompt-injection"
+   ],
+   "benchmark": "signalbench (obeying or ignoring instructions in the data) / access_deny",
+   "dataset": "thamilvendhan/signalbench",
+   "task": "access_deny",
+   "value": 0.5,
+   "result": "0.5",
+   "source": "a source named on the Hub (listed on the Hugging Face Hub for meta-llama/Llama-3.1-8B-Instruct)",
+   "source_url": "https://huggingface.co/datasets/thamilvendhan/signalbench",
+   "source_tier": "3",
+   "official_benchmark": false,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-07-08",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "2faa6d8818f4291a3fcd9f3131074f28ecc38327d448e8a8fcd7530e725716ca",
+   "card_capture_sha256": "1205cd7385c2f1362ee3d389e454b5881ad9117ba78cfec892fc22c490efa445",
+   "note": "family=access_deny; n=12"
+  },
+  {
+   "id": "thamilvendhan-signalbench-bot-policy-meta-llama-llama-3-1-8b-instruct",
+   "applies": {
+    "model": "meta-llama/Llama-3.1-8B-Instruct",
+    "models": [
+     "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+     "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "meta-llama/Llama-3.1-8B-Instruct",
+   "task_types": [],
+   "domains": [
+    "prompt-injection"
+   ],
+   "benchmark": "signalbench (obeying or ignoring instructions in the data) / bot_policy",
+   "dataset": "thamilvendhan/signalbench",
+   "task": "bot_policy",
+   "value": 0.4167,
+   "result": "0.4167",
+   "source": "a source named on the Hub (listed on the Hugging Face Hub for meta-llama/Llama-3.1-8B-Instruct)",
+   "source_url": "https://huggingface.co/datasets/thamilvendhan/signalbench",
+   "source_tier": "3",
+   "official_benchmark": false,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-07-08",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "2faa6d8818f4291a3fcd9f3131074f28ecc38327d448e8a8fcd7530e725716ca",
+   "card_capture_sha256": "1205cd7385c2f1362ee3d389e454b5881ad9117ba78cfec892fc22c490efa445",
+   "note": "family=bot_policy; n=12"
+  },
+  {
+   "id": "thamilvendhan-signalbench-injection-meta-llama-llama-3-1-8b-instruct",
+   "applies": {
+    "model": "meta-llama/Llama-3.1-8B-Instruct",
+    "models": [
+     "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+     "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "meta-llama/Llama-3.1-8B-Instruct",
+   "task_types": [],
+   "domains": [
+    "prompt-injection"
+   ],
+   "benchmark": "signalbench (obeying or ignoring instructions in the data) / injection",
+   "dataset": "thamilvendhan/signalbench",
+   "task": "injection",
+   "value": 0.75,
+   "result": "0.75",
+   "source": "a source named on the Hub (listed on the Hugging Face Hub for meta-llama/Llama-3.1-8B-Instruct)",
+   "source_url": "https://huggingface.co/datasets/thamilvendhan/signalbench",
+   "source_tier": "3",
+   "official_benchmark": false,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-07-08",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "2faa6d8818f4291a3fcd9f3131074f28ecc38327d448e8a8fcd7530e725716ca",
+   "card_capture_sha256": "1205cd7385c2f1362ee3d389e454b5881ad9117ba78cfec892fc22c490efa445",
+   "note": "family=injection; n=12"
+  },
+  {
+   "id": "thamilvendhan-signalbench-memory-label-meta-llama-llama-3-1-8b-instruct",
+   "applies": {
+    "model": "meta-llama/Llama-3.1-8B-Instruct",
+    "models": [
+     "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+     "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "meta-llama/Llama-3.1-8B-Instruct",
+   "task_types": [],
+   "domains": [
+    "prompt-injection"
+   ],
+   "benchmark": "signalbench (obeying or ignoring instructions in the data) / memory_label",
+   "dataset": "thamilvendhan/signalbench",
+   "task": "memory_label",
+   "value": 0.6667,
+   "result": "0.6667",
+   "source": "a source named on the Hub (listed on the Hugging Face Hub for meta-llama/Llama-3.1-8B-Instruct)",
+   "source_url": "https://huggingface.co/datasets/thamilvendhan/signalbench",
+   "source_tier": "3",
+   "official_benchmark": false,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-07-08",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "2faa6d8818f4291a3fcd9f3131074f28ecc38327d448e8a8fcd7530e725716ca",
+   "card_capture_sha256": "1205cd7385c2f1362ee3d389e454b5881ad9117ba78cfec892fc22c490efa445",
+   "note": "family=memory_label; n=12"
+  },
+  {
+   "id": "thamilvendhan-signalbench-src-meta-llama-llama-3-1-8b-instruct",
+   "applies": {
+    "model": "meta-llama/Llama-3.1-8B-Instruct",
+    "models": [
+     "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+     "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "meta-llama/Llama-3.1-8B-Instruct",
+   "task_types": [],
+   "domains": [
+    "prompt-injection"
+   ],
+   "benchmark": "signalbench (obeying or ignoring instructions in the data) / src",
+   "dataset": "thamilvendhan/signalbench",
+   "task": "src",
+   "value": 0.6333,
+   "result": "0.6333",
+   "source": "signalbench raw per-item responses (listed on the Hugging Face Hub for meta-llama/Llama-3.1-8B-Instruct)",
+   "source_url": "https://huggingface.co/datasets/thamilvendhan/signalbench",
+   "source_tier": "3",
+   "official_benchmark": false,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-07-08",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "2faa6d8818f4291a3fcd9f3131074f28ecc38327d448e8a8fcd7530e725716ca",
+   "card_capture_sha256": "1205cd7385c2f1362ee3d389e454b5881ad9117ba78cfec892fc22c490efa445",
+   "note": "SRC overall; deterministic action-based grader, no LLM judge; seed 0, n=75"
+  },
+  {
+   "id": "thamilvendhan-signalbench-time-meta-llama-llama-3-1-8b-instruct",
+   "applies": {
+    "model": "meta-llama/Llama-3.1-8B-Instruct",
+    "models": [
+     "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+     "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+    ]
+   },
+   "hub_id": "meta-llama/Llama-3.1-8B-Instruct",
+   "task_types": [],
+   "domains": [
+    "prompt-injection"
+   ],
+   "benchmark": "signalbench (obeying or ignoring instructions in the data) / time",
+   "dataset": "thamilvendhan/signalbench",
+   "task": "time",
+   "value": 0.8333,
+   "result": "0.8333",
+   "source": "a source named on the Hub (listed on the Hugging Face Hub for meta-llama/Llama-3.1-8B-Instruct)",
+   "source_url": "https://huggingface.co/datasets/thamilvendhan/signalbench",
+   "source_tier": "3",
+   "official_benchmark": false,
+   "hub_verified": false,
+   "retrieved": "2026-11-03",
+   "source_date": "2026-07-08",
+   "source_row": "hub_model_eval_results",
+   "capture_sha256": "2faa6d8818f4291a3fcd9f3131074f28ecc38327d448e8a8fcd7530e725716ca",
+   "card_capture_sha256": "1205cd7385c2f1362ee3d389e454b5881ad9117ba78cfec892fc22c490efa445",
+   "note": "family=time; n=12"
+  }
+ ],
+ "warn_after_days": 365,
+ "warn_note": "a result whose source date is older than this is shown with a warning that it may not describe the model now",
+ "coverage": [
+  {
+   "source": "bfcl_overall",
+   "url": "https://gorilla.cs.berkeley.edu/data_overall.csv",
+   "capture_sha256": "ede5081a24bc5ac7f9b3b09a52af6bcfcd35aa0f1709239fed979db77a8159a6",
+   "bytes": 33046,
+   "kept_in_repository": true,
+   "rows": 109,
+   "models_in_capture": [
+    "Gemini-3-Pro-Preview (Prompt)",
+    "GLM-4.6 (FC thinking)",
+    "Grok-4-1-fast-reasoning (FC)",
+    "Gemini-3-Pro-Preview (FC)",
+    "o3-2025-04-16 (Prompt)",
+    "Grok-4-0709 (Prompt)",
+    "Grok-4-0709 (FC)",
+    "Grok-4-1-fast-non-reasoning (FC)",
+    "Command A Reasoning (FC)",
+    "DeepSeek-V3.2-Exp (Prompt + Thinking)",
+    "Gemini-2.5-Flash (FC)",
+    "GPT-5.2-2025-12-11 (FC)",
+    "GPT-5-mini-2025-08-07 (FC)",
+    "xLAM-2-32b-fc-r (FC)",
+    "DeepSeek-V3.2-Exp (FC)",
+    "GPT-4.1-2025-04-14 (FC)",
+    "o4-mini-2025-04-16 (FC)",
+    "xLAM-2-70b-fc-r (FC)",
+    "GPT-5-nano-2025-08-07 (FC)",
+    "Nanbeige4-3B-Thinking-2511 (FC)",
+    "Gemini-2.5-Flash (Prompt)",
+    "GPT-4.1-mini-2025-04-14 (FC)",
+    "o4-mini-2025-04-16 (Prompt)",
+    "o3-2025-04-16 (FC)",
+    "Nanbeige3.5-Pro-Thinking (FC)",
+    "xLAM-2-8b-fc-r (FC)",
+    "Command A (FC)",
+    "BitAgent-Bounty-8B",
+    "Arch-Agent-32B",
+    "GPT-5.2-2025-12-11 (Prompt)",
+    "ToolACE-2-8B (FC)",
+    "xLAM-2-3b-fc-r (FC)",
+    "GPT-4.1-2025-04-14 (Prompt)",
+    "mistral-large-2411 (FC)",
+    "Mistral-Medium-2505",
+    "Mistral-Medium-2505 (FC)",
+    "Llama-4-Maverick-17B-128E-Instruct-FP8 (FC)",
+    "Mistral-small-2506 (FC)",
+    "Gemini-2.5-Flash-Lite (FC)",
+    "Arch-Agent-3B",
+    "GPT-4.1-nano-2025-04-14 (FC)",
+    "Mistral-Small-2506 (Prompt)",
+    "Arch-Agent-1.5B",
+    "Command R7B (FC)",
+    "Llama-3.3-70B-Instruct (FC)",
+    "mistral-large-2411 (Prompt)",
+    "Hammer2.1-7b (FC)",
+    "xLAM-2-1b-fc-r (FC)",
+    "Gemma-3-12b-it (Prompt)",
+    "GPT-4.1-mini-2025-04-14 (Prompt)",
+    "Hammer2.1-3b (FC)",
+    "Gemma-3-27b-it (Prompt)",
+    "Phi-4 (Prompt)",
+    "Llama-4-Scout-17B-16E-Instruct (FC)",
+    "Gemini-2.5-Flash-Lite (Prompt)",
+    "CoALM-70B",
+    "Hammer2.1-1.5b (FC)",
+    "palmyra-x-004 (FC)",
+    "GPT-5-mini-2025-08-07 (Prompt)",
+    "Open-Mistral-Nemo-2407 (FC)",
+    "GPT-5-nano-2025-08-07 (Prompt)",
+    "Amazon-Nova-2-Lite-v1:0 (FC)",
+    "Granite-3.1-8B-Instruct (FC)",
+    "Falcon3-10B-Instruct (FC)",
+    "Granite-3.2-8B-Instruct (FC)",
+    "CoALM-8B",
+    "Llama-3.1-8B-Instruct (Prompt)",
+    "MiniCPM3-4B-FC (FC)",
+    "Amazon-Nova-Pro-v1:0 (FC)",
+    "GPT-4.1-nano-2025-04-14 (Prompt)",
+    "Falcon3-7B-Instruct (FC)",
+    "Granite-20b-FunctionCalling (FC)",
+    "Amazon-Nova-Micro-v1:0 (FC)",
+    "RZN-T (Prompt)",
+    "MiniCPM3-4B (Prompt)",
+    "Llama-3.2-3B-Instruct (FC)",
+    "Bielik-11B-v2.3-Instruct (Prompt)",
+    "Hammer2.1-0.5b (FC)",
+    "Gemma-3-4b-it (Prompt)",
+    "Open-Mistral-Nemo-2407 (Prompt)",
+    "Granite-4.0-350m (FC)",
+    "Falcon3-3B-Instruct (FC)",
+    "Ministral-8B-Instruct-2410 (FC)",
+    "Falcon3-1B-Instruct (FC)",
+    "Llama-3.2-1B-Instruct (FC)",
+    "Llama-3.1-Nemotron-Ultra-253B-v1 (FC)",
+    "Gemma-3-1b-it (Prompt)"
+   ],
+   "catalog_models_matched": [
+    "meta-llama/Llama-3.1-8B-Instruct",
+    "meta-llama/Llama-3.2-3B-Instruct"
+   ],
+   "retrieved": "2026-11-03",
+   "source_date": "2026-04-12"
+  },
+  {
+   "source": "livecodebench_generation",
+   "url": "https://raw.githubusercontent.com/LiveCodeBench/livecodebench.github.io/main/build/performances_generation.json",
+   "capture_sha256": "17f9a1d69e3f6290fc8b967a4dd13fbb46e34dd05716fdee793780a1cfadd0c1",
+   "bytes": 6950346,
+   "kept_in_repository": false,
+   "rows": 29540,
+   "models_in_capture": [
+    "DeepSeek-V3",
+    "GPT-4-Turbo-2024-04-09",
+    "GPT-4O-2024-08-06",
+    "GPT-4O-mini-2024-07-18",
+    "O3-Mini-2025-01-31 (Low)",
+    "O3-Mini-2025-01-31 (Med)",
+    "O3-Mini-2025-01-31 (High)",
+    "O4-Mini (High)",
+    "O4-Mini (Medium)",
+    "O4-Mini (Low)",
+    "O3 (High)",
+    "Gemini-2.5-Pro-06-05",
+    "Gemini-2.5-Pro-05-06",
+    "Gemini-2.5-Flash-04-17",
+    "Gemini-2.5-Flash-05-20",
+    "DeepSeek-R1-0528",
+    "Grok-3-Mini (High)",
+    "OpenCodeReasoning-Nemotron-1.1-32B",
+    "OpenReasoning-Nemotron-32B",
+    "XBai-o4-medium",
+    "EXAONE-4.0-32B"
+   ],
+   "catalog_models_matched": [],
+   "retrieved": "2026-11-03",
+   "source_date": null
+  },
+  {
+   "source": "SWE-rebench",
+   "kind": "unavailable",
+   "url": "https://huggingface.co/api/datasets/nebius/SWE-rebench-leaderboard",
+   "capture_sha256": "436eebf586188da0d81d0f6aa9e7220f8471feff5ffc79e24a64be4a19a774f6",
+   "bytes": 5525,
+   "retrieved": "2026-11-03"
+  },
+  {
+   "source": "SWE-rebench",
+   "kind": "unavailable",
+   "url": "https://huggingface.co/api/datasets/nebius/SWE-rebench-leaderboard/tree/main/data",
+   "capture_sha256": "ab5f8a23f0d5518bec710cda07ae076e6c3da42efa86f69d37da49205e1e00ea",
+   "bytes": 5024,
+   "retrieved": "2026-11-03"
+  },
+  {
+   "source": "SWE-rebench",
+   "kind": "unavailable",
+   "url": "https://huggingface.co/api/datasets/nebius/SWE-rebench-leaderboard/leaderboard",
+   "capture_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+   "bytes": 2,
+   "retrieved": "2026-11-03"
+  }
+ ]
 }

@@ -230,7 +230,7 @@ def test_a_ticket_that_is_not_for_this_plan_cannot_pair_and_neither_can_the_dial
     run(go())
 
 
-def test_unpair_removes_nothing_until_the_owner_answers_and_a_tool_call_cannot_answer(tmp_path):
+def test_unpair_removes_nothing_until_the_owner_answers_in_the_chat_and_a_system_dialog_cannot_answer_it(tmp_path):
     async def go():
         async with coordinator(tmp_path / "c", answer=True) as c:
             c.desk.open_offer("o1", "482915")
@@ -240,15 +240,17 @@ def test_unpair_removes_nothing_until_the_owner_answers_and_a_tool_call_cannot_a
             out = c.harness.unpair(CLAUDE, "LENOVO")
             conf = out["intents"][0]
             assert conf["kind"] == "confirm" and "lenovo" in conf["text_fallback"] and "mas join" in conf["text_fallback"] and "removed from this coordinator at once" in conf["text_fallback"]
+            assert conf["payload"]["chat_choice"] and conf["payload"]["approval_kind"] == "unpair" and "mas_answer" in conf["text_fallback"] and "mas_request_approval" not in conf["text_fallback"]  # approval-policy.json: ONE chat question
             assert [n.node_id for n in c.registry.all()] == [node.node_id]  # asking removed nothing
             with pytest.raises(Refused) as e:
-                c.harness.decide(CLAUDE, conf["id"], "approve")
-            assert e.value.reason == "confirmation_required"
-            b, state = await answer_with_dialog(c, conf["id"], "approved")
-            assert state == "approved"
+                c.harness.begin_confirmation(CLAUDE, conf["id"], "os_dialog")  # a system dialog is for pairing and keys only
+            assert e.value.reason == "answer_in_chat"
+            assert [n.node_id for n in c.registry.all()] == [node.node_id]
+            out = c.harness.decide(CLAUDE, conf["id"], "approve")
+            assert out["mechanism"] == "chat_choice" and out["relayed_by_model"] is True
             await wait_for(lambda: not c.registry.all())
             un = events(c, "node_unpaired")
-            assert len(un) == 1 and un[0].effective_tag == "OWNER" and un[0].payload["via"] == "claude-desktop:os_dialog"
+            assert len(un) == 1 and un[0].effective_tag == "OWNER" and un[0].payload["via"] == "claude-desktop:chat_choice"
     run(go())
 
 
@@ -259,8 +261,8 @@ def test_an_unpair_the_owner_declines_leaves_the_computer_paired(tmp_path):
             await pair_node(c, tmp_path, "482915", node="lenovo")
             await wait_for(lambda: c.registry.all())
             conf = c.harness.unpair(CLAUDE, "lenovo")["intents"][0]
-            _, state = await answer_with_dialog(c, conf["id"], "declined")
-            assert state == "declined" and len(c.registry.all()) == 1 and not events(c, "node_unpaired")
+            out = c.harness.decide(CLAUDE, conf["id"], "reject")
+            assert out["state"] == "declined" and len(c.registry.all()) == 1 and not events(c, "node_unpaired")
     run(go())
 
 
@@ -342,8 +344,7 @@ def test_the_whole_flow_through_the_chat_adapter_the_code_the_wait_the_confirmat
             assert [n.name for n in c.registry.all()] == ["lenovo"]
             un = await call("mas_unpair", machine="lenovo")
             assert un["structuredContent"]["intents"][0]["kind"] == "confirm" and len(c.registry.all()) == 1  # asking removed nothing
-            c.harness.native_confirm = Dialog("approved")
-            results.append(await call("mas_request_approval", intent_id=un["structuredContent"]["intents"][0]["id"]))
+            results.append(await call("mas_answer", intent_id=un["structuredContent"]["intents"][0]["id"], option="approve"))  # unpair is ONE chat question (approval-policy.json)
             await wait_for(lambda: not c.registry.all())
             results += [done, un]
             assert all(code not in json.dumps(r) for r in results), "the pairing code reached a tool result"  # text, structured content and the cards for the host: none of them

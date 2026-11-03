@@ -217,10 +217,58 @@ def detect(env: Env, recipes: dict | None = None) -> list[dict]:
         if row["state"] == "found" and cell.get("config"):
             cfg = Path(env.fill(cell["config"]))
             if cfg.exists() and r["server_name"] in _entry_names(cfg):
-                row["state"] = "connected"
-                row["detail"] += "; our entry is already in its settings"
+                health, why = entry_health(cfg, r["server_name"], env)
+                if health == "ok":
+                    row["state"] = "connected"
+                    row["detail"] += "; our entry is already in its settings"
+                else:  # our entry is there but it would not start, or it will stop working at the next `mas update`: not "connected", and it is offered for repair
+                    row.update(state="repair", code=health, detail=row["detail"] + f"; our entry is in its settings but {why}")
         out.append(row)
     return out
+
+
+def entry_health(cfg: Path, name: str, env: Env) -> tuple[str, str]:
+    """(`ok` | `dead` | `release`, why) for OUR entry in a JSON settings file. `dead`: the command it runs does not exist. `release`: it runs a program inside a release folder while the stable command exists, so the next
+    `mas update` (which deletes old releases) would break it. Reads only the command; nothing else of the file."""
+    have = _our_entry(cfg, name) if cfg.suffix == ".json" else None
+    cmd = have.get("command") if isinstance(have, dict) else None
+    if not isinstance(cmd, str) or not cmd:
+        return "ok", ""
+    if cmd == env.command()[0]:
+        return "ok", ""  # it is what this program would write today: a rewrite cannot make it better
+    found = Path(cmd).exists() if Path(cmd).is_absolute() else env.which(cmd) is not None
+    if not found:
+        return "dead", f"the command it runs ({cmd}) does not exist"
+    if env.launcher:
+        from envrec_mas import release as rel
+        try:
+            if Path(cmd).resolve().is_relative_to((rel.mas_home() / "releases").resolve()):
+                return "release", f"the command it runs ({cmd}) is inside a release folder, which `mas update` deletes; it should run the stable command {env.launcher[0]}"
+        except (OSError, ValueError):
+            pass
+    return "ok", ""
+
+
+def repair_entries(env: Env, recipes: dict | None = None) -> list[dict]:
+    """Make every entry of ours that is dead or names a release folder run the stable command (`mas update` calls this after the switch). One row per host: `repaired`, or `needs_quit` when the chat is running
+    (a chat rewrites its settings when it quits, so it is not edited under it) with what to do. The settings file is copied first by the same plan steps a connection uses, and nothing else in it changes."""
+    r = recipes or load_recipes()
+    rows = []
+    for row in detect(env, r):
+        if row["state"] != "repair":
+            continue
+        host, label = row["host"], row["label"]
+        try:
+            plan = build_plan(host, env, recipes=r)
+        except ConnectRefused as exc:
+            quit_it = exc.code == "app_running"
+            rows.append({"host": host, "label": label, "state": "needs_quit" if quit_it else "not_repaired", "code": exc.code,
+                         "text": exc.text + (f" Then run `mas connect {host}`: it repairs the entry." if quit_it else "")})
+            continue
+        for st in plan["steps"]:
+            run_step(plan, st["n"], "run", env)
+        rows.append({"host": host, "label": label, "state": "repaired", "text": f"{label}: the entry now runs {env.command()[0]}. Quit {label} completely (Cmd+Q on macOS) and open it again so that it loads the server."})
+    return rows
 
 
 def _entry_names(cfg: Path) -> set[str]:

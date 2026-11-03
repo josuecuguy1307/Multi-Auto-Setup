@@ -12,7 +12,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 COST = {"local": 0, "api": 1, "subscription": 2}
 RANK = {"public": 0, "internal": 1, "confidential": 2}
 ENVS = [  # what the stand-in knows about the network: one local model on one machine, one subscription CLI on another
-    {"environment_id": "llamacpp", "machine_id": "lenovo", "subtype": "local_model", "model_id": "qwen-local", "access_id": "local-hw", "cost": "local"},
+    {"environment_id": "llamacpp", "machine_id": "lenovo", "subtype": "local_model", "model_id": "local-profile", "access_id": "local-hw", "cost": "local"},
     {"environment_id": "claude-code", "machine_id": "mac", "subtype": "provider", "model_id": "claude", "access_id": "plan-sub", "cost": "subscription"},
 ]
 TEXT = {

@@ -23,7 +23,8 @@
    "local_model",
    "own_harness",
    "provider",
-   "embedded"
+   "embedded",
+   "skill_pack"
   ],
   "approved_providers_for_internal": [],
   "automated_use_cleared": []
@@ -90,5 +91,18 @@
    "input_text"
   ],
   "max_chars": 500
+ },
+ "permissive_licenses": [
+  "MIT",
+  "Apache-2.0",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC"
+ ],
+ "permissive_licenses_note": "the only licenses of anything the harness installs or records as a researched lead (SPDX ids); a closed vendor product is a provider the owner already has, never installed by us",
+ "recommend": {
+  "unclassified_task_type": "text",
+  "unclassified_note": "a request whose kind of work no catalog task type names is run, and measured, as this general type; the question says so. The domain stays a free tag, because a wrong type would make the admission exam measure the wrong thing",
+  "max_leads_shown": 5
  }
 }

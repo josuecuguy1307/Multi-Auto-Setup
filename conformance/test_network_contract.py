@@ -475,11 +475,11 @@ def test_T1_the_nodes_task_dispatcher_has_no_shell_no_dynamic_lookup_and_one_all
     assert netrules.task_dispatch_violations(SRC / "envrec_node" / "tasks.py") == []
 
 
-def test_T1_the_allowlist_is_the_read_only_names_and_the_three_named_write_tasks_and_credential_presence():
+def test_T1_the_allowlist_is_the_read_only_names_and_the_named_tasks_credential_presence_list_dir_and_model_list():
     import ast
     tree = ast.parse((SRC / "envrec_node" / "tasks.py").read_text())
     allowed = next(n for n in tree.body if isinstance(n, ast.AnnAssign) and getattr(n.target, "id", "") == "ALLOWED")
-    assert [k.value for k in allowed.value.keys] == ["setup_step", "credential_step", "credential_presence", "environment_run", "node_report", "machine_analysis", "os_details", "installed_programs", "gpus", "model_runtimes", "ai_clis", "memory_for_models"]  # the write types, named, first (setup_step; credential_step from the phase4d amendment, with its read-only presence probe; environment_run from the T4a amendment); the rest only read
+    assert [k.value for k in allowed.value.keys] == ["setup_step", "credential_step", "credential_presence", "list_dir", "model_list", "environment_run", "node_report", "machine_analysis", "os_details", "installed_programs", "gpus", "model_runtimes", "ai_clis", "memory_for_models"]  # the write types, named, first (setup_step; credential_step from the phase4d amendment, with its read-only presence probe; environment_run from the T4a amendment); the rest only read
 
 
 def test_T1_fails_on_a_dispatcher_that_runs_a_shell_command_from_a_task_or_dispatches_by_name():

@@ -5,7 +5,7 @@ GUARD  code refused, enforced or recorded; it never picked what happens next.
 SCRIPT code decided the next action or the outcome (a fallback, a forced advance, a ring move, a repair, a fixed sequence).
 OWNER  the human approved or typed an answer.
 ROUTER  the router chose a harness/model/machine combination by its written rule (a route decision, an escalation); refusals and dispatches stay GUARD.
-CLAUDE-CODE  the operator (the assistant that builds this) acted for the owner in a verification run, with the owner's authorization given in chat: it is counted apart and is never an OWNER event. Zero in a normal run.
+CLAUDE-CODE  the operator (an assistant driving a verification run) acted for the owner in a verification run, with the owner's authorization given in chat: it is counted apart and is never an OWNER event. Zero in a normal run.
 `Event.tag` is stored; for an event written before the field existed `derive_tag` reproduces it from the actor, type and payload, so old logs still count."""
 
 from __future__ import annotations

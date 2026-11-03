@@ -75,4 +75,5 @@ class OpenAICompatModel(ModelAdapter):
             prompt_tokens=int(usage.get("prompt_tokens") or 0),
             completion_tokens=int(usage.get("completion_tokens") or 0),
             latency_s=time.monotonic() - started,
+            model_returned=str(data.get("model")) if data.get("model") else None,
         )

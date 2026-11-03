@@ -1,0 +1,213 @@
+{
+ "note": "Where public evidence comes from, as data. One generic extractor (src/envrec_coordinator/evidence_sources.py) reads every row: it fetches the page, stores the exact bytes by hash, takes the number out of the stored page BY CODE, and keeps a result only if the number is in that capture. The model never writes a value. A new source is a new row; a source that cannot be read with a plain GET is not here.",
+ "sources": [
+  {
+   "id": "hub_model_eval_results",
+   "label": "listed on the Hugging Face Hub for {hub_id}",
+   "url": "https://huggingface.co/api/models/{hub_id}?expand%5B%5D=evalResults",
+   "rows": "evalResults",
+   "fields": {
+    "dataset": "data.dataset.id",
+    "task": "data.dataset.task_id",
+    "value": "data.value",
+    "date": "data.date",
+    "source_name": "data.source.name",
+    "source_url": "data.source.url",
+    "verified": "verified",
+    "notes": "data.notes"
+   },
+   "drop": [
+    {
+     "field": "source_url",
+     "startswith": "https://huggingface.co/{hub_id}",
+     "reason": "vendor-reported: the model's own card"
+    },
+    {
+     "field": "source_name",
+     "contains": "model card",
+     "reason": "vendor-reported: a model card"
+    },
+    {
+     "field": "source_url",
+     "startswith": "https://huggingface.co/datasets/evaleval/",
+     "reason": "an aggregator, not a benchmark"
+    },
+    {
+     "field": "source_url",
+     "contains": "/papers/",
+     "reason": "vendor-reported: a technical report"
+    }
+   ],
+   "benchmark_card": {
+    "url": "https://huggingface.co/api/datasets/{dataset}",
+    "tags": "tags",
+    "official_tag": "benchmark:official"
+   },
+   "format": "hub_eval_results",
+   "source_row_note": "default row"
+  },
+  {
+   "id": "bfcl_overall",
+   "format": "csv_table",
+   "label": "Berkeley Function Calling Leaderboard, overall accuracy",
+   "url": "https://gorilla.cs.berkeley.edu/data_overall.csv",
+   "max_bytes": 2000000,
+   "name_column": "Model",
+   "value_column": "Overall Acc",
+   "dataset": "bfcl",
+   "task": "overall",
+   "source_name": "Berkeley Function Calling Leaderboard",
+   "source_url": "https://gorilla.cs.berkeley.edu/leaderboard.html",
+   "official_benchmark": true,
+   "date_from": {
+    "url": "https://gorilla.cs.berkeley.edu/leaderboard.html",
+    "regex": "Last Updated:\\s*(\\d{4}-\\d{2}-\\d{2})"
+   },
+   "names": {
+    "Llama-3.1-8B-Instruct (Prompt)": "meta-llama/Llama-3.1-8B-Instruct",
+    "Llama-3.2-3B-Instruct (FC)": "meta-llama/Llama-3.2-3B-Instruct"
+   },
+   "names_note": "a row of the leaderboard names a model; this table says which public model it is (read from the leaderboard's own Model Link and name). Only models the catalog has are used."
+  },
+  {
+   "id": "livecodebench_generation",
+   "format": "json_grouped",
+   "label": "LiveCodeBench, code generation, pass@1 averaged over its problems",
+   "url": "https://raw.githubusercontent.com/LiveCodeBench/livecodebench.github.io/main/build/performances_generation.json",
+   "max_bytes": 12000000,
+   "rows": "performances",
+   "models": "models",
+   "group_by": "model",
+   "metric": "pass@1",
+   "model_name_field": "model_repr",
+   "link_field": "link",
+   "link_prefix": "huggingface.co/",
+   "dataset": "livecodebench",
+   "task": "generation",
+   "source_name": "LiveCodeBench leaderboard data",
+   "source_url": "https://livecodebench.github.io/leaderboard.html",
+   "official_benchmark": true,
+   "date_from": null
+  }
+ ],
+ "models": [],
+ "unmapped_models": [
+  {
+   "model": "muse-spark-1.3",
+   "reason": "the API model has no public hub id: the hub lists a differently named open-weights Muse model, whose only results are its own model card (vendor-reported, dropped)"
+  }
+ ],
+ "benchmarks": {
+  "LEXam-Benchmark/LEXam": {
+   "label": "LEXam (law exam questions)",
+   "task_types": [
+    "text"
+   ],
+   "domains": [
+    "legal"
+   ],
+   "read_from": "the dataset card on the Hub: tags legal, reasoning, benchmark:official"
+  },
+  "thamilvendhan/signalbench": {
+   "label": "signalbench (obeying or ignoring instructions in the data)",
+   "task_types": [],
+   "domains": [
+    "prompt-injection"
+   ],
+   "read_from": "the dataset card on the Hub: tags prompt-injection, llm-agents, ai-safety"
+  },
+  "bfcl": {
+   "label": "BFCL (function calling)",
+   "task_types": [
+    "code"
+   ],
+   "domains": [
+    "tool-use"
+   ],
+   "read_from": "the leaderboard's own page: Berkeley Function Calling Leaderboard, overall accuracy"
+  },
+  "livecodebench": {
+   "label": "LiveCodeBench (code generation)",
+   "task_types": [
+    "code"
+   ],
+   "domains": [
+    "coding"
+   ],
+   "read_from": "the benchmark's own results file"
+  },
+  "LiquidAI/ifstruct-v1.0": {
+   "label": "IFStruct (structured-output compliance)",
+   "task_types": [
+    "extraction",
+    "text"
+   ],
+   "domains": [
+    "structured-output"
+   ],
+   "read_from": "the dataset card on the Hub: benchmark:official, task_categories text-generation, tag structured-output; 'can a model produce valid JSON/YAML that follows a requested schema'"
+  },
+  "llamaindex/ParseBench": {
+   "label": "ParseBench (document parsing)",
+   "task_types": [],
+   "domains": [
+    "document-parsing"
+   ],
+   "read_from": "the dataset card on the Hub: benchmark:official; 'a benchmark for evaluating document parsing systems on real-world enterprise documents'"
+  },
+  "hf-audio/open-asr-leaderboard": {
+   "label": "Open ASR leaderboard (speech recognition)",
+   "task_types": [],
+   "domains": [
+    "speech-recognition"
+   ],
+   "read_from": "the dataset on the Hub: the Open ASR leaderboard of the Hub's audio organisation"
+  }
+ },
+ "tier_rules": [
+  {
+   "when": {
+    "verified": true
+   },
+   "tier": "1"
+  },
+  {
+   "when": {
+    "official_benchmark": true,
+    "source_host_not": "huggingface.co"
+   },
+   "tier": "2"
+  },
+  {
+   "when": {},
+   "tier": "3"
+  }
+ ],
+ "tier_note": "1 verified by the Hub; 2 an official benchmark's own leaderboard; 3 anything else third-party (shown, ranked last, never alone enough)",
+ "left_out": [
+  {
+   "source": "per-benchmark Hub leaderboards",
+   "reason": "the checked ones list no result for the catalog's models other than a model card or the aggregator, which are dropped"
+  },
+  {
+   "source": "SWE-rebench",
+   "reason": "unavailable as plain scores: the Hub dataset nebius/SWE-rebench-leaderboard holds the benchmark's TASKS (parquet files per month, no model scores) and the results table on swe-rebench.com is drawn by a 7.8 MB script bundle, not a data file; the Hub's leaderboard endpoint for the dataset answers an empty list",
+   "captures": "stored by hash under evidence_captures/ and listed in evidence.json coverage (kind unavailable); the site bundle read while investigating was 7789901 bytes, sha256 fbb1b659562843da266aa20ec2295253d727ccd9b9469c78ab32df6fad1fffed",
+   "proof_urls": [
+    "https://huggingface.co/api/datasets/nebius/SWE-rebench-leaderboard",
+    "https://huggingface.co/api/datasets/nebius/SWE-rebench-leaderboard/tree/main/data",
+    "https://huggingface.co/api/datasets/nebius/SWE-rebench-leaderboard/leaderboard"
+   ]
+  }
+ ],
+ "not_for_evidence": [
+  "qwen",
+  "claude",
+  "haiku",
+  "kimi",
+  "moonshot"
+ ],
+ "not_for_evidence_note": "models used only to build or test this project: they get no evidence entry; the build lists them for the owner's decision",
+ "repo_capture_max_bytes": 1000000,
+ "models_note": "the models are the base models of the catalog's model files (catalog.lock.yaml), minus the not_for_evidence words; nothing is listed by hand"
+}

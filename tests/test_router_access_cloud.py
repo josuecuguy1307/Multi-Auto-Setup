@@ -39,8 +39,8 @@ def test_a_confidential_task_never_keeps_an_access_that_leaves_the_network_insid
     d = r.route(task(ttype="code", sens="confidential", chat="local"))
     assert d.route.access_id == "opencode:local"
     first = d.rule_trace[0]
-    assert first.step == "sensitivity" and first.values.get("opencode|qwen3-8b|opencode:remote-api|mac") == "cloud"
-    assert "opencode|qwen3-8b|opencode:remote-api|mac" not in first.candidates_out
+    assert first.step == "sensitivity" and first.values.get("opencode|local-8b|opencode:remote-api|mac") == "cloud"
+    assert "opencode|local-8b|opencode:remote-api|mac" not in first.candidates_out
 
 
 def test_without_the_local_access_the_confidential_task_is_refused_not_sent_to_the_remote_one():
@@ -55,7 +55,7 @@ def test_a_public_task_may_use_the_remote_access_and_the_cost_class_still_orders
     r, _ = router_for(world(), both_measured())
     d = r.route(task(ttype="code", sens="public", chat="local"))
     assert d.route.access_id == "opencode:local"
-    assert any(s.step == "cost_class" and "opencode|qwen3-8b|opencode:remote-api|mac" in s.values for s in d.rule_trace)
+    assert any(s.step == "cost_class" and "opencode|local-8b|opencode:remote-api|mac" in s.values for s in d.rule_trace)
 
 
 def test_an_access_without_its_own_flag_inherits_the_environments():
@@ -63,7 +63,7 @@ def test_an_access_without_its_own_flag_inherits_the_environments():
     r, _ = router_for(envs, both_measured())
     d = r.route(task(ttype="code", sens="confidential", chat="local"))
     assert d.route.access_id == "opencode:local"  # the environment is local, so an unflagged access is local: the rule is data, not a guess
-    assert "opencode|qwen3-8b|opencode:remote-api|mac" in d.rule_trace[0].candidates_out
+    assert "opencode|local-8b|opencode:remote-api|mac" in d.rule_trace[0].candidates_out
 
 
 def test_dispatch_refuses_a_confidential_input_for_a_cloud_access_even_if_a_decision_got_there():

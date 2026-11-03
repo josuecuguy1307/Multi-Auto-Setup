@@ -3,9 +3,9 @@
  "manifest_sha256": "079fdddc564b7a8e46c03115c06f70c767c55b35f5b6302ee8771b13503e17e7",
  "counts": {
   "runtime_assets": 15,
-  "model_files": 175,
-  "combinations": 2625,
-  "excluded": 136
+  "model_files": 179,
+  "combinations": 2685,
+  "excluded": 138
  },
  "runtime_assets": [
   {
@@ -361,7 +361,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "2d4a76a30b4af41ecd395c35725ac11688d4cfe4",
     "sources": [
      "hub listing at the pinned revision",
@@ -418,7 +418,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "593b5a2e04c8f3e4ee880263f93e0bd2901ad47f",
     "sources": [
      "hub listing at the pinned revision",
@@ -478,7 +478,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "b0a537b73930e835e38b349bba1581202022a945",
     "sources": [
      "hub listing at the pinned revision",
@@ -535,7 +535,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "21c643bffffcc401ae24caab373b417de27949a5",
     "sources": [
      "hub listing at the pinned revision",
@@ -592,7 +592,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "53066c72a815622e28d006aefbe32df6dd4b1835",
     "sources": [
      "hub listing at the pinned revision",
@@ -649,7 +649,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "ac681f051bd393dc26c5bdacd277c03a7ca5d5d2",
     "sources": [
      "hub listing at the pinned revision",
@@ -716,7 +716,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "198f08841147e5196a6a69bd0053690fb1fd3857",
     "sources": [
      "hub listing at the pinned revision",
@@ -783,7 +783,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "198f08841147e5196a6a69bd0053690fb1fd3857",
     "sources": [
      "hub listing at the pinned revision",
@@ -850,7 +850,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "198f08841147e5196a6a69bd0053690fb1fd3857",
     "sources": [
      "hub listing at the pinned revision",
@@ -917,7 +917,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "c62434db644497c0ee545c690bb66a67eba6eb3f",
     "sources": [
      "hub listing at the pinned revision",
@@ -984,7 +984,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "c62434db644497c0ee545c690bb66a67eba6eb3f",
     "sources": [
      "hub listing at the pinned revision",
@@ -1051,7 +1051,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "c62434db644497c0ee545c690bb66a67eba6eb3f",
     "sources": [
      "hub listing at the pinned revision",
@@ -1110,7 +1110,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "c3024c6fff0a02d52119ecee024bbb93d4b4b8e4",
     "sources": [
      "hub listing at the pinned revision",
@@ -1169,7 +1169,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "c3024c6fff0a02d52119ecee024bbb93d4b4b8e4",
     "sources": [
      "hub listing at the pinned revision",
@@ -1228,7 +1228,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "c3024c6fff0a02d52119ecee024bbb93d4b4b8e4",
     "sources": [
      "hub listing at the pinned revision",
@@ -1295,7 +1295,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "9217f5db79a29953eb74d5343926648285ec7e67",
     "sources": [
      "hub listing at the pinned revision",
@@ -1362,7 +1362,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "9217f5db79a29953eb74d5343926648285ec7e67",
     "sources": [
      "hub listing at the pinned revision",
@@ -1429,7 +1429,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "9217f5db79a29953eb74d5343926648285ec7e67",
     "sources": [
      "hub listing at the pinned revision",
@@ -1496,7 +1496,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
     "sources": [
      "hub listing at the pinned revision",
@@ -1563,7 +1563,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
     "sources": [
      "hub listing at the pinned revision",
@@ -1630,7 +1630,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
     "sources": [
      "hub listing at the pinned revision",
@@ -1702,7 +1702,7 @@
    ],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "bb5d59e06d9551d752d08b292a50eb208b07ab1f",
     "sources": [
      "hub listing at the pinned revision",
@@ -1774,7 +1774,7 @@
    ],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "bb5d59e06d9551d752d08b292a50eb208b07ab1f",
     "sources": [
      "hub listing at the pinned revision",
@@ -1852,7 +1852,7 @@
    ],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "bb5d59e06d9551d752d08b292a50eb208b07ab1f",
     "sources": [
      "hub listing at the pinned revision",
@@ -1919,7 +1919,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "ebb2015119c907b064c512bf053e945850b5875f",
     "sources": [
      "hub listing at the pinned revision",
@@ -1986,7 +1986,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "ebb2015119c907b064c512bf053e945850b5875f",
     "sources": [
      "hub listing at the pinned revision",
@@ -2053,7 +2053,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "ebb2015119c907b064c512bf053e945850b5875f",
     "sources": [
      "hub listing at the pinned revision",
@@ -2120,7 +2120,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "f86cb2c1fa58255f8052cc32aeede1b7482d4361",
     "sources": [
      "hub listing at the pinned revision",
@@ -2187,7 +2187,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "f86cb2c1fa58255f8052cc32aeede1b7482d4361",
     "sources": [
      "hub listing at the pinned revision",
@@ -2254,7 +2254,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "f86cb2c1fa58255f8052cc32aeede1b7482d4361",
     "sources": [
      "hub listing at the pinned revision",
@@ -2313,7 +2313,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "13fb94bfda8c8cf22497dc57b78f391a9acb426a",
     "sources": [
      "hub listing at the pinned revision",
@@ -2372,7 +2372,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "13fb94bfda8c8cf22497dc57b78f391a9acb426a",
     "sources": [
      "hub listing at the pinned revision",
@@ -2431,7 +2431,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "13fb94bfda8c8cf22497dc57b78f391a9acb426a",
     "sources": [
      "hub listing at the pinned revision",
@@ -2491,7 +2491,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "23749fefcc72300e3a2ad315e1317431b06b590a",
     "sources": [
      "hub listing at the pinned revision",
@@ -2551,7 +2551,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "90862c4b9d2787eaed51d12237eafdfe7c5f6077",
     "sources": [
      "hub listing at the pinned revision",
@@ -2611,7 +2611,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "bc640142c66e1fdd12af0bd68f40445458f3869b",
     "sources": [
      "hub listing at the pinned revision",
@@ -2671,7 +2671,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "bc640142c66e1fdd12af0bd68f40445458f3869b",
     "sources": [
      "hub listing at the pinned revision",
@@ -2731,7 +2731,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "7c41481f57cb95916b40956ab2f0b139b296d974",
     "sources": [
      "hub listing at the pinned revision",
@@ -2791,7 +2791,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "7c41481f57cb95916b40956ab2f0b139b296d974",
     "sources": [
      "hub listing at the pinned revision",
@@ -2852,7 +2852,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "370f27d7550e0def9b39c1f16d3fbaa13aa67728",
     "sources": [
      "hub listing at the pinned revision",
@@ -2911,7 +2911,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "f4602530db1d980e16da9d7d3a70294cf5c190be",
     "sources": [
      "hub listing at the pinned revision",
@@ -2970,7 +2970,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "f4602530db1d980e16da9d7d3a70294cf5c190be",
     "sources": [
      "hub listing at the pinned revision",
@@ -3029,7 +3029,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "69d0e58a13e463cd99a9b83e3f5fee7c10265fab",
     "sources": [
      "hub listing at the pinned revision",
@@ -3088,7 +3088,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "69d0e58a13e463cd99a9b83e3f5fee7c10265fab",
     "sources": [
      "hub listing at the pinned revision",
@@ -3164,7 +3164,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "52d6c8ffea26cc873ac5ad116f8631268d7eb503",
     "sources": [
      "hub listing at the pinned revision",
@@ -3240,7 +3240,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "52d6c8ffea26cc873ac5ad116f8631268d7eb503",
     "sources": [
      "hub listing at the pinned revision",
@@ -3317,7 +3317,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "76646427920e08bd278e46af11c5db8532e6a657",
     "sources": [
      "hub listing at the pinned revision",
@@ -3394,7 +3394,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "76646427920e08bd278e46af11c5db8532e6a657",
     "sources": [
      "hub listing at the pinned revision",
@@ -3462,7 +3462,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "1cd86afb9a95c410a6038ab3b40d8b578c892266",
     "sources": [
      "hub listing at the pinned revision",
@@ -3530,7 +3530,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "1cd86afb9a95c410a6038ab3b40d8b578c892266",
     "sources": [
      "hub listing at the pinned revision",
@@ -3600,7 +3600,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "a55c03cbb1dad5a0c678efa066a8dbccf5a8d30e",
     "sources": [
      "hub listing at the pinned revision",
@@ -3670,7 +3670,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "a55c03cbb1dad5a0c678efa066a8dbccf5a8d30e",
     "sources": [
      "hub listing at the pinned revision",
@@ -3739,7 +3739,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "f982a07559d4a2f6c8744d840bf6fccab30eea96",
     "sources": [
      "hub listing at the pinned revision",
@@ -3808,7 +3808,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "f982a07559d4a2f6c8744d840bf6fccab30eea96",
     "sources": [
      "hub listing at the pinned revision",
@@ -3878,7 +3878,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "bca5838231f8cc1303cf8810afffcfbdc41bc75a",
     "sources": [
      "hub listing at the pinned revision",
@@ -3948,7 +3948,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "bca5838231f8cc1303cf8810afffcfbdc41bc75a",
     "sources": [
      "hub listing at the pinned revision",
@@ -4009,7 +4009,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "c387ce812f770cd3677b3387a58f09acc2f78141",
     "sources": [
      "hub listing at the pinned revision",
@@ -4070,7 +4070,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "bf9ae1c8bf026667e6f810768de259bb4a7f4777",
     "sources": [
      "hub listing at the pinned revision",
@@ -4131,7 +4131,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "f8cb02e22e3da38ef962fe1eb1be7f70215253f7",
     "sources": [
      "hub listing at the pinned revision",
@@ -4192,7 +4192,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "2b4630fe0e10f828a95e6603aa421b52867a9842",
     "sources": [
      "hub listing at the pinned revision",
@@ -4253,7 +4253,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "2b4630fe0e10f828a95e6603aa421b52867a9842",
     "sources": [
      "hub listing at the pinned revision",
@@ -4314,7 +4314,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "2b4630fe0e10f828a95e6603aa421b52867a9842",
     "sources": [
      "hub listing at the pinned revision",
@@ -4371,7 +4371,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "410e0069f64869e4b1d17d8de04810b881fd824b",
     "sources": [
      "hub listing at the pinned revision",
@@ -4428,7 +4428,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "410e0069f64869e4b1d17d8de04810b881fd824b",
     "sources": [
      "hub listing at the pinned revision",
@@ -4485,7 +4485,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "410e0069f64869e4b1d17d8de04810b881fd824b",
     "sources": [
      "hub listing at the pinned revision",
@@ -4552,7 +4552,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "70df85ed7132bf21b5acbcb33817f58e7d3cb949",
     "sources": [
      "hub listing at the pinned revision",
@@ -4619,7 +4619,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "70df85ed7132bf21b5acbcb33817f58e7d3cb949",
     "sources": [
      "hub listing at the pinned revision",
@@ -4686,7 +4686,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "70df85ed7132bf21b5acbcb33817f58e7d3cb949",
     "sources": [
      "hub listing at the pinned revision",
@@ -4751,7 +4751,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "02ab6ea6894a8418eb14f6d8ee1bfb08bd298080",
     "sources": [
      "hub listing at the pinned revision",
@@ -4816,7 +4816,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "02ab6ea6894a8418eb14f6d8ee1bfb08bd298080",
     "sources": [
      "hub listing at the pinned revision",
@@ -4881,8 +4881,185 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "02ab6ea6894a8418eb14f6d8ee1bfb08bd298080",
+    "sources": [
+     "hub listing at the pinned revision",
+     "GGUF header (range request)"
+    ],
+    "rules": "03929205c69fb860"
+   }
+  },
+  {
+   "id": "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_0.gguf",
+   "source": "bartowski",
+   "repo": "bartowski/Llama-3.2-3B-Instruct-GGUF",
+   "file": "Llama-3.2-3B-Instruct-Q4_0.gguf",
+   "url": "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/5ab33fa94d1d04e903623ae72c95d1696f09f9e8/Llama-3.2-3B-Instruct-Q4_0.gguf",
+   "revision": "5ab33fa94d1d04e903623ae72c95d1696f09f9e8",
+   "sha256": "4d491003bf6b470e4d04233824c5c939b76d6c81974ba17a3ff207343e1d8e85",
+   "bytes": 1921909280,
+   "license": "llama3.2",
+   "license_source": "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF",
+   "format": "gguf",
+   "quantization": "Q4_0",
+   "params_b": 3.21,
+   "min_ram_gib": 3.41,
+   "kind": "chat",
+   "params_active_b": null,
+   "architecture": "llama",
+   "size_label": "3B",
+   "name": null,
+   "dims": {
+    "layers": 28,
+    "kv_layers": 28,
+    "kv_heads": 8,
+    "key_length": 128,
+    "value_length": 128
+   },
+   "context_trained": 131072,
+   "context_extended": null,
+   "publisher": "bartowski",
+   "base_model": "meta-llama/Llama-3.2-3B-Instruct",
+   "gated": false,
+   "license_header": "llama3.2",
+   "license_card": "llama3.2",
+   "license_verified": true,
+   "license_name": "Llama 3.2 Community License",
+   "license_class": "community-host-run",
+   "license_label": "Meta Llama community license: not permissive; allowed here only as a model the owner runs on their own machines (host-run), not redistributed or embedded in a product; the license name is recorded",
+   "license_basis": "verified-by-code: the file header and the card agree",
+   "labels": [
+    "community license (not permissive): allowed as a model you run on your own machines; the license name is recorded"
+   ],
+   "requires_task": {},
+   "offer_by_default": true,
+   "not_default_reasons": [],
+   "conflicts": [],
+   "companions": [],
+   "shards": [],
+   "verified": {
+    "label": "verified-by-code",
+    "checked": "2026-11-03",
+    "revision": "5ab33fa94d1d04e903623ae72c95d1696f09f9e8",
+    "sources": [
+     "hub listing at the pinned revision",
+     "GGUF header (range request)"
+    ],
+    "rules": "03929205c69fb860"
+   }
+  },
+  {
+   "id": "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+   "source": "bartowski",
+   "repo": "bartowski/Llama-3.2-3B-Instruct-GGUF",
+   "file": "Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+   "url": "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/5ab33fa94d1d04e903623ae72c95d1696f09f9e8/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+   "revision": "5ab33fa94d1d04e903623ae72c95d1696f09f9e8",
+   "sha256": "6c1a2b41161032677be168d354123594c0e6e67d2b9227c84f296ad037c728ff",
+   "bytes": 2019377696,
+   "license": "llama3.2",
+   "license_source": "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF",
+   "format": "gguf",
+   "quantization": "Q4_K_M",
+   "params_b": 3.21,
+   "min_ram_gib": 3.51,
+   "kind": "chat",
+   "params_active_b": null,
+   "architecture": "llama",
+   "size_label": "3B",
+   "name": null,
+   "dims": {
+    "layers": 28,
+    "kv_layers": 28,
+    "kv_heads": 8,
+    "key_length": 128,
+    "value_length": 128
+   },
+   "context_trained": 131072,
+   "context_extended": null,
+   "publisher": "bartowski",
+   "base_model": "meta-llama/Llama-3.2-3B-Instruct",
+   "gated": false,
+   "license_header": "llama3.2",
+   "license_card": "llama3.2",
+   "license_verified": true,
+   "license_name": "Llama 3.2 Community License",
+   "license_class": "community-host-run",
+   "license_label": "Meta Llama community license: not permissive; allowed here only as a model the owner runs on their own machines (host-run), not redistributed or embedded in a product; the license name is recorded",
+   "license_basis": "verified-by-code: the file header and the card agree",
+   "labels": [
+    "community license (not permissive): allowed as a model you run on your own machines; the license name is recorded"
+   ],
+   "requires_task": {},
+   "offer_by_default": true,
+   "not_default_reasons": [],
+   "conflicts": [],
+   "companions": [],
+   "shards": [],
+   "verified": {
+    "label": "verified-by-code",
+    "checked": "2026-11-03",
+    "revision": "5ab33fa94d1d04e903623ae72c95d1696f09f9e8",
+    "sources": [
+     "hub listing at the pinned revision",
+     "GGUF header (range request)"
+    ],
+    "rules": "03929205c69fb860"
+   }
+  },
+  {
+   "id": "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q8_0.gguf",
+   "source": "bartowski",
+   "repo": "bartowski/Llama-3.2-3B-Instruct-GGUF",
+   "file": "Llama-3.2-3B-Instruct-Q8_0.gguf",
+   "url": "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/5ab33fa94d1d04e903623ae72c95d1696f09f9e8/Llama-3.2-3B-Instruct-Q8_0.gguf",
+   "revision": "5ab33fa94d1d04e903623ae72c95d1696f09f9e8",
+   "sha256": "b5607b5090a8280063fff2d706bb3408ca6542341b06aab39c3eca0a28575921",
+   "bytes": 3421899296,
+   "license": "llama3.2",
+   "license_source": "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF",
+   "format": "gguf",
+   "quantization": "Q8_0",
+   "params_b": 3.21,
+   "min_ram_gib": 4.94,
+   "kind": "chat",
+   "params_active_b": null,
+   "architecture": "llama",
+   "size_label": "3B",
+   "name": null,
+   "dims": {
+    "layers": 28,
+    "kv_layers": 28,
+    "kv_heads": 8,
+    "key_length": 128,
+    "value_length": 128
+   },
+   "context_trained": 131072,
+   "context_extended": null,
+   "publisher": "bartowski",
+   "base_model": "meta-llama/Llama-3.2-3B-Instruct",
+   "gated": false,
+   "license_header": "llama3.2",
+   "license_card": "llama3.2",
+   "license_verified": true,
+   "license_name": "Llama 3.2 Community License",
+   "license_class": "community-host-run",
+   "license_label": "Meta Llama community license: not permissive; allowed here only as a model the owner runs on their own machines (host-run), not redistributed or embedded in a product; the license name is recorded",
+   "license_basis": "verified-by-code: the file header and the card agree",
+   "labels": [
+    "community license (not permissive): allowed as a model you run on your own machines; the license name is recorded"
+   ],
+   "requires_task": {},
+   "offer_by_default": true,
+   "not_default_reasons": [],
+   "conflicts": [],
+   "companions": [],
+   "shards": [],
+   "verified": {
+    "label": "verified-by-code",
+    "checked": "2026-11-03",
+    "revision": "5ab33fa94d1d04e903623ae72c95d1696f09f9e8",
     "sources": [
      "hub listing at the pinned revision",
      "GGUF header (range request)"
@@ -4940,7 +5117,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-11-01",
+    "checked": "2026-11-03",
     "revision": "bf5b95e96dac0462e2a09145ec66cae9a3f12067",
     "sources": [
      "hub listing at the pinned revision",
@@ -4999,8 +5176,70 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-11-01",
+    "checked": "2026-11-03",
     "revision": "bf5b95e96dac0462e2a09145ec66cae9a3f12067",
+    "sources": [
+     "hub listing at the pinned revision",
+     "GGUF header (range request)"
+    ],
+    "rules": "03929205c69fb860"
+   }
+  },
+  {
+   "id": "google/gemma-4-E4B-it-qat-q4_0-gguf/gemma-4-E4B_q4_0-it.gguf",
+   "source": "google",
+   "repo": "google/gemma-4-E4B-it-qat-q4_0-gguf",
+   "file": "gemma-4-E4B_q4_0-it.gguf",
+   "url": "https://huggingface.co/google/gemma-4-E4B-it-qat-q4_0-gguf/resolve/4b4a2c1d584be7264f87aac328a1bc739ce81b6c/gemma-4-E4B_q4_0-it.gguf",
+   "revision": "4b4a2c1d584be7264f87aac328a1bc739ce81b6c",
+   "sha256": "676c35070db6dbe52f93e9c864ee0fba4eddea94b9c875d9cb10daff453fbaee",
+   "bytes": 5154941280,
+   "license": "apache-2.0",
+   "license_source": "https://huggingface.co/google/gemma-4-E4B-it-qat-q4_0-gguf",
+   "format": "gguf",
+   "quantization": "Q4_0",
+   "params_b": 7.46,
+   "min_ram_gib": 6.94,
+   "kind": "vision-language",
+   "params_active_b": null,
+   "architecture": "gemma4",
+   "size_label": "7.5B",
+   "name": null,
+   "dims": {
+    "layers": 42,
+    "kv_layers": 42,
+    "kv_heads": 2,
+    "key_length": 512,
+    "value_length": 512,
+    "estimate_notes": [
+     "sliding-window attention"
+    ]
+   },
+   "context_trained": 131072,
+   "context_extended": null,
+   "publisher": "google",
+   "base_model": "google/gemma-4-E4B-it-qat-q4_0-unquantized",
+   "gated": false,
+   "license_header": "apache-2.0",
+   "license_card": "apache-2.0",
+   "license_verified": true,
+   "license_name": "Apache License 2.0",
+   "license_class": "permissive",
+   "license_label": "permissive license",
+   "license_basis": "verified-by-code: the file header and the card agree",
+   "labels": [
+    "includes vision (the projector is counted in the memory and disk numbers)"
+   ],
+   "requires_task": {},
+   "offer_by_default": true,
+   "not_default_reasons": [],
+   "conflicts": [],
+   "companions": [],
+   "shards": [],
+   "verified": {
+    "label": "verified-by-code",
+    "checked": "2026-11-03",
+    "revision": "4b4a2c1d584be7264f87aac328a1bc739ce81b6c",
     "sources": [
      "hub listing at the pinned revision",
      "GGUF header (range request)"
@@ -5066,7 +5305,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "282fa97b53c9fc281a6e023c2c0874cd1479b217",
     "sources": [
      "hub listing at the pinned revision",
@@ -5133,7 +5372,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "282fa97b53c9fc281a6e023c2c0874cd1479b217",
     "sources": [
      "hub listing at the pinned revision",
@@ -5200,7 +5439,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "282fa97b53c9fc281a6e023c2c0874cd1479b217",
     "sources": [
      "hub listing at the pinned revision",
@@ -5267,7 +5506,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "7cdf86ccd1f1bb3491c9b7017b033f2e51367397",
     "sources": [
      "hub listing at the pinned revision",
@@ -5334,7 +5573,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "7cdf86ccd1f1bb3491c9b7017b033f2e51367397",
     "sources": [
      "hub listing at the pinned revision",
@@ -5401,7 +5640,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "7cdf86ccd1f1bb3491c9b7017b033f2e51367397",
     "sources": [
      "hub listing at the pinned revision",
@@ -5460,7 +5699,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "da0bb287b8b5153f4eca84e7a4c1953f7cbfb03a",
     "sources": [
      "hub listing at the pinned revision",
@@ -5519,7 +5758,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "da0bb287b8b5153f4eca84e7a4c1953f7cbfb03a",
     "sources": [
      "hub listing at the pinned revision",
@@ -5578,7 +5817,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "da0bb287b8b5153f4eca84e7a4c1953f7cbfb03a",
     "sources": [
      "hub listing at the pinned revision",
@@ -5637,7 +5876,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "e40e9dd739c7be00fa965c16ce167088190ce114",
     "sources": [
      "hub listing at the pinned revision",
@@ -5696,7 +5935,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "e40e9dd739c7be00fa965c16ce167088190ce114",
     "sources": [
      "hub listing at the pinned revision",
@@ -5755,7 +5994,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "e40e9dd739c7be00fa965c16ce167088190ce114",
     "sources": [
      "hub listing at the pinned revision",
@@ -5824,7 +6063,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "798a3d731dc15be27c453935842b53310a7c6dc9",
     "sources": [
      "hub listing at the pinned revision",
@@ -5891,7 +6130,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "3bdb764463138638307e498e75f35901f24f6e87",
     "sources": [
      "hub listing at the pinned revision",
@@ -5959,7 +6198,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "b27c2fe3f211b7f44e80fa620177aea371099aaa",
     "sources": [
      "hub listing at the pinned revision",
@@ -6027,7 +6266,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "b27c2fe3f211b7f44e80fa620177aea371099aaa",
     "sources": [
      "hub listing at the pinned revision",
@@ -6095,7 +6334,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "b27c2fe3f211b7f44e80fa620177aea371099aaa",
     "sources": [
      "hub listing at the pinned revision",
@@ -6165,7 +6404,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "dc738c5cc796767906450ce40b27b7014583f1c9",
     "sources": [
      "hub listing at the pinned revision",
@@ -6235,7 +6474,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "dc738c5cc796767906450ce40b27b7014583f1c9",
     "sources": [
      "hub listing at the pinned revision",
@@ -6305,7 +6544,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "dc738c5cc796767906450ce40b27b7014583f1c9",
     "sources": [
      "hub listing at the pinned revision",
@@ -6372,7 +6611,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "7e8f817c0ebab568622dadec5ad5ee1283ceeb85",
     "sources": [
      "hub listing at the pinned revision",
@@ -6439,7 +6678,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "7e8f817c0ebab568622dadec5ad5ee1283ceeb85",
     "sources": [
      "hub listing at the pinned revision",
@@ -6499,7 +6738,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "b8208a86a58427e1739265318028eb5895b74bf2",
     "sources": [
      "hub listing at the pinned revision",
@@ -6559,7 +6798,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "b8208a86a58427e1739265318028eb5895b74bf2",
     "sources": [
      "hub listing at the pinned revision",
@@ -6619,7 +6858,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "b8208a86a58427e1739265318028eb5895b74bf2",
     "sources": [
      "hub listing at the pinned revision",
@@ -6681,7 +6920,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "87a04d7f2076c11968a34bc67ead869f522b1c39",
     "sources": [
      "hub listing at the pinned revision",
@@ -6743,7 +6982,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "87a04d7f2076c11968a34bc67ead869f522b1c39",
     "sources": [
      "hub listing at the pinned revision",
@@ -6805,7 +7044,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "87a04d7f2076c11968a34bc67ead869f522b1c39",
     "sources": [
      "hub listing at the pinned revision",
@@ -6873,7 +7112,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "c2cb1972f511add21f3bae244990b8ff3a3ffb23",
     "sources": [
      "hub listing at the pinned revision",
@@ -6941,7 +7180,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "c2cb1972f511add21f3bae244990b8ff3a3ffb23",
     "sources": [
      "hub listing at the pinned revision",
@@ -7009,7 +7248,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "c2cb1972f511add21f3bae244990b8ff3a3ffb23",
     "sources": [
      "hub listing at the pinned revision",
@@ -7079,7 +7318,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "5024c1503d37113e31aa471198492d202a77735e",
     "sources": [
      "hub listing at the pinned revision",
@@ -7149,7 +7388,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "5024c1503d37113e31aa471198492d202a77735e",
     "sources": [
      "hub listing at the pinned revision",
@@ -7219,7 +7458,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "5024c1503d37113e31aa471198492d202a77735e",
     "sources": [
      "hub listing at the pinned revision",
@@ -7279,7 +7518,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "a864f823cce6e6048b5752e2816fe7a23987d790",
     "sources": [
      "hub listing at the pinned revision",
@@ -7339,7 +7578,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "a864f823cce6e6048b5752e2816fe7a23987d790",
     "sources": [
      "hub listing at the pinned revision",
@@ -7399,7 +7638,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "a864f823cce6e6048b5752e2816fe7a23987d790",
     "sources": [
      "hub listing at the pinned revision",
@@ -7461,7 +7700,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "dd750a6178cecdef5154f87fd8e9d71821df7c5d",
     "sources": [
      "hub listing at the pinned revision",
@@ -7523,7 +7762,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "dd750a6178cecdef5154f87fd8e9d71821df7c5d",
     "sources": [
      "hub listing at the pinned revision",
@@ -7585,7 +7824,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "dd750a6178cecdef5154f87fd8e9d71821df7c5d",
     "sources": [
      "hub listing at the pinned revision",
@@ -7645,7 +7884,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "dc1dd2585fac18a78001c677d33ef8a7bbb7eb68",
     "sources": [
      "hub listing at the pinned revision",
@@ -7705,7 +7944,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "dc1dd2585fac18a78001c677d33ef8a7bbb7eb68",
     "sources": [
      "hub listing at the pinned revision",
@@ -7765,7 +8004,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "dc1dd2585fac18a78001c677d33ef8a7bbb7eb68",
     "sources": [
      "hub listing at the pinned revision",
@@ -7827,7 +8066,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "5594d3c59599b4e73d169526ec0a79516ae2d13d",
     "sources": [
      "hub listing at the pinned revision",
@@ -7889,7 +8128,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "5594d3c59599b4e73d169526ec0a79516ae2d13d",
     "sources": [
      "hub listing at the pinned revision",
@@ -7951,7 +8190,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "5594d3c59599b4e73d169526ec0a79516ae2d13d",
     "sources": [
      "hub listing at the pinned revision",
@@ -8011,7 +8250,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "08d5a8a9741dd5c1a95d2d39e25253226aa1464e",
     "sources": [
      "hub listing at the pinned revision",
@@ -8071,7 +8310,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "08d5a8a9741dd5c1a95d2d39e25253226aa1464e",
     "sources": [
      "hub listing at the pinned revision",
@@ -8131,7 +8370,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "08d5a8a9741dd5c1a95d2d39e25253226aa1464e",
     "sources": [
      "hub listing at the pinned revision",
@@ -8193,7 +8432,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "27f75056a8aabab6377df1d9dd4f37c9b1fbe14e",
     "sources": [
      "hub listing at the pinned revision",
@@ -8255,7 +8494,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "27f75056a8aabab6377df1d9dd4f37c9b1fbe14e",
     "sources": [
      "hub listing at the pinned revision",
@@ -8317,7 +8556,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "27f75056a8aabab6377df1d9dd4f37c9b1fbe14e",
     "sources": [
      "hub listing at the pinned revision",
@@ -8377,7 +8616,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "ec48475f0c811d812fbfb61975717a9c36eeb652",
     "sources": [
      "hub listing at the pinned revision",
@@ -8437,7 +8676,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "ec48475f0c811d812fbfb61975717a9c36eeb652",
     "sources": [
      "hub listing at the pinned revision",
@@ -8497,7 +8736,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "ec48475f0c811d812fbfb61975717a9c36eeb652",
     "sources": [
      "hub listing at the pinned revision",
@@ -8559,7 +8798,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "4a6c034845e314924ab1e64e183a1454ff1ea159",
     "sources": [
      "hub listing at the pinned revision",
@@ -8621,7 +8860,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "4a6c034845e314924ab1e64e183a1454ff1ea159",
     "sources": [
      "hub listing at the pinned revision",
@@ -8683,7 +8922,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "4a6c034845e314924ab1e64e183a1454ff1ea159",
     "sources": [
      "hub listing at the pinned revision",
@@ -8745,7 +8984,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "860092b87eb7be326b1c8fb657665a061e87deff",
     "sources": [
      "hub listing at the pinned revision",
@@ -8807,7 +9046,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "860092b87eb7be326b1c8fb657665a061e87deff",
     "sources": [
      "hub listing at the pinned revision",
@@ -8869,7 +9108,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "860092b87eb7be326b1c8fb657665a061e87deff",
     "sources": [
      "hub listing at the pinned revision",
@@ -8931,7 +9170,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "4facc6e944c7b9837a655d7ada70c5b92ab62673",
     "sources": [
      "hub listing at the pinned revision",
@@ -8993,7 +9232,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "4facc6e944c7b9837a655d7ada70c5b92ab62673",
     "sources": [
      "hub listing at the pinned revision",
@@ -9055,7 +9294,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "4facc6e944c7b9837a655d7ada70c5b92ab62673",
     "sources": [
      "hub listing at the pinned revision",
@@ -9120,7 +9359,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "ab4701481089b58a082ef63cc1cee738887293ff",
     "sources": [
      "hub listing at the pinned revision",
@@ -9185,7 +9424,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "ab4701481089b58a082ef63cc1cee738887293ff",
     "sources": [
      "hub listing at the pinned revision",
@@ -9250,7 +9489,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "ab4701481089b58a082ef63cc1cee738887293ff",
     "sources": [
      "hub listing at the pinned revision",
@@ -9307,7 +9546,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "865b82c2e7970d82e3731278c88c57ae7138359c",
     "sources": [
      "hub listing at the pinned revision",
@@ -9364,7 +9603,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "865b82c2e7970d82e3731278c88c57ae7138359c",
     "sources": [
      "hub listing at the pinned revision",
@@ -9421,7 +9660,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "865b82c2e7970d82e3731278c88c57ae7138359c",
     "sources": [
      "hub listing at the pinned revision",
@@ -9488,7 +9727,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "c40945d71cd90f249a56985e8155551a9188dc30",
     "sources": [
      "hub listing at the pinned revision",
@@ -9555,7 +9794,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "c40945d71cd90f249a56985e8155551a9188dc30",
     "sources": [
      "hub listing at the pinned revision",
@@ -9622,7 +9861,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "c40945d71cd90f249a56985e8155551a9188dc30",
     "sources": [
      "hub listing at the pinned revision",
@@ -9681,7 +9920,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "93f3f6a8938ee922b784cf4e5b4203cd3428df8f",
     "sources": [
      "hub listing at the pinned revision",
@@ -9740,7 +9979,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "93f3f6a8938ee922b784cf4e5b4203cd3428df8f",
     "sources": [
      "hub listing at the pinned revision",
@@ -9799,7 +10038,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "93f3f6a8938ee922b784cf4e5b4203cd3428df8f",
     "sources": [
      "hub listing at the pinned revision",
@@ -9860,7 +10099,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "ddd3138955f8f4e20970dea07a486d91e039ca72",
     "sources": [
      "hub listing at the pinned revision",
@@ -9919,7 +10158,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "7f03f9f5dba8c4be26491d14c2fca861aa0c4ec1",
     "sources": [
      "hub listing at the pinned revision",
@@ -9978,7 +10217,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "8c87479a2dc329e4e362a6e5dda7e7de3e0372b2",
     "sources": [
      "hub listing at the pinned revision",
@@ -10037,7 +10276,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "8c87479a2dc329e4e362a6e5dda7e7de3e0372b2",
     "sources": [
      "hub listing at the pinned revision",
@@ -10096,7 +10335,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "bc78f0995361543a70438fe44a60bb7613fed2f0",
     "sources": [
      "hub listing at the pinned revision",
@@ -10155,7 +10394,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "bc78f0995361543a70438fe44a60bb7613fed2f0",
     "sources": [
      "hub listing at the pinned revision",
@@ -10214,7 +10453,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "bc78f0995361543a70438fe44a60bb7613fed2f0",
     "sources": [
      "hub listing at the pinned revision",
@@ -10273,7 +10512,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "8267dad2adc84209b0efd2702ec68a98356125eb",
     "sources": [
      "hub listing at the pinned revision",
@@ -10332,7 +10571,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "8267dad2adc84209b0efd2702ec68a98356125eb",
     "sources": [
      "hub listing at the pinned revision",
@@ -10399,7 +10638,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "eec39ef29d8001a6c3055ef2be37060bfded21cf",
     "sources": [
      "hub listing at the pinned revision",
@@ -10466,7 +10705,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "eec39ef29d8001a6c3055ef2be37060bfded21cf",
     "sources": [
      "hub listing at the pinned revision",
@@ -10530,7 +10769,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "945b4581e2b40cd9a3121de265fd8e387bdf782d",
     "sources": [
      "hub listing at the pinned revision",
@@ -10594,7 +10833,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "945b4581e2b40cd9a3121de265fd8e387bdf782d",
     "sources": [
      "hub listing at the pinned revision",
@@ -10658,7 +10897,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "945b4581e2b40cd9a3121de265fd8e387bdf782d",
     "sources": [
      "hub listing at the pinned revision",
@@ -10726,7 +10965,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "7edb59cacbffaeb016e29c760321c350fb43c429",
     "sources": [
      "hub listing at the pinned revision",
@@ -10794,7 +11033,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "7edb59cacbffaeb016e29c760321c350fb43c429",
     "sources": [
      "hub listing at the pinned revision",
@@ -10861,7 +11100,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "b1fa14294b0f5cac04c43076d1c4574091abf117",
     "sources": [
      "hub listing at the pinned revision",
@@ -10928,7 +11167,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "b1fa14294b0f5cac04c43076d1c4574091abf117",
     "sources": [
      "hub listing at the pinned revision",
@@ -11000,7 +11239,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "eb599d408350ea2bb60452cb86be7c7b2fc28227",
     "sources": [
      "hub listing at the pinned revision",
@@ -11072,7 +11311,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "eb599d408350ea2bb60452cb86be7c7b2fc28227",
     "sources": [
      "hub listing at the pinned revision",
@@ -11145,7 +11384,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "b432f0a2c144af8a1937b06e2ea7f75ebb4d0b31",
     "sources": [
      "hub listing at the pinned revision",
@@ -11218,7 +11457,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "b432f0a2c144af8a1937b06e2ea7f75ebb4d0b31",
     "sources": [
      "hub listing at the pinned revision",
@@ -11282,7 +11521,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "0102285ad796bd99af90f58de616092e5630e970",
     "sources": [
      "hub listing at the pinned revision",
@@ -11346,7 +11585,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "0102285ad796bd99af90f58de616092e5630e970",
     "sources": [
      "hub listing at the pinned revision",
@@ -11411,7 +11650,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "4413bc9b7b091ddad28101650d1395f5e045a328",
     "sources": [
      "hub listing at the pinned revision",
@@ -11476,7 +11715,7 @@
    "shards": [],
    "verified": {
     "label": "verified-by-code",
-    "checked": "2026-10-30",
+    "checked": "2026-11-03",
     "revision": "4413bc9b7b091ddad28101650d1395f5e045a328",
     "sources": [
      "hub listing at the pinned revision",
@@ -11773,11 +12012,27 @@
   ],
   [
    "llama.cpp:b12017:linux/amd64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:cpu",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
   ],
   [
    "llama.cpp:b12017:linux/amd64:cpu",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:cpu",
+   "google/gemma-4-E4B-it-qat-q4_0-gguf/gemma-4-E4B_q4_0-it.gguf"
   ],
   [
    "llama.cpp:b12017:linux/amd64:cpu",
@@ -12473,11 +12728,27 @@
   ],
   [
    "llama.cpp:b12017:linux/amd64:cuda",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:cuda",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:cuda",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:cuda",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
   ],
   [
    "llama.cpp:b12017:linux/amd64:cuda",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:cuda",
+   "google/gemma-4-E4B-it-qat-q4_0-gguf/gemma-4-E4B_q4_0-it.gguf"
   ],
   [
    "llama.cpp:b12017:linux/amd64:cuda",
@@ -13173,11 +13444,27 @@
   ],
   [
    "llama.cpp:b12017:linux/amd64:vulkan",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:vulkan",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:vulkan",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:vulkan",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
   ],
   [
    "llama.cpp:b12017:linux/amd64:vulkan",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/amd64:vulkan",
+   "google/gemma-4-E4B-it-qat-q4_0-gguf/gemma-4-E4B_q4_0-it.gguf"
   ],
   [
    "llama.cpp:b12017:linux/amd64:vulkan",
@@ -13873,11 +14160,27 @@
   ],
   [
    "llama.cpp:b12017:linux/arm64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:cpu",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
   ],
   [
    "llama.cpp:b12017:linux/arm64:cpu",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:cpu",
+   "google/gemma-4-E4B-it-qat-q4_0-gguf/gemma-4-E4B_q4_0-it.gguf"
   ],
   [
    "llama.cpp:b12017:linux/arm64:cpu",
@@ -14573,11 +14876,27 @@
   ],
   [
    "llama.cpp:b12017:linux/arm64:cuda",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:cuda",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:cuda",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:cuda",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
   ],
   [
    "llama.cpp:b12017:linux/arm64:cuda",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:cuda",
+   "google/gemma-4-E4B-it-qat-q4_0-gguf/gemma-4-E4B_q4_0-it.gguf"
   ],
   [
    "llama.cpp:b12017:linux/arm64:cuda",
@@ -15273,11 +15592,27 @@
   ],
   [
    "llama.cpp:b12017:linux/arm64:vulkan",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:vulkan",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:vulkan",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:vulkan",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
   ],
   [
    "llama.cpp:b12017:linux/arm64:vulkan",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:linux/arm64:vulkan",
+   "google/gemma-4-E4B-it-qat-q4_0-gguf/gemma-4-E4B_q4_0-it.gguf"
   ],
   [
    "llama.cpp:b12017:linux/arm64:vulkan",
@@ -15973,11 +16308,27 @@
   ],
   [
    "llama.cpp:b12017:macos/amd64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:macos/amd64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:macos/amd64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:macos/amd64:cpu",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
   ],
   [
    "llama.cpp:b12017:macos/amd64:cpu",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:macos/amd64:cpu",
+   "google/gemma-4-E4B-it-qat-q4_0-gguf/gemma-4-E4B_q4_0-it.gguf"
   ],
   [
    "llama.cpp:b12017:macos/amd64:cpu",
@@ -16673,11 +17024,27 @@
   ],
   [
    "llama.cpp:b12017:macos/arm64:metal",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:macos/arm64:metal",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:macos/arm64:metal",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:macos/arm64:metal",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
   ],
   [
    "llama.cpp:b12017:macos/arm64:metal",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:macos/arm64:metal",
+   "google/gemma-4-E4B-it-qat-q4_0-gguf/gemma-4-E4B_q4_0-it.gguf"
   ],
   [
    "llama.cpp:b12017:macos/arm64:metal",
@@ -17373,11 +17740,27 @@
   ],
   [
    "llama.cpp:b12017:windows/amd64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/amd64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/amd64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/amd64:cpu",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
   ],
   [
    "llama.cpp:b12017:windows/amd64:cpu",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/amd64:cpu",
+   "google/gemma-4-E4B-it-qat-q4_0-gguf/gemma-4-E4B_q4_0-it.gguf"
   ],
   [
    "llama.cpp:b12017:windows/amd64:cpu",
@@ -18073,11 +18456,27 @@
   ],
   [
    "llama.cpp:b12017:windows/amd64:vulkan",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/amd64:vulkan",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/amd64:vulkan",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/amd64:vulkan",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
   ],
   [
    "llama.cpp:b12017:windows/amd64:vulkan",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/amd64:vulkan",
+   "google/gemma-4-E4B-it-qat-q4_0-gguf/gemma-4-E4B_q4_0-it.gguf"
   ],
   [
    "llama.cpp:b12017:windows/amd64:vulkan",
@@ -18773,11 +19172,27 @@
   ],
   [
    "llama.cpp:b12017:windows/arm64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/arm64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/arm64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/arm64:cpu",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
   ],
   [
    "llama.cpp:b12017:windows/arm64:cpu",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/arm64:cpu",
+   "google/gemma-4-E4B-it-qat-q4_0-gguf/gemma-4-E4B_q4_0-it.gguf"
   ],
   [
    "llama.cpp:b12017:windows/arm64:cpu",
@@ -19473,11 +19888,27 @@
   ],
   [
    "llama.cpp:b12017:windows/arm64:vulkan",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/arm64:vulkan",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/arm64:vulkan",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/arm64:vulkan",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
   ],
   [
    "llama.cpp:b12017:windows/arm64:vulkan",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "llama.cpp:b12017:windows/arm64:vulkan",
+   "google/gemma-4-E4B-it-qat-q4_0-gguf/gemma-4-E4B_q4_0-it.gguf"
   ],
   [
    "llama.cpp:b12017:windows/arm64:vulkan",
@@ -20173,11 +20604,27 @@
   ],
   [
    "mistral.rs:v0.9.5:linux/amd64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_0.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:linux/amd64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:linux/amd64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:linux/amd64:cpu",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
   ],
   [
    "mistral.rs:v0.9.5:linux/amd64:cpu",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:linux/amd64:cpu",
+   "google/gemma-4-E4B-it-qat-q4_0-gguf/gemma-4-E4B_q4_0-it.gguf"
   ],
   [
    "mistral.rs:v0.9.5:linux/amd64:cpu",
@@ -20873,11 +21320,27 @@
   ],
   [
    "mistral.rs:v0.9.5:linux/arm64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_0.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:linux/arm64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:linux/arm64:cpu",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:linux/arm64:cpu",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
   ],
   [
    "mistral.rs:v0.9.5:linux/arm64:cpu",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:linux/arm64:cpu",
+   "google/gemma-4-E4B-it-qat-q4_0-gguf/gemma-4-E4B_q4_0-it.gguf"
   ],
   [
    "mistral.rs:v0.9.5:linux/arm64:cpu",
@@ -21573,11 +22036,27 @@
   ],
   [
    "mistral.rs:v0.9.5:macos/arm64:metal",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_0.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:macos/arm64:metal",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:macos/arm64:metal",
+   "bartowski/Llama-3.2-3B-Instruct-GGUF/Llama-3.2-3B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:macos/arm64:metal",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
   ],
   [
    "mistral.rs:v0.9.5:macos/arm64:metal",
    "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf"
+  ],
+  [
+   "mistral.rs:v0.9.5:macos/arm64:metal",
+   "google/gemma-4-E4B-it-qat-q4_0-gguf/gemma-4-E4B_q4_0-it.gguf"
   ],
   [
    "mistral.rs:v0.9.5:macos/arm64:metal",
@@ -22622,11 +23101,19 @@
    "what": "Qwen/Qwen3-VL-32B-Thinking-GGUF/mmproj-Qwen3VL-32B-Thinking-Q8_0.gguf",
    "reason": "a vision projector with no model of its repository in the catalog (the model file is over the size cap)",
    "rule": "R1.1-projector"
+  },
+  {
+   "what": "nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB",
+   "reason": "license 'other' is not in the allowlist: it is not a known license whose class is offered"
+  },
+  {
+   "what": "LiquidAI/LFM3-1.7B-GGUF",
+   "reason": "license 'other' is not in the allowlist: it is not a known license whose class is offered"
   }
  ],
  "verified": {
   "label": "verified-by-code",
-  "checked": "2026-10-30",
+  "checked": "2026-11-03",
   "backend_evidence": [
    {
     "runtime": "llama.cpp",
@@ -22649,7 +23136,7 @@
     "label": "verified-by-code"
    }
   ],
-  "files_checked": 266,
+  "files_checked": 179,
   "rules": "03929205c69fb860",
   "sources": "hub listing and GGUF headers at the pinned revisions",
   "runtime_arches": {

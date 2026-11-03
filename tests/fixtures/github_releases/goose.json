@@ -1,0 +1,295 @@
+{
+ "capture": {
+  "url": "https://api.github.com/repos/block/goose/releases/latest (301 to aaif-goose/goose)",
+  "fetched": "2026-11-02",
+  "original_sha256": "a0d205c69a43231aab48869c4800ff104631dbd6b4d0ea26770fdafd1c973e47",
+  "original_bytes": 82164,
+  "note": "REAL fetch from api.github.com; only the fields the pins use are kept here, copied by code"
+ },
+ "tag_name": "v1.57.0",
+ "published_at": "2026-10-28T19:26:10Z",
+ "assets": [
+  {
+   "name": "download_cli.sh",
+   "size": 17488,
+   "digest": "sha256:710f208cf0225ac330f71cc1540d36b10a6be7a850334b5ec4770fe96fbc57c4",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/download_cli.sh"
+  },
+  {
+   "name": "Goose-1.57.0-1.arm64-vulkan.rpm",
+   "size": 146597321,
+   "digest": "sha256:87efd8c41c1a811c26a58e85e0687d97924db7574010b87bd8b4c34ffac32422",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/Goose-1.57.0-1.arm64-vulkan.rpm"
+  },
+  {
+   "name": "Goose-1.57.0-1.arm64.rpm",
+   "size": 142616305,
+   "digest": "sha256:4890ac8b7869c2be609f3cc4dd21343bf341ce6b3c824aee389deb0b5a731a42",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/Goose-1.57.0-1.arm64.rpm"
+  },
+  {
+   "name": "Goose-1.57.0-1.x86_64-vulkan.rpm",
+   "size": 156714445,
+   "digest": "sha256:14caabf67c18b99f977564b028b3a0ab178a35ed873e1c61614913254c1068d9",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/Goose-1.57.0-1.x86_64-vulkan.rpm"
+  },
+  {
+   "name": "Goose-1.57.0-1.x86_64.rpm",
+   "size": 152820613,
+   "digest": "sha256:be5702a8459082b52cd54a4dcd16c7aea838d0a5c6020ffc246efe7934ff1a6d",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/Goose-1.57.0-1.x86_64.rpm"
+  },
+  {
+   "name": "goose-aarch64-apple-darwin.tar.bz2",
+   "size": 50976859,
+   "digest": "sha256:2fbafa227ab28654c47065f1c9ebcd12f527f017e30c08e618bc6fcf363d7935",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-aarch64-apple-darwin.tar.bz2"
+  },
+  {
+   "name": "goose-aarch64-apple-darwin.tar.gz",
+   "size": 56524572,
+   "digest": "sha256:80d43c49b77302777e9d2fe32faf3c40c1028dafbea1e0a39b0378404a8a074b",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-aarch64-apple-darwin.tar.gz"
+  },
+  {
+   "name": "goose-aarch64-unknown-linux-gnu-vulkan.tar.bz2",
+   "size": 61565406,
+   "digest": "sha256:17b85f749063698c40ea5a72ee58c5f20c2b5ad0a0194f1d0f565f1cdfa3bf24",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-aarch64-unknown-linux-gnu-vulkan.tar.bz2"
+  },
+  {
+   "name": "goose-aarch64-unknown-linux-gnu-vulkan.tar.gz",
+   "size": 72271551,
+   "digest": "sha256:4eeba66866ffbe26a1c3e2914db229699402c62862f1c5789e01a4f0274481d7",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-aarch64-unknown-linux-gnu-vulkan.tar.gz"
+  },
+  {
+   "name": "goose-aarch64-unknown-linux-gnu.tar.bz2",
+   "size": 55425649,
+   "digest": "sha256:17c6b090db6acc5605da904bbe19cc2765bc7a6786019d85a6d0a361de06dbf7",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-aarch64-unknown-linux-gnu.tar.bz2"
+  },
+  {
+   "name": "goose-aarch64-unknown-linux-gnu.tar.gz",
+   "size": 63122266,
+   "digest": "sha256:c32605acfd560aeb2adbf17ec359cc0217e28022a7e647b35a6af5dcfca91749",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-aarch64-unknown-linux-gnu.tar.gz"
+  },
+  {
+   "name": "goose-aarch64-unknown-linux-musl.tar.bz2",
+   "size": 42612006,
+   "digest": "sha256:26dc9be443e92760c4b74c85a0c9be327ac8b48f74cca0985398e8dfdbb7e0d4",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-aarch64-unknown-linux-musl.tar.bz2"
+  },
+  {
+   "name": "goose-aarch64-unknown-linux-musl.tar.gz",
+   "size": 48676441,
+   "digest": "sha256:00a32522f0421ed72fc06f36bfc44c8e51cffefb4daf22a81bb84ccd29d1a1ce",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-aarch64-unknown-linux-musl.tar.gz"
+  },
+  {
+   "name": "goose-acp-aarch64-apple-darwin.tar.gz",
+   "size": 8939408,
+   "digest": "sha256:939d133bd4233d40d16cea5e3380dac95d5bd28bceae585e7d05f40849aa6b4c",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-acp-aarch64-apple-darwin.tar.gz"
+  },
+  {
+   "name": "goose-acp-aarch64-unknown-linux-gnu.tar.gz",
+   "size": 9969004,
+   "digest": "sha256:4c832916626f5743f3551d267c7068c46cbeea203ecc5ab77bfb4101845beb5f",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-acp-aarch64-unknown-linux-gnu.tar.gz"
+  },
+  {
+   "name": "goose-acp-x86_64-apple-darwin.tar.gz",
+   "size": 9551876,
+   "digest": "sha256:a39c317256197c55e8ba29cb1be3d91a4979e4815070dbed6c91521f65c3bbf7",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-acp-x86_64-apple-darwin.tar.gz"
+  },
+  {
+   "name": "goose-acp-x86_64-pc-windows-msvc.zip",
+   "size": 9484318,
+   "digest": "sha256:d5d338d3a51f916a7df5f139957b16cd791e131b2101b9a18eb5548714f9b8a1",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-acp-x86_64-pc-windows-msvc.zip"
+  },
+  {
+   "name": "goose-acp-x86_64-unknown-linux-gnu.tar.gz",
+   "size": 10524153,
+   "digest": "sha256:647e4a68ff60ca6e49fee5d7b4c7a27a891b840c55e209b6830e05a2223ec7e7",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-acp-x86_64-unknown-linux-gnu.tar.gz"
+  },
+  {
+   "name": "Goose-darwin-arm64.zip",
+   "size": 182453264,
+   "digest": "sha256:8c7e0446fcac698841be1274da3cdf57ae09ac6712175b1715c3b4fa39516d3f",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/Goose-darwin-arm64.zip"
+  },
+  {
+   "name": "Goose-darwin-x64.zip",
+   "size": 192301126,
+   "digest": "sha256:5811118d129f3e5fd25f96fb67cf41d6e0bdcfd5ffeff9a1aeb1dff2daacdb0d",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/Goose-darwin-x64.zip"
+  },
+  {
+   "name": "goose-source-v1.57.0.tar.gz",
+   "size": 314696612,
+   "digest": "sha256:42e79f76a396dbb4255c7ae7f34454e1ba3500d96cfd5ddcd4df7278e7cfa5b4",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-source-v1.57.0.tar.gz"
+  },
+  {
+   "name": "goose-source-v1.57.0.zip",
+   "size": 315764404,
+   "digest": "sha256:bc01d7ab5dcc1a5d82e7750b0577081ab84aff9e67429d91d2aeae8c2232129f",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-source-v1.57.0.zip"
+  },
+  {
+   "name": "Goose-win32-x64-cuda.zip",
+   "size": 395250916,
+   "digest": "sha256:49645a54b730dfa81ea2e25d3ffaaf4c20be6020439b95eee3c9bd9eced57d93",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/Goose-win32-x64-cuda.zip"
+  },
+  {
+   "name": "Goose-win32-x64-setup.exe",
+   "size": 137592848,
+   "digest": "sha256:714bbdc1cd77e30d40ec2bad9fdfed9f031f54e15407da2355112f33ea11ddd4",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/Goose-win32-x64-setup.exe"
+  },
+  {
+   "name": "Goose-win32-x64.zip",
+   "size": 222600682,
+   "digest": "sha256:931a2a539f90816e3d15027e7ec52a7c3477089723352ee6d963d9c1da48af05",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/Goose-win32-x64.zip"
+  },
+  {
+   "name": "goose-x86_64-apple-darwin.tar.bz2",
+   "size": 52301211,
+   "digest": "sha256:e48fe024891a4c272a89c74b9ae843d76a73229643c917b785b0680fef9c647a",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-x86_64-apple-darwin.tar.bz2"
+  },
+  {
+   "name": "goose-x86_64-apple-darwin.tar.gz",
+   "size": 58733497,
+   "digest": "sha256:5ad5594246841c759b34966e09ca421c09151b589183a8f1720e15e8395834ae",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-x86_64-apple-darwin.tar.gz"
+  },
+  {
+   "name": "goose-x86_64-pc-windows-msvc-cuda.zip",
+   "size": 225695279,
+   "digest": "sha256:2ba8a35d1bd90fc0def567cd5becc197fec90e95995cc6ea5fb22cb099924c16",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-x86_64-pc-windows-msvc-cuda.zip"
+  },
+  {
+   "name": "goose-x86_64-pc-windows-msvc.zip",
+   "size": 53045496,
+   "digest": "sha256:1ab2117ceec37f95be4d3ad0cdb921d3e97fd8b0fa244046631ecf4b7619d502",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-x86_64-pc-windows-msvc.zip"
+  },
+  {
+   "name": "goose-x86_64-unknown-linux-gnu-vulkan.tar.bz2",
+   "size": 61662538,
+   "digest": "sha256:11e1d9d1fb622b906ac1ef11a054d59a69a2f893effcfff7e72b73c6ee97408d",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-x86_64-unknown-linux-gnu-vulkan.tar.bz2"
+  },
+  {
+   "name": "goose-x86_64-unknown-linux-gnu-vulkan.tar.gz",
+   "size": 71288118,
+   "digest": "sha256:a85516d36e5503fa866d9243ece1d726dd64074e331ca41c86de35ee9eb83fc4",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-x86_64-unknown-linux-gnu-vulkan.tar.gz"
+  },
+  {
+   "name": "goose-x86_64-unknown-linux-gnu.tar.bz2",
+   "size": 55723558,
+   "digest": "sha256:e54036f3b7f95d3b0d7854c09465af5ef52a28c7fa03d2497d0ea68a6382282d",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-x86_64-unknown-linux-gnu.tar.bz2"
+  },
+  {
+   "name": "goose-x86_64-unknown-linux-gnu.tar.gz",
+   "size": 62286102,
+   "digest": "sha256:10eb96cb6a159b6e1d38eeedbef6ab64cd28168aad91948f1fa5c34eefdf98e3",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-x86_64-unknown-linux-gnu.tar.gz"
+  },
+  {
+   "name": "goose-x86_64-unknown-linux-musl.tar.bz2",
+   "size": 43274491,
+   "digest": "sha256:90ac71084236e1a896098e26a4cb9c3e090de6eba30782886d64de839924a966",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-x86_64-unknown-linux-musl.tar.bz2"
+  },
+  {
+   "name": "goose-x86_64-unknown-linux-musl.tar.gz",
+   "size": 50110998,
+   "digest": "sha256:6c3a05e30e1a425dc06a410dbe24b3f3697c9721b1ea2340434ddda6b64267ae",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose-x86_64-unknown-linux-musl.tar.gz"
+  },
+  {
+   "name": "Goose.zip",
+   "size": 182453264,
+   "digest": "sha256:8c7e0446fcac698841be1274da3cdf57ae09ac6712175b1715c3b4fa39516d3f",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/Goose.zip"
+  },
+  {
+   "name": "goose_1.57.0_amd64-vulkan.deb",
+   "size": 149447056,
+   "digest": "sha256:7373016bb685d54a45dd0b47d0d6e64d9f84c63328141cfdb8a7fd368d841307",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose_1.57.0_amd64-vulkan.deb"
+  },
+  {
+   "name": "goose_1.57.0_amd64.deb",
+   "size": 146473080,
+   "digest": "sha256:c0d4dff7018092bac3287c6a33543f27a8f2521c579938460b047b0a70ec55e6",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose_1.57.0_amd64.deb"
+  },
+  {
+   "name": "goose_1.57.0_arm64-vulkan.deb",
+   "size": 146408876,
+   "digest": "sha256:935dda01ca4f3691d973bf6a8b142d964db63dc9ea28148cfc5fe7c4dadd1f74",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose_1.57.0_arm64-vulkan.deb"
+  },
+  {
+   "name": "goose_1.57.0_arm64.deb",
+   "size": 143233446,
+   "digest": "sha256:71ab056e224078511b20f81ea4fd8ff412fb195db027483ea425d8ec63540a07",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/goose_1.57.0_arm64.deb"
+  },
+  {
+   "name": "Goose_intel_mac.zip",
+   "size": 192301126,
+   "digest": "sha256:5811118d129f3e5fd25f96fb67cf41d6e0bdcfd5ffeff9a1aeb1dff2daacdb0d",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/Goose_intel_mac.zip"
+  },
+  {
+   "name": "installer.yml",
+   "size": 358,
+   "digest": "sha256:2251380325cad8b29d5dfce5223c606088b85a275d9c7c56dc3f031c1d446b1f",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/installer.yml"
+  },
+  {
+   "name": "io.github.block.Goose_stable_aarch64-vulkan.flatpak",
+   "size": 131636376,
+   "digest": "sha256:e686c5a23312a716f713a4cfa491facfe728e498ec0d2fc30704a033b0391f7a",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/io.github.block.Goose_stable_aarch64-vulkan.flatpak"
+  },
+  {
+   "name": "io.github.block.Goose_stable_aarch64.flatpak",
+   "size": 128510928,
+   "digest": "sha256:83f9d8bee16f16e0c0935c79b5d0068b8305b2e583ddfd1acee3041cbf0d50a4",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/io.github.block.Goose_stable_aarch64.flatpak"
+  },
+  {
+   "name": "io.github.block.Goose_stable_x86_64-vulkan.flatpak",
+   "size": 141860808,
+   "digest": "sha256:13fb0df88d8624e3e276639938e4550d09097e240cb8b2889dad79f6ac246ce7",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/io.github.block.Goose_stable_x86_64-vulkan.flatpak"
+  },
+  {
+   "name": "io.github.block.Goose_stable_x86_64.flatpak",
+   "size": 137771760,
+   "digest": "sha256:53b0e42a97cc14520bf0a23d3726762bb38ee74a81af3b8d15c55c9f9c663e2e",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/io.github.block.Goose_stable_x86_64.flatpak"
+  },
+  {
+   "name": "mac-update-requirements.json",
+   "size": 84,
+   "digest": "sha256:0171746b828964cda5b9e76bd8ee9d13b1fe9c654f7de7f55067d4364f857286",
+   "browser_download_url": "https://github.com/aaif-goose/goose/releases/download/v1.57.0/mac-update-requirements.json"
+  }
+ ]
+}

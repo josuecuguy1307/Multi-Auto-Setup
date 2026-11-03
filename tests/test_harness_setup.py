@@ -238,7 +238,7 @@ def test_preparing_a_machine_with_no_pick_says_why_in_words_and_starts_nothing(t
             out = c.harness.intents(CLAUDE, view["id"])
             assert out["run"]["finished"] is True
             txt = " ".join(i["text_fallback"] for i in out["intents"])
-            assert "it could not start" in txt.lower() and "pick an option for that machine first" in txt.lower()
+            assert "it could not start" in txt.lower() and "no option has been picked for that machine yet" in txt.lower()
             with pytest.raises(Refused):
                 c.harness.start(CLAUDE, "prepare", "not-a-node")
     run(go())
@@ -282,7 +282,7 @@ def test_pick_plan_text_each_step_through_the_dialog_progress_minimal_call_and_u
             view = c.runs.view(r.id)
             for s in view["plan"]["steps"]:
                 assert D(s["command"]) in plan_txt and D(s["undo"]) in plan_txt and f"Step {s['n']} of 6" in plan_txt
-            assert view["plan"]["hash"] in plan_txt and "cannot approve or undo anything" in plan_txt and "Undoing is its own request" in plan_txt
+            assert view["plan"]["hash"].removeprefix("sha256:")[:8] in plan_txt and "cannot approve or undo anything" in plan_txt and "Undoing is its own request" in plan_txt
             # 6 steps to run and 6 to undo: twelve approvals, each of the one plan, each by the dialog, each its own ticket
             assert [(a, n) for a, n, _ in report["approvals"]] == [("run", n) for n in range(1, 7)] + [("undo", n) for n in range(6, 0, -1)]
             assert {h for _, _, h in report["approvals"]} == {view["plan"]["hash"]}
@@ -329,7 +329,7 @@ def test_open_webui_prepares_a_machine_with_its_own_dialogs_one_step_at_a_time_a
             assert all(D(view["plan"]["steps"][n]["command"]) in confs[n]["message"] and f"step {n + 1} of 6" in confs[n]["message"] for n in range(6))
             st = [e["data"]["description"] for e in chat.events if e["type"] == "status"]
             assert any(x.startswith("GUARD:") and "node1" in x and "step 5 of 6" in x for x in st) and any(x.startswith("OWNER:") and "answered approve_run_5" in x for x in st) and st[-1] == "Done"
-            assert "Setup plan for" in out and view["plan"]["hash"] in out
+            assert "Setup plan for" in out and view["plan"]["hash"].removeprefix("sha256:")[:8] in out
             conf = [e.payload for e in c.log.events("owner_confirmation")]
             assert len(conf) == 6 and all(p["channel"] == "openwebui" and p["mechanism"] == "host_dialog" and p["approved"] for p in conf)
             assert view["actors"]["CLAUDE-CODE"] == 0 and len(c.log.events("owner_authority_refused")) == 0
@@ -369,7 +369,7 @@ def test_claude_desktop_prepares_a_machine_the_model_relays_and_only_the_system_
             assert approvals == 6 and len(dialog.calls) == 6 and len(c.log.events("setup_step_approved")) == 6 and len(c.log.events("owner_authority_refused")) == 0
             alltext = "\n".join(texts)
             view = c.runs.view(run_id)
-            assert "Setup plan for" in alltext and view["plan"]["hash"] in alltext and all(D(st["command"]) in alltext for st in view["plan"]["steps"])
+            assert "Setup plan for" in alltext and view["plan"]["hash"].removeprefix("sha256:")[:8] in alltext and all(D(st["command"]) in alltext for st in view["plan"]["steps"])
             assert "mas_request_approval" in alltext and "approved by you" in alltext and "node1 · minimal call" in alltext
             assert "<svg" not in alltext and "data-card" not in alltext  # what the chat's model reads is words; the card HTML stays out of its reach
             assert all(c.harness.ticket(CLAUDE, t)["assurance"] in ("strong", "weak", "") for t in list(c.harness._tickets) if c.harness._tickets[t].channel == "claude-desktop")
@@ -436,7 +436,7 @@ def test_a_finished_setup_is_undone_later_in_a_new_run_from_the_record_plan_firs
             steps = rec["plan"]["steps"]
             assert all(f"Undo step {x['n']} of 6" in plan_txt and D(x["undo"]) in plan_txt for x in steps)  # what the recorded plan itself wrote as the undo of each step
             assert plan_txt.index("Undo step 6 of 6") < plan_txt.index("Undo step 1 of 6")  # newest first
-            assert rec["plan"]["plan_hash"] in plan_txt and "cannot approve anything" in plan_txt and "Only what that plan wrote is undone" in plan_txt and "SmolLM2" in plan_txt.splitlines()[0]
+            assert rec["plan"]["plan_hash"].removeprefix("sha256:")[:8] in plan_txt and "cannot approve anything" in plan_txt and "Only what that plan wrote is undone" in plan_txt and "SmolLM2" in plan_txt.splitlines()[0]
             assert approvals == [("undo", n) for n in range(6, 0, -1)] and len(dialog.calls) == 6
             assert all(rec["plan"]["plan_hash"] in m and "What is undone" in m for _, m in dialog.calls)
             prog = [t for k, _, t in texts if k == "progress"]

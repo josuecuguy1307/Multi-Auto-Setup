@@ -42,6 +42,20 @@ These are written down but have **not** been run end to end. Where a tile exists
 
 You have several computers and several AIs. Today each AI sees one machine, and you are the glue. MAS is the control layer between **you**, **the AI** and **your machines**: one computer coordinates, the others join with your permission, a local model discovers and sets them up, and every decision that matters is yours. The model chooses its actions; code enforces the rules.
 
+## New in this release
+
+Labels as in [Status](#status). Everything below was run only as SIMULATED-LOCAL (a test world on one machine) unless it says otherwise; none of it has run on real Windows.
+
+| | What | Where to read it |
+|---|---|---|
+| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/network-dark.svg"><img src="assets/readme/symbols/network-light.svg" alt="network" width="21"></picture> | **One look for every surface.** The logo, colors and 27 pixel symbols come from one file (`src/envrec_style/tokens.json`); the README images, the terminal banner and the Open WebUI cards are drawn from it, and tests fail if one drifts. The banner adapts to the terminal (wide, narrow, compact; truecolor, 256 or 16 colors; shades with `NO_COLOR`; plain text with no escape codes when there is no terminal). | [docs/STYLE.md](docs/STYLE.md) |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/owner-dark.svg"><img src="assets/readme/symbols/owner-light.svg" alt="owner" width="21"></picture> | **A first-run menu.** `mas` with no arguments in a terminal shows the banner and a short menu for this computer only (role, service, connect Claude Desktop, announce a node). Each step runs the existing command through its own parser, which shows its plan and waits for your typed yes; the menu never answers for you. With no terminal it prints help and exits with code 2, with no prompt. The installers do not open it yet. | `src/envrec_mas/menu.py`, `tests/test_menu.py` |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/model-dark.svg"><img src="assets/readme/symbols/model-light.svg" alt="model" width="21"></picture> | **A recommender that checks itself by code.** For a task it has no answer for, it looks for candidate tools and models in public sources. A lead is kept only if code re-checks its license, whether it is archived, its last push, its stars and its domain tags from the page it came from; a rejected one is counted with a typed reason. The task type is chosen by independent picks, and when no two agree the owner is asked one question instead of a guess. A cloud second opinion is used only if you allowed cloud use, only through the node that holds the access, and never for confidential work. The first-run profile also asks which of your subscriptions may be used automatically. Leads stay hypotheses until measured. | [docs/RECOMMENDATION_SPEC.md](docs/RECOMMENDATION_SPEC.md), `tests/test_research_checks.py`, `tests/test_type_choice.py`, `tests/test_slots.py`, `tests/test_subscriptions.py` |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/script-dark.svg"><img src="assets/readme/symbols/script-light.svg" alt="script" width="21"></picture> | **One format for everything the harness says to you.** A title line with a symbol, short sections, numbered options you can answer with a number, a `Next:` line only when something is left to do. Three levels, `brief`, `normal` and `detailed` (`mas config verbosity LEVEL`, or ask in a chat); the commands of a plan or an approval are never shortened, and a test shows the content is the same at every level. A new conformance check (HA11) fails if text that only informs asks you to decide. | `src/envrec_harness/formatter.py`, `tests/test_formatter.py` |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/guard-dark.svg"><img src="assets/readme/symbols/guard-light.svg" alt="guard" width="21"></picture> | **A voice skill for the chat's own sentences** (`mas-voice`): answer in the person's language, briefly, ask with options, never touch fixed strings. It is handed to the chat when it connects. Whether a model follows it in each language has **not** been tested yet. | `skills/mas-voice`, `tests/test_voice_skill.py` |
+
+Not run for any of the above: the real Open WebUI, the real Claude Desktop, and Windows. The verbosity control in the web panel is not built.
+
 ## How it works
 
 <picture>
@@ -141,6 +155,7 @@ uv venv --python 3.13 .venv && uv pip install --python .venv/bin/python -e .
 ## More
 
 - **Harness App standard:** how a chat connects to the harness without being modified: [docs/HARNESS_APP_STANDARD.md](docs/HARNESS_APP_STANDARD.md).
+- **Style:** the logo, colors and symbols: [docs/STYLE.md](docs/STYLE.md).
 - **Licenses of what is used:** [THIRD_PARTY.md](THIRD_PARTY.md).
 
 ## License

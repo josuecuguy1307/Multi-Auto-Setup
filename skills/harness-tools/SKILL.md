@@ -11,9 +11,9 @@ The unit of work is a **task**: some text, a task type, a sensitivity. The harne
 
 | The owner says... | Call | Then |
 |---|---|---|
-| "Summarize / extract / clean / compute / fix this" | `mas_create_task` | Show him the route and its reasoning, then `mas_request_approval` with the `intent_id`. Follow with `mas_job` when something may have changed. |
+| "Summarize / extract / clean / compute / fix this" | `mas_create_task` | Show him the route and its reasoning, then relay HIS answer to the question with `mas_answer` (the `intent_id`, approve or reject). Follow with `mas_job` when something may have changed. |
 | "Why would it go there?" / "What if the key is gone?" | `mas_explain_route` | Read the candidates, what was left out and why. It changes nothing. |
-| "Is the local model good enough for this?" | `mas_run_admission` | `mas_request_approval`, then `mas_job`. A measurement is what lets a route be "measured here". |
+| "Is the local model good enough for this?" | `mas_run_admission` | relay his answer with `mas_answer`, then `mas_job`. A measurement is what lets a route be "measured here". |
 | "Which model is best for this?" | `mas_measurements` | Read the ranking. It lists only what was MEASURED here, says when a measurement is stale, lists unmeasured candidates without ranking them. Never add a number that is not in it (no vendor or public figure). To measure another model, serve it, then `mas_run_admission`. |
 | "What happened to it?" | `mas_job` | If a step waits for him, say so. Do not call it again in a row. |
 | "What can my machines do?" / after a key or a setup | `mas_propose` | One proposal from the catalog and one question; present it as it is, add no options of your own. |
@@ -39,7 +39,7 @@ The unit of work is a **task**: some text, a task type, a sensitivity. The harne
 | The owner says... | Call | Then |
 |---|---|---|
 | "Build / prepare / close the month: several steps" | `mas_board_start` (goal, sensitivity) | `mas_board_show` until a plan is waiting for him |
-| (a plan is waiting) | `mas_board_approve` (board_id, decision_id) | `mas_request_approval` with the `intent_id`; he approves the whole plan ONCE in his own dialog; then `mas_board_show` again |
+| (a plan is waiting) | `mas_board_approve` (board_id, decision_id) | `mas_answer` with the `intent_id` and HIS answer; he approves the whole plan ONCE in the chat; then `mas_board_show` again |
 | "What is it doing?" | `mas_board_show` | Read each subtask, where it ran, its code check, and anything waiting for him |
 
 - The director (the coordinator's own model) breaks the goal into subtasks; you do not. Each subtask is routed by the written rule like any task; a confidential board stays on measured local routes at every step.

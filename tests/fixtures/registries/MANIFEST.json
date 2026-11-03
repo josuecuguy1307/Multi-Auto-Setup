@@ -1,0 +1,36 @@
+{
+ "fetched": "2026-11-02",
+ "note": "REAL responses from pypi.org and registry.npmjs.org, byte for byte; the npm ones are the registry's /latest manifest (the full packument of a package is tens of MB and over the page cap)",
+ "files": {
+  "pypi-files-to-prompt.json": {
+   "url": "https://pypi.org/pypi/files-to-prompt/json",
+   "bytes": 20709,
+   "sha256": "3598afd07371dcf494feb8adbae6b9ea0329d554c40e72043ed481be8c1998ba"
+  },
+  "pypi-ollama.json": {
+   "url": "https://pypi.org/pypi/ollama/json",
+   "bytes": 65295,
+   "sha256": "b55f424fd6a2af6655ec68a86ca3d906d08fe11120d604024ff7b1c95b5a378d"
+  },
+  "pypi-aider-chat.json": {
+   "url": "https://pypi.org/pypi/aider-chat/json",
+   "bytes": 301477,
+   "sha256": "cb124f46f966faa741bc675c76956b3c6fd50ed2e9bb8b0b0e7b6aba24afaf36"
+  },
+  "npm-opencode-ai.json": {
+   "url": "https://registry.npmjs.org/opencode-ai/latest",
+   "bytes": 2021,
+   "sha256": "8238b09a1b89cd12b3cead60e0bb29bc0c247541486de085e7d4bc9fb47f73e7"
+  },
+  "npm-openai-codex.json": {
+   "url": "https://registry.npmjs.org/%40openai%2Fcodex/latest",
+   "bytes": 3517,
+   "sha256": "12c1f3bb84f0235e52ccea4f26811e4671257e80b3c870da429674d29ca6b50d"
+  },
+  "npm-pi.json": {
+   "url": "https://registry.npmjs.org/%40earendil-works%2Fpi-coding-agent/latest",
+   "bytes": 5451,
+   "sha256": "af5b02cd5fdcaee5e4f3be9a6d909047afb888c280a7f69a31ac1fda004a68cd"
+  }
+ }
+}

@@ -135,7 +135,7 @@
      "exposed_beyond_loopback": null,
      "models": [
       {
-       "name": "qwen3.5:9b",
+       "name": "local-9b",
        "size_gib": 7.11
       },
       {

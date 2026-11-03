@@ -7,7 +7,7 @@ import json
 
 import yaml
 
-from acceptance_world import ENVS, MODEL, SENTINEL, build, wait_job, TOUCHES
+from acceptance_world import ENVS, MODEL, SENTINEL, build, owner_yes, wait_job, TOUCHES
 from test_acceptance_run import actors, answers, create, execute, filt, measure, no_secret_anywhere, record, run, sc, text
 
 NEW_TYPE = "classification"
@@ -17,6 +17,8 @@ def held_out_catalog():
     envs = copy.deepcopy(ENVS)
     mode = {"name": "no_tools", "confinement": "none_needed", "argv": ["run", "--text", "{prompt}"]}
     for e in envs.values():  # the new task type, as data: the type and its mode in every environment that can serve it
+        if not e.get("adapter"):
+            continue  # a skill pack is instructions, not an environment that serves a task type
         e["task_types"].append(NEW_TYPE)
         e["adapter"]["modes"][NEW_TYPE] = copy.deepcopy(e["adapter"]["modes"]["text"])
         for a in e["accesses"]:

@@ -76,7 +76,7 @@ def outcome(sent):
                                               ("opencode", "code", ["run", "--dir"]), ("opencode", "text", ["run"])])
 def test_each_environment_runs_with_the_arguments_its_recipe_declares_and_the_workspace_is_removed(world, env, ttype, needle):
     r, coord, me, tmp = world
-    kw = {"endpoint": "127.0.0.1:8080", "model": "qwen3-8b"} if env == "opencode" else {}
+    kw = {"endpoint": "127.0.0.1:8080", "model": "local-8b"} if env == "opencode" else {}
     sent = asyncio.run(send_run(r, coord, me, params_for(env, ttype, **kw)))
     status, result = outcome(sent)
     assert status == "done", result
@@ -101,12 +101,12 @@ def test_the_input_travels_as_stdin_for_the_tools_that_read_it_and_as_a_task_pre
 
 def test_opencode_gets_the_loopback_endpoint_and_a_permission_set_with_bash_denied_and_never_ask(world):
     r, coord, me, tmp = world
-    asyncio.run(send_run(r, coord, me, params_for("opencode", "code", endpoint="127.0.0.1:8080", model="qwen3-8b")))
+    asyncio.run(send_run(r, coord, me, params_for("opencode", "code", endpoint="127.0.0.1:8080", model="local-8b")))
     env = S.calls(tmp / "log", "opencode")[0]["env"]
     perm = json.loads(env["OPENCODE_PERMISSION"])
     assert perm == {"bash": "deny", "webfetch": "deny", "external_directory": "deny", "edit": "allow"} and "ask" not in env["OPENCODE_PERMISSION"]
     cfg = json.loads(env["OPENCODE_CONFIG_CONTENT"])
-    assert cfg["provider"]["llamacpp"]["options"]["baseURL"] == "http://127.0.0.1:8080/v1" and "qwen3-8b" in cfg["provider"]["llamacpp"]["models"]
+    assert cfg["provider"]["llamacpp"]["options"]["baseURL"] == "http://127.0.0.1:8080/v1" and "local-8b" in cfg["provider"]["llamacpp"]["models"]
 
 
 def test_an_environment_that_needs_a_sandbox_is_wrapped_by_the_backend_and_its_key_travels_by_name_only(world):
@@ -155,7 +155,7 @@ def test_pi_gets_its_home_redirected_into_the_workspace_and_a_models_json_for_th
         written["env"] = env
         return {"exit": 0, "stdout": "ok", "stderr": "", "timed_out": False, "duration_s": 0.1}
     r.ctx["run"] = fake_run
-    sent = asyncio.run(send_run(r, coord, me, params_for("pi", "code", endpoint="127.0.0.1:8080", model="qwen3-8b")))
+    sent = asyncio.run(send_run(r, coord, me, params_for("pi", "code", endpoint="127.0.0.1:8080", model="local-8b")))
     assert outcome(sent)[0] == "done"
     assert written["models"]["providers"]["llama-cpp"]["baseUrl"] == "http://127.0.0.1:8080/v1" and written["env"]["HOME"] == "/work/.home" and written["env"]["PI_OFFLINE"] == "1"
     assert not (tmp / "mas" / "workspaces" / "w1").exists()
@@ -169,7 +169,7 @@ def test_the_local_model_environment_posts_the_input_to_the_loopback_server(worl
         seen["url"], seen["body"] = str(request.url), json.loads(request.content)
         return httpx.Response(200, json={"choices": [{"message": {"content": " Summary. "}}]})
     r.ctx["transport"] = httpx.MockTransport(handler)
-    sent = asyncio.run(send_run(r, coord, me, params_for("llamacpp-local", "text", sens="confidential", endpoint="127.0.0.1:8080", model="qwen3-8b", text="Summarize this.")))
+    sent = asyncio.run(send_run(r, coord, me, params_for("llamacpp-local", "text", sens="confidential", endpoint="127.0.0.1:8080", model="local-8b", text="Summarize this.")))
     status, result = outcome(sent)
     assert status == "done" and result["output_text"] == "Summary." and seen["url"] == "http://127.0.0.1:8080/v1/chat/completions" and seen["body"]["messages"][0]["content"] == "Summarize this."
 
@@ -185,7 +185,7 @@ def _refuse(world, params, *, entry=None, **kw):
 @pytest.mark.parametrize("name", ["unknown_environment", "stale_recipe", "unsupported_os", "no_owner_origin", "bad_scope", "confidential_cloud", "not_loopback", "sandbox_missing", "not_installed", "bad_parameters"])
 def test_an_environment_run_is_refused_with_its_typed_reason_and_nothing_is_started(world, name):
     r, coord, me, tmp = world
-    params = params_for("opencode", "code", endpoint="127.0.0.1:8080", model="qwen3-8b")
+    params = params_for("opencode", "code", endpoint="127.0.0.1:8080", model="local-8b")
     kw = {}
     if name == "unknown_environment":
         r.ctx["envs"] = {k: v for k, v in ENVS.items() if k != "opencode"}
@@ -200,7 +200,7 @@ def test_an_environment_run_is_refused_with_its_typed_reason_and_nothing_is_star
     elif name == "confidential_cloud":
         params = params_for("claude-code", "text", sens="confidential")
     elif name == "not_loopback":
-        params = params_for("opencode", "code", endpoint="localhost:8080", model="qwen3-8b")
+        params = params_for("opencode", "code", endpoint="localhost:8080", model="local-8b")
     elif name == "sandbox_missing":
         params = params_for("pi", "code", endpoint="127.0.0.1:8080", model="m")
     elif name == "not_installed":
@@ -312,8 +312,8 @@ def test_a_confidential_text_task_from_a_local_chat_runs_on_the_local_model_and_
             try:
                 (tmp_path / "log").mkdir(exist_ok=True)
                 node_up(agent, tmp_path, transport=httpx.MockTransport(lambda req: httpx.Response(200, json={"choices": [{"message": {"content": "the summary"}}]})))
-                m = MachineFacts(machine_id=nid, os_family="darwin", installed=set(), signed_in=set(), model_endpoint="127.0.0.1:8080", model_id="qwen3-8b")
-                key = f"admission.text.{nid}.llamacpp-local.qwen3-8b.local-hardware"
+                m = MachineFacts(machine_id=nid, os_family="darwin", installed=set(), signed_in=set(), model_endpoint="127.0.0.1:8080", model_id="local-8b")
+                key = f"admission.text.{nid}.llamacpp-local.local-8b.local-hardware"
                 r, log, _ = build(c, nid, machine=m, adm=[(key, {"status": "tested", "graded_by": "code", "passed": 9, "of": 10, "identity": {}})])
                 before = len([e for e in events(c, "task_created")])
                 refused = r.route(task("conf-cloud", "text", "confidential", "cloud"))
@@ -359,7 +359,7 @@ def test_a_failing_grader_escalates_through_three_environments_and_then_stops_wi
             try:
                 (tmp_path / "log").mkdir(exist_ok=True)
                 node_up(agent, tmp_path, transport=httpx.MockTransport(lambda req: httpx.Response(200, json={"choices": [{"message": {"content": "wrong"}}]})))
-                m = MachineFacts(machine_id=nid, os_family="darwin", installed={"opencode", "claude-code"}, signed_in={"claude-code:plan"}, model_endpoint="127.0.0.1:8080", model_id="qwen3-8b")
+                m = MachineFacts(machine_id=nid, os_family="darwin", installed={"opencode", "claude-code"}, signed_in={"claude-code:plan"}, model_endpoint="127.0.0.1:8080", model_id="local-8b")
                 r, log, _ = build(c, nid, machine=m)
                 c.own_task("esc")
                 used = []

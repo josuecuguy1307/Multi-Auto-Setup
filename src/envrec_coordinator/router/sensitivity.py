@@ -19,7 +19,7 @@ def creation_refusal(task: Task, effective: str | None = None) -> Refusal | None
     """A task with no level, or a confidential one (its own level or inherited from an input) asked from a cloud chat, is refused before anything else (R1). No default level is ever guessed."""
     if task.sensitivity not in SENSITIVITIES:
         return Refusal(task_id=task.task_id, code="sensitivity_missing", reason=strings.refusal_text("sensitivity_missing"))
-    if (effective or task.sensitivity) == "confidential" and task.entry_chat.kind == "cloud":
+    if (effective or task.sensitivity) == "confidential" and task.entry_chat.kind == "cloud" and not task.held_inputs:  # the level of a task that holds harness-side inputs comes from them, not from what the chat said
         return Refusal(task_id=task.task_id, code="confidential_from_cloud_chat", reason=strings.refusal_text("confidential_from_cloud_chat"), details={"entry_chat": task.entry_chat.model_dump()})
     return None
 

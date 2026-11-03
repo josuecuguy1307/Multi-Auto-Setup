@@ -23,10 +23,11 @@ STR = {
         "pl_rule": "You approve each step yourself, one by one, and only with a gesture of yours: the system dialog (Touch ID or password), the chat's own dialog or the panel. This chat and its model cannot approve or undo anything.",
         "pl_status_pending": "pending", "ap_title": "Multi Auto Setup: approve a step", "ap_run": "Run", "ap_undo": "Undo", "ap_step": "{verb} step {n} of {of} on {machine}: {title}",
         "ap_summary": "{verb} step {n} of {of} on {machine}: {title}", "ap_size": "Size", "ap_ask_tool": "To approve it call mas_request_approval with this intent_id: the system dialog opens; your model cannot answer for you.", "ap_ask_cli": "Type yes below to approve this step; anything else declines it.",
+        "ap_ask_cli_plan": "Type yes below to approve this plan, or anything else to decline. It is ONE question for the whole plan.",
         "sp_line": "{machine} · {verb} step {n} of {of} «{title}»: {state}{extra}", "sp_run": "preparing", "sp_undo": "undoing", "sp_plan": "{machine} · the plan is ready: {steps} steps, {size} to download", "sp_plan_moved": "{machine} · the plan is ready: {steps} steps, {size} moved, nothing downloaded",
         "st_waiting_for_owner": "waiting for your approval", "st_approved": "approved by you", "st_sent": "sent to the machine", "st_accepted": "the machine accepted it", "st_running": "running", "st_done": "done",
         "st_failed": "failed", "st_rejected": "rejected", "st_timed_out": "no answer in time", "mc_line": "{machine} · minimal call: {ok}, latency {latency} ms{rate}, answer «{answer}» (text tested; vision untested)", "mc_rate": ", {tps} tokens/s", "ap_undoing": "What is undone",
-        "mc_ok": "ok", "mc_bad": "failed", "no_pick_hint": "Pick an option for that machine first.", "prep_refused": "It could not start: {reason}",
+        "mc_ok": "ok", "mc_bad": "failed", "no_pick_hint": "No option has been picked for that machine yet.", "prep_refused": "It could not start: {reason}",
         "undo_note": "Undoing is its own request with its own approval: each step to undo asks you separately.",
         "ud_head": "Plan to undo what was set up on {machine}: {option}", "ud_only": "Only what that plan wrote is undone, with the undo the plan itself carries; the newest step first.",
         "ud_step": "Undo step {n} of {of}: {title}", "ud_does": "What is done", "ud_removes": "Removes", "sp_undo_plan": "{machine} · the plan to undo is ready: {steps} steps",
@@ -76,6 +77,11 @@ STR["en"].update({
     "pr_ambiguous": "More than one waiting computer is called {ref}: say which one by the number in the list.", "pr_unknown": "{ref} is not one of the paired computers.",
     "mcp_recorded": "Answer recorded.",
     "ap_intent_id": "intent_id for mas_request_approval: {id}",
+    "ap_answer_id": "intent_id for mas_answer: {id}",
+    "ap_how_chat": "ask the owner this ONE question in the chat and relay HIS answer with mas_answer (intent_id {id}, option approve or reject); you never answer it for him",
+    "ap_how_dialog": "call mas_request_approval with intent_id {id}: the owner answers in his own system dialog",
+    "ap_chat_ask": "This is ONE question in the chat, bound to the plan above, not a system dialog. Show it to the owner exactly as it is, ask him to approve or reject, and relay HIS answer with mas_answer (option approve or reject) only after he has said it. It is recorded as answered in the chat, relayed by you. You never answer it for him.",
+    "act_open_head": "Open or running now:",
     "ap_plan_head": "{verb} this plan on {machine} ({n} step(s)){title}?",
     "ap_total": "Total download",
     "ap_plan_ask": "This is ONE question for the whole plan. Show it to the owner exactly as it is, ask him to approve or not, and relay HIS answer with mas_answer (option approve or reject) only after he has said it. It is recorded as answered in the chat, relayed by you, not as a system dialog. If a step fails or the plan changes, he is asked again.",
@@ -86,6 +92,19 @@ STR["en"].update({
     "pr_dialog_open": "{name} typed the right code. A confirmation dialog is now open on the owner's screen, showing its name and key fingerprint ({fp}). The owner answers there; there is nothing for me to call. Ask again in a few seconds for the outcome.",
     "un_summary": "Unpair {name} from this network?", "un_command": "Stop trusting {name}: its key is removed from this coordinator at once, so it is refused from now on. If it is connected it is told and forgets this coordinator.",
     "un_undo": "Pair it again: run mas join on {name}, then ask me to pair a new computer.",
+})
+
+STR["en"].update({
+    # ---- the one formatter for owner-facing text (envrec_harness/formatter.py): titles, section names and the lines it adds
+    "fm_network": "Your network", "fm_machine": "Machine: {name}", "fm_options": "Options for this machine", "fm_plan": "Setup plan", "fm_undo_plan": "Undo plan",
+    "fm_run": "Run {kind}: {status}", "fm_ask": "A decision for you", "fm_confirm": "Needs your approval", "fm_progress": "In progress", "fm_text": "From the harness", "fm_withheld": "Withheld",
+    "fm_confidential": "confidential", "fm_coordinator": "Coordinator: {name}", "fm_none_yet": "No paired machines yet.", "fm_idle": "idle", "fm_now": "now: {what}", "fm_seen": "last seen {ago} ago",
+    "fm_never_seen": "not seen yet", "fm_no_analysis": "not analysed yet", "fm_more": "… {n} more line(s); ask for the detailed view to read them", "fm_known": "known by", "fm_hypothesis": "unverified",
+    "fm_next": "Next: {what}", "fm_next_pick": "reply with the number of your choice.", "fm_next_approve": "approve or reject; nothing runs until you do.", "fm_next_none": "nothing is waiting on you.",
+    "fm_relay": "How to answer: {line}", "fm_resources": "Resources", "fm_ai": "AI available", "fm_findings": "Findings", "fm_system": "System", "fm_hardware": "Hardware",
+    "fm_option_line": "{title} ({kind}, {where})", "fm_where_local": "stays on the machine", "fm_where_cloud": "goes to the cloud", "fm_unmeasured": "not measured here",
+    "fm_who": "Who decided: {actors}", "fm_level": "View: {level}", "fm_step": "Step {n} of {of}: {title}", "fm_hash_hidden": "plan hash: shown in the detailed view",
+    "lv_brief": "brief", "lv_normal": "normal", "lv_detailed": "detailed",
 })
 
 # Labels of the machine facts the cards show, by fact key. A key without a row is shown by its own name (we never invent a friendlier word for a fact we do not know).

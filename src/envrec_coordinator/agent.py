@@ -210,10 +210,11 @@ class AnalysisAdapter(BaseAdapter):
 class OptionsAdapter(BaseAdapter):
     """Tools of protocol-setup-options: read the STORED analysis (no re-probing), ask the owner closed questions, look up the catalog, build the options (code applies the filters), explain each."""
 
-    def __init__(self, *, node_id: str, node_name: str, load_stored, owner_events, catalog: dict | None = None) -> None:
+    def __init__(self, *, node_id: str, node_name: str, load_stored, owner_events, catalog: dict | None = None, prefer_publisher=None) -> None:
         super().__init__(owner_events=owner_events)
         self.node_id, self.node_name, self.load_stored = node_id, node_name, load_stored  # load_stored() -> the stored analysis of this node, or None
         self.catalog = catalog
+        self.prefer_publisher = prefer_publisher or (lambda: None)  # the owner's preferred publisher from his profile, read when the options are built
         self.options_built: list[dict] = []
         self.explained: set[str] = set()
 
@@ -303,7 +304,7 @@ class OptionsAdapter(BaseAdapter):
         if choice is None:
             return ProbeResult(ok=False, error="ask the owner which_ai first: the options are built from the owner's choice")
         res = O.build_options(facts, choice=str(choice), sensitivity=str(facts.get(f"{ANSWER_PREFIX}sensitivity", "internal")), chosen_cli=facts.get(f"{ANSWER_PREFIX}which_cli"),
-                              chosen_provider=facts.get(f"{ANSWER_PREFIX}which_api_provider"), catalog=self.catalog)
+                              chosen_provider=facts.get(f"{ANSWER_PREFIX}which_api_provider"), catalog=self.catalog, prefer_publisher=self.prefer_publisher())
         self.options_built = res["options"]
         out = [_fact(ctx.target.id, "option.set", {"choice": res["choice"], "ids": [o["id"] for o in res["options"]], "considered": res["considered"], "kept": res["kept"], "rule": res["rule"]},
                      "build_options", "envrec_coordinator.options", event_id=ctx.event_id, confidence=1.0)]

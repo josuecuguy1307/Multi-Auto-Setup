@@ -109,12 +109,13 @@ model_sources:
   - {id: tinyllama,     status: approve, hub: huggingface, author: TinyLlama,     formats: [gguf], seen: "3 gguf repos: 3 apache-2.0"}
   # Conversion hubs host other people's models under mixed licenses. Off by default; per-repo license filtering would still apply.
   - {id: ggml-org,      status: propose-off, hub: huggingface, author: ggml-org,   formats: [gguf], seen: "100 repos: 50 apache-2.0, 11 mit, 27 none, 7 other, 1 cc-by-nc, 1 gemma"}
-  - {id: bartowski,     status: approve, hub: huggingface, author: bartowski,  formats: [gguf], repos: [bartowski/Meta-Llama-3.1-8B-Instruct-GGUF], seen: "approved for ONE repo (the ungated quantization of Meta Llama 3.1 8B Instruct, license llama3.1, class community-host-run: the owner runs it on his own machines); the other 99+ repos of this author stay off (mixed licenses)"}
+  - {id: bartowski,     status: approve, hub: huggingface, author: bartowski,  formats: [gguf], repos: [bartowski/Meta-Llama-3.1-8B-Instruct-GGUF, bartowski/Llama-3.2-3B-Instruct-GGUF], seen: "approved for ONE repo (the ungated quantization of Meta Llama 3.1 8B Instruct, license llama3.1, class community-host-run: the owner runs it on his own machines); the other 99+ repos of this author stay off (mixed licenses)"}
   - {id: unsloth,       status: propose-off, hub: huggingface, author: unsloth,    formats: [gguf], seen: "100 repos: 63 apache-2.0, 8 mit, 23 other, 2 llama3.2, 2 gemma, 1 llama3.3"}
+  - {id: nvidia,        status: approve, hub: huggingface, author: nvidia,        formats: [gguf], repos: [nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB], seen: "approved for ONE repo: NVIDIA's own GGUF of Nemotron 3.5 Bolt E4B, whose model page states openmdw-1.1 (not a known license: it stays out with that reason unless the table learns it)"}
   # Excluded publishers
-  - {id: google,        status: exclude, seen: "37 gguf repos: 25 'gemma' license (restricted use), 9 apache-2.0, 3 llama; the Gemma terms restrict use"}
+  - {id: google,        status: approve, hub: huggingface, author: google,        formats: [gguf], repos: [google/gemma-4-E4B-it-qat-q4_0-gguf], seen: "approved for ONE repo: Google's own QAT quantization of Gemma 4 E4B, whose model page states apache-2.0 (read 2026-11-02); the other Google GGUF repos stay out (most state the Gemma terms)"}
   - {id: meta-llama,    status: exclude, seen: "0 gguf repos under this author when read; Meta's Llama licenses are now KNOWN licenses (class community-host-run: not permissive, allowed as a model the owner runs on their own machines, the license name recorded), so approving this source or any quantizer of a Llama model no longer hides it for its license"}
-  - {id: liquidai,      status: exclude, seen: "49 repos: 48 'other' (LFM license), restricted"}
+  - {id: liquidai,      status: approve, hub: huggingface, author: LiquidAI,     formats: [gguf], repos: [LiquidAI/LFM3-1.7B-GGUF], seen: "approved for ONE repo, to see what the generator does with its license (lfm1.0, not a known license: it stays out with that reason); the other 48 repos stay out"}
   - {id: lmstudio-community, status: exclude, seen: "100 repos: 41 apache-2.0 but also cc-by-nc, llama3, gemma, none; mixed and redundant with the first-party sources"}
 quantizations: [Q4_K_M, Q4_0, Q8_0]    # files outside these are ignored
 

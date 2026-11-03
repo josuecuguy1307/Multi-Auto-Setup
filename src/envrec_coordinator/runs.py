@@ -159,13 +159,16 @@ class AgentRuns:
 
     def _started(self, run: AgentRun) -> None:
         """Who asked for this run. The owner's own press is an OWNER event in the run's log; a start by the operator (CLAUDE-CODE) is counted apart and never as the owner's."""
+        if run.via == "harness":  # started by the harness itself (a chain reading a computer): a GUARD record, never an OWNER event
+            run.store.append_event(Event(actor=Actor.policy, type="run_requested", payload={"kind": run.kind, "via": "harness"}, run_id=None, tag="GUARD"))
+            return
         A.write_owner_event(run.store, "run_requested", {"kind": run.kind, "via": run.via, **({"by": "claude-code"} if run.via == "claude-code" else {})}, None)  # OWNER for the owner's press, CLAUDE-CODE for the operator's
 
     def start_analysis(self, node_id: str, via: str = "web", *, model=None, status: dict | None = None) -> AgentRun:
         node = self.coord.registry.get(node_id)
         run = AgentRun(uuid.uuid4().hex[:10], "analysis", node_id, node.name if node else node_id, via)
         self.runs[run.id] = run
-        self.coord.log.add("analysis_requested", {"run": run.id, "node": node_id, "via": via}, owner=(via != "claude-code"))  # the OWNER pressed the button, unless the start says it was the operator (CLAUDE-CODE)
+        self.coord.log.add("analysis_requested", {"run": run.id, "node": node_id, "via": via}, owner=(via not in ("claude-code", "harness")))  # a chain's own read is the harness's, not the owner's press  # the OWNER pressed the button, unless the start says it was the operator (CLAUDE-CODE)
         if node is None:
             run.status, run.reason = "failed", "that computer is not paired"
             return run
@@ -207,7 +210,8 @@ class AgentRuns:
             run.status, run.reason = "no_model", "no model available on the coordinator: " + (run.model_status.get("reason") or "")
             run.finished = time.time()
             return run
-        adapter = A.OptionsAdapter(node_id=node_id, node_name=run.node_name, load_stored=lambda: self.stored_analysis(node_id), owner_events=self._owner_event)
+        adapter = A.OptionsAdapter(node_id=node_id, node_name=run.node_name, load_stored=lambda: self.stored_analysis(node_id), owner_events=self._owner_event,
+                                   prefer_publisher=lambda: self.coord.services.profile.get("preferred_publisher") if getattr(self.coord, "services", None) is not None else None)
         run.adapter = adapter
         run.task = asyncio.ensure_future(self._execute(run, adapter, model or self._model()))
         return run
@@ -294,7 +298,8 @@ class AgentRuns:
         approve = lambda h, n, a, by: self.coord.log.add("setup_step_approved", {"run": run.id, "node": "this-computer", "plan_hash": h, "step": n, "action": a, **({"by": "claude-code"} if by != "owner" else {})}, owner=True)  # noqa: E731
         from envrec_coordinator import connect as CN
         adapter = ConnectAdapter(detect=lambda: CN.detect(self.coord.connect_env), build=lambda h: CN.build_plan(h, self.coord.connect_env), preselected=host or None,
-                                 start_step=lambda plan, n, action: self.coord.connect_step(plan, n, action), approve=approve, owner_events=self._owner_event)
+                                 start_step=lambda plan, n, action: self.coord.connect_step(plan, n, action), approve=approve, owner_events=self._owner_event,
+                                 plan_approval=approval.mechanism_for("connect") if approval.mechanism_for("connect") == approval.CHAT_CHOICE else None)
         run.adapter = adapter
         run.task = asyncio.ensure_future(self._execute(run, adapter, model or self._model()))
         return run
@@ -336,6 +341,35 @@ class AgentRuns:
         tmp = self.picks / f"{run.node_id}.json.tmp"
         tmp.write_text(json.dumps({"run": run.id, "node": run.node_id, "picked_at": time.time(), "option": option}, ensure_ascii=False, default=str))
         tmp.replace(self.picks / f"{run.node_id}.json")
+
+    def record_pick_option(self, node_id: str, option: dict, run_id: str) -> None:
+        """The same stored pick `record_pick` writes, for an option the harness built by code and the owner chose in a chat question (not in an options run)."""
+        self.picks.mkdir(parents=True, exist_ok=True)
+        tmp = self.picks / f"{node_id}.json.tmp"
+        tmp.write_text(json.dumps({"run": run_id, "node": node_id, "picked_at": time.time(), "option": option}, ensure_ascii=False, default=str))
+        tmp.replace(self.picks / f"{node_id}.json")
+
+    # ---- tools the harness installed on a computer (one file per computer, one entry per environment) ---------------------------------------------------------
+
+    def stored_tools(self, node_id: str) -> dict[str, dict]:
+        try:
+            doc = json.loads((Path(self.coord.state) / "tool_installs" / f"{node_id}.json").read_text())
+        except (OSError, ValueError):
+            return {}
+        return doc if isinstance(doc, dict) else {}
+
+    def _write_tools(self, node_id: str, doc: dict) -> None:
+        d = Path(self.coord.state) / "tool_installs"
+        d.mkdir(parents=True, exist_ok=True)
+        tmp = d / f"{node_id}.json.tmp"
+        tmp.write_text(json.dumps(doc, default=str))
+        tmp.replace(d / f"{node_id}.json")
+
+    def save_tool(self, node_id: str, env_id: str, doc: dict) -> None:
+        self._write_tools(node_id, {**self.stored_tools(node_id), env_id: doc})
+
+    def drop_tool(self, node_id: str, env_id: str) -> None:
+        self._write_tools(node_id, {k: v for k, v in self.stored_tools(node_id).items() if k != env_id})
 
     def stored_pick(self, node_id: str) -> dict | None:
         try:
@@ -476,6 +510,10 @@ class AgentRuns:
             if run.kind in ("install", "uninstall", "connect"):  # the protocol's own terminal state is the status: done, rolled_back, cannot_install, nothing_to_undo or nothing_to_connect
                 run.status = state if proto_done and state in ("done", "rolled_back", "cannot_install", "nothing_to_undo", "nothing_to_connect") else "blocked_needs_human" if reason == "blocked_needs_human" else "stopped"
                 run.reason = "" if proto_done else f"the run ended before the protocol did: {reason}"
+                if state == "nothing_to_connect" and run.kind == "connect":  # the refusal's own words are the reason the owner reads (quit the chat, then ask again), not a silent end
+                    refused = next((f for f in run.store.current_facts(run.target.id) if f.key == "setup.refused"), None)
+                    if refused is not None and isinstance(refused.value, dict):
+                        run.reason = str(refused.value.get("text", ""))[:500]
             if run.kind == "analysis" and run.status == "done":
                 self._store_analysis(run)
             if run.kind == "draft" and run.status == "done":

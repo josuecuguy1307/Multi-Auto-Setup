@@ -260,7 +260,7 @@ def test_the_read_only_types_still_refuse_every_write_shaped_parameter(tmp_path)
 
 
 def test_the_allowlist_is_eight_read_only_types_and_the_two_named_write_types():
-    assert set(node_tasks.ALLOWED) == {"node_report", "machine_analysis", "credential_presence", *T.PROBES, *T.WRITE_TYPES} and T.WRITE_TYPES == ("setup_step", "environment_run", "credential_step")  # the credential change is the third write (contract 3.10), with its read-only presence probe
+    assert set(node_tasks.ALLOWED) == {"node_report", "machine_analysis", "credential_presence", "list_dir", "model_list", *T.PROBES, *T.WRITE_TYPES} and T.WRITE_TYPES == ("setup_step", "environment_run", "credential_step")  # the credential change is the third write (contract 3.10), with its read-only presence probe
     assert set(T.PARAMS) == set(node_tasks.ALLOWED)
     read_only = set(node_tasks.ALLOWED) - set(T.WRITE_TYPES)
     for t in read_only:
