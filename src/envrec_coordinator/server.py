@@ -315,7 +315,16 @@ class Coordinator:
             pass
 
     def analysis_of(self, node_id: str) -> dict | None:
-        return self.registry.load_analysis(node_id) if self.registry.get(node_id) else None
+        """The ONE lookup of a machine's stored analysis, shared by every reader: what a finished harness analysis run stored (the runs store, complete under the current spec) first; an
+        analysis a machine_analysis task stored (the registry store) only as the legacy fallback. Two stores exist on disk, but no reader picks one on its own any more."""
+        if self.registry.get(node_id) is None:
+            return None
+        doc = self.runs.stored_analysis(node_id)
+        return doc if doc is not None else self.registry.load_analysis(node_id)
+
+    def analysis_present(self, node_id: str) -> bool:
+        """Whether any analysis record of this machine exists at all, usable or not: a refusal can then say the true thing (none stored, or one stored that no longer serves)."""
+        return self.runs.stored_analysis_record(node_id) is not None or self.registry.load_analysis(node_id) is not None
 
     # ---- harness runs (the model drives; see runs.py) ----
 
