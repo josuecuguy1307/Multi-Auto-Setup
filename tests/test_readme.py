@@ -24,7 +24,9 @@ def test_every_local_link_and_image_exists():
 
 def test_no_license_badge_until_the_owner_chooses():
     assert "img.shields.io/badge/license" not in README and "img.shields.io/github/license" not in README
-    assert "has not been chosen" in README
+    assert (ROOT / "LICENSE").exists()
+    assert "## License" in README
+    assert "Licensed under the Apache License, Version 2.0. See LICENSE and NOTICE." in README
 
 
 def test_public_readme_has_no_ai_assisted_or_not_tested_claims():
