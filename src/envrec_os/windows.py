@@ -5,6 +5,7 @@ from __future__ import annotations
 import getpass
 import os
 import subprocess
+from contextlib import contextmanager
 from pathlib import Path
 
 
@@ -24,6 +25,17 @@ class WindowsLayer:
 
     def make_executable(self, path: Path) -> None:
         return None  # Windows has no execute bit: a file runs by its extension
+
+    @contextmanager
+    def raw_terminal(self, fd: int):
+        yield  # UNTESTED: the console already delivers one key at a time
+
+    def read_key(self, stream) -> str:
+        import msvcrt  # UNTESTED: written without a Windows machine
+        ch = msvcrt.getwch()
+        if ch in ("\x00", "\xe0"):
+            return {"H": "\x1b[A", "P": "\x1b[B"}.get(msvcrt.getwch(), "\x1b")
+        return ch
 
     def enable_ansi(self) -> None:
         """Turn on virtual terminal processing for stdout and UTF-8 output, so the banner's colors and blocks show. UNTESTED here (needs Windows)."""

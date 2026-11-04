@@ -86,10 +86,15 @@ def cmd_coordinator_start(a) -> int:
     try:
         asyncio.run(run())
     except BindRefused as exc:
-        print(f"refused: {exc}", file=sys.stderr)
+        from envrec_mas.tui import translate_error
+        info = translate_error(str(exc))
+        print(f"{info.headline}. {info.next_action}\nTechnical detail: {exc}", file=sys.stderr)
         return EXIT_USAGE
     except OSError as exc:
-        print(f"could not listen on {cfg['bind']}:{cfg['port']}" + (f" or on the web screen's port {cfg['web_port']}" if cfg["web"] else "") + f": {exc.strerror or exc}", file=sys.stderr)
+        from envrec_mas.tui import translate_error
+        raw = f"could not listen on {cfg['bind']}:{cfg['port']}" + (f" or on the web screen's port {cfg['web_port']}" if cfg["web"] else "") + f": {exc.strerror or exc}"
+        info = translate_error(raw)
+        print(f"{info.headline}. {info.cause} {info.next_action}\nTechnical detail: {raw}", file=sys.stderr)
         return 1
     except KeyboardInterrupt:
         pass
@@ -566,11 +571,16 @@ def main(argv: list[str] | None = None) -> int:
     fg = sub.add_parser("forget", help="on a node: forget the coordinator locally")
     fg.add_argument("--yes", action="store_true", help="answer yes to the question that was shown")
     fg.set_defaults(fn=lifecycle.cmd_forget)
+    pv = sub.add_parser("preview", help="try the interactive screens with fake computers; nothing is changed")
+    pv.set_defaults(fn=lambda a: __import__("envrec_mas.tui", fromlist=["x"]).main_preview())
     a = p.parse_args(argv)
     if a.cmd is None:
-        from envrec_mas import menu
+        from envrec_mas import menu, tui
         from envrec_style import term
-        code = menu.main_for_terminal(_state(a), ["--state-dir", a.state_dir] if a.state_dir else [])
+        state_args = ["--state-dir", a.state_dir] if a.state_dir else []
+        code = tui.main_for_terminal(_state(a), state_args)
+        if code == 2:  # no interactive terminal: the setup menu, then plain help
+            code = menu.main_for_terminal(_state(a), state_args)
         if code == 2:  # no terminal to answer on: say what `mas` can do and never wait for input
             print(term.plain_text() + "\n\n" + p.format_help())
         return code

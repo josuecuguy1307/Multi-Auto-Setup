@@ -39,6 +39,12 @@ class OsLayer(Protocol):
     def spawn_detached(self, argv: list[str], cwd: Path, log_path: Path, env: dict[str, str] | None = None) -> int:
         """Start a program that outlives its parent, with no console and no input, its output going to `log_path`. Returns its process id. No shell: `argv` is the whole command."""
 
+    def raw_terminal(self, fd: int):
+        """Context manager: read keys one at a time without waiting for Enter, restoring the terminal on exit."""
+
+    def read_key(self, stream) -> str:
+        """One key as text: a character, or an escape sequence for an arrow key."""
+
 
 def family() -> str:
     if sys.platform == "win32":
