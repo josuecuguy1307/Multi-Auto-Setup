@@ -462,13 +462,18 @@ class AgentRuns:
         tmp.replace(self.analyses / f"{run.node_id}.json")
         self.coord.log.add("analysis_stored", {"run": run.id, "node": run.node_id, "facts": len(rows)})
 
-    def stored_analysis(self, node_id: str) -> dict | None:
-        """The stored analysis of a node, or None when there is none (or it is not a complete one)."""
+    def stored_analysis_record(self, node_id: str) -> dict | None:
+        """The stored analysis document exactly as it lies on disk, usable or not: who asks whether one exists at all reads this, never a second copy of the path."""
         try:
             doc = json.loads((self.analyses / f"{node_id}.json").read_text())
         except (OSError, ValueError):
             return None
-        return doc if isinstance(doc, dict) and self._analysis_need() <= set(doc.get("facts", {})) else None  # an analysis made under an older, narrower spec does not count
+        return doc if isinstance(doc, dict) else None
+
+    def stored_analysis(self, node_id: str) -> dict | None:
+        """The stored analysis of a node, or None when there is none (or it is not a complete one)."""
+        doc = self.stored_analysis_record(node_id)
+        return doc if doc is not None and self._analysis_need() <= set(doc.get("facts", {})) else None  # an analysis made under an older, narrower spec does not count
 
     @staticmethod
     def _analysis_need() -> set[str]:

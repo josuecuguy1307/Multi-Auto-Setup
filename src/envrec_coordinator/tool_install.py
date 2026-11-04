@@ -16,6 +16,7 @@ from envrec_net import setup as P
 STEP_WAIT_S = 1200.0
 TI_NO_ENV = "The catalog has no environment named {environment}."
 TI_NO_ANALYSIS = "There is no stored analysis of {machine}: analyse it first, so the harness knows its system and architecture."
+TI_OUTDATED_ANALYSIS = "The stored analysis of {machine} no longer serves: it was made under an older, narrower spec and lacks facts the harness now needs. Analyse it again, so the harness knows its system and architecture."
 TI_NO_MACHINE = "Say which computer: {names}."
 TI_REFUSED = "{environment} cannot be installed on {machine}: {state}: {why}"
 TI_NOT_INSTALLED = "{environment} is not installed on {machine} by the harness, so there is nothing to undo."
@@ -52,7 +53,7 @@ class ToolInstallTools:
             return self._tool_undo(ch, entry, nid, name)
         analysis = self.coord.analysis_of(nid)
         if analysis is None:
-            return self._out(False, TI_NO_ANALYSIS.format(machine=name))
+            return self._out(False, (TI_OUTDATED_ANALYSIS if self.coord.analysis_present(nid) else TI_NO_ANALYSIS).format(machine=name))  # the true reason: nothing stored, or a stored one that no longer serves
         n = O._norm({k: row.get("value") for k, row in (analysis.get("facts") or {}).items()})
         permissive = set(E.load_policy().get("permissive_licenses", []))
         try:

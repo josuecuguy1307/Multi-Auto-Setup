@@ -221,6 +221,100 @@ def test_the_node_refuses_a_wrong_hash_flags_it_does_not_know_a_program_that_fai
 
 # ---- the services flow in the acceptance world --------------------------------------------------------------------------------------------------------------------------------------------
 
+def harness_analysis(c, nid):
+    """What a finished harness analysis run stores (runs store only, never the registry store): the record mas_prepare reads."""
+    import time as _t
+    facts = {"machine.os.family": "linux", "machine.os.name": "Linux", "machine.os.arch": "x86_64", "machine.disk_free_gib": 200, "machine.ram_total_gib": 16,
+             "machine.ram_available_gib": 10, "machine.vram_gib": 0, "machine.gpus": [], "machine.model_path": "cpu", "machine.runtimes": [],
+             "machine.ai_clis": [], "machine.api_key_variable_names": [], "analysis.finished": True}
+    c.runs.analyses.mkdir(parents=True, exist_ok=True)
+    (c.runs.analyses / f"{nid}.json").write_text(json.dumps({"run": "seeded", "node": nid, "stored_at": _t.time(), "facts": {k: {"value": v, "status": "tested"} for k, v in facts.items()}}))
+
+
+class StubOrigin:
+    """Only the address a plan is built from (no server is started: reaching the plan never downloads)."""
+    @staticmethod
+    def url(p):
+        return "http://127.0.0.1:9" + p
+
+
+def empty_registry(c, nid):
+    (c.registry.dir / f"analysis-{nid}.json").unlink(missing_ok=True)  # build() seeds a registry analysis for every world (acceptance_world.py): remove the file in this test's own tmp dir, so that store is genuinely empty (the reader itself is not patched)
+    assert c.registry.load_analysis(nid) is None
+
+
+@pytest.mark.skipif(not POSIX, reason="the fake program is a POSIX script")
+def test_install_tool_reads_the_analysis_a_harness_run_stored(tmp_path, monkeypatch):
+    """Regression (real failure on the Lenovo): the owner analysed with mas_start, mas_prepare used that analysis, yet mas_install_tool refused 'no stored analysis' for every tool."""
+    async def go():
+        body = tool_archive("tar.gz")
+        entry, _ = fake_entry(StubOrigin, body, "tar.gz")
+        w, c, nid, host, teardown = await build(tmp_path)
+        try:
+            harness_analysis(c, nid)  # only the runs store holds an analysis; the registry store is emptied below
+            empty_registry(c, nid)
+            monkeypatch.setattr(TP, "load_tool_recipes", lambda path=None: {"github-release-tool": tool_recipe()})
+            c.services.catalog["faketool"] = entry
+            r = c.services.install_tool(CH, environment="faketool")
+            assert r["ok"] and "Install Fake tool" in r["text"], r["text"]
+        finally:
+            await teardown()
+    run(go())
+
+
+def test_install_tool_refuses_when_no_analysis_exists_anywhere(tmp_path):
+    async def go():
+        w, c, nid, host, teardown = await build(tmp_path)
+        try:
+            empty_registry(c, nid)  # and no harness analysis was ever stored for this machine
+            r = c.services.install_tool(CH, environment="opencode")
+            assert not r["ok"] and "no stored analysis" in r["text"], r["text"]
+        finally:
+            await teardown()
+    run(go())
+
+
+def test_install_tool_says_the_true_reason_for_an_incomplete_stored_analysis(tmp_path):
+    async def go():
+        w, c, nid, host, teardown = await build(tmp_path)
+        try:
+            empty_registry(c, nid)
+            c.runs.analyses.mkdir(parents=True, exist_ok=True)  # stored under an older, narrower spec: most facts the current one needs are missing
+            (c.runs.analyses / f"{nid}.json").write_text(json.dumps({"run": "old", "node": nid, "stored_at": 1.0, "facts": {"machine.os.family": {"value": "linux", "status": "tested"}}}))
+            r = c.services.install_tool(CH, environment="opencode")
+            assert not r["ok"] and "no longer serves" in r["text"] and "no stored analysis" not in r["text"], r["text"]
+        finally:
+            await teardown()
+    run(go())
+
+
+def test_install_tool_does_not_borrow_another_machines_analysis(tmp_path):
+    async def go():
+        w, c, nid, host, teardown = await build(tmp_path)
+        try:
+            empty_registry(c, nid)
+            harness_analysis(c, "another-machine")  # a complete analysis, but of a different computer
+            r = c.services.install_tool(CH, environment="opencode")
+            assert not r["ok"] and "no stored analysis" in r["text"], r["text"]
+        finally:
+            await teardown()
+    run(go())
+
+
+@pytest.mark.parametrize("env", ["opencode", "codex", "goose"])
+def test_every_shipped_tool_reaches_the_plan_through_the_same_lookup(tmp_path, env):
+    async def go():
+        w, c, nid, host, teardown = await build(tmp_path)
+        try:
+            empty_registry(c, nid)
+            harness_analysis(c, nid)
+            r = c.services.install_tool(CH, environment=env)
+            assert r["ok"] and "step(s)" in r["text"], (env, r["text"])
+        finally:
+            await teardown()
+    run(go())
+
+
 @pytest.mark.skipif(not POSIX, reason="the fake program is a POSIX script")
 def test_one_chat_question_then_the_steps_then_the_router_sees_the_tool_and_the_node_finds_it_and_it_can_be_undone(tmp_path, monkeypatch):
     async def go():
