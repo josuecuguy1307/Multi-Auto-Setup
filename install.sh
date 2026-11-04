@@ -14,8 +14,8 @@
 #           --no-join                do not offer `mas join`    --uninstall [--purge]    remove it (keys only with --purge)
 
 # PIN-BEGIN (scripts/pin_installers.py rewrites these three lines)
-DEFAULT_TAG="node-preview-10"
-DEFAULT_SHA256="274bc34e76eb6801391d8431c7d296bf5c094ff22830c85fe4046f202e5d9d43"
+DEFAULT_TAG="node-preview-11"
+DEFAULT_SHA256="33bca7a2a122ed4a8d0453360bda2b6044b50421435a73291d8ea3f47d5b1464"
 DEFAULT_BASE="https://github.com/josuecuguy1307/Multi-Auto-Setup/releases"
 # PIN-END
 PY_VERSION="3.13"
