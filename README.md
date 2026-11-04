@@ -160,7 +160,7 @@ uv venv --python 3.13 .venv && uv pip install --python .venv/bin/python -e .
 
 ## License
 
-The project's license has not been chosen yet. Until one is added, no license is granted.
+Licensed under the Apache License, Version 2.0. See LICENSE and NOTICE.
 
 ## Hackathon
 
