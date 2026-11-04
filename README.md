@@ -31,10 +31,40 @@ Top row: the operating systems. Bottom row: the chats that connect through MCP. 
 
 You have several computers and several AIs. Today each AI sees one machine, and you are the glue. MAS is the control layer between **you**, **the AI** and **your machines**: one computer coordinates, the others join with your permission, a local model discovers and sets them up, and every decision that matters is yours. The model chooses its actions; code enforces the rules.
 
+**Discover computers. Understand their capabilities. Prepare and equip their AI environments. Bring together models, agents, harnesses and specialized tools. Coordinate different machines securely as one system.**
+
+## What you can do with it
+
+- **Coding and software development** on the computer and coding harness that fit the task.
+- **Software installation and environment setup**: analyze a machine, pick an option, approve the plan, install, verify.
+- **CSV processing and data analysis** through the catalog task types for data work.
+- **Financial reporting and report generation**: describe the work in your own words; the Recommendation Engine finds a suitable environment and asks you one question before anything is created.
+- **Work from the chat you already use.** Connect it once (`mas connect`): Claude Desktop, Open WebUI, Muse Code, Claude Code, Codex and OpenCode reach the same MAS tools through MCP (stdio and streamable HTTP). You recognize your machines, answer questions and approve steps there; pairing codes and secrets never pass through a chat.
+
+## Harnesses, matched to the work
+
+A harness is the execution and tool-access environment an agent works inside. MAS keeps a catalog of environments and picks among them by rule, never by opinion:
+
+| Work | Environments in the catalog |
+|---|---|
+| Coding | `codex`, `opencode`, `pi`, `claude-code`, `muse-code` |
+| Local models and data work | `llamacpp-local` (text, code, summarize, extraction, data cleaning, numeric analysis) |
+| Provider API | `meta-model-api` |
+| General agent work | `goose`; domain skill packs such as the legal contract-review pack |
+
+The **Recommendation Engine** explores tools, models, harnesses and environments for a kind of work: it names a default and an alternative, what is missing, and what could be installed (`mas_install_tool`) after you approve a plan. The **Router** then selects the harness, model, access and computer among the combinations your machines, permissions, privacy level and admission results allow, and records its reasoning. A confidential task is only ever routed to a combination measured on your own paired machines.
+
+Models MAS can run with are profiles, not code: the local actor on each machine and the `muse-glimmer` / `muse-spark` profile names in `config/models.yaml`, with endpoints you supply. Which model runs where is decided from measured memory and fit, and shown to you before anything installs.
+
+## Built with
+
+Development tools, kept separate from the clients and models MAS operates: Claude Code throughout the construction of MAS; Muse Code working with Meta Muse Wonder during construction, including the local-model harness and Open WebUI integration work; Claude Design for design work; smaller local Qwen models as the in-harness actor during development and experiments.
+
 ## New in this release
 
 | | What | Where to read it |
 |---|---|---|
+| <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/coordinator-dark.svg"><img src="assets/readme/symbols/coordinator-light.svg" alt="coordinator" width="21"></picture> | **An interactive terminal for `mas`.** Home, Computers, Help, Questions and Progress in plain language, with clear errors and `mas preview` to try the screens with fake computers. Styled from the same single token source as every other surface, and meaning never depends on color alone. | `src/envrec_mas/tui.py`, `tests/test_tui.py` |
 | <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/network-dark.svg"><img src="assets/readme/symbols/network-light.svg" alt="network" width="21"></picture> | **One look for every surface.** The logo, colors and 27 pixel symbols come from one file (`src/envrec_style/tokens.json`); the README images, the terminal banner and the Open WebUI cards are drawn from it, and tests fail if one drifts. The banner adapts to the terminal (wide, narrow, compact; truecolor, 256 or 16 colors; shades with `NO_COLOR`; plain text with no escape codes when there is no terminal). | [docs/STYLE.md](docs/STYLE.md) |
 | <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/owner-dark.svg"><img src="assets/readme/symbols/owner-light.svg" alt="owner" width="21"></picture> | **A first-run menu.** `mas` with no arguments in a terminal shows the banner and a short menu for this computer only (role, service, connect Claude Desktop, announce a node). Each step runs the existing command through its own parser, which shows its plan and waits for your typed yes; the menu never answers for you. With no terminal it prints help and exits with code 2, with no prompt. | `src/envrec_mas/menu.py`, `tests/test_menu.py` |
 | <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/symbols/model-dark.svg"><img src="assets/readme/symbols/model-light.svg" alt="model" width="21"></picture> | **A recommender that checks itself by code.** For a task it has no answer for, it looks for candidate tools and models in public sources. A lead is kept only if code re-checks its license, whether it is archived, its last push, its stars and its domain tags from the page it came from; a rejected one is counted with a typed reason. The task type is chosen by independent picks, and when no two agree the owner is asked one question instead of a guess. A cloud second opinion is used only if you allowed cloud use, only through the node that holds the access, and never for confidential work. The first-run profile also asks which of your subscriptions may be used automatically. Leads stay hypotheses until measured. | [docs/RECOMMENDATION_SPEC.md](docs/RECOMMENDATION_SPEC.md), `tests/test_research_checks.py`, `tests/test_type_choice.py`, `tests/test_slots.py`, `tests/test_subscriptions.py` |
