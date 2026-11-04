@@ -107,6 +107,10 @@ TILES = [
     ("linux", "Linux", "Debian, Fedora, Alpine", "WORKS", "done", "tested in containers"),
     ("claude-desktop", "Claude Desktop", "chat, through MCP", "WORKS", "done", "tested for real"),
     ("open-webui", "Open WebUI", "chat, through MCP", "CONNECTED ONCE", "searching", "connected once by the owner"),
+    ("muse-code", "Muse Code", "chat, through MCP", "CONNECTS", "model", "connect with mas connect"),
+    ("claude-code", "Claude Code", "chat, through MCP", "CONNECTS", "script", "connect with mas connect"),
+    ("codex", "Codex", "chat, through MCP", "CONNECTS", "searching", "connect with mas connect"),
+    ("opencode", "OpenCode", "chat, through MCP", "CONNECTS", "node", "connect with mas connect"),
 ]
 
 

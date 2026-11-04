@@ -39,8 +39,8 @@ def test_windows_installer_has_no_status_claim():
 
 def test_third_party_tiles_are_only_for_verified_things():
     tiles = sorted(p.name for p in (ROOT / "assets" / "readme").glob("tile-*-dark.svg"))
-    assert tiles == ["tile-claude-desktop-dark.svg", "tile-linux-dark.svg", "tile-macos-dark.svg", "tile-open-webui-dark.svg", "tile-windows-dark.svg"]
-    assert "tile-meta" not in README and "tile-codex" not in README
+    assert tiles == ["tile-claude-code-dark.svg", "tile-claude-desktop-dark.svg", "tile-codex-dark.svg", "tile-linux-dark.svg", "tile-macos-dark.svg", "tile-muse-code-dark.svg", "tile-open-webui-dark.svg", "tile-opencode-dark.svg", "tile-windows-dark.svg"]
+    assert "tile-meta" not in README
     assert "WORKS" not in (ROOT / "assets" / "readme" / "tile-open-webui-dark.svg").read_text().replace("CONNECTED ONCE", "")
 
 

@@ -25,6 +25,11 @@ Top row: the operating systems. Bottom row: the chats verified end to end so far
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-claude-desktop-dark.svg"><img src="assets/readme/tile-claude-desktop-light.svg" alt="Claude Desktop through MCP: works" width="272"></picture>
 <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-open-webui-dark.svg"><img src="assets/readme/tile-open-webui-light.svg" alt="Open WebUI through MCP: connected once" width="272"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-muse-code-dark.svg"><img src="assets/readme/tile-muse-code-light.svg" alt="Muse Code through MCP: connects" width="272"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-claude-code-dark.svg"><img src="assets/readme/tile-claude-code-light.svg" alt="Claude Code through MCP: connects" width="272"></picture>
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-codex-dark.svg"><img src="assets/readme/tile-codex-light.svg" alt="Codex through MCP: connects" width="272"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-opencode-dark.svg"><img src="assets/readme/tile-opencode-light.svg" alt="OpenCode through MCP: connects" width="272"></picture>
 </div>
 
 ## Why MAS
