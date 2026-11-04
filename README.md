@@ -16,7 +16,7 @@
 
 ## Works with
 
-Top row: the operating systems. Bottom row: the chats that connect through MCP. Only connections that were run and verified are shown.
+Top row: the operating systems. Bottom row: the chats verified end to end so far. Every chat MAS can connect (Claude Desktop, Open WebUI, Muse Code, Claude Code, Codex, OpenCode) is listed under "What you can do with it".
 
 <div align="center">
 <picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/tile-macos-dark.svg"><img src="assets/readme/tile-macos-light.svg" alt="macOS: works" width="272"></picture>
@@ -58,7 +58,7 @@ Models MAS can run with are profiles, not code: the local actor on each machine 
 
 ## Built with
 
-Development tools, kept separate from the clients and models MAS operates: Claude Code throughout the construction of MAS; Muse Code working with Meta Muse Wonder during construction, including the local-model harness and Open WebUI integration work; Claude Design for design work; smaller local Qwen models as the in-harness actor during development and experiments.
+MAS was built by two coding agents working during its construction, kept separate from the clients and models MAS operates: **Claude Code** (Claude Sonnet) and **Muse Code** (Meta Muse Wonder), including the local-model harness and Open WebUI integration work. **Claude Design** was used for design work, and smaller local Qwen models served as the in-harness actor during development and experiments. Orchestration, decisions, review and verification with the test and conformance suites: the owner, Josué.
 
 ## New in this release
 

@@ -83,11 +83,11 @@ Through these interfaces the owner can recognise machines (the network and machi
 
 Kept strictly separate from what MAS operates:
 
-- **Claude Code** — used throughout the development and construction of MAS.
-- **Muse Code, working with Meta Muse Wonder** — used during construction and development, including in this documentation and release work.
+- **Claude Code** (Claude Sonnet) — one of the two coding agents that built MAS, used throughout its construction.
+- **Muse Code** (Meta Muse Wonder) — the other coding agent that built MAS, including the local-model harness work, the Open WebUI integration, and this documentation and release work.
 - **Claude Design** — used for design work.
-- **Meta Muse Wonder** — also used in work involving local-model harnesses and the Open WebUI integration.
 - **Smaller local Qwen models** (for example `qwen3.5:9b`) — used during development, experimentation and MAS workflows as the local actor that chooses actions inside the harness.
+- **Orchestration and verification** — direction, decisions, review and verification with the test and conformance suites by the owner, Josué.
 
 ## 7. Models MAS works with
 
