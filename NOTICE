@@ -1,6 +1,6 @@
 Multi Auto Setup (MAS)
-Copyright 2026 Martin Arcos
-This product includes software developed by Martin Arcos.
+Copyright 2026 Josué Arcos
+This product includes software developed by Josué Arcos.
 
 Third-party software included in this repository:
 - Contract Review skill, test fixture in tests/fixtures/skill_pack/ — source: https://github.com/evolsb/claude-legal-skill — original licence: MIT (Copyright (c) 2026 Christopher Sheehan; see tests/fixtures/skill_pack/LICENSE).
