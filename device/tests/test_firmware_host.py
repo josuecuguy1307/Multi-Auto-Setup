@@ -386,9 +386,14 @@ def test_class_and_window_ranges(fw, cls, pw):
     assert fw.request(a_request(cls=cls, pw=pw))[0] == "malformed"
 
 
-@pytest.mark.parametrize("n", [0, 145, 147, 300])
+@pytest.mark.parametrize("n", [0, 145, 147])
 def test_request_length_is_exact(fw, n):
     assert fw.call(REQUEST, bytes(n))[0] == "malformed"
+
+
+def test_a_payload_larger_than_the_frame_buffer_is_a_bad_frame(fw):
+    assert fw.call(REQUEST, bytes(300))[0] == "bad_frame"
+    assert fw.info()[2] == 0
 
 
 def test_failed_request_changes_nothing(fw):
@@ -693,7 +698,7 @@ def test_saboteur_no_latch_clear_on_request_is_caught(tmp_path):
 
 
 def test_saboteur_no_printable_check_is_caught(tmp_path):
-    bad = _saboteur(tmp_path, "if (!printable(p + 114)) /* SABOTEUR-ANCHOR: printable */", "if (0)")
+    bad = _saboteur(tmp_path, "if (!printable(p + 112)) /* SABOTEUR-ANCHOR: printable */", "if (!printable(p + 112) && 0)")
     f = Fw(bad, tmp_path / "s.bin")
     assert f.request(a_request(summary=b"A" * 31 + b"\x1f"))[0] == "ok"
     f.close()

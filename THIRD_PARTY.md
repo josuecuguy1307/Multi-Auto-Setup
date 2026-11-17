@@ -90,7 +90,8 @@ from its own LICENSE file when it is cloned (into git-ignored `scout/`, read bef
 
 | Name | Link | License | Role | Verdict |
 |---|---|---|---|---|
-| Monocypher (+ optional monocypher-ed25519) | https://monocypher.org | to read at clone (expected CC0-1.0 / BSD-2-Clause dual) | planned firmware dependency (DECISIONS D-007) | not evaluated |
+| Monocypher 4.0.2 (+ optional monocypher-ed25519) | https://monocypher.org (tarball sha256 38d07179…0879c) | BSD-2-Clause OR CC0-1.0 (read: LICENCE.md) | vendored unmodified in device/firmware/vendor/monocypher (pure Ed25519 for the key firmware, D-007/A-2) | read before use: pure computation, no I/O; Ed25519 checked against `cryptography` |
+| ziglang 0.13.0 (PyPI, Zig's `zig cc`) | https://pypi.org/project/ziglang/ | MIT | C compiler for the firmware host build, installed only in runs/toolchain (git-ignored) | build tool, not shipped |
 | tillitis-key1 / tk1-pcba | https://github.com/tillitis/tillitis-key1 | to read at clone | design-only: firmware-hash-derived key identity idea (D-007); no PCB derived | not cloned |
 | SoloKeys, USB Armory, tamago, armory-boot | see MISSION 8.2 | to read at clone | design reference | not cloned |
 | pocketllm (vraj00222, Looming41), llama.cpp, project-nomad | see MISSION 8.2 | to read at clone | Phase 2 candidates | not cloned |
