@@ -455,3 +455,33 @@ remove a decoupling cap → net check fails.
   counter_regressed or wrong_session. NOT logged: a pressed token never presented to the gate, one whose pending was swept or lost at a
   restart before it was presented, and one whose signed action, summary or class differs from its pending. Their counters show as gaps.
 
+
+## D-025 The gate as its own process, and the guardrail battery (2026-11-17; P2-GUARDRAILS; implements D-003, D-005, D-006, A-1 §2, §7)
+- **`mas_device.gated`** is the policy gate's process. The host's owner launches it (no defaults: `--root`, `--state`, `--pin`, `--session`,
+  `--target` are required; nothing starts it by itself). It holds the audit log, the pinned key and the session; the model's side reaches it
+  only through **JSON lines on its stdin/stdout** with a fixed method set: `read`, `plan_write`, `begin`, `execute`, `undo_for`, `begin_undo`,
+  `execute_undo`, `log_head`. There is no method that changes policy, keys or the log; any other name is `unknown_method`. Each method is a
+  `rpc_<name>` function and the allowed set is a literal: the battery checks both. It exits when its stdin closes (unplug, parent gone).
+- **Every refusal is logged** (`rpc.refused`: request id, method name as ASCII, code), so the owner sees what the model tried (rule 5).
+  Successful reads are logged with path and sha256; `begin` is logged with class, action hash and summary.
+- **Credentials are never read** (rule 8): `read` and `plan_write` refuse paths whose components name credential stores (`.ssh`, `.gnupg`,
+  `.aws`, `.azure`, `.kube`, `.password-store`, private key files, `*.pem`/`*.key`/`*.p12`/`*.pfx`/`*.kdbx`, `.env*`, `.netrc`, `.git-credentials`, `credentials*`, browser
+  `Login Data`/`Cookies`/`logins.json`/`key4.db`, `wallet.dat`, `shadow`, `SAM`, `NTDS.dit`). `plan_write` is included because its undo
+  carries the old bytes. This is a name list, not content inspection: a secret in an ordinary file is not caught (P3-NOCREDS covers
+  inspection).
+- **The battery** (`device/tests/test_guardrails.py`) runs the daemon as a real subprocess through a launcher that installs a Python audit
+  hook before importing anything of the device: sockets, DNS, subprocesses, `os.system`/exec/spawn, registry writes, native code loading,
+  and any file write/rename/delete/mkdir outside the root and state folders are recorded and **blocked** (the hook raises), so even a
+  weakened build cannot touch the dev machine. A scripted malicious model sends every request shape (no token, forged, other key, other
+  action, replayed, after restart, other session, forged undo, traversal and alias paths, protocol junk) and the battery requires: the host
+  folder byte-identical, nothing but the log in the state folder, zero audit events, the daemon alive, the log intact, one `rpc.refused`
+  per refusal. The owner path (press, write, undo) must work and the undo must restore the folder exactly, so the battery is not vacuous.
+- **Positive controls** (A-1 §7): each detector is shown to fire against a deliberately weakened daemon (monkeypatched in the launcher after
+  the audit hook): a write without approval, an extra RPC method, unlogged refusals, credential reads, DNS, a subprocess, a file outside the
+  root, a registry key. Static checks (imports limited to an allowlist with no socket/ssl/http/urllib/subprocess/ctypes/multiprocessing/
+  asyncio/envrec; no autostart, HID, remote-execution, scanning, firewall, credential-store or evasion markers in the device code; no
+  exploit markers in the repo's code) each have a crafted fixture that must be flagged.
+- **Not covered here, declared**: OS-level isolation of the gate from the model (same user in host-compute mode, D-005; Landlock/seccomp/
+  restricted token are later defence in depth); the model process itself is simulated by the test (it holds only the pipe); the key is the
+  Python model, whose button the model's side is assumed not to reach (separate device). Replay defence itself is P1-UNIT/P2-GATE; the
+  battery checks it end to end through the RPC (same daemon, restarted daemon, other session).

@@ -125,3 +125,8 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
 - P1-UNIT closed: evaluator run 7 (fresh context, at 0d288d6) VERDICT PASS, Code-Hash fc884e03...1053fa3 matches judged_hash();
   oracle P1-UNIT PASS 179 tests, 4 saboteurs killed (9/26 PASS). Handover to a new account via HANDOFF.md; P2-GATE run 7 and P5-PCB
   run 2 were lost at the usage limit and are being re-run.
+- P2-GUARDRAILS PASS (26 tests, 5 saboteurs killed): `mas_device.gated` runs the gate as its own process behind JSON-lines RPC with a fixed
+  method set; every refusal logged; credential paths refused; log must sit outside the root (D-025). Battery: audit-hooked launcher blocks
+  and records sockets/subprocess/registry/native code/outside writes; scripted malicious model; positive controls for every detector.
+  P2-LOG evaluator run 2: FAIL on 4 weak tests (repair with a known head, records() after re-chain, newline-only repair, bool/int seq test);
+  nothing broken. Fixing test-first next.
