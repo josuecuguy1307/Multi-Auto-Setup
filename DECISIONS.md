@@ -429,3 +429,17 @@ remove a decoupling cap → net check fails.
 - Declared equivalent: resolving mkdirs inside `_apply` (a swapped parent makes the later file write refuse and the rollback removes the
   folder); the rmdirs type check in `_check_state` (a swapped folder is refused earlier as a link).
 
+## D-023 Gate after evaluator run 5; corrections to D-022 (2026-11-17)
+- Lost update closed: `_apply` compares each file with its approved pre-state immediately before replacing or deleting it, and checks each
+  folder is still absent immediately before making it. An edit landing after the last pre-apply check (e.g. during the fsync'd log append)
+  makes the write fail with pre_state_changed, rolled back, logged as write.failed; it is never overwritten. A window remains between
+  that final comparison and os.replace (microseconds, not the log append) — declared, like the junction-swap window.
+- Corrections to D-022: (1) expired tokens are authenticated before the expiry check, so their counter IS known: authenticated tokens the
+  gate refuses as expired, counter_regressed or wrong_session are now logged as `write.rejected`/`undo.rejected` with counter and reason.
+  Tokens refused before the signature is verified (malformed, unknown_key, bad_signature) carry no trustworthy counter and are not logged;
+  a replayed token (unknown_nonce) was already logged when first spent. (2) "Equivalent" is withdrawn for the mkdirs-resolve mutant: it is
+  now killed by a test that records every folder made and requires all of them inside the root. (3) "Plan time refuses what could never
+  be written" now covers: names in UTF-16 units and UTF-8 bytes (<= 200), the host's path limit with the temporary-name suffix (259 on
+  Windows without long paths, 32000 with, 4095 on POSIX), names that look like 8.3 aliases, paths through a file, deleting what is absent,
+  files over 1 MiB, non-plain attributes, an undo whose folder is gone. It still does not cover every filesystem quirk (e.g. a full disk).
+

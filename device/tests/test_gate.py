@@ -702,7 +702,7 @@ def test_a_junction_swapped_in_after_consume_is_refused_at_apply(pg, key, root, 
     monkeypatch.setattr(log, "append", hook)
     with pytest.raises(gt.Refused) as e:
         pg.execute(token, w)
-    assert e.value.code == "apply_failed"
+    assert e.value.code in ("apply_failed", "outside_root")  # refused inside the apply step, with the precise reason
     assert list(outside.iterdir()) == []
 
 

@@ -36,6 +36,7 @@ import copy
 import hashlib
 import json
 import os
+import re
 import secrets
 import stat
 import sys
@@ -47,7 +48,23 @@ from mas_device import approval as ap
 from mas_device.log import AuditLog, LogBroken
 
 MAX_FILE_BYTES = 1 << 20
-MAX_NAME = 200  # one path component; leaves room for the temporary name used to replace a file atomically (255 on NTFS/ext4)
+MAX_NAME = 200  # one path component, in UTF-16 units (NTFS: 255) and in UTF-8 bytes (ext4: 255), leaving room for the temporary name
+TEMP_SUFFIX_LEN = 18  # "." + name + ".mas-tmp-" + 8 hex: the temporary file next to the target is this much longer than the target
+LOGGED_REJECTIONS = ("expired", "counter_regressed", "wrong_session")  # authenticated tokens that can never be spent: logged with their counter
+
+
+def _long_paths_enabled() -> bool:
+    if sys.platform != "win32":
+        return False
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\FileSystem") as k:
+            return winreg.QueryValueEx(k, "LongPathsEnabled")[0] == 1
+    except OSError:
+        return False
+
+
+PATH_LIMIT = (32000 if _long_paths_enabled() else 259) if sys.platform == "win32" else 4095  # MAX_PATH minus the NUL, or PATH_MAX
 PLAIN_ATTRIBUTES = 0x20 | 0x80 | 0x2000  # ARCHIVE, NORMAL, NOT_CONTENT_INDEXED: anything else (hidden, system, read-only...) is refused
 REASONS = ("bad_action", "outside_root", "pre_state_changed", "undo_mismatch", "undo_not_issued", "log_failed", "apply_failed", "too_large")
 WRITE_KEYS = {"kind", "target", "files", "mkdirs", "undo"}
@@ -102,8 +119,10 @@ def _check_rel(rel) -> list[str]:
     for part in parts:
         if part in ("", ".", ".."):
             raise Refused("outside_root", rel)
-        if len(part) > MAX_NAME:
-            raise Refused("bad_action", f"a name longer than {MAX_NAME} characters")
+        if len(part.encode("utf-16-le")) // 2 > MAX_NAME or len(part.encode("utf-8")) > MAX_NAME:
+            raise Refused("bad_action", f"a name longer than {MAX_NAME} UTF-16 units or UTF-8 bytes")
+        if re.search(r"~\d", part):
+            raise Refused("bad_action", f"{part!r} looks like an 8.3 short name: it could alias another entry of the same action")
         if part.split(".")[0].rstrip(" ").lower() in _RESERVED or part[-1] in ". ":  # "CON .txt" is CON on older Windows
             raise Refused("bad_action", f"{part!r} is not portable")
     return parts
@@ -229,6 +248,8 @@ class PolicyGate:
         for rel in sorted(files):
             data = files[rel]
             p = self._resolve(rel)
+            if len(str(p)) + TEMP_SUFFIX_LEN > PATH_LIMIT:
+                raise Refused("bad_action", f"{rel}: the path is too long for this host ({PATH_LIMIT})")
             if data is not None and not isinstance(data, (bytes, bytearray)):
                 raise Refused("bad_action", f"{rel}: content is bytes or None")
             if data is not None and len(data) > MAX_FILE_BYTES:
@@ -292,6 +313,9 @@ class PolicyGate:
                 if os.path.lexists(self._resolve(d)):
                     raise Refused("pre_state_changed", f"{d} exists now")
         else:
+            for f in action["files"]:
+                if f["content_b64"] is not None and not self._resolve(f["path"]).parent.is_dir():
+                    raise Refused("pre_state_changed", f"{f['path']}: the folder to restore it into is gone")
             leaving = {f["path"] for f in action["files"] if f["content_b64"] is None} | set(action["rmdirs"])
             for d in action["rmdirs"]:
                 p = self._resolve(d)
@@ -367,8 +391,13 @@ class PolicyGate:
             self._require_issued(action)
             self._shape(action, RESTORE_KEYS, "files.restore", "rmdirs")
             self._check_state(action)
-        approval = self._approvals.consume(token, action, cls=cls)
         kind = "write" if cls == ap.Class.WRITE else "undo"
+        try:
+            approval = self._approvals.consume(token, action, cls=cls)
+        except ap.Rejected as exc:
+            if exc.code in LOGGED_REJECTIONS:  # the signature was verified first: the counter is authentic and is now never spent
+                self._log_rejected(kind, token, exc.code)
+            raise
         try:
             self._check_state(action)                 # again, after the token is spent
         except (Refused, OSError) as exc:  # the token is spent: the log says so, so no counter goes missing from it (rule 5)
@@ -390,12 +419,13 @@ class PolicyGate:
             raise Refused("log_failed", str(exc)[:120]) from None
         try:
             self._apply(action)
-        except OSError as exc:
+        except (OSError, Refused) as exc:
+            code = exc.code if isinstance(exc, Refused) else "apply_failed"
             try:
-                self._log.append(f"{kind}.failed", {"action_hash": approval.action_hash.hex(), "error": str(exc)[:200]})
+                self._log.append(f"{kind}.failed", {"action_hash": approval.action_hash.hex(), "reason": code, "error": str(exc)[:200]})
             except (LogBroken, OSError):
                 pass
-            raise Refused("apply_failed", str(exc)[:120]) from None
+            raise Refused(code, str(exc)[:120]) from None
         with self._lock:
             if cls == ap.Class.WRITE:
                 self._undo_by_write[approval.action_hash] = approval.undo_hash
@@ -409,17 +439,31 @@ class PolicyGate:
             raise Refused("log_failed", f"written, but the done record failed: {str(exc)[:100]}") from None
         return {"action_hash": approval.action_hash.hex(), "undo_hash": approval.undo_hash.hex(), "counter": approval.counter}
 
+    def _log_rejected(self, kind: str, token, code: str) -> None:
+        try:
+            b = ap.unpack_body(bytes(token)[:ap.BODY_LEN])
+            self._log.append(f"{kind}.rejected", {"counter": b.counter, "key_id": b.key_id.hex(), "nonce": b.req.nonce.hex(),
+                                                  "action_hash": b.req.action_hash.hex(), "reason": code})
+        except (LogBroken, OSError, ap.Rejected, ValueError):
+            pass
+
     def _apply(self, action: dict) -> None:
-        """Make the change, or put back everything this call changed and re-raise."""
+        """Make the change, or put back everything this call changed and re-raise. Each file is compared with its approved pre-state
+        immediately before it is replaced or deleted, and each folder must still be absent immediately before it is made: an edit made
+        on the host after the last check (an editor's autosave during the log append) is never overwritten."""
         done: list[tuple] = []
         try:
             for d in action.get("mkdirs", []):
                 p = self._resolve(d)
+                if os.path.lexists(p):
+                    raise Refused("pre_state_changed", f"{d} appeared before it was made")
                 _make_dir(p)
                 done.append(("mkdir", p, None))
             for f in action["files"]:
                 p = self._resolve(f["path"])
                 prev = self._current(p)
+                if _sha(prev) != f["pre"]:
+                    raise Refused("pre_state_changed", f"{f['path']} changed after the approval was logged")
                 data = _unb64(f["content_b64"])
                 if data is None:
                     _remove_file(p)
@@ -443,4 +487,6 @@ class PolicyGate:
                         _replace_file(p, prev)
                 except OSError:
                     print(f"ERROR gate rollback incomplete at {p}", file=sys.stderr)
+            if isinstance(exc, Refused):
+                raise
             raise OSError(str(exc)) from None
