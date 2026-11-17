@@ -53,6 +53,7 @@ def gate(key, gate_clock):
 def approve(gate, key, action=ACTION, cls=ap.Class.WRITE):
     pending = gate.begin(action, cls)
     req = key.request(pending.key_request())
+    key._clock.t += KeyModel.MIN_DWELL_S  # the person reads the screen first (D-017)
     key.button.press()
     return key.sign(req)
 

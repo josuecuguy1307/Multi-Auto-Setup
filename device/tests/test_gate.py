@@ -64,6 +64,7 @@ def pg(root, key, log, clock):
 def press(pg, key, action, cls=ap.Class.WRITE):
     pending = pg.begin(action) if cls == ap.Class.WRITE else pg.begin_undo(action)
     req = key.request(pending.key_request())
+    key._clock.t += KeyModel.MIN_DWELL_S  # the person reads the screen first (D-017)
     key.button.press()
     return key.sign(req)
 

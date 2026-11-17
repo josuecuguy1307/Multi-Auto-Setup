@@ -95,10 +95,14 @@ class Died(Exception):
     pass
 
 
+DWELL_MS = 1000  # a press counts only after the summary has been on screen this long (D-017)
+
+
 class Fw:
-    def __init__(self, exe: Path, flash: Path, seed: bytes = SEED, **env):
+    def __init__(self, exe: Path, flash: Path, seed: bytes | None = SEED, **env):
         trng = flash.with_name(flash.name + ".trng")
-        trng.write_bytes(seed)
+        if seed is not None:
+            trng.write_bytes(seed)
         e = {k: v for k, v in os.environ.items() if not k.startswith("MAS_")}
         e.update({"MAS_FLASH_FILE": str(flash), "MAS_TRNG_FILE": str(trng)})
         e.update({k: str(v) for k, v in env.items()})
@@ -162,7 +166,10 @@ class Fw:
             raise Died(self.p.wait()) from None
         assert self._read(1) == b"k"
 
-    def press(self):
+    def press(self, dwell: bool = True):
+        """A person's press, by default after reading the screen for the minimum time; dwell=False presses at the current tick."""
+        if dwell:
+            self.advance(DWELL_MS)
         self._ack(b"P")
 
     def advance(self, ms: int):
@@ -306,7 +313,7 @@ def test_differential_against_the_python_reference_model(exe, tmp_path):
                     handles[seq] = h
             elif op == "press":
                 km.button.press()
-                f.press()
+                f.press(dwell=False)
             elif op == "adv":
                 ms = rnd.choice([0, 1, 999, 1000, 5000, 29999, 30000, 30001, 45000])
                 t[0] += ms
@@ -347,17 +354,17 @@ def test_press_before_the_request_does_not_count(fw):
 
 def test_press_window_is_strict_and_capped_at_thirty_seconds(fw):
     for pw, wait, want in [(30, 30000, "ok"), (30, 30001, "press_window"), (5, 5000, "ok"), (5, 5001, "press_window"),
-                           (255, 30000, "ok"), (255, 30001, "press_window"), (1, 0, "ok")]:
+                           (255, 30000, "ok"), (255, 30001, "press_window"), (1, 1000, "ok")]:
         st, seq, _ = fw.request(a_request(pw=pw))
         fw.advance(wait)
-        fw.press()
+        fw.press(dwell=False)
         assert fw.sign(seq)[0] == want, (pw, wait)
 
 
 def test_the_press_time_counts_not_the_sign_time(fw):
     st, seq, _ = fw.request(a_request())
     fw.advance(1000)
-    fw.press()
+    fw.press(dwell=False)
     fw.advance(600000)
     assert fw.sign(seq)[0] == "ok"
 
@@ -824,7 +831,7 @@ def test_press_window_survives_the_32_bit_tick_wrap(fw):
     st, seq, _ = fw.request(a_request())
     fw.advance(0xFFFFFFFF)
     fw.advance(1001)
-    fw.press()
+    fw.press(dwell=False)
     assert fw.sign(seq)[0] == "press_window"
 
 
@@ -947,3 +954,51 @@ def test_nv_never_programs_a_slot_that_is_not_erased(exe, nvtool, flash):
     assert nv(f"poke 1 32 {poke.hex()}") == "0"
     assert nv("commit 3") == "-1"
     nv.close()
+
+
+# ---- evaluator run 3 (device/evals/evaluator/P4-FW-HOST.run3.md) ----------------------------------
+
+def test_a_press_counts_only_after_the_summary_was_on_screen_for_a_second(fw):
+    st, seq, _ = fw.request(a_request())
+    fw.press(dwell=False)
+    assert fw.sign(seq) == ("no_press", None), "a press at 0 ms: nobody read the screen"
+    fw.advance(DWELL_MS - 1)
+    fw.press(dwell=False)
+    assert fw.sign(seq) == ("no_press", None)
+    fw.advance(1)
+    fw.press(dwell=False)
+    assert fw.sign(seq)[0] == "ok"
+
+
+def test_bait_and_switch_just_before_the_press_is_refused(fw):
+    st, s1, _ = fw.request(a_request(random.Random(1), summary=b"READ  benign status".ljust(32)))
+    fw.advance(4000)
+    st, s2, _ = fw.request(a_request(random.Random(2), summary=b"WRITE rm -rf host-a".ljust(32)))
+    fw.press(dwell=False)
+    assert fw.sign(s2) == ("no_press", None)
+
+
+def test_a_press_while_the_display_is_being_drawn_does_not_count(exe, flash):
+    f = Fw(exe, flash, MAS_PRESS_IN_DISPLAY=1)  # the mock's display presses the button once while it draws the next summary
+    st, seq, _ = f.request(a_request())
+    f.advance(DWELL_MS)
+    assert f.sign(seq) == ("no_press", None)
+    f.close()
+
+
+def test_trng_failure_at_first_boot_is_a_fault_with_no_token(exe, flash):
+    f = Fw(exe, flash, seed=None)
+    assert f.call(GET_INFO)[0] == "nv_fault"
+    assert f.call(REQUEST, req_payload(a_request()))[0] == "nv_fault"
+    f.close()
+    assert f.tokens() == []
+
+
+@pytest.mark.parametrize("mode", [{"MAS_FLASH_FAIL_CALLS": 1}, {"MAS_FLASH_STUCK": 1}], ids=["write_fails", "write_does_not_stick"])
+def test_first_boot_key_write_failure_is_a_fault_with_no_token(exe, flash, mode):
+    f = Fw(exe, flash, **mode)
+    assert f.call(GET_INFO)[0] == "nv_fault"
+    st = f.call(REQUEST, req_payload(a_request()))[0]
+    assert st == "nv_fault"
+    f.close()
+    assert f.tokens() == []
