@@ -1,7 +1,7 @@
 {
- "checksum": "fa1d254409ea3fee70c045e8e48590b221acbd2370b816815ae77f069f810004",
+ "checksum": "2e7b056e50b8abc3161e2ac0f958355cadd63c644cf77d1fdfce1376923644f0",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "19bc4ca",
+ "git_head_at_run": "fd02218",
  "results": {
   "P1-DOCS": {
    "at": "2026-11-16T23:05:50",
@@ -47,6 +47,21 @@
    "reason": "1 failed, 0 errors",
    "status": "FAIL",
    "title": "First unit through the full cycle: signed approval tokens (guardrail 3) with an evaluator report"
+  },
+  "P2-LOG": {
+   "at": "2026-11-16T23:14:15",
+   "counts": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 19
+   },
+   "fingerprint": "cde3dca3ff68fdda00c135ee98c8871f47af6769eb72be14d902aba937ba3494",
+   "label": "SIMULATED",
+   "phase": 2,
+   "reason": "19 passed",
+   "status": "PASS",
+   "title": "Append-only hash-chained log; any edit, truncation or reorder is detected; model process cannot write it"
   }
  }
 }
