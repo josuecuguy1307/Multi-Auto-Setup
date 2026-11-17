@@ -390,3 +390,13 @@ remove a decoupling cap → net check fails.
   NEEDS_HUMAN #9). Not dropped, not stood in for.
 - Process note: the an505 port was written before its tests (a smoke-first spike), unlike the other units; the saboteur above is the check
   that the tests have teeth.
+
+## D-019 Renode (2026-11-17)
+- Renode 1.17.0 (2026-09-07), official `renode-1.17.0.windows-portable.zip` from github.com/renode/renode releases (Josué approved;
+  106,735,414 bytes as listed by the GitHub API; sha256 18bcf145…b9db), unpacked with a path-safety check into `runs/toolchain/renode`
+  (git-ignored). No installer, no admin rights, nothing system-wide.
+- Platform: Renode's own stock `tests/platforms/ARMv8M-TrustZone_mps2.repl` (Cortex-M33, CMSDK UART0 at 0x50200000, SSRAM at 0x10000000),
+  i.e. the same memory map as QEMU's mps2-an505: the **same ELF** runs unmodified in both emulators. UART0 is bridged to TCP by a server
+  socket terminal. Renode starts in ~20 s, so each instance runs ten scripts back to back.
+- P4-FW-RENODE tests: transcripts identical to the host build over the same 20 scripts as QEMU (≥ 30 signatures per block), no token
+  without a press, the dwell, the gate accepting a token once, and a frozen-clock saboteur that must differ.

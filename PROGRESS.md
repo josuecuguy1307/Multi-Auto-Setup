@@ -100,3 +100,4 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   which put a NUL byte and broken f-strings into build.py (fixed with file tools; use Write/Edit for code with backslashes); the first
   transcript test compared mostly refusals (1 signature in 20 scripts) and missed a frozen clock — fixed with approval flows and a saboteur.
   27 tests pass. Renode split into P4-FW-RENODE (FAIL until installed).
+- Renode 1.17.0 portable (approved by Josué) runs the same an505 ELF on its stock MPS2 TrustZone platform: P4-FW-RENODE 4 tests.

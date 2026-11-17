@@ -1,7 +1,7 @@
 {
- "checksum": "9ddf1019109ddace00f544bd5db9d6027865061ead4238c1495276a8280b6bb7",
+ "checksum": "711fb34867a056a89214dc287d936ad5efe324e62c2bc7c9801266d3d2b5d65f",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "d4171a9",
+ "git_head_at_run": "5e34c24",
  "results": {
   "P1-DOCS": {
    "at": "2026-11-16T23:23:48",
@@ -115,7 +115,7 @@
    "title": "Filesystem diff of the host before/after a session is empty outside approved writes"
   },
   "P4-FW-EMU": {
-   "at": "2026-11-17T01:18:50",
+   "at": "2026-11-17T01:27:25",
    "counts": {
     "errors": 0,
     "failures": 0,
@@ -130,7 +130,7 @@
    "title": "Same firmware runs in QEMU (mps2-an505, Cortex-M33) with transcripts identical to the host build; button is the only approval path"
   },
   "P4-FW-HOST": {
-   "at": "2026-11-17T01:17:18",
+   "at": "2026-11-17T01:25:41",
    "counts": {
     "errors": 0,
     "failures": 0,
@@ -145,18 +145,18 @@
    "title": "Firmware core (host build, HAL mocks) rejects replayed, altered and expired approvals; signs only after a press"
   },
   "P4-FW-RENODE": {
-   "at": "2026-11-17T01:20:50",
+   "at": "2026-11-17T01:29:28",
    "counts": {
     "errors": 0,
-    "failures": 2,
+    "failures": 0,
     "skipped": 0,
-    "tests": 2
+    "tests": 4
    },
-   "fingerprint": "ae2ef529278a7ae952dad90fff81c5c7d89a9b5e7c7fdf7e6dc34eb05ffb0d38",
+   "fingerprint": "41a5282b8b6e3ec45f52a71660eceae6c24beef46fcdac89d09646e33174db9e",
    "label": "EMULATED",
    "phase": 4,
-   "reason": "2 failed, 0 errors",
-   "status": "FAIL",
+   "reason": "4 passed",
+   "status": "PASS",
    "title": "Same firmware runs in Renode with transcripts identical to the host build and QEMU"
   },
   "P5-PCB": {

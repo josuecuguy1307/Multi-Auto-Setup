@@ -31,5 +31,4 @@ Each item: what, why, exact steps. The run keeps going on other units meanwhile.
    `docker info` still cannot reach `dockerDesktopLinuxEngine`; usually fixed by `wsl --update` then restarting Docker Desktop), and the
    run uses the official `kicad/kicad:9.0` image; or allow a native install: `winget install KiCad.KiCad`. Say which in STEER.md.
 
-9. **Renode for P4-FW-RENODE.** Not on winget. Either allow downloading the official Windows installer from
-   https://github.com/renode/renode/releases (latest stable `renode_*.msi`), or run it later in the Linux container once Docker works.
+9. ~~Renode for P4-FW-RENODE~~ — done 2026-11-17: portable zip, unpacked into runs/toolchain/renode (D-019).

@@ -52,7 +52,7 @@ k consecutive passing runs of each eval; limitations section lists what was only
 | P3-READONLY | 3 | **FAIL** | EMULATED | Inspection makes zero writes (diff and read-only mount) and never touches the network | never run |
 | P4-FW-HOST | 4 | **PASS** | SIMULATED | Firmware core (host build, HAL mocks) rejects replayed, altered and expired approvals; signs only after a press | 323 passed |
 | P4-FW-EMU | 4 | **PASS** | EMULATED | Same firmware runs in QEMU (mps2-an505, Cortex-M33) with transcripts identical to the host build; button is the only approval path | 27 passed |
-| P4-FW-RENODE | 4 | **FAIL** | EMULATED | Same firmware runs in Renode with transcripts identical to the host build and QEMU | 2 failed, 0 errors |
+| P4-FW-RENODE | 4 | **PASS** | EMULATED | Same firmware runs in Renode with transcripts identical to the host build and QEMU | 4 passed |
 | P5-PCB | 5 | **PASS** | DESIGN-ONLY | ERC, DRC and fabrication checks green; fab outputs marked NO FABRICAR; HUMAN_REVIEW_PCB.md present | 20 passed |
 | P6-EVALS | 6 | **FAIL** | REAL | Evals reproducible with one command; every number in the paper comes from a script over raw results | never run |
 | P6-REPO | 6 | **FAIL** | REAL | README, THIRD_PARTY.md and reproduction instructions complete | never run |

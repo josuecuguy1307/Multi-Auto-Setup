@@ -100,5 +100,5 @@ from its own LICENSE file when it is cloned (into git-ignored `scout/`, read bef
 | Syft, Grype, osquery | see MISSION 8.2 | to read at clone | Phase 3 candidates (fwupd, EMBA, binwalk, Ghidra cut for v0: D-011) | not cloned |
 | KiCad (kicad-cli), KiBot, Zener (diodeinc/pcb), atopile, Freerouting | see MISSION 8.2 | to read at clone | Phase 5 toolchain (D-009) | not cloned |
 | QEMU 11.1.0 (`qemu-system-arm`) | https://www.qemu.org (winget SoftwareFreedomConservancy.QEMU) | GPL-2.0 | P4-FW-EMU emulator, run as an external tool (no QEMU code in the repo) | installed natively on Josué's host |
-| Renode | https://renode.io | MIT | P4-FW-RENODE emulator, external tool | not installed (NEEDS_HUMAN #9) |
+| Renode 1.17.0 (portable zip) | https://github.com/renode/renode/releases/tag/v1.17.0 | MIT (bundled components list their own in `licenses/`) | P4-FW-RENODE emulator, external tool; its stock `ARMv8M-TrustZone_mps2.repl` is used in place | unpacked into runs/toolchain/renode (git-ignored) |
 | anthropics/claude-quickstarts (autonomous-coding) | https://github.com/anthropics/claude-quickstarts | to read at clone | harness reference only | not cloned |
