@@ -1,0 +1,5 @@
+Monocypher 4.0.2, from https://monocypher.org/download/monocypher-4.0.2.tar.gz
+sha256 of the tarball: 38d07179738c0c90677dba3ceb7a7b8496bcfea758ba1a53e803fed30ae0879c (downloaded 2026-11-17)
+Files copied unmodified: src/monocypher.{c,h}, src/optional/monocypher-ed25519.{c,h}, LICENCE.md.
+Licence: BSD-2-Clause or CC0-1.0 (dual; see LICENCE.md). Read before use: pure computation, no I/O or system calls.
+Used for: pure Ed25519 (RFC 8032, SHA-512) in the key firmware, as required by DECISIONS D-004/D-007.

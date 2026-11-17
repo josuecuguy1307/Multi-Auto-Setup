@@ -276,3 +276,41 @@ D-004 approval token (fixed-width signed struct, pure Ed25519 with monocypher-ed
 - M6: OPEN
 - M7: OPEN
 - M8: RESOLVED — `run.sh` advisor is opt-in (`MAS_ADVISOR` default off); device/tests/test_harness.py::test_unattended_loop_spends_no_advisor_credits_by_default
+
+## A-2 Advisor — Fable 5.2, 2026-11-17: firmware core spec for P4-FW-HOST (condensed faithfully; builder follows it)
+
+1. **Modules** (`device/firmware/`, all static, no malloc/stdio in core): `core/mas_core.{c,h}` state machine (`mas_init`, `mas_rx_byte`,
+   `mas_button_isr`); `core/mas_frame.c` COBS + CRC16; `core/mas_nv.c` counter log and key page, the only caller of flash program/erase;
+   `core/sha256.c` own (~70 lines, tested against hashlib; Monocypher has no SHA-256); `core/mas_hal.h` (`hal_tick_ms`, `hal_tx`,
+   `hal_display(summary[32], next_counter)` — all-zero clears, `hal_trng`, `hal_flash_ptr/program/erase`); `host/hal_host.c`, `host/main_host.c`.
+   The button is a HAL→core call only; nothing in the transport path reaches it. The 146-byte request is exactly body bytes 31..176.
+2. **Wire**: `COBS(op | payload | crc16_be) 0x00`, CRC-16/CCITT-FALSE (`binascii.crc_hqx(d, 0xFFFF)`); responses `COBS(status | payload | crc16) 0x00`;
+   RX overflow discards to the next 0x00 and replies BAD_FRAME. **Opcode allowlist = {0x01 GET_INFO, 0x02 REQUEST (146 B), 0x03 SIGN (seq u32)}.**
+   Status: 0 OK, 1 MALFORMED, 2 SUMMARY_NOT_PRINTABLE, 3 STALE_REQUEST, 4 NO_PRESS, 5 PRESS_WINDOW, 6 UNKNOWN_OPCODE, 7 BAD_FRAME, 8 NV_FAULT.
+   REQUEST checks in keymodel order (length → printable → cls 1..7 / pw ≠ 0); a failed request changes nothing; success: seq++, clear the
+   latch, store t_req, show the display. SIGN: no pending / seq mismatch → STALE (latch untouched); take+clear latch (interrupts masked), none →
+   NO_PRESS and keep pending; clear pending and display; `(uint32_t)(press.t − t_req) > min(pw,30)*1000` → PRESS_WINDOW (strict, press time
+   not SIGN time); commit counter+1 → NV_FAULT on failure; build body, sign, transmit.
+3. **Counter**: two flash pages, append-only 16-byte records `counter u64 LE | ~counter u64 LE` (a torn record fails the complement check;
+   NOR only clears bits). Boot: max valid record over both pages, else 0. Write the slot after the last non-erased slot of the active page;
+   never program a non-0xFF slot. Page full: erase the other page, then write there (the max survives in the old page during the erase).
+   Commit = program, read back, compare, and only then `crypto_ed25519_sign`. Host sweep: mock flash file with AND-on-program, flushed per byte;
+   `MAS_CUT_AFTER=k` exits 77 after k programmed bytes or mid-erase (variants untouched / all 0xFF / garbage); sweep over a full sign including a
+   page rollover; assert counter ∈ {N, N+1}, ≥ any emitted token's counter, next token's counter > every counter ever emitted.
+   Unsure: STM32U5 flash ECC may NMI on a torn word; program granularity not remembered; 16-byte aligned records are safe; label not verified.
+4. **Key**: key page `seed[32] | pub[32] | crc16`; first boot with an erased page: TRNG seed, key pair on a copy, write, continue. Every boot:
+   derive sk, `key_id = sha256(pub)[:8]`. No opcode reads, writes or regenerates the key. Host build SIMULATED: flash is a file, `hal_trng`
+   reads `MAS_TRNG_FILE`; no TrustZone, RDP or real entropy.
+5. **Tests** (`device/tests/test_firmware_host.py`): host binary on stdin with tagged records (`F` frame bytes, `P` press, `T` tick, `D`
+   display dump; only `F` reaches `mas_rx_byte`). Vectors (sha256, CRC, COBS; key_id); differential ~200 seeded scripts against KeyModel
+   (tokens byte-equal, codes equal, display equal); rejections (no press, press before request, window+1 ms rejected / exactly window accepted,
+   pw 255 capped at 30, second SIGN stale, newer request stales the old seq, one press one token, summary 0x1F/0x7F/0x80, cls 0 and 8, pw 0,
+   145/147-byte payloads); replay: the key has no replay defence by design — same request twice needs two presses, two counters, and
+   `Gate.consume` rejects the second; frames (bad CRC, bad COBS, oversize, empty, all 253 unknown opcodes); display = `token[143:175]`;
+   immutability (10k random frames without a press: flash hash unchanged, zero tokens; opcode enum = {1,2,3}; `hal_flash_*` only in mas_nv.c);
+   power-cut sweep and NV_FAULT emits no token; libFuzzer target (Linux container) plus an always-on deterministic Python fuzz; saboteurs
+   (no latch clear on request, sign before commit, no printable check) must each turn the suite red.
+6. **Pitfalls**: `crypto_ed25519_key_pair` wipes the seed (pass a copy; sk = seed‖pk); never `crypto_eddsa_*` (BLAKE2b); wipe temporaries;
+   signing stack is several KB (measure on QEMU). zig cc on Windows: `_setmode(..., _O_BINARY)` on stdin/stdout and fflush per frame; debug
+   builds trap on UBSan (use -O2, sanitizers as a separate run); `-Werror` on core only; libFuzzer/ASan on Windows uncertain — run in Linux;
+   serialise byte by byte, no struct casts.
