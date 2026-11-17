@@ -1,7 +1,7 @@
 {
- "checksum": "2e7b056e50b8abc3161e2ac0f958355cadd63c644cf77d1fdfce1376923644f0",
+ "checksum": "55e0b3c3029dde387ac2da2ee8e209e834eb7f458262060759c41dbcf4127582",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "fd02218",
+ "git_head_at_run": "e772bda",
  "results": {
   "P1-DOCS": {
    "at": "2026-11-16T23:05:50",
@@ -47,6 +47,21 @@
    "reason": "1 failed, 0 errors",
    "status": "FAIL",
    "title": "First unit through the full cycle: signed approval tokens (guardrail 3) with an evaluator report"
+  },
+  "P2-GATE": {
+   "at": "2026-11-16T23:19:21",
+   "counts": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 44
+   },
+   "fingerprint": "13e0957359607bdcf54422c47f7dfdb5535baad2855cd3e136a7a5af9531e215",
+   "label": "SIMULATED",
+   "phase": 2,
+   "reason": "44 passed",
+   "status": "PASS",
+   "title": "Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first"
   },
   "P2-LOG": {
    "at": "2026-11-16T23:14:15",

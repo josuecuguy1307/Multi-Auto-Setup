@@ -374,9 +374,14 @@ def test_undo_refuses_to_clobber_a_later_change(pg, key, root):
 def test_undo_keeps_a_folder_someone_else_filled(pg, key, root):
     w = pg.plan_write({"opt/mas/node.toml": b"[node]\n"})
     pg.execute(press(pg, key, w), w)
-    (root / "opt" / "mas" / "owner.txt").write_bytes(b"mine")
     undo = pg.undo_for(ap.action_hash(w))
+    (root / "opt" / "mas" / "early.txt").write_bytes(b"mine")
+    with pytest.raises(gt.Refused) as e:  # refused before the key is even asked
+        pg.begin_undo(undo)
+    assert e.value.code == "pre_state_changed"
+    (root / "opt" / "mas" / "early.txt").unlink()
     token = press(pg, key, undo, cls=ap.Class.UNDO)
+    (root / "opt" / "mas" / "owner.txt").write_bytes(b"mine")  # and after the press
     with pytest.raises(gt.Refused) as e:
         pg.execute_undo(token, undo)
     assert e.value.code == "pre_state_changed"
