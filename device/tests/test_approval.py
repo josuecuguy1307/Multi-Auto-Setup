@@ -11,7 +11,9 @@ import enum
 import hashlib
 import json
 import threading
+import sys
 import time
+from pathlib import Path
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -914,3 +916,64 @@ def test_the_key_validates_the_copy_it_keeps(gate, key):
     sneaky = SneakyRequest(*req)
     h = key.request(sneaky)
     assert key._pending.req == tuple(req), "the kept copy is exactly the checked fields"
+
+
+
+# ---- evaluator run 6 (device/evals/evaluator/P1-UNIT.run6.md) ---------------------------------------
+
+FIRST_NONCE = (
+    "from mas_device import approval as ap\n"
+    "g = ap.Gate({}, session=bytes(32))\n"
+    "print(g.begin({'kind': 'noop', 'target': 't', 'undo': {'kind': 'noop'}}, ap.Class.WRITE).nonce.hex())\n"
+)
+
+
+def test_first_nonces_differ_across_fresh_interpreters():
+    """A real restart is a new process: a nonce source that is deterministic per process would replay a spent token after it."""
+    import os
+    import subprocess
+    root = Path(__file__).resolve().parents[2]
+    env = dict(os.environ, PYTHONPATH=str(root / "src"))
+    seen = set()
+    for _ in range(5):
+        out = subprocess.run([sys.executable, "-c", FIRST_NONCE], capture_output=True, text=True, env=env, timeout=60)
+        assert out.returncode == 0, out.stderr[-500:]
+        seen.add(out.stdout.strip())
+    assert len(seen) == 5, seen
+
+
+class Shifting(ap.KeyRequest):
+    """Answers the first read of each field honestly and every later read with something else."""
+
+    def __getattribute__(self, name):
+        if name in ("summary", "nonce"):
+            reads = object.__getattribute__(self, "__dict__")
+            reads[name] = reads.get(name, 0) + 1
+            if reads[name] > 1:
+                return b"\x1b[2J" + b"X" * 28 if name == "summary" else b"N" * 21
+        return super().__getattribute__(name)
+
+
+def test_the_key_checks_the_very_copy_it_keeps(gate, key):
+    req = gate.begin(ACTION, ap.Class.WRITE).key_request()
+    key.request(Shifting(*req))
+    kept = key._pending.req
+    assert kept == tuple(req)
+    assert all(0x20 <= c < 0x7F for c in kept.summary) and len(kept.nonce) == 16
+
+
+def test_the_pending_the_gate_returns_is_not_its_own_state(key, gate_clock):
+    gate = ap.Gate({key.key_id: key.public_key}, session=SESSION, clock=gate_clock)
+    p = gate.begin(ACTION, ap.Class.WRITE)
+    tok = sign_request(key, p.key_request())
+    gate_clock.t += ap.MAX_TTL_S + 380
+    object.__setattr__(p, "created", gate_clock.t - 1)  # the caller makes its copy look fresh
+    with pytest.raises(ap.Rejected) as e:
+        gate.consume(tok, ACTION, cls=ap.Class.WRITE)
+    assert e.value.code == "expired"
+
+
+@pytest.mark.parametrize("cls", list(ap.Class))
+def test_every_class_shows_its_own_name_on_the_key(cls):
+    assert ap.summary_for(ACTION, cls).decode("ascii").startswith(cls.name[:6])
+    assert "host-aaaa"[:12] in ap.summary_for(ACTION, cls).decode("ascii")
