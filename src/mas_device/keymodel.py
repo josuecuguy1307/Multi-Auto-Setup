@@ -119,6 +119,7 @@ class KeyModel:
             raise KeyRefused("malformed")
         if self._counter >= 2**64 - 2:
             raise KeyRefused("counter_exhausted")  # no next counter to sign (the firmware answers nv_fault)
+        req = KeyRequest(*(bytes(f) if type(f) is bytearray else f for f in req))  # its own immutable copy (the firmware memcpy's it)
         self._seq += 1
         self.button._take()  # a press latched before this request never counts for it
         self._pending = RequestHandle(self._seq, _next_event(), self._clock(), req)

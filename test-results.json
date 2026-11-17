@@ -1,7 +1,7 @@
 {
- "checksum": "d7ec2c3cc0e56b23a3a475f3d6cef2d4c9f22080acfe58a106e8b063ae8ed051",
+ "checksum": "5fe9e04b65c1928fe66d11556672257a1fe2a1083f75715d574f63a53c3ecc3f",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "b2be85e",
+ "git_head_at_run": "2083f7d",
  "results": {
   "P0-SECRETS": {
    "at": "2026-11-17T02:38:12",
@@ -43,14 +43,14 @@
    "title": "The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist"
   },
   "P1-UNIT": {
-   "at": "2026-11-17T02:35:48",
+   "at": "2026-11-17T02:51:17",
    "counts": {
     "errors": 0,
     "failures": 1,
     "skipped": 0,
-    "tests": 159
+    "tests": 164
    },
-   "fingerprint": "c3d9cafd8d2610a4b7436ab6ee1bba859aa0a42e8c52b9a092fe82c265fbd580",
+   "fingerprint": "df3e3f185534b7ee609bd1de4eb358a5b82334e764e912bf9247827af0deb18b",
    "label": "SIMULATED",
    "phase": 1,
    "reason": "1 failed, 0 errors",
@@ -73,14 +73,14 @@
    "title": "Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers"
   },
   "P2-GATE": {
-   "at": "2026-11-17T02:37:09",
+   "at": "2026-11-17T02:52:47",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 104
    },
-   "fingerprint": "48de5fe538551662916911d058ff8884eca8a8a11a69825db9f6272ad28f6e6d",
+   "fingerprint": "e7a5b82043ebd9d1366653caf433c8d3ed18c0db503753d21bebc4e86a3328b0",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "104 passed, 2 saboteurs killed",
@@ -101,14 +101,14 @@
    "title": "Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations"
   },
   "P2-LOG": {
-   "at": "2026-11-17T02:37:31",
+   "at": "2026-11-17T02:53:14",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 41
    },
-   "fingerprint": "0fef7fd1aa64a730785f42d5cd4c6fdf630816fabed6af876bd625565808ac84",
+   "fingerprint": "e5887802faa5bfa98f73a6ad9ef5d5b81d32aef42a78b8bde9f26a0f2146a345",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "41 passed, 2 saboteurs killed",
@@ -216,7 +216,7 @@
    "title": "Same firmware runs in QEMU (mps2-an505, Cortex-M33) with transcripts identical to the host build; button is the only approval path"
   },
   "P4-FW-HOST": {
-   "at": "2026-11-17T02:12:10",
+   "at": "2026-11-17T02:53:37",
    "counts": {
     "errors": 0,
     "failures": 0,

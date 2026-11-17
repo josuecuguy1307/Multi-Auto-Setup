@@ -236,8 +236,9 @@ class Gate:
     """Holds pending approvals in memory and accepts each signed token once. `pinned` maps key_id to the raw 32-byte Ed25519 public key."""
 
     def __init__(self, pinned: dict[bytes, bytes], *, session: bytes, clock: Callable[[], float] = time.monotonic, ttl_s: float = MAX_TTL_S) -> None:
-        if len(session) != 32:
+        if type(session) not in (bytes, bytearray) or len(session) != 32:
             raise ValueError("session id is 32 bytes")
+        session = bytes(session)
         try:
             ok = not isinstance(ttl_s, bool) and isinstance(ttl_s, (int, float)) and math.isfinite(ttl_s) and 0 < ttl_s <= MAX_TTL_S
         except OverflowError:
@@ -258,9 +259,12 @@ class Gate:
     def _now(self) -> float:
         """One clock reading, refused unless it is a real finite number: a bad reading is never stored and never wedges the gate."""
         v = self.clock()
-        if type(v) not in (int, float) or not math.isfinite(v):
-            raise Rejected("expired", "the gate's clock gave an unusable reading")
-        return float(v)
+        try:
+            if type(v) not in (int, float) or not math.isfinite(v):
+                raise Rejected("expired", "the gate's clock gave an unusable reading")
+            return float(v)
+        except OverflowError:
+            raise Rejected("expired", "the gate's clock reading is too large") from None
 
     def begin(self, action: dict, cls: Class) -> Pending:
         cls = as_class(cls)
