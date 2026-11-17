@@ -5,7 +5,9 @@
  * counter is committed to flash and read back before the signature is computed. One press, one signature.
  *
  * Token = body[177] | Ed25519(body)[64], body = "MAS-APPROVE-v1\0" | key_id[8] | counter u64 BE | request[146] (approval.py pack_body).
- * SIMULATED in the host build (HAL mocks); EMULATED on QEMU/Renode; nothing here has run on real hardware yet. */
+ * SIMULATED in the host build (HAL mocks). QEMU/Renode runs are planned (P4-FW-EMU, not built yet); nothing has run on real hardware.
+ * Fail closed: any failed counter commit latches a fault until reboot; an erased or inconsistent key page after the key has signed is a
+ * fault, never a new identity. */
 #include <string.h>
 #include "mas_core.h"
 #include "mas_hal.h"
@@ -35,11 +37,12 @@ static int fault;
 static uint32_t seq;
 static struct {
     int valid;
-    uint32_t seq, t_req;
+    uint32_t seq;
+    uint64_t t_req;
     uint8_t payload[REQ_LEN];
 } pending;
 static volatile int press_latched;
-static volatile uint32_t press_t;
+static volatile uint64_t press_t;
 
 static void wr_be(uint8_t *p, uint64_t v, int n) {
     for (int i = 0; i < n; i++) p[i] = (uint8_t)(v >> (8 * (n - 1 - i)));
@@ -76,7 +79,8 @@ void mas_init(void) {
     if (k != 0) {
         /* A corrupted key page is replaced only if this key never signed anything (empty counter log): a power cut during first-boot
          * key generation. Once a counter exists, the identity is never silently changed. */
-        if (k < 0 && (!mas_nv_log_empty() || mas_nv_erase_key() != 0)) { fault = 1; return; }
+        if (!mas_nv_log_empty()) { fault = 1; return; }
+        if (k < 0 && mas_nv_erase_key() != 0) { fault = 1; return; }
         if (hal_trng(seed) != 0) { fault = 1; return; }
         memcpy(tmp, seed, 32);
         crypto_ed25519_key_pair(sk, pub, tmp); /* wipes tmp */
@@ -140,16 +144,16 @@ static void op_sign(const uint8_t *p, size_t n) {
     if (!pending.valid || s != pending.seq) { reply(ST_STALE_REQUEST, 0, 0); return; }
     hal_irq_disable();
     int pressed = press_latched;
-    uint32_t t = press_t;
+    uint64_t t = press_t;
     press_latched = 0;
     hal_irq_enable();
     if (!pressed) { reply(ST_NO_PRESS, 0, 0); return; }
     pending.valid = 0; /* one press, one request */
     hal_display(ZERO32, 0);
     uint32_t pw = pending.payload[PW_AT] < MAX_WINDOW_S ? pending.payload[PW_AT] : MAX_WINDOW_S;
-    if ((uint32_t)(t - pending.t_req) > pw * 1000u) { reply(ST_PRESS_WINDOW, 0, 0); return; }
+    if (t - pending.t_req > (uint64_t)pw * 1000u) { reply(ST_PRESS_WINDOW, 0, 0); return; }
     uint64_t next = mas_nv_counter() + 1;
-    /* SABOTEUR-ANCHOR: commit-then-sign */ if (mas_nv_commit(next) != 0) { reply(ST_NV_FAULT, 0, 0); return; } send_token(next);
+    /* SABOTEUR-ANCHOR: commit-then-sign */ if (mas_nv_commit(next) != 0) { fault = 1; reply(ST_NV_FAULT, 0, 0); return; } send_token(next);
 }
 
 static void handle(uint8_t op, const uint8_t *p, size_t n) {

@@ -350,3 +350,11 @@ live lookup was done (no invented stock numbers); HUMAN_REVIEW_PCB.md has the te
 (every VDD*/VDDA/VDDUSB/VBAT/VCAP pin has a cap to GND, BTN has exactly one IC pin, CC1/CC2 distinct with one 5.1k each, BOOT0 10k, NRST
 100 nF, D± only U2 and U1, one pull-up each on SCL/SDA); saboteurs: delete a track → DRC unconnected; change a pad net → parity fails;
 remove a decoupling cap → net check fails.
+
+## D-015 Firmware fixes after evaluator run 1 (2026-11-17)
+- Counter: any failed commit latches a fault until reboot (core and NV module); `active` moves to a freshly erased page only after a record
+  there is read back. The page holding the maximum is never erased. (Evaluator BROKE 1: 513 failed commits had erased it.)
+- Key: an erased or inconsistent key page once the counter log is non-empty is a fault, never a new identity (BROKE 2).
+- Tick: `hal_tick_ms` is 64-bit; the press window no longer aliases at 2^32 ms (BROKE 3). The STM32 port must keep a 64-bit ms counter.
+- Amends A-2 §5: the libFuzzer target is NOT built (it needs a Linux container; Docker is down). A deterministic 10,000-frame Python fuzz
+  and 200 differential scripts run instead. Recorded as a gap, not as done.

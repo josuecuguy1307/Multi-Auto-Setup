@@ -11,7 +11,7 @@
 #define MAS_PAGE_CTR_A 1
 #define MAS_PAGE_CTR_B 2
 
-uint32_t hal_tick_ms(void);                                   /* monotonic, wraps at 2^32 */
+uint64_t hal_tick_ms(void);                                   /* monotonic milliseconds, 64-bit: never wraps in practice */
 void hal_tx(const uint8_t *buf, size_t len);                  /* bytes out on the transport */
 void hal_display(const uint8_t summary[32], uint64_t next);  /* all-zero summary clears the screen */
 int hal_trng(uint8_t out[32]);                                /* 0 on success */

@@ -3,7 +3,8 @@
  * Fault injection for the power-cut sweep:
  *   MAS_CUT_AFTER=k        exit(77) when flash step k+1 would start (each programmed byte is a step, each erase is a step)
  *   MAS_CUT_ERASE=0|1|2    what a cut erase leaves: 0 untouched, 1 fully erased, 2 deterministic garbage
- *   MAS_FLASH_FAIL_AFTER=k program calls fail (write nothing) once k bytes have been programmed */
+ *   MAS_FLASH_FAIL_AFTER=k program calls fail (write nothing) once k bytes have been programmed
+ *   MAS_FLASH_STUCK=1      program calls report success but no bit changes (tests the read-back) */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,9 +14,9 @@
 #define PAGES 3
 static uint8_t flash[PAGES * MAS_PAGE_SIZE];
 static FILE *ff;
-static uint32_t tick;
+static uint64_t tick;
 static long cut_after = -1, steps, fail_after = -1, programmed;
-static int erase_mode;
+static int erase_mode, stuck;
 static uint8_t disp[32];
 static uint64_t disp_next;
 
@@ -42,6 +43,7 @@ void host_hal_init(void) {
     cut_after = env_long("MAS_CUT_AFTER", -1);
     erase_mode = (int)env_long("MAS_CUT_ERASE", 0);
     fail_after = env_long("MAS_FLASH_FAIL_AFTER", -1);
+    stuck = (int)env_long("MAS_FLASH_STUCK", 0);
 }
 
 static void persist(size_t off, size_t len) {
@@ -58,7 +60,7 @@ static void step(void) {
     steps++;
 }
 
-uint32_t hal_tick_ms(void) { return tick; }
+uint64_t hal_tick_ms(void) { return tick; }
 void host_tick_add(uint32_t ms) { tick += ms; }
 
 void hal_tx(const uint8_t *buf, size_t len) {
@@ -96,6 +98,7 @@ int hal_flash_program(int page, uint32_t off, const uint8_t *buf, size_t len) {
     for (size_t i = 0; i < len; i++) {
         if (fail_after >= 0 && programmed >= fail_after) return -1;
         step();
+        if (stuck) continue; /* reports success, bits do not change */
         flash[base + i] &= buf[i];
         persist(base + i, 1);
         programmed++;

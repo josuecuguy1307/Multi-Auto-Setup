@@ -713,7 +713,7 @@ def test_saboteur_no_printable_check_is_caught(tmp_path):
 
 
 def test_saboteur_sign_before_commit_is_caught_by_the_power_cut_sweep(tmp_path):
-    bad = _saboteur(tmp_path, "/* SABOTEUR-ANCHOR: commit-then-sign */ if (mas_nv_commit(next) != 0) { reply(ST_NV_FAULT, 0, 0); return; } send_token(next);",
+    bad = _saboteur(tmp_path, "/* SABOTEUR-ANCHOR: commit-then-sign */ if (mas_nv_commit(next) != 0) { fault = 1; reply(ST_NV_FAULT, 0, 0); return; } send_token(next);",
                     "send_token(next); if (mas_nv_commit(next) != 0) { return; }")
     flash = tmp_path / "s.bin"
     f = Fw(bad, flash)

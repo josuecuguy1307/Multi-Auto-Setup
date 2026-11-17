@@ -17,7 +17,7 @@
 #define KEY_LEN 66u
 
 static uint64_t cur;
-static int any, active;
+static int any, active, failed;
 static uint32_t next_slot;
 
 static uint64_t rd64(const uint8_t *p) {
@@ -40,6 +40,7 @@ int mas_nv_init(void) {
     static const int pages[2] = {MAS_PAGE_CTR_A, MAS_PAGE_CTR_B};
     cur = 0;
     any = 0;
+    failed = 0;
     active = MAS_PAGE_CTR_A;
     for (int k = 0; k < 2; k++) {
         const uint8_t *p = hal_flash_ptr(pages[k]);
@@ -66,25 +67,29 @@ uint64_t mas_nv_counter(void) { return cur; }
 
 int mas_nv_log_empty(void) { return !any; }
 
+/* Fail closed: after any failed commit this module refuses every further commit until the next boot rescans the flash. The page that
+ * holds the maximum is never erased: only the other page is, and `active` moves to it only after a record there has been read back. */
 int mas_nv_commit(uint64_t c) {
     uint8_t rec[REC];
-    if (c == 0 || c == UINT64_MAX || (any && c <= cur)) return -1;
+    if (failed || c == 0 || c == UINT64_MAX || (any && c <= cur)) return -1;
     wr64(rec, c);
     wr64(rec + 8, ~c);
     int page = active;
     uint32_t slot = next_slot;
+    failed = 1; /* cleared only when the record is durable */
     if (slot >= SLOTS) {
         page = (active == MAS_PAGE_CTR_A) ? MAS_PAGE_CTR_B : MAS_PAGE_CTR_A;
-        if (hal_flash_erase(page) != 0) return -1;
+        if (hal_flash_erase(page) != 0 || !all_ff(hal_flash_ptr(page), MAS_PAGE_SIZE)) return -1;
         slot = 0;
     }
-    active = page;
-    next_slot = slot + 1; /* even a failed write leaves this slot used: it is never programmed twice */
     if (!all_ff(hal_flash_ptr(page) + slot * REC, REC)) return -1;
     if (hal_flash_program(page, slot * REC, rec, REC) != 0) return -1;
     if (memcmp(hal_flash_ptr(page) + slot * REC, rec, REC) != 0) return -1;
+    active = page;
+    next_slot = slot + 1;
     cur = c;
     any = 1;
+    failed = 0;
     return 0;
 }
 

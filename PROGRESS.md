@@ -71,7 +71,9 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   Tests first (red e85e233), then the C core: 3-opcode allowlist, COBS+CRC16 framing, press-after-request latch, strict press window at the
   press time, two-page counter log committed and read back before signing, key page never touched by an opcode. P4-FW-HOST oracle PASS,
   296 tests (60 differential scripts vs keymodel.py, power-cut sweeps incl. page rollover with 3 erase variants, first-boot cut, 3 saboteur
-  builds that the suite catches). SIMULATED. Evaluator run 1 started.
+  builds; correction after evaluator run 1: two of the saboteur tests then only showed the saboteur misbehaving, now they run the suite's
+  own check and require it to fail). SIMULATED. Evaluator run 1: FAIL (counter rollback after 513 failed commits, key regenerated after
+  signing, tick wrap). Fixed test-first (red a20a48e): 308 tests pass, D-015. Evaluator run 2 pending.
 - Failed attempts: a 300-byte payload test expected `malformed` but the spec says RX overflow is `bad_frame` (test corrected); the
   printable-check saboteur left `printable()` unused and -Werror refused to build it (saboteur now keeps the call). A combined shell command
   that also ran a no-op `sed -i` on a vendored file was blocked by the auto-mode classifier; redone as plain copy + Write.
