@@ -314,3 +314,39 @@ D-004 approval token (fixed-width signed struct, pure Ed25519 with monocypher-ed
    signing stack is several KB (measure on QEMU). zig cc on Windows: `_setmode(..., _O_BINARY)` on stdin/stdout and fflush per frame; debug
    builds trap on UBSan (use -O2, sanitizers as a separate run); `-Werror` on core only; libFuzzer/ASan on Windows uncertain — run in Linux;
    serialise byte by byte, no struct casts.
+
+## A-3 Advisor — Fable 5.2, 2026-11-17: key board spec for P5-PCB (condensed faithfully) — amends D-009
+
+**Amendment to D-009.** No Docker on this host, KiCad installed natively (winget gave **KiCad 10.0.8**, not 9). Zener/atopile/KiBot are
+replaced by: one Python source of truth `device/hardware/design.py` (parts + pin-NAME→net map; MCU pin numbers are resolved from the stock
+symbol, never hardcoded) → `gen_sch.py` writes a real `.kicad_sch` (stock symbols embedded, a global label at every pin end, no_connect on
+unused pins, PWR_FLAG on GND and VBUS, deterministic uuid5 UUIDs) → `kicad-cli sch export netlist` → `gen_pcb.py` under KiCad's bundled
+Python builds the board **from that netlist** (parity by construction) with placement from design.py → routing without Java: GND only through
+pours (solid B.Cu + F.Cu) with a via beside each GND pad; other nets by a small deterministic two-layer grid router; zone fill; DRC judges.
+Every lib:name came from memory: the generator must assert each exists in the installed libraries.
+
+**Parts.** U1 STM32U585CIT6 (LQFP48, LDO variant, not "Q"); J1 GCT USB4105-GF-A USB-C (USB 2.0); U2 USBLC6-2SC6; U3 AP2112K-3.3 (≈250 mV
+dropout at 600 mA, load < 50 mA); SW1 C&K PTS645; J2 1x4 2.54 mm OLED socket; J3 2x5 1.27 mm SWD (Cortex Debug: 1 VTref, 2 SWDIO, 3/5/9 GND,
+4 SWCLK, 6 SWO, 10 NRST); D1 0603 LED; 0603 passives. R1/R2 5.1k CC1/CC2→GND separately; 1 µF on VBUS (total ≪ 10 µF); LDO out 1 µF + 4.7 µF;
+100 nF per VDD, VDDUSB, VBAT (tied to +3V3); VDDA 100 nF + 1 µF to +3V3 (ADC unused; flag); VCAP 4.7 µF per VCAP pin (UNVERIFIED for the LDO
+variant: check AN5373); BOOT0 (PH3) 10k→GND; NRST 100 nF→GND; button to GND, 10k pull-up, 1k + 100 nF RC into the MCU (open reads "not
+pressed"); I²C 4.7k pull-ups (modules may carry their own; flag); LED 1k. ATECC608B DNP footprint only if ERC stays clean.
+**Clock:** no crystal; HSI48 + CRS on USB SOF (confident for U575/U585 USB FS device); PH0/PH1/PC14/PC15 no-connect.
+
+**Pin map** (functions high confidence; every LQFP48 pin number UNVERIFIED): USB_DM/DP PA11/PA12; SWDIO/SWCLK PA13/PA14; SWO PB3;
+I2C1 SCL/SDA PB6/PB7 (AF4); BTN PA0 (EXTI0/WKUP1, not a strap, TrustZone-assignable); LED PA8; BOOT0 PH3; NRST; VDD, VSS, VDDA/VSSA,
+VDDUSB, VBAT, VCAP.
+
+**Board.** 20 × 48 mm, 2-layer 1.6 mm FR4 1 oz, parts on F.Cu. Rules above JLCPCB minimums: clearance 0.15, signal 0.2, power 0.4, via
+0.6/0.3, copper-to-edge 0.3, hole-to-hole 0.5 (mm). GND pours both layers with stitching. Order along the long axis: J1 at the edge → U2 within
+3 mm → R1/R2 → U3 + caps → U1 centre with decoupling at each pin → SW1 → J2 far end; J3 and D1 on the long edge. USB D± short, paired, top
+only, over unbroken bottom GND; no impedance control (flag). Silk `NO FABRICAR sin revisión humana` on both sides.
+
+**Tests (P5-PCB).** ERC `--severity-all --exit-code-violations` JSON zero; DRC `--schematic-parity --severity-all --exit-code-violations`
+with zero violations, zero unconnected, zero parity issues; no exclusions or lowered severities in `.kicad_pro`, capped no_connect count,
+rules ≥ fab values; generators deterministic (byte-identical rerun); gerbers, drill, pos, BOM exported by kicad-cli, each stamped and
+suffixed `_NO_FABRICAR`, no zip; BOM rows have MPNs, `bom_snapshot.json` dated with source and stock/lifecycle per MPN, and says so if no
+live lookup was done (no invented stock numbers); HUMAN_REVIEW_PCB.md has the ten items, the UNVERIFIED list and DESIGN-ONLY; netlist checks
+(every VDD*/VDDA/VDDUSB/VBAT/VCAP pin has a cap to GND, BTN has exactly one IC pin, CC1/CC2 distinct with one 5.1k each, BOOT0 10k, NRST
+100 nF, D± only U2 and U1, one pull-up each on SCL/SDA); saboteurs: delete a track → DRC unconnected; change a pad net → parity fails;
+remove a decoupling cap → net check fails.
