@@ -1,7 +1,7 @@
 {
- "checksum": "eb056ae7f642c639e9a116b0ac319a54a82bf2d9265ece6575de85a3a2b155b9",
+ "checksum": "bdc59c23672bf7e5d0f1272fb65e0cfc7b5b39f4bac2821d8b5cf24c28bce45b",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "f67e634",
+ "git_head_at_run": "8cc8b86",
  "results": {
   "P0-SECRETS": {
    "at": "2026-11-17T02:38:12",
@@ -43,14 +43,14 @@
    "title": "The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist"
   },
   "P1-UNIT": {
-   "at": "2026-11-17T10:12:43",
+   "at": "2026-11-17T10:23:16",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 179
    },
-   "fingerprint": "874b47d2b699cea0e3d587b4716abab2bddde3fc350d290894b6e3580d06221c",
+   "fingerprint": "029a03ceecb686d38ede53a4f14baec9c272ea2d5fa20899febc2a94e5b5ce7a",
    "label": "SIMULATED",
    "phase": 1,
    "reason": "179 passed, 4 saboteurs killed",

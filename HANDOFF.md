@@ -15,13 +15,13 @@
 | P2-LOG | PASS 44, 2 saboteurs | run 2 findings fixed (D-026); **evaluator run 3 not yet run** |
 | P2-GUARDRAILS | PASS 26, 5 saboteurs | built 385e4a6 (D-025: `mas_device/gated.py`); **evaluator run 1 not yet run** |
 | P4-FW-HOST / EMU / RENODE | PASS 328 / 27 / 4 | firmware in C; QEMU mps2-an505 and Renode run the same ELF |
-| P5-PCB | PASS 35 (DESIGN-ONLY) | board evaluator run 2 was running at handoff |
+| P5-PCB | PASS 35 (DESIGN-ONLY) | **board evaluator run 2 FAIL** (`device/evals/evaluator/P5-PCB.run2.md`): USB D- bypasses the ESD part U2 (stub), 31 vias inside SMD pads (one on U1 pin 36); tests miss the power path (U3 EN, LDO cap values, VDDA 1 uF), button path (R5/C11), SWD pin order and D1 polarity; HUMAN_REVIEW line about the USB-C body is wrong. Not yet fixed |
 | everything else | FAIL (not built) | P2-PORTABLE, P2-ZEROTRACE, P2-FLEET, P2-MODEL, P2-MEMORY, P2-PAIRING, P3-*, P4-SECBOOT, P5-ENCLOSURE, P6-*, P0-SECRETS |
 
 Updated 2026-11-17 (second account), 10/26 PASS. Evaluators to run next (fresh context; give them the proportionality rule of §3;
 tell them to work in a `git archive HEAD` copy under `runs/eval/` and to write their report to `runs/eval/<ID>.runN.report.md` so it
-survives a usage limit): **P2-GUARDRAILS run 1**, **P2-GATE run 8**, **P2-LOG run 3**. **P5-PCB run 2** was started at a99fcbc; if its
-report is not in `runs/eval/P5-PCB.run2.report.md`, re-run it. The `evaluator` agent type only loads when the session starts in this repo;
+survives a usage limit): **P2-GUARDRAILS run 1**, **P2-GATE run 8**, **P2-LOG run 3**. P5-PCB run 2 is done (FAIL, see table): fix its 4 REQUIRED
+items test-first (reroute D- through U2, vias out of pads, netlist tests for power/button/SWD/LED), then board evaluator run 3. The `evaluator` agent type only loads when the session starts in this repo;
 otherwise paste `.claude/agents/evaluator.md` into a general-purpose agent and tell it not to run `device_accept.py run`.
 
 ## 2. How to resume (in order)

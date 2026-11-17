@@ -132,3 +132,6 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   nothing broken. Fixing test-first next.
 - P2-GATE run 7 (BROKE: rollback restore without a final compare; 3 weak tests) and P2-LOG run 2 (4 weak tests) fixed test-first (D-026):
   P2-GATE 141 PASS, P2-LOG 44 PASS. Next: evaluator runs P2-GATE 8, P2-LOG 3, P2-GUARDRAILS 1; P5-PCB run 2 still running.
+- P5-PCB board evaluator run 2: FAIL. BROKE: USB D- reaches the MCU by a direct path that skips the ESD part U2 (U2 on a 15 mm stub);
+  31 vias inside SMD pads (A-3 says beside; one overlaps U1 pin 36). WEAK: power path (U3 EN, LDO caps, VDDA), button path (R5/C11),
+  SWD pin order, D1 polarity untested. Run-1 items all fixed. Not yet fixed; report in device/evals/evaluator/P5-PCB.run2.md.
