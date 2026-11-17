@@ -1,7 +1,7 @@
 {
- "checksum": "bdc59c23672bf7e5d0f1272fb65e0cfc7b5b39f4bac2821d8b5cf24c28bce45b",
+ "checksum": "ad97fe0f3212803d1e20992c8beb8f343975d3eb97bee9a500f21877f99d5b32",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "8cc8b86",
+ "git_head_at_run": "18a1f25",
  "results": {
   "P0-SECRETS": {
    "at": "2026-11-17T02:38:12",
@@ -277,18 +277,18 @@
    "title": "Parametric enclosure fits the board (clearances, USB-C opening, button access) by automatic check"
   },
   "P5-PCB": {
-   "at": "2026-11-17T09:18:54",
+   "at": "2026-11-17T10:29:39",
    "counts": {
     "errors": 0,
-    "failures": 0,
+    "failures": 2,
     "skipped": 0,
-    "tests": 35
+    "tests": 47
    },
-   "fingerprint": "328c0a82e725ab4754759817ef0d9be419269bfeaf6e3bbb5a8082a4f171f430",
+   "fingerprint": "889a69b7415fc6cef59824b2d63be780784f47203fea5acbf22c31891a49ba0a",
    "label": "DESIGN-ONLY",
    "phase": 5,
-   "reason": "35 passed",
-   "status": "PASS",
+   "reason": "2 failed, 0 errors",
+   "status": "FAIL",
    "title": "ERC, DRC and fabrication checks green; fab outputs marked NO FABRICAR; HUMAN_REVIEW_PCB.md present"
   },
   "P6-EVALS": {

@@ -3,8 +3,8 @@
     <kicad>/bin/python.exe device/hardware/inspect_board.py <board.kicad_pcb>   -> JSON on stdout
 
 texts:  every PCB_TEXT: layer, text, visible, x, y, height, thickness, bbox
-tracks: every track segment: net, layer, start, end, width        vias: net, x, y
-pads:   every pad: ref, number, net, x, y, layers                   outline: Edge.Cuts bounding box
+tracks: every track segment: net, layer, start, end, width        vias: net, x, y, diameter, drill
+pads:   every pad: ref, number, net, x, y, bbox, layers             outline: Edge.Cuts bounding box
 All coordinates in mm.
 """
 
@@ -34,14 +34,17 @@ def main(path: str) -> None:
     for t in b.GetTracks():
         layer = b.GetLayerName(t.GetLayer())
         if t.GetClass() == "PCB_VIA":
-            out["vias"].append({"net": t.GetNetname(), "x": mm(t.GetPosition().x), "y": mm(t.GetPosition().y)})
+            out["vias"].append({"net": t.GetNetname(), "x": mm(t.GetPosition().x), "y": mm(t.GetPosition().y),
+                                "diameter": mm(t.GetWidth(pcbnew.F_Cu)), "drill": mm(t.GetDrillValue())})
         else:
             out["tracks"].append({"net": t.GetNetname(), "layer": layer, "start": [mm(t.GetStart().x), mm(t.GetStart().y)],
                                   "end": [mm(t.GetEnd().x), mm(t.GetEnd().y)], "width": mm(t.GetWidth())})
     for fp in b.GetFootprints():
         for p in fp.Pads():
+            pb = p.GetBoundingBox()
             out["pads"].append({"ref": fp.GetReference(), "number": p.GetNumber(), "net": p.GetNetname(),
                                 "x": mm(p.GetPosition().x), "y": mm(p.GetPosition().y),
+                                "bbox": [mm(pb.GetX()), mm(pb.GetY()), mm(pb.GetRight()), mm(pb.GetBottom())],
                                 "layers": [b.GetLayerName(l) for l in (pcbnew.F_Cu, pcbnew.B_Cu) if p.IsOnLayer(l)]})
     ebb = b.GetBoardEdgesBoundingBox()
     out["outline"] = [mm(ebb.GetX()), mm(ebb.GetY()), mm(ebb.GetRight()), mm(ebb.GetBottom())]

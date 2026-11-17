@@ -472,3 +472,216 @@ def test_the_committed_fab_files_are_a_fresh_build(rebuilt):
     assert mine.keys() == fresh.keys()
     for name in mine:
         assert mine[name] == fresh[name], name
+
+
+# ---- board evaluator run 2 (device/evals/evaluator/P5-PCB.run2.md) ------------------------------------------
+
+def _pad_boxes(board, ref):
+    return [p for p in board["pads"] if p["ref"] == ref]
+
+
+def esd_bypass(board, net) -> bool:
+    """True if copper of `net` joins J1 to U1 without passing through U2's pad copper. Tracks are cut into short pieces; pieces inside a
+    U2 pad are removed (that copper IS the ESD part's pad); what is left must not connect a J1 pad to the U1 pad."""
+    u2 = [p["bbox"] for p in _pad_boxes(board, "U2") if p["net"] == net]
+    inside = lambda pt, b, m=0.0: b[0] - m <= pt[0] <= b[2] + m and b[1] - m <= pt[1] <= b[3] + m
+    pieces = []
+    for t in board["tracks"]:
+        if t["net"] != net:
+            continue
+        (x0, y0), (x1, y1) = t["start"], t["end"]
+        n = max(1, int(math.dist((x0, y0), (x1, y1)) / 0.05))
+        for k in range(n):
+            a = (x0 + (x1 - x0) * k / n, y0 + (y1 - y0) * k / n)
+            b = (x0 + (x1 - x0) * (k + 1) / n, y0 + (y1 - y0) * (k + 1) / n)
+            if not any(inside(((a[0] + b[0]) / 2, (a[1] + b[1]) / 2), box) for box in u2):
+                pieces.append((a, b, t["width"]))
+    ends = {"J1": [p["bbox"] for p in _pad_boxes(board, "J1") if p["net"] == net],
+            "U1": [p["bbox"] for p in _pad_boxes(board, "U1") if p["net"] == net]}
+    assert u2 and ends["J1"] and ends["U1"], net
+    nodes = [("piece", i) for i in range(len(pieces))] + [("J1", 0), ("U1", 0)]
+    adj = {k: set() for k in nodes}
+    buckets: dict = {}
+    for i, (a, b, w) in enumerate(pieces):
+        buckets.setdefault((int(a[0] / 0.5), int(a[1] / 0.5)), []).append(i)
+    for i, (a, b, w) in enumerate(pieces):
+        cx, cy = int(a[0] / 0.5), int(a[1] / 0.5)
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for k in buckets.get((cx + dx, cy + dy), []):
+                    if k > i and _seg_dist(a, b, pieces[k][0], pieces[k][1]) < (w + pieces[k][2]) / 2 - 1e-6:
+                        adj[("piece", i)].add(("piece", k))
+                        adj[("piece", k)].add(("piece", i))
+        for side, boxes in ends.items():
+            if any(inside(a, box, w / 2) or inside(b, box, w / 2) for box in boxes):
+                adj[("piece", i)].add((side, 0))
+                adj[(side, 0)].add(("piece", i))
+    seen, todo = {("J1", 0)}, [("J1", 0)]
+    while todo:
+        for nxt in adj[todo.pop()]:
+            if nxt not in seen:
+                seen.add(nxt)
+                todo.append(nxt)
+    return ("U1", 0) in seen
+
+
+def test_usb_data_lines_pass_through_the_esd_part_pads(board):
+    assert [n for n in ("USB_DP", "USB_DM") if esd_bypass(board, n)] == []
+
+
+def test_saboteur_a_direct_usb_track_around_the_esd_part_is_caught(board):
+    j = next(p for p in board["pads"] if p["ref"] == "J1" and p["net"] == "USB_DM")
+    u = next(p for p in board["pads"] if p["ref"] == "U1" and p["net"] == "USB_DM")
+    weakened = dict(board, tracks=board["tracks"] + [{"net": "USB_DM", "layer": "F.Cu", "start": [j["x"], j["y"]],
+                                                         "end": [u["x"], u["y"]], "width": 0.2}])
+    assert esd_bypass(weakened, "USB_DM")
+
+
+def vias_in_pads(board) -> list:
+    """Vias whose copper overlaps any pad (A-3: a via BESIDE each GND pad; an open hole in a pad wicks solder at reflow)."""
+    bad = []
+    for v in board["vias"]:
+        r = v["diameter"] / 2
+        for p in board["pads"]:
+            x0, y0, x1, y1 = p["bbox"]
+            dx, dy = max(x0 - v["x"], 0, v["x"] - x1), max(y0 - v["y"], 0, v["y"] - y1)
+            if math.hypot(dx, dy) < r - 1e-6:
+                bad.append((v["net"], v["x"], v["y"], p["ref"], p["number"]))
+    return bad
+
+
+def test_no_via_sits_in_a_pad(board):
+    assert vias_in_pads(board) == []
+
+
+def test_saboteur_a_via_in_a_pad_is_caught(board):
+    p = next(p for p in board["pads"] if p["ref"] == "C1" and p["net"] == "GND")
+    weakened = dict(board, vias=board["vias"] + [{"net": "GND", "x": p["x"], "y": p["y"], "diameter": 0.6, "drill": 0.3}])
+    assert vias_in_pads(weakened)
+
+
+def _one(pins, ref, func=None, number=None):
+    found = {n for n, r, p, f, _ in pins[0] if r == ref and (func is None or f == func) and (number is None or p == number)}
+    return found.pop() if len(found) == 1 else None
+
+
+def _between(pins, a, b, prefix):
+    by_ref = {}
+    for n, r, p, f, t in pins[0]:
+        by_ref.setdefault(r, set()).add(n)
+    return sorted(r for r, ns in by_ref.items() if r.startswith(prefix) and ns == {a, b})
+
+
+def _value_is(pins, ref, parse, want) -> bool:
+    try:
+        return math.isclose(parse(pins[1][ref]), want)
+    except (AssertionError, KeyError):
+        return False
+
+
+def circuit_violations(pins, board) -> list[str]:
+    """Power path, button path, LED and SWD, read pin by pin from the netlist (and pad positions for 'at the pin')."""
+    v = []
+    pads = {(p["ref"], p["number"]): (p["x"], p["y"]) for p in board["pads"]}
+    numbers = {(r, f): p for n, r, p, f, _ in pins[0]}
+    for func, net in (("VIN", "VBUS"), ("EN", "VBUS"), ("VOUT", "+3V3"), ("GND", "GND")):
+        if _one(pins, "U3", func) != net:
+            v.append(f"U3.{func} not on {net}")
+    for func, net in (("VBUS", "VBUS"), ("GND", "GND")):
+        if _one(pins, "U2", func) != net:
+            v.append(f"U2.{func} not on {net}")
+
+    def big_cap_near(ref, func, net, limit=5.0):
+        at = pads.get((ref, numbers.get((ref, func))))
+        for c in _between(pins, net, "GND", "C"):
+            try:
+                if farads(pins[1][c]) < 1e-6 * 0.999:
+                    continue
+            except (AssertionError, KeyError):
+                continue
+            for n, r, p, f, _ in pins[0]:
+                if at and r == c and n == net and (c, p) in pads and math.dist(at, pads[(c, p)]) <= limit:
+                    return True
+        return False
+
+    for ref, func, net in (("U3", "VIN", "VBUS"), ("U3", "VOUT", "+3V3"), ("U1", "VDDA", "+3V3")):
+        if not big_cap_near(ref, func, net):
+            v.append(f"no >= 1 uF capacitor within 5 mm of {ref}.{func}")
+    if _one(pins, "SW1", number="1") != "BTN_RAW" or _one(pins, "SW1", number="2") != "GND":
+        v.append("SW1 is not between BTN_RAW and GND")
+    for a, b, prefix, parse, want, what in (("+3V3", "BTN_RAW", "R", ohms, 10e3, "button pull-up 10k"),
+                                            ("BTN_RAW", "BTN", "R", ohms, 1e3, "button series 1k"),
+                                            ("BTN", "GND", "C", farads, 100e-9, "button filter 100 nF")):
+        refs = _between(pins, a, b, prefix)
+        if len(refs) != 1 or not _value_is(pins, refs[0], parse, want):
+            v.append(what)
+    if _one(pins, "U1", "PA0") != "BTN":
+        v.append("U1.PA0 is not BTN")
+    k, a = _one(pins, "D1", "K"), _one(pins, "D1", "A")
+    if k is None or k != _one(pins, "U1", "PA8"):
+        v.append("D1 cathode is not driven by U1.PA8")
+    led_r = _between(pins, "+3V3", a, "R") if a else []
+    if len(led_r) != 1 or not _value_is(pins, led_r[0], ohms, 1e3):
+        v.append("D1 anode has no 1k to +3V3")
+    for num, func in (("2", "PA13"), ("4", "PA14"), ("6", "PB3"), ("10", "NRST")):
+        if _one(pins, "J3", number=num) is None or _one(pins, "J3", number=num) != _one(pins, "U1", func):
+            v.append(f"J3.{num} is not U1.{func}")
+    if _one(pins, "J3", number="1") != "+3V3" or any(_one(pins, "J3", number=n) != "GND" for n in ("3", "5", "9")):
+        v.append("J3 supply/ground pins")
+    return v
+
+
+def test_power_button_led_and_swd_paths_are_right(pins, board):
+    assert circuit_violations(pins, board) == []
+
+
+def _mutate(pins, fn):
+    return ([y for y in (fn(x) for x in pins[0]) if y is not None], dict(pins[1]))
+
+
+def _swap_led(x):
+    if x[1] != "D1":
+        return x
+    return (("LED_A" if x[0] == "LED_K_DRV" else "LED_K_DRV"),) + x[1:]
+
+
+def _swap_swd(x):
+    if x[1] != "J3" or x[2] not in ("2", "4"):
+        return x
+    return (("SWCLK" if x[2] == "2" else "SWDIO"),) + x[1:]
+
+
+MUTATIONS = {
+    "regulator EN to GND": lambda p: _mutate(p, lambda x: (("GND",) + x[1:]) if x[1] == "U3" and x[3] == "EN" else x),
+    "R5 deleted": lambda p: _mutate(p, lambda x: None if x[1] == "R5" else x),
+    "D1 reversed": lambda p: _mutate(p, _swap_led),
+    "SWDIO/SWCLK swapped on J3": lambda p: _mutate(p, _swap_swd),
+    "C8 (VDDA 1 uF) removed": lambda p: _mutate(p, lambda x: None if x[1] == "C8" else x),
+    "LDO caps 100 nF": lambda p: (list(p[0]), dict(p[1], C1="100nF", C2="100nF", C3="100nF")),
+}
+
+
+@pytest.mark.parametrize("name", sorted(MUTATIONS))
+def test_saboteur_each_circuit_mutation_is_caught(pins, board, name):
+    assert circuit_violations(MUTATIONS[name](pins), board), name
+
+
+def mpn_value(mpn: str):
+    if m := re.fullmatch(r"CL10[AB](\d)(\d)(\d)\w+", mpn):  # Samsung: two digits and a power of ten, in pF
+        return int(m.group(1) + m.group(2)) * 10 ** int(m.group(3)) * 1e-12
+    if m := re.fullmatch(r"RC0603FR-07(\d+)([RKM])(\d*)L", mpn):  # Yageo: 5K1, 10K, 4K7
+        return float(f"{m.group(1)}.{m.group(3) or 0}") * {"R": 1, "K": 1e3, "M": 1e6}[m.group(2)]
+    return None
+
+
+def test_every_passive_mpn_matches_its_value():
+    bad = []
+    for p in design.PARTS:
+        if p.lib_id in ("Device:R", "Device:C"):
+            want = farads(p.value) if p.lib_id == "Device:C" else ohms(p.value)
+            got = mpn_value(p.mpn)
+            if got is None or not math.isclose(got, want, rel_tol=1e-9):
+                bad.append((p.ref, p.value, p.mpn))
+    assert bad == []
+    assert mpn_value("CL10A105KB8NNNC") == pytest.approx(1e-6) and mpn_value("CL10B104KB8NNNC") == pytest.approx(100e-9)
+    assert mpn_value("RC0603FR-075K1L") == pytest.approx(5.1e3) and mpn_value("RC0603FR-074K7L") == pytest.approx(4.7e3)
