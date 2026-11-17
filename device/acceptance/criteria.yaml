@@ -38,7 +38,7 @@ criteria:
     label: SIMULATED
   - id: P2-LOG
     phase: 2
-    title: Append-only hash-chained log; any edit, truncation or reorder is detected; model process cannot write it
+    title: Append-only hash-chained log; any edit, rewrite, truncation or reorder is detected against a known head; a broken log is never extended (process separation from the model is P2-GUARDRAILS)
     tests: [device/tests/test_log.py]
     covers: [src/mas_device]
     label: SIMULATED

@@ -1,7 +1,7 @@
 {
- "checksum": "82e2c93363d080c2d3a6d7136a0eea84ebc5f7e54705f3149064644f0f002316",
+ "checksum": "092ff8b8d80de0b888e8011e8c6ee61c7be998e0795010ce7b30b943ed3342f8",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "01dd7ff",
+ "git_head_at_run": "00ea4d4",
  "results": {
   "P1-DOCS": {
    "at": "2026-11-16T23:23:48",
@@ -48,35 +48,71 @@
    "status": "FAIL",
    "title": "First unit through the full cycle: signed approval tokens (guardrail 3) with an evaluator report"
   },
+  "P2-FLEET": {
+   "at": "2026-11-16T23:27:15",
+   "fingerprint": "decf3cb7570c2ed07b8c3d485959319fb5fe562db7cd4103ce9dbe7ca7c6556d",
+   "label": "EMULATED",
+   "phase": 2,
+   "reason": "missing test files: device/tests/test_fleet.py",
+   "status": "FAIL",
+   "title": "Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers"
+  },
   "P2-GATE": {
-   "at": "2026-11-16T23:19:21",
+   "at": "2026-11-16T23:27:05",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 44
    },
-   "fingerprint": "13e0957359607bdcf54422c47f7dfdb5535baad2855cd3e136a7a5af9531e215",
+   "fingerprint": "1221709f830beac9aae928ba76968d9aa9f11044278bbfbec8724e2ba0a56761",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "44 passed",
    "status": "PASS",
    "title": "Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first"
   },
+  "P2-GUARDRAILS": {
+   "at": "2026-11-16T23:27:15",
+   "fingerprint": "28b071c3e04644094caaf3a08703bf9afc3b56106ee9ad851765b552f36765df",
+   "label": "SIMULATED",
+   "phase": 2,
+   "reason": "missing test files: device/tests/test_guardrails.py",
+   "status": "FAIL",
+   "title": "Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations"
+  },
   "P2-LOG": {
-   "at": "2026-11-16T23:14:15",
+   "at": "2026-11-16T23:27:10",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
-    "tests": 19
+    "tests": 41
    },
-   "fingerprint": "cde3dca3ff68fdda00c135ee98c8871f47af6769eb72be14d902aba937ba3494",
+   "fingerprint": "7090986c1a7a934415a719af4b2eb2c3f29d33b0f17d341acdb5a3744083cf42",
    "label": "SIMULATED",
    "phase": 2,
-   "reason": "19 passed",
+   "reason": "41 passed",
    "status": "PASS",
-   "title": "Append-only hash-chained log; any edit, truncation or reorder is detected; model process cannot write it"
+   "title": "Append-only hash-chained log; any edit, rewrite, truncation or reorder is detected against a known head; a broken log is never extended (process separation from the model is P2-GUARDRAILS)"
+  },
+  "P2-PORTABLE": {
+   "at": "2026-11-16T23:27:15",
+   "fingerprint": "f7e5efc25bc78615798da9000c985edacc94ceb14779a5ac05d9e707d5e28199",
+   "label": "EMULATED",
+   "phase": 2,
+   "reason": "missing test files: device/tests/test_portable.py",
+   "status": "FAIL",
+   "title": "One-command launch from a read-only medium in a clean VM/container; profiler picks compute mode"
+  },
+  "P2-ZEROTRACE": {
+   "at": "2026-11-16T23:27:15",
+   "fingerprint": "071c24a615c4be0d3c099e160bc73f96b5ba76008bb751cb7ad16fbf47fd6f67",
+   "label": "EMULATED",
+   "phase": 2,
+   "reason": "missing test files: device/tests/test_zerotrace.py",
+   "status": "FAIL",
+   "title": "Filesystem diff of the host before/after a session is empty outside approved writes"
   }
  }
 }

@@ -37,7 +37,7 @@ def lines(path):
 
 
 def write(path, ls):
-    path.write_text("\n".join(ls) + "\n", encoding="utf-8")
+    path.write_bytes(("\n".join(ls) + "\n").encode("utf-8"))  # bytes: write_text turns every newline into CRLF on Windows
 
 
 def test_fresh_log_verifies_and_head_moves(path):
@@ -225,7 +225,7 @@ def test_line_separator_characters_in_strings_do_not_break_the_log(path, sep):
 
 def test_same_size_edit_then_append_is_refused(filled, path):
     data = path.read_bytes()
-    edited = data.replace(b'"n": 1,', b'"n": 7,', 1)
+    edited = data.replace(b'"n": 1}', b'"n": 7}', 1)
     assert len(edited) == len(data) and edited != data
     path.write_bytes(edited)
     with pytest.raises(lg.LogBroken):
@@ -333,6 +333,6 @@ def test_crlf_or_reformatted_lines_are_refused(filled, path):
 
 
 def test_records_refuses_to_return_a_tampered_log(filled, path):
-    path.write_bytes(path.read_bytes().replace(b'"n": 1,', b'"n": 7,', 1))
+    path.write_bytes(path.read_bytes().replace(b'"n": 1}', b'"n": 7}', 1))
     with pytest.raises(lg.LogBroken):
         filled.records()

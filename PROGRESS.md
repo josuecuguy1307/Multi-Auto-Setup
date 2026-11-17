@@ -47,3 +47,22 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
 - Push of device/v0 failed silently (credential prompt cannot show in this shell): nothing is on the remote. NEEDS_HUMAN #4.
 - Docker Desktop not running (daemon pipe missing): container harness blocked. NEEDS_HUMAN #7.
 - P2-LOG: tests written and seen red, then src/mas_device/log.py: 19 pass. Not yet run through the oracle or the evaluator.
+
+## 2026-11-17 — Session 2
+- Push of device/v0 works now (GCM sign-in done by Josué in the terminal). Docker Desktop launched, but the engine was not up when checked.
+- Reviewer R-1 (fresh context): 8 must-fix items, recorded verbatim in DECISIONS.md. A new P1-DOCS test keeps P1-DOCS FAIL until each has a
+  resolution with evidence. M8 resolved (run.sh advisor opt-in, tested). M1–M7 OPEN.
+- Evaluator P1-UNIT run 1: **FAIL** (clock rollback / NaN TTL fail open, optional class check, empty undo accepted, unbounded pending,
+  malformed input escaping as non-Rejected, key-model counter issues, 10 surviving mutants). Report: device/evals/evaluator/P1-UNIT.md. Not fixed yet.
+- P2-GATE: tests red (e772bda), then gate.py: 44 pass, oracle PASS. Evaluator run 1: **FAIL** (case-insensitive duplicate paths lose the
+  undo; caller-object swap after consume writes unapproved bytes; concurrent _run not serialised; 6 surviving mutants). The oracle PASS is
+  provisional: the unit is not closed. Report: device/evals/evaluator/P2-GATE.md. Not fixed yet.
+- P2-LOG evaluator run 1: **FAIL** (rewrite past a known head verified ok; U+2028 broke the log for good; same-size edit then append;
+  no known head on reopen; two writers forked the chain in 128/200 runs). Fixed: tests for every item (red 00ea4d4), then log.py rewritten
+  (ASCII byte-exact lines, known-head check at any length, full re-verify under an OS lock before each append, open(expected=...),
+  explicit repair_partial). 41 pass, oracle PASS. Evaluator run 2 not done yet. Criterion retitled: it no longer claims the model's process
+  cannot write the log (that is P2-GUARDRAILS).
+- Failed attempt: my first test edits used `Path.write_text`, which writes CRLF on Windows, so 8 old tamper tests were tampering line endings
+  instead of the field they meant to; switched the helper to bytes. A same-size edit pattern (`"n": 1,`) never matched (n is the last key).
+- STEER (Josué, in chat): move to the hardware work now. Next: firmware core in C (Phase 4) and PCB as code (Phase 5). The P1-UNIT / P2-GATE
+  fixes listed above stay open.
