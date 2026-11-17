@@ -8,6 +8,9 @@ from __future__ import annotations
 
 import ast
 import base64
+import inspect
+import threading
+import time
 import hashlib
 import os
 import sys
@@ -442,3 +445,144 @@ def test_apply_helpers_are_called_only_after_consume_and_log():
                    for c in ast.walk(run) if isinstance(c, ast.Call))
     order = [name for _, _, name in calls if name in ("consume", "append", "_apply")]
     assert order.index("consume") < order.index("append") < order.index("_apply"), order
+
+
+
+# ---- evaluator run 1 (device/evals/evaluator/P2-GATE.md) ---------------------------------------------
+
+@pytest.mark.parametrize("names", [("etc/APP.conf", "etc/app.conf"), ("N.txt", "n.txt"), ("É.txt", "é.txt"),
+                                   ("Opt/x.txt", "opt/y.txt")])
+def test_paths_that_collide_without_case_are_refused(pg, root, names):
+    before = snapshot(root)
+    with pytest.raises(gt.Refused) as e:
+        pg.plan_write({n: b"x" for n in names})
+    assert e.value.code == "bad_action"
+    assert snapshot(root) == before
+
+
+def test_a_path_must_be_the_files_own_name_not_an_alias(pg, root):
+    (root / "longdirectoryname").mkdir()
+    (root / "longdirectoryname" / "f.txt").write_bytes(b"old")
+    aliases = ["LongDirectoryName/f.txt", "longdirectoryname/F.TXT"]
+    if sys.platform == "win32":
+        import ctypes
+        buf = ctypes.create_unicode_buffer(1024)
+        if ctypes.windll.kernel32.GetShortPathNameW(str(root / "longdirectoryname"), buf, 1024):
+            short = Path(buf.value).name
+            if short.lower() != "longdirectoryname":
+                aliases.append(f"{short}/f.txt")  # an 8.3 alias, where the volume makes them
+    for alias in aliases:
+        if not (root / alias).exists():
+            continue  # a case-sensitive filesystem: this spelling is simply another, absent file
+        with pytest.raises(gt.Refused) as e:
+            pg.plan_write({alias: b"new"})
+        assert e.value.code == "bad_action", alias
+    assert (root / "longdirectoryname" / "f.txt").read_bytes() == b"old"
+
+
+@pytest.mark.parametrize("name", ["a<b", "a>b", 'a"b', "a|b", "a?b", "a*b"])
+def test_names_windows_cannot_hold_are_refused_cleanly(pg, name):
+    with pytest.raises(gt.Refused) as e:
+        pg.plan_write({name: b"x"})
+    assert e.value.code == "bad_action"
+
+
+def test_read_refuses_a_file_with_other_hard_links(pg, root, tmp_path):
+    outside = tmp_path / "secret.txt"
+    outside.write_bytes(b"secret")
+    os.link(outside, root / "hl.txt")
+    with pytest.raises(gt.Refused) as e:
+        pg.read("hl.txt")
+    assert e.value.code == "bad_action"
+
+
+class Sly(dict):
+    """Looks like the approved entry to everything except the code that writes."""
+
+    def __getitem__(self, k):
+        if k == "content_b64" and any(f.function == "_apply" for f in inspect.stack()[1:4]):
+            return base64.b64encode(b"backdoor=1\n").decode()
+        return super().__getitem__(k)
+
+
+def test_the_gate_writes_only_its_own_copy_of_the_approved_action(pg, key, root):
+    w = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    token = press(pg, key, w)
+    w["files"] = [Sly(f) for f in w["files"]]
+    pg.execute(token, w)
+    assert (root / "etc" / "app.conf").read_bytes() == b"port=2\n"
+
+
+def test_the_gate_runs_its_own_copy_of_the_undo(pg, key, root):
+    w = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    pg.execute(press(pg, key, w), w)
+    u = pg.undo_for(ap.action_hash(w))
+    token = press(pg, key, u, cls=ap.Class.UNDO)
+    u["files"] = [Sly(f) for f in u["files"]]
+    pg.execute_undo(token, u)
+    assert (root / "etc" / "app.conf").read_bytes() == b"port=1\n"
+
+
+def test_two_approved_writes_at_once_never_both_run_against_the_same_pre_state(pg, key, root, log, monkeypatch):
+    w1 = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    w2 = pg.plan_write({"etc/app.conf": b"port=3\n"})
+    t1, t2 = press(pg, key, w1), press(pg, key, w2)
+    real = log.append
+
+    def slow(*a, **k):
+        time.sleep(0.2)
+        return real(*a, **k)
+
+    monkeypatch.setattr(log, "append", slow)
+    results = []
+
+    def go(tok, w):
+        try:
+            pg.execute(tok, w)
+            results.append("ok")
+        except gt.Refused as exc:
+            results.append(exc.code)
+
+    ts = [threading.Thread(target=go, args=a) for a in ((t1, w1), (t2, w2))]
+    [t.start() for t in ts]
+    [t.join() for t in ts]
+    assert sorted(results) == ["ok", "pre_state_changed"], results
+
+
+def test_a_host_change_between_validation_and_consume_is_caught(pg, key, root, monkeypatch):
+    w = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    token = press(pg, key, w)
+    real = pg._approvals.consume
+
+    def consume_after_a_change(*a, **k):
+        (root / "etc" / "app.conf").write_bytes(b"port=9\n")  # the host changes after the gate validated, before the token is spent
+        return real(*a, **k)
+
+    monkeypatch.setattr(pg._approvals, "consume", consume_after_a_change)
+    with pytest.raises(gt.Refused) as e:
+        pg.execute(token, w)
+    assert e.value.code == "pre_state_changed"
+    assert (root / "etc" / "app.conf").read_bytes() == b"port=9\n"
+
+
+def test_a_forged_undo_inside_a_directly_approved_write_is_refused_at_execute(pg, key, root):
+    w = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    w["undo"]["files"][0]["content_b64"] = base64.b64encode(b"backdoor=1\n").decode()
+    pending = pg._approvals.begin(w, ap.Class.WRITE)  # the attacker reaches the token gate directly, skipping PolicyGate.begin
+    req = key.request(pending.key_request())
+    key._clock.t += KeyModel.MIN_DWELL_S
+    key.button.press()
+    token = key.sign(req)
+    with pytest.raises(gt.Refused) as e:
+        pg.execute(token, w)
+    assert e.value.code == "undo_mismatch"
+    assert (root / "etc" / "app.conf").read_bytes() == b"port=1\n"
+
+
+def test_a_link_that_stays_inside_the_root_is_refused_too(pg, root):
+    (root / "inner").mkdir()
+    _make_link(root / "alias", root / "inner")
+    with pytest.raises(gt.Refused) as e:
+        pg.plan_write({"alias/planted.txt": b"x"})
+    assert e.value.code == "outside_root"
+    assert list((root / "inner").iterdir()) == []
