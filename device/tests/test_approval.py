@@ -554,12 +554,35 @@ class Seq:
         return self.values.pop(0) if len(self.values) > 1 else self.values[0]
 
 
-def test_the_sweep_never_deletes_a_newer_pending(key):
-    clock = Seq(101.0, 100.0, 101.5)  # B begins at 101; A's begin then reads an older 100; B is consumed at 101.5
+def test_a_begin_racing_another_never_sweeps_its_newer_pending(key):
+    """A reads the clock; B begins meanwhile with a later time. If A read the clock outside the lock, A would sweep B's pending as
+    'from the future'. Reading it under the lock makes B wait for A instead (the wait below then times out harmlessly)."""
+    b_done = threading.Event()
+    local = threading.local()
+
+    def clock():
+        if getattr(local, "who", "") == "A" and not getattr(local, "read", False):
+            local.read = True
+            b_done.wait(0.5)  # under the lock B cannot run, so this times out; outside the lock B finishes first
+            return 100.0
+        return 101.0
+
     gate = ap.Gate({key.key_id: key.public_key}, session=SESSION, clock=clock)
-    b = gate.begin(ACTION, ap.Class.WRITE)
-    gate.begin(dict(ACTION, target="host-z"), ap.Class.WRITE)
-    tok = sign_request(key, b.key_request())
+    out = {}
+
+    def a():
+        local.who = "A"
+        gate.begin(dict(ACTION, target="host-a"), ap.Class.WRITE)
+
+    def b():
+        time.sleep(0.1)
+        out["b"] = gate.begin(ACTION, ap.Class.WRITE)
+        b_done.set()
+
+    ta, tb = threading.Thread(target=a), threading.Thread(target=b)
+    ta.start(), tb.start()
+    ta.join(), tb.join()
+    tok = sign_request(key, out["b"].key_request())
     assert gate.consume(tok, ACTION, cls=ap.Class.WRITE).counter == 1
 
 
@@ -711,3 +734,74 @@ def test_the_key_model_window_is_capped_at_thirty_seconds(gate, key, pw, wait, w
     except KeyRefused as exc:
         got = exc.code
     assert got == want
+
+
+
+# ---- evaluator run 3 (device/evals/evaluator/P1-UNIT.run3.md) ---------------------------------------
+
+@pytest.mark.parametrize("field,value", [("nonce", "N" * 16), ("nonce", list(range(16))), ("session_id", "S" * 32),
+                                         ("action_hash", "A" * 32), ("undo_hash", tuple(range(32))), ("summary", "x" * 32)])
+def test_the_key_refuses_non_bytes_fields_before_any_state_change(tmp_path, gate, key_clock, field, value):
+    k = KeyModel.create(tmp_path / "k", clock=key_clock)
+    state = (tmp_path / "k" / "state.json").read_bytes()
+    req = gate.begin(ACTION, ap.Class.WRITE).key_request()._replace(**{field: value})
+    with pytest.raises(KeyRefused) as e:
+        k.request(req)
+    assert e.value.code == "malformed"
+    assert k._counter == 0 and (tmp_path / "k" / "state.json").read_bytes() == state
+
+
+def test_the_key_builds_the_body_before_it_commits_the_counter(tmp_path, gate, key_clock, monkeypatch):
+    import mas_device.keymodel as km
+    k = KeyModel.create(tmp_path / "k", clock=key_clock)
+    r = k.request(gate.begin(ACTION, ap.Class.WRITE).key_request())
+    key_clock.t += KeyModel.MIN_DWELL_S
+    k.button.press()
+    monkeypatch.setattr(km, "pack_body", lambda *a: (_ for _ in ()).throw(ValueError("cannot pack")))
+    with pytest.raises(Exception):
+        k.sign(r)
+    assert k._counter == 0, "no counter is spent on a body that cannot be built"
+    assert json.loads((tmp_path / "k" / "state.json").read_text(encoding="utf-8"))["counter"] == 0
+
+
+@pytest.mark.parametrize("bad", [None, "x", True, float("nan"), float("inf"), [1]])
+def test_one_bad_clock_reading_neither_stores_nor_wedges(key, bad):
+    readings = [bad, 500.0]
+    gate = ap.Gate({key.key_id: key.public_key}, session=SESSION, clock=lambda: readings[0])
+    with pytest.raises(ap.Rejected):
+        gate.begin(ACTION, ap.Class.WRITE)
+    assert gate._pending == {}
+    readings[0] = 500.0
+    gate.begin({"kind": "files.restore", "target": "host-aaaa", "files": [], "rmdirs": []}, ap.Class.UNDO)
+    tok = sign_request(key, gate.begin(ACTION, ap.Class.WRITE).key_request())
+    assert gate.consume(tok, ACTION, cls=ap.Class.WRITE).counter == 1
+
+
+def test_a_clock_rollback_never_holds_the_cap(key):
+    now = [4600.0]
+    gate = ap.Gate({key.key_id: key.public_key}, session=SESSION, clock=lambda: now[0])
+    for _ in range(ap.MAX_PENDING):
+        gate.begin(ACTION, ap.Class.WRITE)
+    now[0] = 1000.0  # the clock went back an hour: every pending is now from the future and can never be consumed
+    gate.begin(ACTION, ap.Class.WRITE)
+
+
+def test_a_press_latched_before_the_request_never_counts_even_if_the_key_clock_went_back(gate, key, key_clock):
+    key_clock.t = 1005.0
+    key.button.press()
+    key_clock.t = 1000.0  # the key's clock went back: the old press now looks 5 s after the request
+    r = key.request(gate.begin(ACTION, ap.Class.WRITE).key_request())
+    with pytest.raises(KeyRefused) as e:
+        key.sign(r)
+    assert e.value.code == "no_press"
+
+
+class LyingLength(bytes):
+    def __len__(self):
+        return ap.BODY_LEN + ap.SIG_LEN
+
+
+def test_a_token_whose_length_lies_is_malformed(gate):
+    with pytest.raises(ap.Rejected) as e:
+        gate.consume(LyingLength(b"x" * 10), ACTION, cls=ap.Class.WRITE)
+    assert e.value.code == "malformed"
