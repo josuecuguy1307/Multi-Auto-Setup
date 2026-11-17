@@ -644,3 +644,104 @@ def test_undo_for_anything_but_a_hash_is_refused(pg, bad):
     with pytest.raises(gt.Refused) as e:
         pg.undo_for(bad)
     assert e.value.code == "undo_not_issued"
+
+
+
+# ---- evaluator run 3 (device/evals/evaluator/P2-GATE.run3.md) ------------------------------------------
+
+def _make_junction(link: Path, target: Path) -> None:
+    """A real NTFS junction on Windows (a reparse point that is not a symlink); a symlink elsewhere."""
+    if sys.platform == "win32":
+        import _winapi
+        _winapi.CreateJunction(str(target), str(link))
+    else:
+        os.symlink(target, link, target_is_directory=True)
+
+
+def test_undo_for_takes_a_bytearray_hash(pg, key):
+    w = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    pg.execute(press(pg, key, w), w)
+    assert pg.undo_for(bytearray(ap.action_hash(w))) == pg.undo_for(ap.action_hash(w))
+
+
+def test_a_foreign_target_is_refused_at_begin_and_at_execute(pg, key, root):
+    w = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    w["target"] = "bank-server"
+    w["undo"]["target"] = "bank-server"
+    with pytest.raises(gt.Refused) as e:
+        pg.begin(w)
+    assert e.value.code == "bad_action"
+    pending = pg._approvals.begin(w, ap.Class.WRITE)  # the attacker reaches the token gate directly
+    req = key.request(pending.key_request())
+    key._clock.t += KeyModel.MIN_DWELL_S
+    key.button.press()
+    with pytest.raises(gt.Refused) as e:
+        pg.execute(key.sign(req), w)
+    assert e.value.code == "bad_action"
+    assert (root / "etc" / "app.conf").read_bytes() == b"port=1\n"
+
+
+def test_a_junction_swapped_in_after_consume_is_refused_at_apply(pg, key, root, log, tmp_path, monkeypatch):
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (root / "sub").mkdir()
+    w = pg.plan_write({"sub/f.txt": b"x"})
+    token = press(pg, key, w)
+    real = log.append
+
+    def hook(kind, payload):
+        out = real(kind, payload)
+        if kind == "write.approved":  # after the token is spent and the undo logged, before the write
+            os.rename(root / "sub", root / "sub_old")
+            _make_junction(root / "sub", outside)
+        return out
+
+    monkeypatch.setattr(log, "append", hook)
+    with pytest.raises(gt.Refused) as e:
+        pg.execute(token, w)
+    assert e.value.code == "apply_failed"
+    assert list(outside.iterdir()) == []
+
+
+def test_a_real_junction_inside_the_root_is_refused(pg, root):
+    (root / "inner").mkdir()
+    _make_junction(root / "alias", root / "inner")
+    with pytest.raises(gt.Refused) as e:
+        pg.plan_write({"alias/p.txt": b"x"})
+    assert e.value.code == "outside_root"
+    assert list((root / "inner").iterdir()) == []
+
+
+@pytest.mark.parametrize("name", ["con", "prn", "aux", "nul", "PRN.txt", "AUX.log", "con.txt", "Nul.dat",
+                                  "CON .txt", "nul .txt", "COM1 .txt", "CONIN$ .txt", "a.", "a ", "dir./x", "dir /x"])
+def test_device_names_and_trailing_dots_or_spaces_are_refused(pg, root, name):
+    before = snapshot(root)
+    with pytest.raises(gt.Refused) as e:
+        pg.plan_write({name: b"x"})
+    assert e.value.code == "bad_action", name
+    assert snapshot(root) == before
+
+
+def test_a_spent_token_is_always_in_the_log(pg, key, root, log, monkeypatch):
+    w = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    token = press(pg, key, w)
+    real = pg._approvals.consume
+
+    def consume_then_change(*a, **k):
+        out = real(*a, **k)
+        (root / "etc" / "app.conf").write_bytes(b"port=9\n")  # the host changes right after the token is spent
+        return out
+
+    monkeypatch.setattr(pg._approvals, "consume", consume_then_change)
+    with pytest.raises(gt.Refused) as e:
+        pg.execute(token, w)
+    assert e.value.code == "pre_state_changed"
+    recs = log.records()
+    assert [r["type"] for r in recs] == ["write.refused"]
+    assert recs[0]["payload"]["counter"] == 1 and recs[0]["payload"]["reason"] == "pre_state_changed"
+
+
+def test_a_file_that_is_also_a_folder_of_the_same_action_is_refused(pg):
+    with pytest.raises(gt.Refused) as e:
+        pg.plan_write({"q": b"1", "q/r": b"2"})
+    assert e.value.code == "bad_action"
