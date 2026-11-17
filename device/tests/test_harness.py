@@ -119,3 +119,15 @@ def test_hooks_cover_stop_steer_and_kill_switch():
     assert "SessionStart" in hooks and "Stop" in hooks
     blob = json.dumps(hooks)
     assert "device_hook" in blob
+
+
+def test_unattended_loop_spends_no_advisor_credits_by_default():
+    """Reviewer R-1 M8: under `claude -p` Fable is billed without a consent prompt, so the loop's advisor is opt-in (MISSION 4.2)."""
+    import os
+    import subprocess
+    text = (ROOT / "run.sh").read_text(encoding="utf-8")
+    line = next(l for l in text.splitlines() if "ADVISOR_ARGS=(--advisor" in l)
+    assert '${MAS_ADVISOR:-off}' in line and "fable" not in line, line
+    out = subprocess.run(["bash", "-c", line + '; echo "${#ADVISOR_ARGS[@]}"'], capture_output=True, text=True,
+                         env={k: v for k, v in os.environ.items() if k != "MAS_ADVISOR"})
+    assert out.stdout.strip().splitlines()[-1] == "0", out

@@ -4,7 +4,7 @@
 #   bash run.sh                          # on this machine (bypass permissions: only inside a sandbox/VM you trust)
 #   MAS_LOOP_MODE=container bash run.sh  # inside the device harness container (recommended)
 #
-# Env: CLAUDE_BIN (a Claude Code >= 2.1.321, for Fable 5.2), MAS_ADVISOR (default fable; "off" disables), MAS_MODEL (default claude-opus-5-5),
+# Env: CLAUDE_BIN (a Claude Code >= 2.1.321, for Fable 5.2), MAS_ADVISOR (default off: the unattended loop never spends usage credits on its own; set "fable" to opt in, NEEDS_HUMAN #1), MAS_MODEL (default claude-opus-5-5),
 #      MAS_MAX_SESSIONS (default 200), MAS_EFFORT (default high).
 set -u
 cd "$(dirname "$0")" || exit 1
@@ -32,7 +32,7 @@ CLAUDE=$(pick_claude)
 echo "claude: $CLAUDE ($("$CLAUDE" --version 2>/dev/null))"
 
 ADVISOR_ARGS=()
-[ "${MAS_ADVISOR:-fable}" != "off" ] && ADVISOR_ARGS=(--advisor "${MAS_ADVISOR:-fable}")
+[ "${MAS_ADVISOR:-off}" != "off" ] && ADVISOR_ARGS=(--advisor "${MAS_ADVISOR}")
 
 PROMPT='You are continuing the MAS portable device mission in this repo. Read MISSION.md, STEER.md, the last entry of PROGRESS.md, DECISIONS.md and NEEDS_HUMAN.md.
 If AGENT_STOP exists: commit, note it in PROGRESS.md, stop.

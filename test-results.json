@@ -1,17 +1,17 @@
 {
- "checksum": "55e0b3c3029dde387ac2da2ee8e209e834eb7f458262060759c41dbcf4127582",
+ "checksum": "82e2c93363d080c2d3a6d7136a0eea84ebc5f7e54705f3149064644f0f002316",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "e772bda",
+ "git_head_at_run": "01dd7ff",
  "results": {
   "P1-DOCS": {
-   "at": "2026-11-16T23:05:50",
+   "at": "2026-11-16T23:23:48",
    "counts": {
     "errors": 0,
     "failures": 1,
     "skipped": 0,
-    "tests": 15
+    "tests": 16
    },
-   "fingerprint": "eb7375dbf0be5ed0fd264bef011a541ed2f9a87923a7fb77bc82d01986420392",
+   "fingerprint": "b3e77af7d2ee1d57d9d3abee43f36b27916e29d19b3765d650f6688126f1fb72",
    "label": "REAL",
    "phase": 1,
    "reason": "1 failed, 0 errors",
@@ -19,29 +19,29 @@
    "title": "DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice"
   },
   "P1-HARNESS": {
-   "at": "2026-11-16T23:05:37",
+   "at": "2026-11-16T23:23:15",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
-    "tests": 24
+    "tests": 25
    },
-   "fingerprint": "e4f0c53da74858d1c1de4808910b2904cb2fbe4321f92c91333d925c1554c579",
+   "fingerprint": "c07ae6d543e4fa83ec479e8bda42285478b44bd7c540b8dc1f45190e1ddec62d",
    "label": "REAL",
    "phase": 1,
-   "reason": "24 passed",
+   "reason": "25 passed",
    "status": "PASS",
    "title": "The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist"
   },
   "P1-UNIT": {
-   "at": "2026-11-16T23:06:55",
+   "at": "2026-11-16T23:23:50",
    "counts": {
     "errors": 0,
     "failures": 1,
     "skipped": 0,
     "tests": 55
    },
-   "fingerprint": "f99f7ebfa2636caec0775fd394fa3e292b9d30c2d0f649f9db8ca6a285a5e725",
+   "fingerprint": "b54ad2dea92d5a920c6241682d5f1f3fdbb800ec59f31eab4cd098e226738769",
    "label": "SIMULATED",
    "phase": 1,
    "reason": "1 failed, 0 errors",

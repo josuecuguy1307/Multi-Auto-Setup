@@ -35,6 +35,19 @@ def test_docs_reviewed_by_a_fresh_context_reviewer():
     assert m and len(m.group(1).strip()) > 400, "the reviewer's verdict on DECISIONS.md and ACCEPTANCE.md must be recorded"
 
 
+def test_every_reviewer_must_fix_is_resolved_with_evidence():
+    """A reviewer pass counts only once each must-fix item has a resolution naming its evidence (a test file or a commit), not 'OPEN'."""
+    d = read("DECISIONS.md")
+    block = d.split("## R-1 Reviewer pass", 1)[1].split("\n## ", 1)[0]
+    musts = re.findall(r"^(\d+)\. \*\*", block.split("### Must fix", 1)[1].split("### Should fix", 1)[0], re.M)
+    assert musts, "no must-fix items found"
+    res = dict(re.findall(r"^- M(\d+): (.+)$", block.split("### R-1 resolutions", 1)[1], re.M))
+    for n in musts:
+        line = res.get(n, "OPEN")
+        assert not line.startswith("OPEN"), f"reviewer must-fix {n} is still open"
+        assert re.search(r"(device/tests/\S+\.py|\b[0-9a-f]{7,40}\b)", line), f"must-fix {n} names no test or commit as evidence"
+
+
 def test_every_guardrail_maps_to_a_criterion():
     table = read("DECISIONS.md").split("## D-006", 1)[1].split("## D-007", 1)[0]
     rows = [l for l in table.splitlines() if l.startswith("| ") and re.match(r"\| \d+ ", l)]

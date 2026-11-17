@@ -4,10 +4,9 @@ Each item: what, why, exact steps. The run keeps going on other units meanwhile.
 
 ## Open
 
-1. **Fable 5.2 advisor cost in the unattended loop.** `run.sh` passes `--advisor fable`. Under `claude -p`, Fable is billed to usage credits
-   **without a consent prompt** (official model-config docs). If you do not want that: run `MAS_ADVISOR=off bash run.sh`, and the loop
-   falls back to the `reviewer` subagent at the same decision points. To accept it explicitly once: in an interactive session run
-   `/model fable` and choose to continue on Fable.
+1. **Fable 5.2 advisor in the unattended loop (opt-in).** Under `claude -p`, Fable is billed to usage credits **without a consent prompt**
+   (official model-config docs), so since reviewer R-1 M8 `run.sh` runs with the advisor **off** and uses the `reviewer` subagent instead.
+   To opt in: `MAS_ADVISOR=fable bash run.sh`. Interactive sessions can still use Fable (`/model fable`).
 2. **Claude Code on PATH is 2.1.79** (winget). Fable 5.2 needs ≥ 2.1.321. Either update it (`winget upgrade Anthropic.ClaudeCode`, or
    `claude update`) or keep using the app's bundled build: `run.sh` looks for it automatically, or set `CLAUDE_BIN`.
 3. **Starting the unattended loop is your decision.** `bash run.sh` runs fresh sessions with `--permission-mode bypassPermissions` until every

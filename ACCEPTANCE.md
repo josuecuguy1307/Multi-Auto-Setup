@@ -39,7 +39,7 @@ k consecutive passing runs of each eval; limitations section lists what was only
 <!-- BEGIN GENERATED: device_accept.py -->
 | ID | Phase | Status | Label | Criterion | Reason |
 |---|---|---|---|---|---|
-| P1-HARNESS | 1 | **PASS** | REAL | The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist | 24 passed |
+| P1-HARNESS | 1 | **PASS** | REAL | The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist | 25 passed |
 | P1-DOCS | 1 | **FAIL** | REAL | DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice | 1 failed, 0 errors |
 | P1-UNIT | 1 | **FAIL** | SIMULATED | First unit through the full cycle: signed approval tokens (guardrail 3) with an evaluator report | 1 failed, 0 errors |
 | P2-GATE | 2 | **PASS** | SIMULATED | Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first | 44 passed |

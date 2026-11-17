@@ -163,3 +163,176 @@ def test_owner_view_flags_a_broken_chain(filled, path):
     del ls[0]
     write(path, ls)
     assert "chain: BROKEN" in lg.render(path)
+
+
+# ---- evaluator run 1 (device/evals/evaluator/P2-LOG.md): each BROKE item and each surviving mutant gets a test ----
+
+import hashlib
+import threading
+
+
+def rechain(recs, *, start=1, domain=lg.DOMAIN):
+    """Rebuild a fully self-consistent chain from edited records: what an attacker with write access to the file can do."""
+    prev, out = lg.GENESIS, []
+    for i, r in enumerate(recs):
+        r = {k: r[k] for k in lg.FIELDS}
+        r["seq"], r["prev"] = start + i, prev
+        r["hash"] = hashlib.sha256(domain + lg.canonical({k: r[k] for k in lg.FIELDS})).hexdigest()
+        out.append(json.dumps(r, sort_keys=True, ensure_ascii=True))
+        prev = r["hash"]
+    return out
+
+
+def test_same_length_rewrite_is_detected_against_a_known_head(filled, path):
+    head = filled.head()
+    recs = [json.loads(l) for l in lines(path)]
+    recs[2]["payload"]["n"] = 666
+    write(path, rechain(recs))
+    assert lg.verify(path).ok  # self-consistent on its own
+    v = lg.verify(path, expected=head)
+    assert not v.ok and v.bad_seq == 5
+
+
+def test_rewrite_extended_past_the_known_head_is_detected(filled, path):
+    head = filled.head()
+    recs = [json.loads(l) for l in lines(path)]
+    recs[2]["payload"]["n"] = 666
+    recs.append(dict(recs[-1], payload={"n": "forged"}))
+    write(path, rechain(recs))
+    v = lg.verify(path, expected=head)
+    assert not v.ok and v.bad_seq == head.seq
+
+
+def test_truncate_then_forge_a_longer_tail_is_detected(filled, path):
+    head = filled.head()
+    recs = [json.loads(l) for l in lines(path)][:2]
+    recs += [dict(recs[-1], payload={"n": f"forged{i}"}) for i in range(4)]
+    write(path, rechain(recs))
+    assert not lg.verify(path, expected=head).ok
+
+
+@pytest.mark.parametrize("sep", [" ", " ", "\u0085", "\r", "\x0b", "\x0c", "\x1c"])
+def test_line_separator_characters_in_strings_do_not_break_the_log(path, sep):
+    log = lg.AuditLog.open(path, clock=Clock())
+    log.append("host", {"name": f"vm{sep}evil"})
+    log.append(f"t{sep}", {"k": 1})
+    raw = path.read_bytes()
+    assert raw.isascii() and raw.count(b"\n") == 2
+    assert lg.verify(path).ok
+    again = lg.AuditLog.open(path, clock=Clock())
+    assert again.records()[0]["payload"]["name"] == f"vm{sep}evil"
+
+
+def test_same_size_edit_then_append_is_refused(filled, path):
+    data = path.read_bytes()
+    edited = data.replace(b'"n": 1,', b'"n": 7,', 1)
+    assert len(edited) == len(data) and edited != data
+    path.write_bytes(edited)
+    with pytest.raises(lg.LogBroken):
+        filled.append("approval", {"n": 99})
+    assert path.read_bytes() == edited
+
+
+def test_reopen_with_a_known_head_refuses_a_truncated_log(filled, path):
+    head = filled.head()
+    write(path, lines(path)[:2])
+    with pytest.raises(lg.LogBroken):
+        lg.AuditLog.open(path, clock=Clock(), expected=head)
+
+
+def test_two_writers_never_break_the_chain(path):
+    a = lg.AuditLog.open(path, clock=Clock())
+    a.append("x", {"i": 0})
+    for round_ in range(60):
+        b = lg.AuditLog.open(path, clock=Clock())
+        a = lg.AuditLog.open(path, clock=Clock())
+        barrier, errors = threading.Barrier(2), []
+
+        def go(log, who):
+            barrier.wait()
+            try:
+                log.append("x", {"who": who, "round": round_})
+            except lg.LogBroken as exc:
+                errors.append(exc)
+
+        ts = [threading.Thread(target=go, args=(a, "a")), threading.Thread(target=go, args=(b, "b"))]
+        [t.start() for t in ts]
+        [t.join() for t in ts]
+        assert lg.verify(path).ok, f"chain broken in round {round_}"
+        assert len(errors) <= 1
+    assert lg.verify(path).head.seq >= 61
+
+
+def test_bool_and_float_seq_or_at_are_refused(filled, path):
+    for field, bad in (("seq", True), ("seq", 1.0), ("at", 1.5), ("at", False)):
+        recs = [json.loads(l) for l in lines(path)]
+        r = recs[0]
+        r[field] = bad
+        r["hash"] = hashlib.sha256(lg.DOMAIN + json.dumps({k: r[k] for k in lg.FIELDS}, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        ls = lines(path)
+        ls[0] = json.dumps(r, sort_keys=True)
+        write(path, ls)
+        assert not lg.verify(path).ok, (field, bad)
+        write(path, [json.dumps(x, sort_keys=True) for x in [json.loads(l) for l in lines(path)]])
+
+
+def test_extra_field_outside_the_hash_is_refused(filled, path):
+    ls = lines(path)
+    r = json.loads(ls[1])
+    r["note"] = "owner approved"
+    ls[1] = json.dumps(r, sort_keys=True)
+    write(path, ls)
+    assert not lg.verify(path).ok
+
+
+def test_chain_that_does_not_start_at_one_is_refused(filled, path):
+    recs = [json.loads(l) for l in lines(path)]
+    write(path, rechain(recs, start=2))
+    assert not lg.verify(path).ok
+
+
+def test_chain_hashed_without_the_domain_tag_is_refused(filled, path):
+    recs = [json.loads(l) for l in lines(path)]
+    write(path, rechain(recs, domain=b""))
+    assert not lg.verify(path).ok
+
+
+def test_full_record_without_trailing_newline_is_partial(filled, path):
+    path.write_bytes(path.read_bytes()[:-1])
+    v = lg.verify(path)
+    assert not v.ok and v.bad_seq == 5
+
+
+def test_partial_tail_reports_the_right_seq_and_can_be_repaired_on_request(filled, path):
+    with path.open("ab") as f:
+        f.write(b'{"at": 1, "hash": ')
+    v = lg.verify(path)
+    assert not v.ok and v.bad_seq == 6
+    with pytest.raises(lg.LogBroken):
+        lg.AuditLog.open(path, clock=Clock())
+    fixed = lg.AuditLog.open(path, clock=Clock(), repair_partial=True)
+    recs = fixed.records()
+    assert recs[-1]["type"] == "log.repaired" and recs[-1]["payload"]["dropped_bytes"] == len(b'{"at": 1, "hash": ')
+    assert lg.verify(path).ok and fixed.head().seq == 6
+
+
+def test_repair_never_drops_a_complete_record(filled, path):
+    ls = lines(path)
+    del ls[1]
+    write(path, ls)
+    with pytest.raises(lg.LogBroken):
+        lg.AuditLog.open(path, clock=Clock(), repair_partial=True)
+
+
+def test_crlf_or_reformatted_lines_are_refused(filled, path):
+    data = path.read_bytes()
+    path.write_bytes(data.replace(b"\n", b"\r\n"))
+    assert not lg.verify(path).ok
+    path.write_bytes(data.replace(b"\n", b" \n", 1))
+    assert not lg.verify(path).ok
+
+
+def test_records_refuses_to_return_a_tampered_log(filled, path):
+    path.write_bytes(path.read_bytes().replace(b'"n": 1,', b'"n": 7,', 1))
+    with pytest.raises(lg.LogBroken):
+        filled.records()

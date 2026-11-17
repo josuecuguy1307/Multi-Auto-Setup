@@ -233,3 +233,46 @@ build. (4) Button fatigue: MAS asks approval for reads too; one press authorises
 screen and offer an approved export. (7) Cut for v0: fwupd, emba, binwalk, Ghidra (root, device access, GPL); stamp every report with the
 vulnerability DB date. (8) Windows: build and test in a Linux container; Windows host support is a new small cross-platform launcher and
 executor, not a port of all of envrec. (9) Enclosure: parametric model with a fit check only.
+
+## R-1 Reviewer pass — fresh-context reviewer (built-in Plan agent with `.claude/agents/reviewer.md`), 2026-11-17 (verbatim)
+
+Scope: read MISSION.md, DECISIONS.md (D-001..D-014, A-1), ACCEPTANCE.md, criteria.yaml, scripts/device_accept.py, scripts/device_hook.py, run.sh, device/tests/test_{harness,docs,unit_cycle}.py. Ran `device_accept.py verify` (exit 0) and the harness suite (24 passed). Did not run `device_accept.py run`.
+
+### Must fix before Phase 1 closes
+
+1. **P1-DOCS can never hold a stable PASS.** `ACCEPTANCE.md` is in P1-DOCS `covers`, but the oracle rewrites its generated table after it takes the fingerprint: the PASS row changes a covered file, so the criterion turns STALE; `status` then writes STALE, which restores the hash, so the true state is PASS while the table says STALE. `verify` fails every round and the commit gate blocks every commit. The SessionStart hook runs `status`, which writes `ACCEPTANCE.md`, so every session starts dirty. Why: Phase 1 cannot close green, and an always-red gate trains people to bypass it. Change: fingerprint `ACCEPTANCE.md` with the generated block removed; make `status` read-only (only `run` writes); add a harness test where a passing criterion covers its own table.
+2. **A recorded PASS is trusted and can be forged.** `status` exit 0 is the stop condition in `run.sh` and trusts `test-results.json`; the checksum is an unkeyed sha256, so three lines calling `fingerprint()` and `_checksum()` forge any PASS. `git_head_at_run` is recorded but never checked (A-1 §7 asked for results bound to the commit SHA and a clean tree). Why: a builder optimising against the oracle can "finish" without running anything — the 56 % failure mode. Change: add `device_accept.py confirm`: refuse a dirty tree, create a clean `git worktree` at HEAD, ignore recorded results, re-run every criterion, print the HEAD SHA. `run.sh` stops, and phases close, only on `confirm`; keep `test-results.json` as a cache for the commit gate.
+3. **Code that runs inside pytest is neither fingerprinted nor controlled.** A `conftest.py` at the root or under `device/`; `pyproject.toml` addopts (`-p envrec_timeout` from `testplugins/`); any entry-point plugin in `.venv`; `PYTEST_ADDOPTS`/`PYTEST_PLUGINS` inherited through `os.environ`. Any of these can deselect failing tests (deselected tests never appear in the JUnit report; the oracle only checks `tests == 0`), rewrite reports, or overwrite `runs/acceptance/<id>.xml`. None is in a P2–P6 fingerprint. Why: one added conftest turns every criterion green. Change: hermetic run — `-c device/acceptance/pytest.ini` (no addopts), `--rootdir=.`, `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`, strip `PYTEST_*`; fail on any unpinned `conftest.py` on a test's path; add oracle, ini and conftests to every fingerprint; `min_tests` per criterion; record passed node ids. Harness test per attack (conftest deselect, `PYTEST_ADDOPTS=-k`, xfail, plugin).
+4. **No saboteur controls exist yet.** A-1 §7 makes saboteur patches mandatory for all phases; ACCEPTANCE names them only for Phase 2 and the oracle has no mechanism. Tests that `return` early when QEMU/Renode/a VM image is missing pass silently. Change: a `saboteurs:` field (patch files) per criterion, applied in a temp copy, each must FAIL; P1-UNIT saboteurs for signature check, nonce deletion, summary re-derivation, TTL. A `requires:` field (tools/images) checked by the oracle, FAIL when missing.
+5. **The P1-UNIT cycle evidence can be forged.** `test_unit_cycle.py` accepts any commit where the test file exists without the implementation (an empty file qualifies), never runs the tests at the red commit, does not stop later weakening; the evaluator report only needs `VERDICT: PASS` and is not bound to the evaluated code. Change: run the red commit's `test_approval.py` against the red tree (must fail) and against HEAD's implementation (must pass); the report carries the P1-UNIT fingerprint, checked equal to the current one.
+6. **The criteria are incomplete and their numbers are not pinned.** Missing: Phase 2 — the local model actually answers from the read-only medium; portable memory in an open format round-trips and is encrypted at rest; the gate accepts only the paired key_id and MAS `chat_choice` is absent from the device build. Phase 3 — report readable by the owner and consumable by the agent; no credentials collected (planted-secret fixtures must not appear in the report or model context). Phase 4 — documented secure-boot design. Phase 5 — enclosure fit check. Phase 6 — manual-README baseline, error bars, outside judge, LaTeX source, authors, arXiv variant. Repo-wide — secret scan. Unpinned: P3 thresholds (no field in `criteria.yaml`), k, fuzz count, residue-allowlist path, minimum number of VMs. P2-ZEROTRACE's title ("empty outside approved writes") contradicts D-010. Change: add these criteria or tests and `thresholds:` fields now; retitle P2-ZEROTRACE to the D-010 wording.
+7. **Host-owner consent and rule 7 authorization are undefined.** Rule 4.1.1 needs an explicit action by the host machine's owner, but the button is on the device; D-005/D-006 never say whose press counts when the device owner is not the host owner. Rule 7's "solo máquinas propias o autorizadas de forma explícita" has no mechanism or test. Why: a device owner could approve writes or a fleet join on a borrowed machine. Change: a decision that the host owner's launch is the session consent and shows them the terms; JOIN_FLEET also needs a host-side confirmation recorded in the log; test both under P2-FLEET.
+8. **Unattended spending.** `run.sh` defaults to `--advisor fable`, billed to usage credits without asking (NEEDS_HUMAN #1); conflicts with MISSION 4.2 "no compres nada" in an unattended loop. Change: default `MAS_ADVISOR=off` until Josué answers.
+
+### Should fix later
+
+- Commit gate fails open (any exception returns 0), matches only `Bash` (this host also has PowerShell), and `git ci` aliases or `sh -c` get past the regex. Use `Bash|PowerShell`, fail closed, treat `confirm` as the real guard.
+- Covers are incomplete: P1-DOCS reads `NEEDS_HUMAN.md`; P1-HARNESS reads `MISSION.md`, `PROGRESS.md`, `run.sh`, `device_hook.py`; none covered. The criterion's own definition is not in its fingerprint (narrowing `tests` keeps the old PASS). Hash the canonical criterion dict; record files the tests open (`sys.addaudithook`).
+- P2-LOG title overclaims "model process cannot write it"; tests prove detection only. Retitle or add an OS-separation test.
+- A-1 basis gap: the advisor did not read `policy.py`, PROVISIONING_SAFETY.md or NETWORK_CONTRACT.md, yet D-003 reuses "the policy function". Have the reviewer read them before P2-GATE work.
+- Credential collection in inspection: osquery `shell_history`, process command lines and environment, `authorized_keys`. Ship a table/field denylist enforced in code.
+- INSPECT_SESSION scope (D-012) unbounded: sign the collector list and TTL inside the action.
+- Oracle robustness: no `subprocess.run` timeout, no network-off run, no run-time seeds (A-1 §7).
+- Weak harness tests: `test_hand_edit_is_detected` only shows a sha256 changes; no tests for an out-of-date table, xfail/xpass, fixture errors, `pytest.exit`. Test through `main(["verify"])` on a temp root.
+- Emulator claims in D-007 come from memory: confirm QEMU `mps2-an505` and Renode STM32U5/L552 before Phase 4 code.
+- "Evaluator cannot write" is half true (Bash can write): word it as "no Write/Edit tools; writes only under `runs/eval/`".
+
+### Fine as is
+
+D-004 approval token (fixed-width signed struct, pure Ed25519 with monocypher-ed25519 named, in-memory nonce, gate-clock TTL, session binding, classes, re-derived signed summary, pre-state hash). D-003/D-008/D-010/D-011 (key + host compute; Pi emulated only, Jetson cut; display yes, ATECC608B no; honest "no trace" with three-arm diffs; inspection cuts). D-006 maps every rule to a mechanism and a criterion. Oracle core: default FAIL; missing, zero collected, import errors, failures, skips and xfail are FAIL; fingerprint normalises CRLF and includes the test files. Labels carry REAL/SIMULATED/EMULATED/DESIGN-ONLY.
+
+### R-1 resolutions (builder; P1-DOCS stays FAIL while any line says OPEN)
+
+- M1: OPEN
+- M2: OPEN
+- M3: OPEN
+- M4: OPEN
+- M5: OPEN
+- M6: OPEN
+- M7: OPEN
+- M8: RESOLVED — `run.sh` advisor is opt-in (`MAS_ADVISOR` default off); device/tests/test_harness.py::test_unattended_loop_spends_no_advisor_credits_by_default
