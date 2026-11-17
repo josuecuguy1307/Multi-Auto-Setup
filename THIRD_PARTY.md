@@ -81,3 +81,22 @@ Known limits (documented, not hidden):
 - **No plaintext fallback, ever.** If keyring resolves to its fail or null backend (for example a headless Linux machine with no Secret Service running), secret entry refuses with the typed reason `credential_store_missing`.
 - **macOS Keychain prompt.** An item is tied to the program that created it. When the Python binary changes (a new virtual environment, a `uv` interpreter update, `mas update`), macOS can ask the owner to allow the new binary to read the item, or the read can fail until the owner allows it. Answer with the account password in the system dialog; the harness never sees it.
 - `typing-extensions` (PSF-2.0, via `cryptography`) is only pulled below Python 3.11, which this project does not support.
+
+## MAS portable device (branch `device/v0`)
+
+Device code (`src/mas_device/`, `device/`) adds **no new dependency** so far: it uses `cryptography` (Ed25519, already above) and PyYAML.
+The repos in MISSION.md section 8.2 are **not cloned or evaluated yet**. Their licenses are left unconfirmed here until each one is read
+from its own LICENSE file when it is cloned (into git-ignored `scout/`, read before anything runs, run only in a container).
+
+| Name | Link | License | Role | Verdict |
+|---|---|---|---|---|
+| Monocypher (+ optional monocypher-ed25519) | https://monocypher.org | to read at clone (expected CC0-1.0 / BSD-2-Clause dual) | planned firmware dependency (DECISIONS D-007) | not evaluated |
+| tillitis-key1 / tk1-pcba | https://github.com/tillitis/tillitis-key1 | to read at clone | design-only: firmware-hash-derived key identity idea (D-007); no PCB derived | not cloned |
+| SoloKeys, USB Armory, tamago, armory-boot | see MISSION 8.2 | to read at clone | design reference | not cloned |
+| pocketllm (vraj00222, Looming41), llama.cpp, project-nomad | see MISSION 8.2 | to read at clone | Phase 2 candidates | not cloned |
+| portable-memory (MacPaw), portable-ai-memory | see MISSION 8.2 | to read at clone | Phase 2 memory format candidates | not cloned |
+| pi (earendil-works), pi-continual, prime-agent | see MISSION 8.2 | to read at clone | harness candidates (MAS already lists `pi` as an environment) | not cloned |
+| Syft, Grype, osquery | see MISSION 8.2 | to read at clone | Phase 3 candidates (fwupd, EMBA, binwalk, Ghidra cut for v0: D-011) | not cloned |
+| KiCad (kicad-cli), KiBot, Zener (diodeinc/pcb), atopile, Freerouting | see MISSION 8.2 | to read at clone | Phase 5 toolchain (D-009) | not cloned |
+| QEMU, Renode | see MISSION 8.2 | to read at clone | Phase 4 emulators (D-007), run as external tools | not installed |
+| anthropics/claude-quickstarts (autonomous-coding) | https://github.com/anthropics/claude-quickstarts | to read at clone | harness reference only | not cloned |

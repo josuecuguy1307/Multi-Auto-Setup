@@ -1,0 +1,118 @@
+# Acceptance criteria for the MAS portable device. Source of truth for ACCEPTANCE.md and test-results.json.
+#
+# Rules (enforced by scripts/device_accept.py, not by anyone's word):
+# - Every criterion starts FAIL. Only the checker writes PASS, and only when every listed test ran and passed.
+# - A skipped, missing or uncollectable test is FAIL. "No tests" is FAIL.
+# - A PASS is bound to the content hash of `covers` (and the tests). Change a covered file and the PASS goes STALE until re-run.
+# - `label` is how the result may be described in the README and the paper (EMULATED, SIMULATED, REAL, DESIGN-ONLY).
+#
+# Fields: id, phase, title, tests (pytest paths or node ids, relative to the repo root), covers (files or folders), label.
+
+criteria:
+  # ---- Phase 1: recon, decisions, harness -------------------------------------------------
+  - id: P1-HARNESS
+    phase: 1
+    title: The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist
+    tests: [device/tests/test_harness.py]
+    covers: [scripts/device_accept.py, device/acceptance/criteria.yaml, CLAUDE.md, .claude/settings.json, .claude/agents]
+    label: REAL
+  - id: P1-DOCS
+    phase: 1
+    title: DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice
+    tests: [device/tests/test_docs.py]
+    covers: [DECISIONS.md, ACCEPTANCE.md, THIRD_PARTY.md]
+    label: REAL
+  - id: P1-UNIT
+    phase: 1
+    title: "First unit through the full cycle: signed approval tokens (guardrail 3) with an evaluator report"
+    tests: [device/tests/test_approval.py, device/tests/test_unit_cycle.py]
+    covers: [src/mas_device/approval.py, src/mas_device/keymodel.py, device/evals/evaluator]
+    label: SIMULATED
+
+  # ---- Phase 2: software v0 -----------------------------------------------------------------
+  - id: P2-GATE
+    phase: 2
+    title: Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first
+    tests: [device/tests/test_gate.py]
+    covers: [src/mas_device]
+    label: SIMULATED
+  - id: P2-LOG
+    phase: 2
+    title: Append-only hash-chained log; any edit, truncation or reorder is detected; model process cannot write it
+    tests: [device/tests/test_log.py]
+    covers: [src/mas_device]
+    label: SIMULATED
+  - id: P2-GUARDRAILS
+    phase: 2
+    title: Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations
+    tests: [device/tests/test_guardrails.py]
+    covers: [src/mas_device]
+    label: SIMULATED
+  - id: P2-PORTABLE
+    phase: 2
+    title: One-command launch from a read-only medium in a clean VM/container; profiler picks compute mode
+    tests: [device/tests/test_portable.py]
+    covers: [src/mas_device, device/medium]
+    label: EMULATED
+  - id: P2-ZEROTRACE
+    phase: 2
+    title: Filesystem diff of the host before/after a session is empty outside approved writes
+    tests: [device/tests/test_zerotrace.py]
+    covers: [src/mas_device, device/medium]
+    label: EMULATED
+  - id: P2-FLEET
+    phase: 2
+    title: Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers
+    tests: [device/tests/test_fleet.py]
+    covers: [src/mas_device, device/medium]
+    label: EMULATED
+
+  # ---- Phase 3: inspection ------------------------------------------------------------------
+  - id: P3-INSPECT
+    phase: 3
+    title: Inventory precision and recall against fixtures with known truth meet thresholds
+    tests: [device/tests/test_inspect_accuracy.py]
+    covers: [src/mas_device]
+    label: SIMULATED
+  - id: P3-READONLY
+    phase: 3
+    title: Inspection makes zero writes (diff and read-only mount) and never touches the network
+    tests: [device/tests/test_inspect_readonly.py]
+    covers: [src/mas_device]
+    label: EMULATED
+
+  # ---- Phase 4: key firmware ----------------------------------------------------------------
+  - id: P4-FW-HOST
+    phase: 4
+    title: Firmware core (host build, HAL mocks) rejects replayed, altered and expired approvals; signs only after a press
+    tests: [device/tests/test_firmware_host.py]
+    covers: [device/firmware]
+    label: SIMULATED
+  - id: P4-FW-EMU
+    phase: 4
+    title: Same firmware runs in QEMU and Renode; button is the only approval path
+    tests: [device/tests/test_firmware_emu.py]
+    covers: [device/firmware]
+    label: EMULATED
+
+  # ---- Phase 5: hardware --------------------------------------------------------------------
+  - id: P5-PCB
+    phase: 5
+    title: ERC, DRC and fabrication checks green; fab outputs marked NO FABRICAR; HUMAN_REVIEW_PCB.md present
+    tests: [device/tests/test_pcb.py]
+    covers: [device/hardware]
+    label: DESIGN-ONLY
+
+  # ---- Phase 6: evals and paper -------------------------------------------------------------
+  - id: P6-EVALS
+    phase: 6
+    title: Evals reproducible with one command; every number in the paper comes from a script over raw results
+    tests: [device/tests/test_evals_paper.py]
+    covers: [device/evals, device/paper]
+    label: REAL
+  - id: P6-REPO
+    phase: 6
+    title: README, THIRD_PARTY.md and reproduction instructions complete
+    tests: [device/tests/test_repo.py]
+    covers: [README.md, THIRD_PARTY.md, device]
+    label: REAL
