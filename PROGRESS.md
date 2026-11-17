@@ -66,3 +66,13 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   instead of the field they meant to; switched the helper to bytes. A same-size edit pattern (`"n": 1,`) never matched (n is the last key).
 - STEER (Josué, in chat): move to the hardware work now. Next: firmware core in C (Phase 4) and PCB as code (Phase 5). The P1-UNIT / P2-GATE
   fixes listed above stay open.
+- Firmware (Phase 4, host build): advisor Fable 5.2 wrote the core spec (DECISIONS A-2). Toolchain: zig cc from PyPI `ziglang==0.13.0` in
+  runs/toolchain (Docker engine still down). Monocypher 4.0.2 vendored unmodified; its Ed25519 matches `cryptography` byte for byte.
+  Tests first (red e85e233), then the C core: 3-opcode allowlist, COBS+CRC16 framing, press-after-request latch, strict press window at the
+  press time, two-page counter log committed and read back before signing, key page never touched by an opcode. P4-FW-HOST oracle PASS,
+  296 tests (60 differential scripts vs keymodel.py, power-cut sweeps incl. page rollover with 3 erase variants, first-boot cut, 3 saboteur
+  builds that the suite catches). SIMULATED. Evaluator run 1 started.
+- Failed attempts: a 300-byte payload test expected `malformed` but the spec says RX overflow is `bad_frame` (test corrected); the
+  printable-check saboteur left `printable()` unused and -Werror refused to build it (saboteur now keeps the call). A combined shell command
+  that also ran a no-op `sed -i` on a vendored file was blocked by the auto-mode classifier; redone as plain copy + Write.
+- Blocked for Phase 5: KiCad (kicad-cli ERC/DRC, D-009) needs the Docker engine or a native install (NEEDS_HUMAN #7, #8).

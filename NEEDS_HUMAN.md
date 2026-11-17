@@ -13,8 +13,7 @@ Each item: what, why, exact steps. The run keeps going on other units meanwhile.
    criterion is PASS or `AGENT_STOP` exists. Recommended: container mode (`MAS_LOOP_MODE=container bash run.sh`, next unit builds the image).
    Authentication inside the container: run `claude setup-token` yourself and pass it as an environment variable at `docker run`; it must
    never be written to the repo or logs.
-4. **Pushing `device/v0`.** The first push will use your git credentials on this machine. If it fails, the work stays committed locally and
-   the run continues.
+4. ~~Pushing `device/v0`~~ — done 2026-11-17 (Git Credential Manager sign-in).
 5. **Confirm v0 compute = the host's own CPU/GPU** (DECISIONS D-003): a Pi 5 cannot be powered from most host USB ports, so Pi mode is
    VM-emulated only and the Jetson option is cut. Reply in STEER.md if you disagree.
 6. **Hardware license** (DECISIONS D-014): proposed CERN-OHL-P-2.0 for the key board. Confirm or pick another in STEER.md.
@@ -27,3 +26,7 @@ Each item: what, why, exact steps. The run keeps going on other units meanwhile.
 
 7. **Docker Desktop is not running** (`dockerDesktopLinuxEngine` pipe missing). Start it once so the container harness, QEMU/Renode and
    KiCad can run in containers.
+
+8. **KiCad for Phase 5 (PCB checks).** The ERC/DRC gates need `kicad-cli`. Either get the Docker engine running (Docker Desktop opens but
+   `docker info` still cannot reach `dockerDesktopLinuxEngine`; usually fixed by `wsl --update` then restarting Docker Desktop), and the
+   run uses the official `kicad/kicad:9.0` image; or allow a native install: `winget install KiCad.KiCad`. Say which in STEER.md.
