@@ -417,3 +417,15 @@ remove a decoupling cap → net check fails.
   recorded in the audit log next to the press: the device owner alone can never add a borrowed machine to the fleet.
 - Enforced by P2-PAIRING and P2-FLEET (both FAIL until built).
 
+## D-022 What an undo restores (2026-11-17; P2-GATE evaluator run 4)
+- An undo restores bytes and removes the folders the write created. It does **not** restore a file's ACL, timestamps or alternate data
+  streams: `os.replace` gives the new file its folder's inherited ACL, and the restore does too. Files with attributes beyond ARCHIVE /
+  NORMAL / NOT_CONTENT_INDEXED (hidden, system, read-only, ...) are refused at plan time rather than silently changed. Preserving security
+  descriptors needs Windows APIs this host-side simulation does not use; recorded as a known gap for the device's executor (Phase 2).
+- After the token is spent, any failure to re-read the host (a refusal or an OS error such as a file locked by another process) is logged
+  as `write.refused`/`undo.refused` with the counter and comes back as `Refused`: no spent counter is missing from the log.
+- Not logged: an expired token (the gate cannot attribute a counter to a body it refuses before verifying the action). Known gap.
+- Plan time refuses what could never be written: a path through an existing file, a name longer than 200 characters.
+- Declared equivalent: resolving mkdirs inside `_apply` (a swapped parent makes the later file write refuse and the rollback removes the
+  folder); the rmdirs type check in `_check_state` (a swapped folder is refused earlier as a link).
+

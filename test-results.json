@@ -1,7 +1,7 @@
 {
- "checksum": "5fe9e04b65c1928fe66d11556672257a1fe2a1083f75715d574f63a53c3ecc3f",
+ "checksum": "793d98e72a3a9300f755d4818095a4cc6c06c8499fdd39c630f3d105c14f28ed",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "2083f7d",
+ "git_head_at_run": "7429e4e",
  "results": {
   "P0-SECRETS": {
    "at": "2026-11-17T02:38:12",
@@ -13,14 +13,14 @@
    "title": "No credentials, keys or tokens anywhere in the repository (secret scan over the whole tree and history)"
   },
   "P1-DOCS": {
-   "at": "2026-11-17T02:35:46",
+   "at": "2026-11-17T08:32:37",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 18
    },
-   "fingerprint": "3d0d0ef920c9cefef0d41977d154f66809386e48e7fd0b418d0deedf8230e4e5",
+   "fingerprint": "710613bc68af37df703c52dee6894483b3036f8c531a9d220f0c25a7668e11a5",
    "label": "REAL",
    "phase": 1,
    "reason": "18 passed",
@@ -73,17 +73,17 @@
    "title": "Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers"
   },
   "P2-GATE": {
-   "at": "2026-11-17T02:52:47",
+   "at": "2026-11-17T08:32:38",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
-    "tests": 104
+    "tests": 114
    },
-   "fingerprint": "e7a5b82043ebd9d1366653caf433c8d3ed18c0db503753d21bebc4e86a3328b0",
+   "fingerprint": "e337ed34ef87d182e4f943c805bbc17f8337fa8606cb90c015aea603c2259d26",
    "label": "SIMULATED",
    "phase": 2,
-   "reason": "104 passed, 2 saboteurs killed",
+   "reason": "114 passed, 2 saboteurs killed",
    "saboteurs": {
     "skip-post-consume-recheck": "killed",
     "skip-validate-in-run": "killed"

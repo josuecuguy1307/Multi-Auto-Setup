@@ -14,6 +14,9 @@ An undo runs only if its hash equals the undo_hash of a write approval this gate
 Entries in the log, or tokens of class UNDO for any other undo, do not make an undo valid. A restart forgets every right to undo
 (recovery from a key-countersigned log head is later work: DECISIONS D-006, LOG_HEAD).
 
+What an undo restores: the file's bytes and the folders the write created. It does NOT restore ACLs, timestamps or alternate data
+streams (files with non-plain attributes are refused instead, D-022): a file replaced and then restored takes its folder's inherited ACL.
+
 The gate copies every action it is handed (it never reads the caller's object again; the copies in begin/begin_undo are defence in
 depth, since consume recomputes everything from its own copy), serialises writes and undos (one at a time, from validation to undo
 registration, across threads; a nested call from the same thread, e.g. from a log hook, is refused), refuses paths that collide without case or reach an entry through an alias (case variant, 8.3
@@ -44,6 +47,8 @@ from mas_device import approval as ap
 from mas_device.log import AuditLog, LogBroken
 
 MAX_FILE_BYTES = 1 << 20
+MAX_NAME = 200  # one path component; leaves room for the temporary name used to replace a file atomically (255 on NTFS/ext4)
+PLAIN_ATTRIBUTES = 0x20 | 0x80 | 0x2000  # ARCHIVE, NORMAL, NOT_CONTENT_INDEXED: anything else (hidden, system, read-only...) is refused
 REASONS = ("bad_action", "outside_root", "pre_state_changed", "undo_mismatch", "undo_not_issued", "log_failed", "apply_failed", "too_large")
 WRITE_KEYS = {"kind", "target", "files", "mkdirs", "undo"}
 RESTORE_KEYS = {"kind", "target", "files", "rmdirs"}
@@ -97,6 +102,8 @@ def _check_rel(rel) -> list[str]:
     for part in parts:
         if part in ("", ".", ".."):
             raise Refused("outside_root", rel)
+        if len(part) > MAX_NAME:
+            raise Refused("bad_action", f"a name longer than {MAX_NAME} characters")
         if part.split(".")[0].rstrip(" ").lower() in _RESERVED or part[-1] in ". ":  # "CON .txt" is CON on older Windows
             raise Refused("bad_action", f"{part!r} is not portable")
     return parts
@@ -161,12 +168,15 @@ class PolicyGate:
 
     def _resolve(self, rel) -> Path:
         p = self.root
-        for part in _check_rel(rel):
+        parts = _check_rel(rel)
+        for i, part in enumerate(parts):
             parent, p = p, p / part
             if _is_link(p):
                 raise Refused("outside_root", f"{rel}: a link inside the path")
             if os.path.lexists(p) and part not in os.listdir(parent):
                 raise Refused("bad_action", f"{rel}: {part!r} is not the entry's own name (case variant or alias)")
+            if i < len(parts) - 1 and os.path.lexists(p) and not p.is_dir():
+                raise Refused("bad_action", f"{rel}: {part!r} is a file, not a folder")
         probe = p
         while not probe.exists() and probe != self.root:
             probe = probe.parent
@@ -180,6 +190,9 @@ class PolicyGate:
             return None
         if not p.is_file() or _is_link(p):
             raise Refused("bad_action", f"{p.name} is not a regular file")
+        attrs = getattr(p.stat(), "st_file_attributes", 0)
+        if attrs & ~PLAIN_ATTRIBUTES:
+            raise Refused("bad_action", f"{p.name} has attributes the undo could not restore (0x{attrs:x})")
         if p.stat().st_nlink > 1:
             raise Refused("bad_action", f"{p.name} has other hard links: its bytes may live outside the root")
         if p.stat().st_size > MAX_FILE_BYTES:
@@ -358,13 +371,16 @@ class PolicyGate:
         kind = "write" if cls == ap.Class.WRITE else "undo"
         try:
             self._check_state(action)                 # again, after the token is spent
-        except Refused as exc:  # the token is spent: the log says so, so no counter goes missing from it (rule 5)
+        except (Refused, OSError) as exc:  # the token is spent: the log says so, so no counter goes missing from it (rule 5)
+            code = exc.code if isinstance(exc, Refused) else "pre_state_changed"
             try:
                 self._log.append(f"{kind}.refused", {"action_hash": approval.action_hash.hex(), "counter": approval.counter,
-                                                     "key_id": approval.key_id.hex(), "nonce": approval.nonce.hex(), "reason": exc.code})
+                                                     "key_id": approval.key_id.hex(), "nonce": approval.nonce.hex(), "reason": code})
             except (LogBroken, OSError):
                 pass
-            raise
+            if isinstance(exc, Refused):
+                raise
+            raise Refused(code, f"the host could not be read after the token was spent: {type(exc).__name__}") from None
         try:
             self._log.append(f"{kind}.approved", {
                 "action_hash": approval.action_hash.hex(), "undo_hash": approval.undo_hash.hex(), "key_id": approval.key_id.hex(),
