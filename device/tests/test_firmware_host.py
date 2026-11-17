@@ -115,12 +115,15 @@ class Fw:
             raise Died(self.p.wait())
         return data
 
-    def raw(self, data: bytes) -> list[tuple[str, bytes]]:
+    def _write(self, data: bytes) -> None:
         try:
-            self.p.stdin.write(b"F" + len(data).to_bytes(2, "big") + data)
+            self.p.stdin.write(data)
             self.p.stdin.flush()
         except OSError:
             raise Died(self.p.wait()) from None
+
+    def raw(self, data: bytes) -> list[tuple[str, bytes]]:
+        self._write(b"F" + len(data).to_bytes(2, "big") + data)
         out = []
         while True:
             tag = self._read(1)
@@ -159,11 +162,7 @@ class Fw:
         return st, (p if st == "ok" else None)
 
     def _ack(self, data: bytes) -> None:
-        try:
-            self.p.stdin.write(data)
-            self.p.stdin.flush()
-        except OSError:
-            raise Died(self.p.wait()) from None
+        self._write(data)
         assert self._read(1) == b"k"
 
     def press(self, dwell: bool = True):
@@ -176,8 +175,7 @@ class Fw:
         self._ack(b"T" + ms.to_bytes(4, "big"))
 
     def display(self) -> str:
-        self.p.stdin.write(b"D")
-        self.p.stdin.flush()
+        self._write(b"D")
         assert self._read(1) == b"D"
         summary, nxt = self._read(32), int.from_bytes(self._read(8), "big")
         return "" if summary == bytes(32) else f"{summary.decode('ascii').rstrip()}  #{nxt}"

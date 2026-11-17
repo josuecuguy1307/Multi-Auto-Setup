@@ -87,6 +87,36 @@ def build_tool(c_file: Path, out: Path, name: str, extra_sources: tuple = ()) ->
     return exe
 
 
+AN505 = ["an505/startup.c", "an505/hal_an505.c", "an505/main_an505.c"]
+ARM = ["-target", "thumb-freestanding-eabi", "-mcpu=cortex_m33", "-ffreestanding", "-fno-builtin"]
+
+
+def build_an505(src: Path = HERE, out: Path | None = None) -> Path:
+    """The same core for QEMU's mps2-an505 (Cortex-M33), EMULATED. Returns the ELF path."""
+    src = Path(src)
+    h = hashlib.sha256(b"an505")
+    for p in sorted(q for q in src.rglob("*") if q.is_file() and q.suffix in (".c", ".h", ".ld")):
+        h.update(p.relative_to(src).as_posix().encode() + b"\0" + p.read_bytes())
+    out = Path(out) if out else ROOT / "runs" / "fw-build" / ("an505-" + h.hexdigest()[:16])
+    elf = out / "keyfw_an505.elf"
+    if elf.exists():
+        return elf
+    out.mkdir(parents=True, exist_ok=True)
+    cc = compiler()
+    inc = ["-I", str(src / "an505" / "include"), "-I", str(src / "core"), "-I", str(src / "vendor" / "monocypher"), "-I", str(src / "an505")]
+    objs = []
+    for rel, flags in [(r, CORE_FLAGS) for r in CORE + AN505] + [(r, VENDOR_FLAGS) for r in VENDOR]:
+        obj = out / (rel.replace("/", "_") + ".o")
+        r = subprocess.run(cc + ARM + flags + inc + ["-c", str(src / rel), "-o", str(obj)], capture_output=True, text=True)
+        if r.returncode != 0:
+            raise BuildError(f"ERROR compiling {rel} for an505:\n{r.stderr[-3000:]}")
+        objs.append(str(obj))
+    r = subprocess.run(cc + ARM + ["-nostdlib", "-T", str(src / "an505" / "link.ld")] + objs + ["-o", str(elf)], capture_output=True, text=True)
+    if r.returncode != 0:
+        raise BuildError(f"ERROR linking an505:\n{r.stderr[-3000:]}")
+    return elf
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out")

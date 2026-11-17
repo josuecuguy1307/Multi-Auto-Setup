@@ -90,8 +90,14 @@ criteria:
     label: SIMULATED
   - id: P4-FW-EMU
     phase: 4
-    title: Same firmware runs in QEMU and Renode; button is the only approval path
+    title: Same firmware runs in QEMU (mps2-an505, Cortex-M33) with transcripts identical to the host build; button is the only approval path
     tests: [device/tests/test_firmware_emu.py]
+    covers: [device/firmware]
+    label: EMULATED
+  - id: P4-FW-RENODE
+    phase: 4
+    title: Same firmware runs in Renode with transcripts identical to the host build and QEMU
+    tests: [device/tests/test_firmware_renode.py]
     covers: [device/firmware]
     label: EMULATED
 

@@ -95,3 +95,8 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
 - Firmware evaluator run 3: FAIL (press during the display redraw approved the new request; no minimum time on screen; TRNG and key-write
   failures untested). Fixed test-first (red 5747266, D-017): draw first, then clear the latch; 1 s minimum dwell in firmware and keymodel;
   every Python test that pressed at 0 ms now waits the dwell. P4-FW-HOST 323 tests PASS; P2-GATE/P2-LOG re-run PASS. Run 4 pending.
+- Emulation (P4-FW-EMU): QEMU 11.1.0 installed (winget). Same core cross-compiled for Cortex-M33 with zig; boots on mps2-an505 and answers
+  over the CMSDK UART. Failed attempts: freestanding build had no string.h (added a minimal one); the Bash tool collapses `\` in heredocs,
+  which put a NUL byte and broken f-strings into build.py (fixed with file tools; use Write/Edit for code with backslashes); the first
+  transcript test compared mostly refusals (1 signature in 20 scripts) and missed a frozen clock — fixed with approval flows and a saboteur.
+  27 tests pass. Renode split into P4-FW-RENODE (FAIL until installed).

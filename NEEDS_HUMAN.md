@@ -30,3 +30,6 @@ Each item: what, why, exact steps. The run keeps going on other units meanwhile.
 8. **KiCad for Phase 5 (PCB checks).** The ERC/DRC gates need `kicad-cli`. Either get the Docker engine running (Docker Desktop opens but
    `docker info` still cannot reach `dockerDesktopLinuxEngine`; usually fixed by `wsl --update` then restarting Docker Desktop), and the
    run uses the official `kicad/kicad:9.0` image; or allow a native install: `winget install KiCad.KiCad`. Say which in STEER.md.
+
+9. **Renode for P4-FW-RENODE.** Not on winget. Either allow downloading the official Windows installer from
+   https://github.com/renode/renode/releases (latest stable `renode_*.msi`), or run it later in the Linux container once Docker works.

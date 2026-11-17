@@ -378,3 +378,15 @@ remove a decoupling cap → net check fails.
   before the press it expects. The press window (≤ 30 s) still runs from the same moment.
 - Tests: a mock display that presses during the redraw; press at 0 ms and 999 ms refused, 1000 ms accepted; bait-and-switch refused;
   TRNG failure and failed or stuck first-boot key writes give nv_fault with no token.
+
+## D-018 Emulation: QEMU now, Renode split out (2026-11-17)
+- QEMU 11.1.0 installed natively by winget (Josué approved; Docker still down). Target `mps2-an505` (Cortex-M33, D-007). The same four core
+  files are cross-compiled with `zig cc -target thumb-freestanding-eabi -mcpu=cortex_m33`; the port (`device/firmware/an505/`) adds only
+  startup, a CMSDK UART HAL with flash in RAM, and a main loop that speaks the host build's tagged records over UART0 (TCP on 127.0.0.1).
+  Tick and button come from the harness over that UART (SysTick and a GPIO interrupt on the board); the TRNG seed is sent before boot.
+- The test that compares host and QEMU transcripts was weak at first: its random scripts produced 1 signature in 20 scripts, and a frozen
+  emulated clock went unnoticed. Scripts now include whole approval flows (≥ 60 signatures) and a frozen-clock saboteur must differ.
+- P4-FW-EMU is now QEMU only; **P4-FW-RENODE** is a separate criterion that stays FAIL until Renode is installed (it is not on winget;
+  NEEDS_HUMAN #9). Not dropped, not stood in for.
+- Process note: the an505 port was written before its tests (a smoke-first spike), unlike the other units; the saboteur above is the check
+  that the tests have teeth.

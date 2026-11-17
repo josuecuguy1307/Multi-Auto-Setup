@@ -1,7 +1,7 @@
 {
- "checksum": "8f19737244196e8fd7dc0b304f5ac44ac505f604ac3214f6631261072b098337",
+ "checksum": "9ddf1019109ddace00f544bd5db9d6027865061ead4238c1495276a8280b6bb7",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "5747266",
+ "git_head_at_run": "d4171a9",
  "results": {
   "P1-DOCS": {
    "at": "2026-11-16T23:23:48",
@@ -114,20 +114,50 @@
    "status": "FAIL",
    "title": "Filesystem diff of the host before/after a session is empty outside approved writes"
   },
+  "P4-FW-EMU": {
+   "at": "2026-11-17T01:18:50",
+   "counts": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 27
+   },
+   "fingerprint": "e22e04b61cd604bf4983c72cfebc2879011a70e1ad927392c20a31b39131c70b",
+   "label": "EMULATED",
+   "phase": 4,
+   "reason": "27 passed",
+   "status": "PASS",
+   "title": "Same firmware runs in QEMU (mps2-an505, Cortex-M33) with transcripts identical to the host build; button is the only approval path"
+  },
   "P4-FW-HOST": {
-   "at": "2026-11-17T01:05:38",
+   "at": "2026-11-17T01:17:18",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 323
    },
-   "fingerprint": "32049ebee7bbc1e24fdf0fde4dbe2a8ba934c89f6b34e1f1522efab7b0c9ae54",
+   "fingerprint": "942d3ed5de8f8a20519886ee1a60d9b0a3b0a96f3b6ff25bbf47415296a32e43",
    "label": "SIMULATED",
    "phase": 4,
    "reason": "323 passed",
    "status": "PASS",
    "title": "Firmware core (host build, HAL mocks) rejects replayed, altered and expired approvals; signs only after a press"
+  },
+  "P4-FW-RENODE": {
+   "at": "2026-11-17T01:20:50",
+   "counts": {
+    "errors": 0,
+    "failures": 2,
+    "skipped": 0,
+    "tests": 2
+   },
+   "fingerprint": "ae2ef529278a7ae952dad90fff81c5c7d89a9b5e7c7fdf7e6dc34eb05ffb0d38",
+   "label": "EMULATED",
+   "phase": 4,
+   "reason": "2 failed, 0 errors",
+   "status": "FAIL",
+   "title": "Same firmware runs in Renode with transcripts identical to the host build and QEMU"
   },
   "P5-PCB": {
    "at": "2026-11-17T00:56:13",

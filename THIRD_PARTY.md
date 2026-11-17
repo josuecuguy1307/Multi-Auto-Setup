@@ -99,5 +99,6 @@ from its own LICENSE file when it is cloned (into git-ignored `scout/`, read bef
 | pi (earendil-works), pi-continual, prime-agent | see MISSION 8.2 | to read at clone | harness candidates (MAS already lists `pi` as an environment) | not cloned |
 | Syft, Grype, osquery | see MISSION 8.2 | to read at clone | Phase 3 candidates (fwupd, EMBA, binwalk, Ghidra cut for v0: D-011) | not cloned |
 | KiCad (kicad-cli), KiBot, Zener (diodeinc/pcb), atopile, Freerouting | see MISSION 8.2 | to read at clone | Phase 5 toolchain (D-009) | not cloned |
-| QEMU, Renode | see MISSION 8.2 | to read at clone | Phase 4 emulators (D-007), run as external tools | not installed |
+| QEMU 11.1.0 (`qemu-system-arm`) | https://www.qemu.org (winget SoftwareFreedomConservancy.QEMU) | GPL-2.0 | P4-FW-EMU emulator, run as an external tool (no QEMU code in the repo) | installed natively on Josué's host |
+| Renode | https://renode.io | MIT | P4-FW-RENODE emulator, external tool | not installed (NEEDS_HUMAN #9) |
 | anthropics/claude-quickstarts (autonomous-coding) | https://github.com/anthropics/claude-quickstarts | to read at clone | harness reference only | not cloned |
