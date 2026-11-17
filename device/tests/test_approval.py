@@ -7,6 +7,7 @@ SIMULATED: the key is the Python reference model of the firmware (src/mas_device
 from __future__ import annotations
 
 import copy
+import enum
 import hashlib
 import json
 import threading
@@ -484,20 +485,21 @@ def test_two_threads_never_both_spend_one_token(gate, key, monkeypatch):
     monkeypatch.setattr(ap, "summary_for", slow)
     for _ in range(5):
         tok = approve(gate, key)
-        wins = []
+        wins, losers = [], []
         barrier = threading.Barrier(2)
 
         def go():
             barrier.wait()
             try:
                 wins.append(gate.consume(tok, ACTION, cls=ap.Class.WRITE))
-            except ap.Rejected:
-                pass
+            except ap.Rejected as exc:
+                losers.append(exc.code)
 
         ts = [threading.Thread(target=go) for _ in range(2)]
         [t.start() for t in ts]
         [t.join() for t in ts]
         assert len(wins) == 1
+        assert losers == ["unknown_nonce"], losers  # the lock makes the loser find no nonce, not a lucky counter check
 
 
 def test_pending_requests_are_bounded_and_expired_ones_are_swept(gate, gate_clock):
@@ -537,3 +539,175 @@ def test_a_key_clock_that_goes_back_before_the_press_fails_closed(gate, key, key
     with pytest.raises(KeyRefused) as e:
         key.sign(r)
     assert e.value.code == "no_press"
+
+
+
+# ---- evaluator run 2 (device/evals/evaluator/P1-UNIT.run2.md) ---------------------------------------
+
+class Seq:
+    """A clock that returns the given values in order, then repeats the last one."""
+
+    def __init__(self, *values):
+        self.values = list(values)
+
+    def __call__(self):
+        return self.values.pop(0) if len(self.values) > 1 else self.values[0]
+
+
+def test_the_sweep_never_deletes_a_newer_pending(key):
+    clock = Seq(101.0, 100.0, 101.5)  # B begins at 101; A's begin then reads an older 100; B is consumed at 101.5
+    gate = ap.Gate({key.key_id: key.public_key}, session=SESSION, clock=clock)
+    b = gate.begin(ACTION, ap.Class.WRITE)
+    gate.begin(dict(ACTION, target="host-z"), ap.Class.WRITE)
+    tok = sign_request(key, b.key_request())
+    assert gate.consume(tok, ACTION, cls=ap.Class.WRITE).counter == 1
+
+
+def test_a_flood_of_writes_never_blocks_a_persons_undo(gate):
+    for _ in range(ap.MAX_PENDING):
+        gate.begin(ACTION, ap.Class.WRITE)
+    undo_action = {"kind": "files.restore", "target": "host-aaaa", "files": [], "rmdirs": []}
+    gate.begin(undo_action, ap.Class.UNDO)
+
+
+class Foreign(enum.IntEnum):
+    DELETE_EVERYTHING = 1
+
+
+class EvilInt(int):
+    def __eq__(self, other):
+        return True
+
+    __hash__ = int.__hash__
+
+
+@pytest.mark.parametrize("cls", [Foreign.DELETE_EVERYTHING, EvilInt(1)])
+def test_lookalike_classes_are_refused(gate, cls):
+    with pytest.raises(ap.Rejected):
+        gate.begin(ACTION, cls)
+
+
+@pytest.mark.parametrize("text", [None, 123, b'{"a": 1}', ["x"]])
+def test_parse_action_rejects_anything_that_is_not_text(text):
+    with pytest.raises(ap.Rejected) as e:
+        ap.parse_action(text)
+    assert e.value.code == "malformed"
+
+
+def test_a_ttl_too_large_for_a_float_is_a_value_error(key):
+    with pytest.raises(ValueError):
+        ap.Gate({key.key_id: key.public_key}, session=SESSION, ttl_s=10**400)
+
+
+@pytest.mark.parametrize("kind", [" ", "\t", "\n", "a b", "../x", "x" * 65])
+def test_an_undo_kind_must_be_a_real_name(gate, kind):
+    with pytest.raises(ap.Rejected) as e:
+        gate.begin(dict(ACTION, undo={"kind": kind}), ap.Class.WRITE)
+    assert e.value.code == "no_undo"
+
+
+@pytest.mark.parametrize("where", ["press", "request"])
+def test_a_nan_tick_on_the_key_never_signs(gate, key, key_clock, where):
+    r = None
+    if where == "request":
+        key_clock.t = float("nan")
+    r = key.request(gate.begin(ACTION, ap.Class.WRITE).key_request())
+    key_clock.t = float("nan") if where == "press" else 1000.0
+    key.button.press()
+    with pytest.raises(KeyRefused):
+        key.sign(r)
+
+
+@pytest.mark.parametrize("field,value", [("cls", True), ("cls", 1.0), ("press_window_s", True), ("press_window_s", 30.0),
+                                         ("cls", 0), ("cls", 8), ("press_window_s", 0), ("press_window_s", 256)])
+def test_the_key_takes_exact_integers_in_range(gate, key, field, value):
+    req = gate.begin(ACTION, ap.Class.WRITE).key_request()._replace(**{field: value})
+    with pytest.raises(KeyRefused) as e:
+        key.request(req)
+    assert e.value.code == "malformed"
+
+
+@pytest.mark.parametrize("field,n", [("session_id", 31), ("nonce", 17), ("action_hash", 33), ("undo_hash", 0), ("summary", 31)])
+def test_the_key_checks_field_lengths(gate, key, field, n):
+    req = gate.begin(ACTION, ap.Class.WRITE).key_request()._replace(**{field: b"A" * n})
+    with pytest.raises(KeyRefused) as e:
+        key.request(req)
+    assert e.value.code == "malformed"
+
+
+def test_a_token_signed_over_another_class_is_refused(gate, key):
+    pending = gate.begin(ACTION, ap.Class.WRITE)
+    tok = sign_request(key, pending.key_request()._replace(cls=int(ap.Class.LOG_HEAD), summary=ap.summary_for(ACTION, ap.Class.LOG_HEAD)))
+    with pytest.raises(ap.Rejected) as e:
+        gate.consume(tok, ACTION, cls=ap.Class.WRITE)
+    assert e.value.code in ("class_mismatch", "summary_mismatch")
+    pending = gate.begin(ACTION, ap.Class.WRITE)
+    tok = sign_request(key, pending.key_request()._replace(cls=int(ap.Class.LOG_HEAD)))
+    with pytest.raises(ap.Rejected) as e:
+        gate.consume(tok, ACTION, cls=ap.Class.WRITE)
+    assert e.value.code == "class_mismatch"
+
+
+def test_a_token_signed_over_another_action_hash_is_refused(gate, key):
+    pending = gate.begin(ACTION, ap.Class.WRITE)
+    tok = sign_request(key, pending.key_request()._replace(action_hash=b"\x55" * 32))
+    with pytest.raises(ap.Rejected) as e:
+        gate.consume(tok, ACTION, cls=ap.Class.WRITE)
+    assert e.value.code == "action_mismatch"
+
+
+def test_a_cloned_key_repeating_a_counter_is_refused(tmp_path, gate, key, key_clock):
+    clone = KeyModel(tmp_path / "clone", Ed25519PrivateKey.from_private_bytes(key._secret_bytes_for_test()), 0, key_clock)
+    (tmp_path / "clone").mkdir()
+    gate.consume(approve(gate, key), ACTION, cls=ap.Class.WRITE)  # counter 1
+    with pytest.raises(ap.Rejected) as e:
+        gate.consume(approve(gate, clone), ACTION, cls=ap.Class.WRITE)  # the clone signs counter 1 again
+    assert e.value.code == "counter_regressed"
+
+
+def test_a_pin_of_the_real_key_id_to_another_key_never_verifies(key, gate_clock, tmp_path):
+    rogue = KeyModel.create(tmp_path / "rogue", clock=key._clock)
+    gate = ap.Gate({key.key_id: rogue.public_key}, session=SESSION, clock=gate_clock)  # a mismatched pin is dropped, not trusted
+    pending = gate.begin(ACTION, ap.Class.WRITE)
+    body = ap.pack_body(key.key_id, 1, pending.key_request())
+    forged = body + Ed25519PrivateKey.from_private_bytes(rogue._secret_bytes_for_test()).sign(body)
+    with pytest.raises(ap.Rejected) as e:
+        gate.consume(forged, ACTION, cls=ap.Class.WRITE)
+    assert e.value.code == "unknown_key"
+
+
+def test_one_press_one_signature_on_the_same_handle(gate, key):
+    r = key.request(gate.begin(ACTION, ap.Class.WRITE).key_request())
+    key._clock.t += KeyModel.MIN_DWELL_S
+    key.button.press()
+    key.sign(r)
+    key.button.press()
+    with pytest.raises(KeyRefused) as e:
+        key.sign(r)
+    assert e.value.code == "stale_request"
+
+
+@pytest.mark.parametrize("wait,want", [(0.0, "no_press"), (0.999, "no_press"), (1.0, "ok")])
+def test_the_key_model_dwell(gate, key, wait, want):
+    r = key.request(gate.begin(ACTION, ap.Class.WRITE).key_request())
+    key._clock.t += wait
+    key.button.press()
+    try:
+        key.sign(r)
+        got = "ok"
+    except KeyRefused as exc:
+        got = exc.code
+    assert got == want
+
+
+@pytest.mark.parametrize("pw,wait,want", [(255, 30.0, "ok"), (255, 30.001, "press_window"), (5, 5.001, "press_window")])
+def test_the_key_model_window_is_capped_at_thirty_seconds(gate, key, pw, wait, want):
+    r = key.request(gate.begin(ACTION, ap.Class.WRITE).key_request()._replace(press_window_s=pw))
+    key._clock.t += wait
+    key.button.press()
+    try:
+        key.sign(r)
+        got = "ok"
+    except KeyRefused as exc:
+        got = exc.code
+    assert got == want

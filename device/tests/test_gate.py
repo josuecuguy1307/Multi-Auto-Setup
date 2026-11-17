@@ -586,3 +586,61 @@ def test_a_link_that_stays_inside_the_root_is_refused_too(pg, root):
         pg.plan_write({"alias/planted.txt": b"x"})
     assert e.value.code == "outside_root"
     assert list((root / "inner").iterdir()) == []
+
+
+
+# ---- evaluator run 2 (device/evals/evaluator/P2-GATE.run2.md) ------------------------------------------
+
+def test_a_nested_write_from_inside_a_write_is_refused(pg, key, root, log, monkeypatch):
+    w1 = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    w2 = pg.plan_write({"etc/app.conf": b"port=3\n"})
+    t1, t2 = press(pg, key, w1), press(pg, key, w2)
+    real = log.append
+    nested = []
+
+    def hook(kind, payload):
+        out = real(kind, payload)
+        if kind == "write.approved" and not nested:
+            try:
+                pg.execute(t2, w2)
+                nested.append("ran")
+            except gt.Refused as exc:
+                nested.append(exc.code)
+        return out
+
+    monkeypatch.setattr(log, "append", hook)
+    pg.execute(t1, w1)
+    assert nested == ["bad_action"], nested
+    assert (root / "etc" / "app.conf").read_bytes() == b"port=2\n"
+    assert [r["type"] for r in log.records()] == ["write.approved", "write.done"]
+
+
+def test_the_realpath_check_alone_stops_a_link_out_of_the_root(pg, root, tmp_path, monkeypatch):
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    _make_link(root / "link", outside)
+    monkeypatch.setattr(gt, "_is_link", lambda p: False)  # suppose the link check missed it
+    with pytest.raises(gt.Refused) as e:
+        pg.plan_write({"link/planted.txt": b"x"})
+    assert e.value.code == "outside_root"
+    assert list(outside.iterdir()) == []
+
+
+@pytest.mark.parametrize("name", ["COM0", "LPT0", "COM¹", "COM²", "COM³", "LPT¹", "LPT²", "LPT³", "CONIN$",
+                                  "CONOUT$", "CLOCK$", "conin$.txt", "com0.log"])
+def test_every_windows_device_name_is_refused(pg, name):
+    with pytest.raises(gt.Refused) as e:
+        pg.plan_write({name: b"x"})
+    assert e.value.code == "bad_action"
+
+
+def test_a_lone_surrogate_path_is_refused_by_the_gate(pg):
+    with pytest.raises(gt.Refused):
+        pg.plan_write({"a\udc00": b"x"})
+
+
+@pytest.mark.parametrize("bad", [[1], None, "abc", 12])
+def test_undo_for_anything_but_a_hash_is_refused(pg, bad):
+    with pytest.raises(gt.Refused) as e:
+        pg.undo_for(bad)
+    assert e.value.code == "undo_not_issued"

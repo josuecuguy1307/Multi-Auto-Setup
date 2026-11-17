@@ -9,6 +9,7 @@ storage, and only then releases the signature. A power cut after the commit lose
 from __future__ import annotations
 
 import json
+import math
 import os
 import time
 from collections.abc import Callable
@@ -109,6 +110,8 @@ class KeyModel:
             raise KeyRefused("malformed")
         if not all(0x20 <= c < 0x7F for c in req.summary):
             raise KeyRefused("summary_not_printable")
+        if type(req.cls) is not int or type(req.press_window_s) is not int:
+            raise KeyRefused("malformed")  # the firmware reads two bytes: only exact integers model them
         if req.cls not in {int(c) for c in Class} or not 1 <= req.press_window_s <= 255:
             raise KeyRefused("malformed")
         if self._counter >= 2**64 - 2:
@@ -130,6 +133,8 @@ class KeyModel:
         press = self.button._take()
         if press is None or press[0] <= p.event:
             raise KeyRefused("no_press")
+        if not (math.isfinite(press[1]) and math.isfinite(p.at)):
+            raise KeyRefused("no_press")  # a broken tick never signs (the firmware's tick is an integer and cannot be NaN)
         if press[1] - p.at < self.MIN_DWELL_S:
             raise KeyRefused("no_press")  # too soon for anyone to have read the screen; the request stays pending
         self._pending = None  # one press, one request

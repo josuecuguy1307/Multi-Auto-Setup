@@ -17,6 +17,7 @@ import enum
 import hashlib
 import json
 import math
+import re
 import secrets
 import struct
 import threading
@@ -39,7 +40,8 @@ MAX_TTL_S = 120.0
 PRESS_WINDOW_S = 30
 NO_UNDO = b"\x00" * 32
 INT_LIMIT = 2**63 - 1
-MAX_PENDING = 64  # outstanding approvals per gate; expired ones are swept first
+MAX_PENDING = 64  # outstanding approvals per class (a flood of one class never blocks another, e.g. a person's UNDO); expired ones are swept first
+UNDO_KIND = re.compile(r"[a-z][a-z0-9_.-]{0,63}")
 
 REASONS = ("malformed", "unknown_key", "bad_signature", "unknown_nonce", "wrong_session", "expired", "class_mismatch", "action_mismatch",
            "summary_mismatch", "counter_regressed", "no_undo", "too_many_pending")
@@ -113,6 +115,8 @@ def action_hash(action: dict) -> bytes:
 
 def parse_action(text: str) -> dict:
     """Parse an action that arrived as JSON text; duplicate keys are refused, not silently resolved."""
+    if not isinstance(text, str):
+        raise Rejected("malformed", "an action arrives as text")
     def pairs(items):
         d = {}
         for k, v in items:
@@ -130,7 +134,7 @@ def parse_action(text: str) -> dict:
 
 def as_class(value: Any) -> Class:
     """Exactly one of the listed integers: no bool, float, string or None standing in for a class."""
-    if isinstance(value, bool) or not isinstance(value, int):
+    if type(value) is not int and type(value) is not Class:  # no bool, float, str, None, foreign IntEnum or int subclass
         raise Rejected("class_mismatch", f"a class is an integer, not {type(value).__name__}")
     try:
         return Class(value)
@@ -141,7 +145,7 @@ def as_class(value: Any) -> Class:
 def has_undo(action: dict) -> bool:
     """An undo is an object that names what it does (a non-empty "kind"); {} or a bare argument list is not an undo."""
     undo = action.get("undo")
-    return isinstance(undo, dict) and isinstance(undo.get("kind"), str) and bool(undo["kind"])
+    return isinstance(undo, dict) and isinstance(undo.get("kind"), str) and UNDO_KIND.fullmatch(undo["kind"]) is not None
 
 
 def undo_hash_of(action: dict) -> bytes:
@@ -234,7 +238,11 @@ class Gate:
     def __init__(self, pinned: dict[bytes, bytes], *, session: bytes, clock: Callable[[], float] = time.monotonic, ttl_s: float = MAX_TTL_S) -> None:
         if len(session) != 32:
             raise ValueError("session id is 32 bytes")
-        if isinstance(ttl_s, bool) or not isinstance(ttl_s, (int, float)) or not math.isfinite(ttl_s) or not 0 < ttl_s <= MAX_TTL_S:
+        try:
+            ok = not isinstance(ttl_s, bool) and isinstance(ttl_s, (int, float)) and math.isfinite(ttl_s) and 0 < ttl_s <= MAX_TTL_S
+        except OverflowError:
+            ok = False
+        if not ok:
             raise ValueError(f"ttl_s must be finite and in (0, {MAX_TTL_S}]")
         self._keys = {kid: Ed25519PublicKey.from_public_bytes(pub) for kid, pub in pinned.items() if key_id_of(pub) == kid}
         self.session, self.clock, self.ttl_s = session, clock, float(ttl_s)
@@ -247,6 +255,11 @@ class Gate:
         elapsed = now - p.created
         return math.isfinite(elapsed) and 0 <= elapsed < self.ttl_s
 
+    def _expired_by_age(self, p: Pending, now: float) -> bool:
+        """For the sweep only: past its TTL, or a non-finite age. A negative age (a pending newer than `now`) is kept."""
+        elapsed = now - p.created
+        return not math.isfinite(elapsed) or elapsed >= self.ttl_s
+
     def begin(self, action: dict, cls: Class) -> Pending:
         cls = as_class(cls)
         if not isinstance(action, dict):
@@ -254,13 +267,14 @@ class Gate:
         ah, uh = action_hash(action), undo_hash_of(action)
         if cls in NEEDS_UNDO and (uh == NO_UNDO or not has_undo(action)):
             raise Rejected("no_undo", "a write whose undo cannot be stated is never offered")
-        now = self.clock()
-        p = Pending(secrets.token_bytes(16), self.session, ah, uh, summary_for(action, cls), cls, PRESS_WINDOW_S, now)
+        summary = summary_for(action, cls)
         with self._lock:
-            for nonce in [n for n, q in self._pending.items() if not self._live(q, now)]:
+            now = self.clock()  # read under the lock: no begin can sweep with a time older than a pending another one just made
+            for nonce in [n for n, q in self._pending.items() if self._expired_by_age(q, now)]:
                 del self._pending[nonce]
-            if len(self._pending) >= MAX_PENDING:
-                raise Rejected("too_many_pending", f"{MAX_PENDING} approvals are already waiting")
+            if sum(1 for q in self._pending.values() if q.cls == cls) >= MAX_PENDING:
+                raise Rejected("too_many_pending", f"{MAX_PENDING} {cls.name} approvals are already waiting")
+            p = Pending(secrets.token_bytes(16), self.session, ah, uh, summary, cls, PRESS_WINDOW_S, now)
             self._pending[p.nonce] = p
         return p
 
