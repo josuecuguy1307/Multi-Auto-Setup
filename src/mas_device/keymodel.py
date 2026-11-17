@@ -35,7 +35,8 @@ class KeyRefused(Exception):
 
 
 class Button:
-    """The physical button. Its only operation is a press; nothing can set it pressed from software."""
+    """The physical button. Its only public operation is a press. In this Python model that is a convention (name mangling can be
+    bypassed); in the firmware the latch is set only by the button's interrupt and no opcode reaches it."""
 
     def __init__(self, clock: Callable[[], float] = time.monotonic) -> None:
         self.__clock = clock
@@ -93,7 +94,10 @@ class KeyModel:
         folder = Path(folder)
         priv = Ed25519PrivateKey.from_private_bytes((folder / "secret.bin").read_bytes())
         state = json.loads((folder / "state.json").read_text(encoding="utf-8"))
-        return cls(folder, priv, int(state["counter"]), clock)
+        counter = state.get("counter")
+        if isinstance(counter, bool) or not isinstance(counter, int) or not 0 <= counter < 2**64 - 1:
+            raise ValueError(f"stored counter {counter!r} is not an integer in [0, 2^64-1)")
+        return cls(folder, priv, counter, clock)
 
     def _save(self) -> None:
         state = {"key_id": self.key_id.hex(), "public_key": self.public_key.hex(), "counter": self._counter}
@@ -107,6 +111,8 @@ class KeyModel:
             raise KeyRefused("summary_not_printable")
         if req.cls not in {int(c) for c in Class} or not 1 <= req.press_window_s <= 255:
             raise KeyRefused("malformed")
+        if self._counter >= 2**64 - 2:
+            raise KeyRefused("counter_exhausted")  # no next counter to sign (the firmware answers nv_fault)
         self._seq += 1
         self.button._take()  # a press latched before this request never counts for it
         self._pending = RequestHandle(self._seq, _next_event(), self._clock(), req)

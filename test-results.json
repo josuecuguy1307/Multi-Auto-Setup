@@ -1,17 +1,17 @@
 {
- "checksum": "711fb34867a056a89214dc287d936ad5efe324e62c2bc7c9801266d3d2b5d65f",
+ "checksum": "58fb20b7159e2d24d09f37ff861869db2c20f2b33d03e216a3238645af13c238",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "5e34c24",
+ "git_head_at_run": "5b2de65",
  "results": {
   "P1-DOCS": {
-   "at": "2026-11-16T23:23:48",
+   "at": "2026-11-17T01:46:03",
    "counts": {
     "errors": 0,
     "failures": 1,
     "skipped": 0,
     "tests": 16
    },
-   "fingerprint": "b3e77af7d2ee1d57d9d3abee43f36b27916e29d19b3765d650f6688126f1fb72",
+   "fingerprint": "1d72c34d72fc3f078e43cd2ae762c931df13eada862e72d619c2e226bf943eae",
    "label": "REAL",
    "phase": 1,
    "reason": "1 failed, 0 errors",
@@ -19,14 +19,14 @@
    "title": "DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice"
   },
   "P1-HARNESS": {
-   "at": "2026-11-17T01:06:50",
+   "at": "2026-11-17T01:45:09",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 25
    },
-   "fingerprint": "8f7052955c471111240b379d3218ab8aa82f076b0f1caa3df1a715f1086a0598",
+   "fingerprint": "01fc2483f0c9eba35e27f41e28cc0c7305c23be0bf1b70c0c3a1e47f8eb9f251",
    "label": "REAL",
    "phase": 1,
    "reason": "25 passed",
@@ -34,14 +34,14 @@
    "title": "The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist"
   },
   "P1-UNIT": {
-   "at": "2026-11-16T23:23:50",
+   "at": "2026-11-17T01:46:07",
    "counts": {
     "errors": 0,
     "failures": 1,
     "skipped": 0,
-    "tests": 55
+    "tests": 100
    },
-   "fingerprint": "b54ad2dea92d5a920c6241682d5f1f3fdbb800ec59f31eab4cd098e226738769",
+   "fingerprint": "2a20674a98e5bd76988142fef6b0bc88a96c652c5e3b860be83cff7e82403081",
    "label": "SIMULATED",
    "phase": 1,
    "reason": "1 failed, 0 errors",
@@ -49,8 +49,8 @@
    "title": "First unit through the full cycle: signed approval tokens (guardrail 3) with an evaluator report"
   },
   "P2-FLEET": {
-   "at": "2026-11-17T01:05:37",
-   "fingerprint": "495926590732fe8e1812f48a69b619bfdd34438e00ec2d227029cb99409bad08",
+   "at": "2026-11-17T01:46:32",
+   "fingerprint": "4d8470dc92ea0b367f080102d4ecb6d777a48b55c6ea7cd59d05c12899118bee",
    "label": "EMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_fleet.py",
@@ -58,23 +58,23 @@
    "title": "Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers"
   },
   "P2-GATE": {
-   "at": "2026-11-17T01:05:30",
+   "at": "2026-11-17T01:46:21",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
-    "tests": 44
+    "tests": 62
    },
-   "fingerprint": "bf2182a1602f9a8cb8feebe05b539d99e5c4708cc1f1e954874dfdc7a4f005d4",
+   "fingerprint": "be50be040e90a18edf2940d77a1f2b1318c99b9b22dfda3f1f73f94c03bfc691",
    "label": "SIMULATED",
    "phase": 2,
-   "reason": "44 passed",
+   "reason": "62 passed",
    "status": "PASS",
    "title": "Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first"
   },
   "P2-GUARDRAILS": {
-   "at": "2026-11-17T01:05:37",
-   "fingerprint": "cf0219177a19308b3bc911302e7c3449784752b23d570658696524a2a108a856",
+   "at": "2026-11-17T01:46:32",
+   "fingerprint": "48ceaebaa8fa285fd290d3b6c0165c3404af39d631360b7249cbd6ab216a4625",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_guardrails.py",
@@ -82,14 +82,14 @@
    "title": "Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations"
   },
   "P2-LOG": {
-   "at": "2026-11-17T01:05:33",
+   "at": "2026-11-17T01:46:27",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 41
    },
-   "fingerprint": "7ea3a4edc8292ce5f84009af3dd72a7abd27f850a23bed5054a73ecf836e8e0a",
+   "fingerprint": "8452aa84134058fec4828e45de5f24cfecd26959376e9d1d17526a89557fb09c",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "41 passed",
@@ -97,8 +97,8 @@
    "title": "Append-only hash-chained log; any edit, rewrite, truncation or reorder is detected against a known head; a broken log is never extended (process separation from the model is P2-GUARDRAILS)"
   },
   "P2-PORTABLE": {
-   "at": "2026-11-17T01:05:37",
-   "fingerprint": "0bbd09ed8af12e6658ed66e66e7527986fc29686bb3488fa201b0893609bbd9b",
+   "at": "2026-11-17T01:46:32",
+   "fingerprint": "8a283a7cfc65a1c253ebb4e4c926a0a7f5242adbac73399d6077c8d0bd1af4de",
    "label": "EMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_portable.py",
@@ -106,8 +106,8 @@
    "title": "One-command launch from a read-only medium in a clean VM/container; profiler picks compute mode"
   },
   "P2-ZEROTRACE": {
-   "at": "2026-11-17T01:05:37",
-   "fingerprint": "264f53b6f9d90af0659976376efcffd435f102ceb541a9c00b0467ffe5117604",
+   "at": "2026-11-17T01:46:32",
+   "fingerprint": "6ebd1ad2fd2e448b86b2c5676f9d83c219fae9efa86798e08f3a171abbcbe411",
    "label": "EMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_zerotrace.py",

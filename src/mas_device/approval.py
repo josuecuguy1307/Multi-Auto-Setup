@@ -39,9 +39,10 @@ MAX_TTL_S = 120.0
 PRESS_WINDOW_S = 30
 NO_UNDO = b"\x00" * 32
 INT_LIMIT = 2**63 - 1
+MAX_PENDING = 64  # outstanding approvals per gate; expired ones are swept first
 
 REASONS = ("malformed", "unknown_key", "bad_signature", "unknown_nonce", "wrong_session", "expired", "class_mismatch", "action_mismatch",
-           "summary_mismatch", "counter_regressed", "no_undo")
+           "summary_mismatch", "counter_regressed", "no_undo", "too_many_pending")
 
 
 class Class(enum.IntEnum):
@@ -95,9 +96,13 @@ def _check(v: Any, path: str = "$") -> None:
 
 
 def canonical(obj: Any) -> bytes:
-    """Sorted keys, no spaces, UTF-8. Only null, bool, 64-bit int, NFC string, list and object: nothing whose encoding could differ between implementations."""
-    _check(obj)
-    return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode("utf-8")
+    """Sorted keys, no spaces, UTF-8. Only null, bool, 64-bit int, NFC string, list and object: nothing whose encoding could differ between implementations.
+    Anything else (lone surrogates, nesting too deep to walk, unencodable values) is Rejected("malformed"), never another exception."""
+    try:
+        _check(obj)
+        return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode("utf-8")
+    except (UnicodeEncodeError, RecursionError, ValueError, TypeError) as exc:
+        raise Rejected("malformed", type(exc).__name__) from None
 
 
 def action_hash(action: dict) -> bytes:
@@ -117,10 +122,26 @@ def parse_action(text: str) -> dict:
         return d
     try:
         obj = json.loads(text, object_pairs_hook=pairs, parse_float=lambda s: float(s), parse_constant=lambda s: float("nan"))
-    except ValueError as exc:
+    except (ValueError, RecursionError) as exc:
         raise Rejected("malformed", str(exc)[:100]) from None
     action_hash(obj)
     return obj
+
+
+def as_class(value: Any) -> Class:
+    """Exactly one of the listed integers: no bool, float, string or None standing in for a class."""
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise Rejected("class_mismatch", f"a class is an integer, not {type(value).__name__}")
+    try:
+        return Class(value)
+    except ValueError:
+        raise Rejected("class_mismatch", f"unknown class {value}") from None
+
+
+def has_undo(action: dict) -> bool:
+    """An undo is an object that names what it does (a non-empty "kind"); {} or a bare argument list is not an undo."""
+    undo = action.get("undo")
+    return isinstance(undo, dict) and isinstance(undo.get("kind"), str) and bool(undo["kind"])
 
 
 def undo_hash_of(action: dict) -> bytes:
@@ -213,23 +234,37 @@ class Gate:
     def __init__(self, pinned: dict[bytes, bytes], *, session: bytes, clock: Callable[[], float] = time.monotonic, ttl_s: float = MAX_TTL_S) -> None:
         if len(session) != 32:
             raise ValueError("session id is 32 bytes")
+        if isinstance(ttl_s, bool) or not isinstance(ttl_s, (int, float)) or not math.isfinite(ttl_s) or not 0 < ttl_s <= MAX_TTL_S:
+            raise ValueError(f"ttl_s must be finite and in (0, {MAX_TTL_S}]")
         self._keys = {kid: Ed25519PublicKey.from_public_bytes(pub) for kid, pub in pinned.items() if key_id_of(pub) == kid}
-        self.session, self.clock, self.ttl_s = session, clock, min(ttl_s, MAX_TTL_S)
+        self.session, self.clock, self.ttl_s = session, clock, float(ttl_s)
         self._pending: dict[bytes, Pending] = {}
         self._last_counter: dict[bytes, int] = {}
         self._lock = threading.Lock()
 
+    def _live(self, p: Pending, now: float) -> bool:
+        """Fail closed: a clock that went back, a non-finite elapsed time or one past the TTL all mean expired."""
+        elapsed = now - p.created
+        return math.isfinite(elapsed) and 0 <= elapsed < self.ttl_s
+
     def begin(self, action: dict, cls: Class) -> Pending:
-        cls = Class(cls)
+        cls = as_class(cls)
+        if not isinstance(action, dict):
+            raise Rejected("malformed", "an action is an object")
         ah, uh = action_hash(action), undo_hash_of(action)
-        if cls in NEEDS_UNDO and uh == NO_UNDO:
+        if cls in NEEDS_UNDO and (uh == NO_UNDO or not has_undo(action)):
             raise Rejected("no_undo", "a write whose undo cannot be stated is never offered")
-        p = Pending(secrets.token_bytes(16), self.session, ah, uh, summary_for(action, cls), cls, PRESS_WINDOW_S, self.clock())
+        now = self.clock()
+        p = Pending(secrets.token_bytes(16), self.session, ah, uh, summary_for(action, cls), cls, PRESS_WINDOW_S, now)
         with self._lock:
+            for nonce in [n for n, q in self._pending.items() if not self._live(q, now)]:
+                del self._pending[nonce]
+            if len(self._pending) >= MAX_PENDING:
+                raise Rejected("too_many_pending", f"{MAX_PENDING} approvals are already waiting")
             self._pending[p.nonce] = p
         return p
 
-    def consume(self, token: Any, action: dict, *, cls: Class | None = None) -> Approval:
+    def consume(self, token: Any, action: dict, *, cls: Class) -> Approval:
         if not isinstance(token, (bytes, bytearray)) or len(token) != BODY_LEN + SIG_LEN:
             raise Rejected("malformed", "a token is exactly %d bytes" % (BODY_LEN + SIG_LEN))
         token = bytes(token)
@@ -242,6 +277,9 @@ class Gate:
             pub.verify(sig, body_bytes)
         except InvalidSignature:
             raise Rejected("bad_signature") from None
+        cls = as_class(cls)
+        if not isinstance(action, dict):
+            raise Rejected("malformed", "an action is an object")
         ah, uh = action_hash(action), undo_hash_of(action)  # before the lock: a malformed action raises here and burns nothing
         with self._lock:
             p = self._pending.get(b.req.nonce)
@@ -249,10 +287,10 @@ class Gate:
                 raise Rejected("unknown_nonce", "never issued here, already used, or forgotten at restart")
             if b.req.session_id != self.session or p.session != self.session:
                 raise Rejected("wrong_session")
-            if self.clock() - p.created >= self.ttl_s:
+            if not self._live(p, self.clock()):
                 del self._pending[p.nonce]
                 raise Rejected("expired")
-            if b.req.cls != p.cls or (cls is not None and Class(cls) != p.cls):
+            if b.req.cls != p.cls or cls != p.cls:
                 raise Rejected("class_mismatch")
             if not (ah == b.req.action_hash == p.action_hash and uh == b.req.undo_hash == p.undo_hash):
                 raise Rejected("action_mismatch")

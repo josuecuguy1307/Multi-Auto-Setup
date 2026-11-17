@@ -14,9 +14,14 @@ An undo runs only if its hash equals the undo_hash of a write approval this gate
 Entries in the log, or tokens of class UNDO for any other undo, do not make an undo valid. A restart forgets every right to undo
 (recovery from a key-countersigned log head is later work: DECISIONS D-006, LOG_HEAD).
 
+The gate copies every action it is handed (it never reads the caller's object again), serialises writes and undos (one at a time,
+from validation to undo registration), refuses paths that collide without case or reach an entry through an alias (case variant, 8.3
+name), and refuses files with other hard links.
+
 SIMULATED: the host is a folder (`root`) on the dev machine; on the device the gate runs in its own process and the model reaches it only
-through a narrow RPC (Phase 2, P2-GUARDRAILS). The check-then-write window inside one call is not atomic against a concurrent writer on the
-host; the pre-state check narrows it but does not close it.
+through a narrow RPC (Phase 2, P2-GUARDRAILS). NOT closed: between the last link check and the write, another process of the same user on
+the host could swap a parent folder for a junction and redirect one write outside the root (Python on Windows has no openat/O_NOFOLLOW).
+The pre-state checks narrow the window; they do not close it.
 """
 
 from __future__ import annotations
@@ -25,6 +30,7 @@ import base64
 import binascii
 import copy
 import hashlib
+import json
 import os
 import secrets
 import stat
@@ -81,6 +87,8 @@ def _check_rel(rel) -> list[str]:
         raise Refused("bad_action", "path is not NFC or has control characters")
     if rel.startswith("/") or "\\" in rel or ":" in rel:
         raise Refused("outside_root", rel)
+    if any(c in '<>"|?*' for c in rel):
+        raise Refused("bad_action", "characters Windows cannot hold in a name")
     parts = rel.split("/")
     for part in parts:
         if part in ("", ".", ".."):
@@ -142,15 +150,18 @@ class PolicyGate:
         self._undo_by_write: dict[bytes, bytes] = {}   # write action_hash -> undo_hash, for executed writes
         self._undoable: dict[bytes, dict] = {}         # undo_hash -> undo action, until it runs once
         self._lock = threading.Lock()
+        self._run_lock = threading.RLock()  # one write or undo at a time, from validation to the undo registration
 
     # -- paths and state
 
     def _resolve(self, rel) -> Path:
         p = self.root
         for part in _check_rel(rel):
-            p = p / part
+            parent, p = p, p / part
             if _is_link(p):
                 raise Refused("outside_root", f"{rel}: a link inside the path")
+            if os.path.lexists(p) and part not in os.listdir(parent):
+                raise Refused("bad_action", f"{rel}: {part!r} is not the entry's own name (case variant or alias)")
         probe = p
         while not probe.exists() and probe != self.root:
             probe = probe.parent
@@ -164,6 +175,8 @@ class PolicyGate:
             return None
         if not p.is_file() or _is_link(p):
             raise Refused("bad_action", f"{p.name} is not a regular file")
+        if p.stat().st_nlink > 1:
+            raise Refused("bad_action", f"{p.name} has other hard links: its bytes may live outside the root")
         if p.stat().st_size > MAX_FILE_BYTES:
             raise Refused("too_large", p.name)
         return p.read_bytes()
@@ -181,6 +194,16 @@ class PolicyGate:
         if not isinstance(files, dict) or not files:
             raise Refused("bad_action", "files is a non-empty mapping of path to bytes or None")
         entries, undo_entries, mkdirs = [], [], []
+        spelled: dict[str, str] = {}
+        for rel in files:
+            if not isinstance(rel, str):
+                raise Refused("bad_action", "a path is a string")
+            parts = rel.split("/")
+            for i in range(1, len(parts) + 1):
+                prefix = "/".join(parts[:i])
+                key = unicodedata.normalize("NFC", prefix).casefold()
+                if spelled.setdefault(key, prefix) != prefix:
+                    raise Refused("bad_action", f"{prefix!r} and {spelled[key]!r} are the same entry on a case-insensitive host")
         for rel in sorted(files):
             data = files[rel]
             p = self._resolve(rel)
@@ -268,7 +291,16 @@ class PolicyGate:
 
     # -- the two entry points that lead to a write
 
+    @staticmethod
+    def _own(action):
+        """The gate's own plain copy: callers' objects (dict subclasses, objects other threads hold) are never read again."""
+        try:
+            return json.loads(ap.canonical(action))
+        except ap.Rejected:
+            raise Refused("bad_action", "not a canonical action") from None
+
     def begin(self, action) -> ap.Pending:
+        action = self._own(action)
         self._validate_write(action)
         return self._approvals.begin(action, ap.Class.WRITE)
 
@@ -283,6 +315,7 @@ class PolicyGate:
             return copy.deepcopy(self._undoable[uh])
 
     def begin_undo(self, undo) -> ap.Pending:
+        undo = self._own(undo)
         self._require_issued(undo)
         self._shape(undo, RESTORE_KEYS, "files.restore", "rmdirs")
         self._check_state(undo)
@@ -292,6 +325,11 @@ class PolicyGate:
         return self._run(token, undo, ap.Class.UNDO)
 
     def _run(self, token, action, cls: ap.Class) -> dict:
+        action = self._own(action)
+        with self._run_lock:
+            return self._run_locked(token, action, cls)
+
+    def _run_locked(self, token, action, cls: ap.Class) -> dict:
         if cls == ap.Class.WRITE:
             self._validate_write(action)          # stale or forged: refused before the token is touched
         else:

@@ -439,8 +439,8 @@ def test_apply_helpers_are_called_only_after_consume_and_log():
     direct = {name for name, c in callers.items() if c & helpers and name not in helpers}
     assert direct == {"_apply"}, direct
     users_of_apply = {name for name, c in callers.items() if "_apply" in c}
-    assert users_of_apply == {"_run"}, users_of_apply
-    run = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "_run")
+    assert users_of_apply == {"_run_locked"}, users_of_apply
+    run = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "_run_locked")
     calls = sorted((c.lineno, c.col_offset, c.func.attr if isinstance(c.func, ast.Attribute) else getattr(c.func, "id", ""))
                    for c in ast.walk(run) if isinstance(c, ast.Call))
     order = [name for _, _, name in calls if name in ("consume", "append", "_apply")]
