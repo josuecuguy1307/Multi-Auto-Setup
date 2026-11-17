@@ -4,7 +4,9 @@
  *   MAS_CUT_AFTER=k        exit(77) when flash step k+1 would start (each programmed byte is a step, each erase is a step)
  *   MAS_CUT_ERASE=0|1|2    what a cut erase leaves: 0 untouched, 1 fully erased, 2 deterministic garbage
  *   MAS_FLASH_FAIL_AFTER=k program calls fail (write nothing) once k bytes have been programmed
- *   MAS_FLASH_STUCK=1      program calls report success but no bit changes (tests the read-back) */
+ *   MAS_FLASH_STUCK=1      program calls report success but no bit changes (tests the read-back)
+ *   MAS_FLASH_FAIL_CALLS=n the first n program calls fail (write nothing); later calls work
+ *   MAS_ERASE_STUCK=1      erase calls report success but the page does not change (tests the erase verify) */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,7 +18,8 @@ static uint8_t flash[PAGES * MAS_PAGE_SIZE];
 static FILE *ff;
 static uint64_t tick;
 static long cut_after = -1, steps, fail_after = -1, programmed;
-static int erase_mode, stuck;
+static int erase_mode, stuck, erase_stuck;
+static long fail_calls;
 static uint8_t disp[32];
 static uint64_t disp_next;
 
@@ -44,6 +47,8 @@ void host_hal_init(void) {
     erase_mode = (int)env_long("MAS_CUT_ERASE", 0);
     fail_after = env_long("MAS_FLASH_FAIL_AFTER", -1);
     stuck = (int)env_long("MAS_FLASH_STUCK", 0);
+    fail_calls = env_long("MAS_FLASH_FAIL_CALLS", 0);
+    erase_stuck = (int)env_long("MAS_ERASE_STUCK", 0);
 }
 
 static void persist(size_t off, size_t len) {
@@ -95,6 +100,10 @@ const uint8_t *hal_flash_ptr(int page) { return flash + (size_t)page * MAS_PAGE_
 int hal_flash_program(int page, uint32_t off, const uint8_t *buf, size_t len) {
     if (page < 0 || page >= PAGES || off + len > MAS_PAGE_SIZE) return -1;
     size_t base = (size_t)page * MAS_PAGE_SIZE + off;
+    if (fail_calls > 0) {
+        fail_calls--;
+        return -1;
+    }
     for (size_t i = 0; i < len; i++) {
         if (fail_after >= 0 && programmed >= fail_after) return -1;
         step();
@@ -121,6 +130,7 @@ int hal_flash_erase(int page) {
         persist(base, MAS_PAGE_SIZE);
     }
     step();
+    if (erase_stuck) return 0; /* reports success, page unchanged */
     memset(flash + base, 0xFF, MAS_PAGE_SIZE);
     persist(base, MAS_PAGE_SIZE);
     return 0;

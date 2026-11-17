@@ -71,7 +71,7 @@ def build(src: Path = HERE, out: Path | None = None, extra: list[str] | None = N
     return exe
 
 
-def build_tool(c_file: Path, out: Path, name: str) -> Path:
+def build_tool(c_file: Path, out: Path, name: str, extra_sources: tuple = ()) -> Path:
     """A small host-only test program (vectors, smoke) linked with the core helpers it needs."""
     out.mkdir(parents=True, exist_ok=True)
     exe = out / (name + EXE)
@@ -79,6 +79,7 @@ def build_tool(c_file: Path, out: Path, name: str) -> Path:
         return exe
     cc = compiler()
     srcs = [str(c_file), str(HERE / "core" / "mas_frame.c"), str(HERE / "core" / "sha256.c")] + [str(HERE / v) for v in VENDOR]
+    srcs += [str(HERE / s) for s in extra_sources]
     r = subprocess.run(cc + VENDOR_FLAGS + ["-I", str(HERE / "core"), "-I", str(HERE / "vendor" / "monocypher")] + srcs + ["-o", str(exe)],
                        capture_output=True, text=True)
     if r.returncode != 0:

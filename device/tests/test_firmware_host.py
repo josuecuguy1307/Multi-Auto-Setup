@@ -653,16 +653,20 @@ def test_flash_failure_releases_no_token(exe, flash):
     assert f.tokens() == []
 
 
-def test_power_cut_during_first_boot_key_generation(exe, tmp_path):
-    for k in range(0, 70, 3):
+TEARING_SEED = bytes.fromhex("0661851bb1e31131145110929909f260541ea7949e01da850fd862b1581bf375")  # evaluator run 2: cut 9 -> CRC FF FF passes
+
+
+@pytest.mark.parametrize("seed", [SEED, TEARING_SEED], ids=["seed0", "tearing"])
+def test_power_cut_during_first_boot_key_generation(exe, tmp_path, seed):
+    for k in range(0, 67):
         flash = tmp_path / f"fb{k}.bin"
-        f = Fw(exe, flash, MAS_CUT_AFTER=k)
+        f = Fw(exe, flash, seed=seed, MAS_CUT_AFTER=k)
         try:
             f.info()
         except (Died, AssertionError):
             pass
         f.close()
-        f = Fw(exe, flash)
+        f = Fw(exe, flash, seed=seed)
         kid, pub, counter = f.info()
         assert kid == ap.key_id_of(pub) and counter == 0, k
         f.close()
@@ -803,7 +807,9 @@ def test_counter_never_wraps(exe, flash, start, expect):
 
 @pytest.mark.parametrize("byte", [0, 31, 32, 63])
 def test_key_page_with_valid_crc_but_inconsistent_seed_and_pub_is_a_fault(exe, flash, byte):
-    boot(exe, flash)
+    f = Fw(exe, flash)
+    approve(f, a_request())  # the key has signed: its identity must never change
+    f.close()
     data = bytearray(flash.read_bytes())
     data[byte] ^= 0x01
     data[64:66] = crc(bytes(data[:64]))
@@ -820,3 +826,124 @@ def test_press_window_survives_the_32_bit_tick_wrap(fw):
     fw.advance(1001)
     fw.press()
     assert fw.sign(seq)[0] == "press_window"
+
+
+# ---- evaluator run 2 (device/evals/evaluator/P4-FW-HOST.run2.md) ----------------------------------
+
+def test_inconsistent_key_page_before_any_signature_is_regenerated_not_bricked(exe, flash):
+    boot(exe, flash)
+    data = bytearray(flash.read_bytes())
+    data[40] ^= 0x01
+    data[64:66] = crc(bytes(data[:64]))
+    flash.write_bytes(bytes(data))
+    f = Fw(exe, flash)
+    kid, pub, counter = f.info()
+    assert counter == 0 and kid == ap.key_id_of(pub)
+    assert pub == Ed25519PrivateKey.from_private_bytes(SEED).public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+    f.close()
+
+
+def fill(exe, flash, pages: dict):
+    """pages: {page_index: [counter values for slots 0..]}; the key page comes from a normal first boot."""
+    boot(exe, flash)
+    data = bytearray(flash.read_bytes())
+    for page, values in pages.items():
+        for i, v in enumerate(values):
+            data[page * PAGE + 16 * i:page * PAGE + 16 * (i + 1)] = counter_record(v)
+    flash.write_bytes(bytes(data))
+    return bytes(data)
+
+
+def test_the_maximum_is_found_in_page_a_while_page_b_holds_records(exe, flash):
+    fill(exe, flash, {1: [1025], 2: list(range(513, 1025))})
+    assert boot(exe, flash) == 1025
+    f = Fw(exe, flash)
+    assert int.from_bytes(approve(f, a_request())[23:31], "big") == 1026
+    f.close()
+
+
+def test_power_cut_during_the_b_to_a_rollover(exe, flash):
+    base = fill(exe, flash, {1: list(range(1, 513)), 2: list(range(513, 1025))})
+    assert boot(exe, flash) == 1024
+    assert _sweep(exe, base, flash, 17, erase_modes=(0, 1, 2)) >= 3 * 16
+
+
+def test_saturated_counter_refuses_the_request(exe, flash):
+    for start in (2**64 - 2, 2**64 - 1):
+        fill(exe, flash, {1: [start]})
+        f = Fw(exe, flash)
+        assert f.call(REQUEST, req_payload(a_request()))[0] == "nv_fault"
+        assert f.display() == ""
+        f.close()
+
+
+class Nv:
+    """Drives mas_nv_* directly (device/firmware/tests/nv_tool.c) on a flash file."""
+
+    def __init__(self, tool, flash, **env):
+        e = {k: v for k, v in os.environ.items() if not k.startswith("MAS_")}
+        e.update({"MAS_FLASH_FILE": str(flash)}, **{k: str(v) for k, v in env.items()})
+        self.p = subprocess.Popen([str(tool)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, env=e, text=True)
+
+    def __call__(self, line: str) -> str:
+        self.p.stdin.write(line + "\n")
+        self.p.stdin.flush()
+        return self.p.stdout.readline().strip()
+
+    def close(self):
+        self.p.stdin.close()
+        self.p.wait()
+
+
+@pytest.fixture(scope="module")
+def nvtool(tmp_path_factory):
+    try:
+        return fwb.build_tool(FW / "tests" / "nv_tool.c", tmp_path_factory.mktemp("nv"), "nv_tool",
+                              extra_sources=("core/mas_nv.c", "host/hal_host.c"))
+    except fwb.BuildError as exc:
+        pytest.fail(str(exc))
+
+
+def test_nv_refuses_counters_that_do_not_increase(exe, nvtool, flash):
+    fill(exe, flash, {1: [1, 2, 3]})
+    nv = Nv(nvtool, flash)
+    assert nv("init") == "0 3"
+    assert nv("commit 3") == "-1" and nv("commit 2") == "-1" and nv("commit 0") == "-1"
+    assert nv("commit 4") == "0" and nv("counter") == "4"
+    nv.close()
+
+
+def test_nv_latches_after_one_failed_commit(exe, nvtool, flash):
+    fill(exe, flash, {1: [1]})
+    nv = Nv(nvtool, flash, MAS_FLASH_FAIL_CALLS=1)  # only the first program call fails
+    assert nv("init") == "0 1"
+    assert nv("commit 2") == "-1"
+    assert nv("commit 2") == "-1" and nv("commit 3") == "-1", "the NV module itself must stay closed until reboot"
+    nv.close()
+    nv = Nv(nvtool, flash)
+    assert nv("init").startswith("0 ") and nv("commit 2") == "0"
+    nv.close()
+
+
+def test_nv_verifies_the_erase_before_using_the_new_page(exe, nvtool, flash):
+    data = bytearray(fill(exe, flash, {1: list(range(1, 513))}))
+    data[2 * PAGE + 16 * 5:2 * PAGE + 16 * 6] = b"\x00" * 16  # page B not erased: garbage beyond slot 0
+    flash.write_bytes(bytes(data))
+    nv = Nv(nvtool, flash, MAS_ERASE_STUCK=1)
+    assert nv("init") == "0 512"
+    assert nv("commit 513") == "-1"
+    nv.close()
+    assert boot(exe, flash) == 512
+
+
+def test_nv_never_programs_a_slot_that_is_not_erased(exe, nvtool, flash):
+    fill(exe, flash, {1: [1, 2]})
+    rec = bytearray(counter_record(3))
+    poke = bytearray(b"\xff" * 16)
+    k, b = next((k, b) for k in range(16) for b in range(8) if not rec[k] >> b & 1)
+    poke[k] &= ~(1 << b) & 0xFF  # not erased, yet programming the record over it would read back correctly
+    nv = Nv(nvtool, flash)
+    assert nv("init") == "0 2"
+    assert nv(f"poke 1 32 {poke.hex()}") == "0"
+    assert nv("commit 3") == "-1"
+    nv.close()
