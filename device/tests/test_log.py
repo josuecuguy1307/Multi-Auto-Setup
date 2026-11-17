@@ -263,17 +263,18 @@ def test_two_writers_never_break_the_chain(path):
     assert lg.verify(path).head.seq >= 61
 
 
-def test_bool_and_float_seq_or_at_are_refused(filled, path):
-    for field, bad in (("seq", True), ("seq", 1.0), ("at", 1.5), ("at", False)):
-        recs = [json.loads(l) for l in lines(path)]
-        r = recs[0]
+def test_bool_and_float_seq_or_at_are_refused(path):
+    # a one-record log, correctly hashed: nothing after it can fail instead, so only the type checks can refuse it (P2-LOG run 2, item 4)
+    for field, bad in (("seq", True), ("seq", 1.0), ("at", 1.5), ("at", False), ("at", True)):
+        r = {"seq": 1, "prev": lg.GENESIS, "type": "x", "payload": {}, "at": 5}
         r[field] = bad
         r["hash"] = hashlib.sha256(lg.DOMAIN + json.dumps({k: r[k] for k in lg.FIELDS}, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-        ls = lines(path)
-        ls[0] = json.dumps(r, sort_keys=True)
-        write(path, ls)
+        write(path, [json.dumps(r, sort_keys=True)])
         assert not lg.verify(path).ok, (field, bad)
-        write(path, [json.dumps(x, sort_keys=True) for x in [json.loads(l) for l in lines(path)]])
+    r = {"seq": 1, "prev": lg.GENESIS, "type": "x", "payload": {}, "at": 5}
+    r["hash"] = lg.record_hash(r)
+    write(path, [json.dumps(r, sort_keys=True)])
+    assert lg.verify(path).ok  # the control: the same record with honest types verifies
 
 
 def test_extra_field_outside_the_hash_is_refused(filled, path):
@@ -336,3 +337,39 @@ def test_records_refuses_to_return_a_tampered_log(filled, path):
     path.write_bytes(path.read_bytes().replace(b'"n": 1}', b'"n": 7}', 1))
     with pytest.raises(lg.LogBroken):
         filled.records()
+
+
+# ---- evaluator run 2 (device/evals/evaluator/P2-LOG.run2.md) ------------------------------------------
+
+def _rechain(recs: list[dict], start: int) -> list[str]:
+    for i in range(start, len(recs)):
+        recs[i]["prev"] = recs[i - 1]["hash"] if i else lg.GENESIS
+        recs[i]["hash"] = lg.record_hash(recs[i])
+    return [json.dumps(r, sort_keys=True) for r in recs]
+
+
+def test_a_repair_never_reaches_below_a_known_head(filled, path):
+    head = filled.head()
+    data = path.read_bytes()
+    path.write_bytes(data[:-3])  # the head record lost its tail: the repair could only drop it
+    with pytest.raises(lg.LogBroken):
+        lg.AuditLog.open(path, clock=Clock(), expected=head, repair_partial=True)
+    assert path.read_bytes() == data[:-3], "a refused repair leaves the evidence as it was"
+    assert lg.verify(path, head).ok is False
+
+
+def test_records_refuses_a_same_length_rechained_rewrite(filled, path):
+    recs = [json.loads(l) for l in lines(path)]
+    recs[1]["payload"]["n"] = 6  # same length as 1
+    write(path, _rechain(recs, 1))
+    assert lg.verify(path).ok, "the file alone is a valid chain"
+    with pytest.raises(lg.LogBroken):
+        filled.records()
+
+
+def test_a_repair_keeps_a_complete_record_that_only_lost_its_newline(filled, path):
+    path.write_bytes(path.read_bytes()[:-1])
+    log = lg.AuditLog.open(path, clock=Clock(), repair_partial=True)
+    recs = log.records()
+    assert [r["payload"].get("n") for r in recs[:5]] == [0, 1, 2, 3, 4]
+    assert recs[-1]["type"] == "log.repaired" and recs[-1]["payload"] == {"completed_record": 5}

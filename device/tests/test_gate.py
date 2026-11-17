@@ -1131,3 +1131,88 @@ def test_a_wrong_session_token_is_logged_with_its_counter(pg, key, root, log):
         pg.execute(key.sign(req), w)
     assert e.value.code == "wrong_session"
     assert [(r["type"], r["payload"]["reason"], r["payload"]["counter"]) for r in log.records()] == [("write.rejected", "wrong_session", 1)]
+
+
+# ---- evaluator run 7 (device/evals/evaluator/P2-GATE.run7.md) ------------------------------------------
+
+def test_the_rollback_restore_compares_after_its_temporary_file_is_on_disk(pg, key, root, log, monkeypatch):
+    (root / "a.conf").write_bytes(b"a=1\n")
+    (root / "b.conf").write_bytes(b"b=1\n")
+    w = pg.plan_write({"a.conf": b"a=2\n", "b.conf": b"b=2\n"})
+    token = press(pg, key, w)
+    real, real_fsync = gt._replace_file, os.fsync
+    calls, armed = [], []
+
+    def flaky(path, data, *a, **k):
+        calls.append(path)
+        if len(calls) == 2:
+            raise OSError("disk full")
+        if len(calls) == 3:
+            armed.append(True)  # the rollback restoring a.conf
+        return real(path, data, *a, **k)
+
+    def fsync(fd):
+        real_fsync(fd)
+        if armed and any(f.function == "_replace_file" for f in inspect.stack()[1:3]):
+            armed.clear()
+            (root / "a.conf").write_bytes(b"a=owner\n")  # the owner saves while the rollback's temporary file is on disk
+
+    monkeypatch.setattr(gt, "_replace_file", flaky)
+    monkeypatch.setattr(gt.os, "fsync", fsync)
+    with pytest.raises(gt.Refused):
+        pg.execute(token, w)
+    assert (root / "a.conf").read_bytes() == b"a=owner\n"
+    failed = [r for r in log.records() if r["type"] == "write.failed"]
+    assert failed and failed[0]["payload"]["left_changed"] == ["a.conf"]
+    assert not [q for q in root.iterdir() if "mas-tmp" in q.name]
+
+
+def test_an_approved_delete_never_removes_an_edit_made_during_the_log_append(pg, key, root, log, monkeypatch):
+    w = pg.plan_write({"etc/app.conf": None})
+    token = press(pg, key, w)
+    real_append = log.append
+
+    def append(type, payload):
+        head = real_append(type, payload)
+        if type == "write.approved":
+            (root / "etc" / "app.conf").write_bytes(b"port=1\nowner_edit=1\n")
+        return head
+
+    monkeypatch.setattr(log, "append", append)
+    with pytest.raises(gt.Refused) as e:
+        pg.execute(token, w)
+    assert e.value.code == "pre_state_changed"
+    assert (root / "etc" / "app.conf").read_bytes() == b"port=1\nowner_edit=1\n"
+
+
+def test_a_failed_write_puts_back_every_existing_file_it_replaced(pg, key, root, log, monkeypatch):
+    (root / "a.conf").write_bytes(b"a=1\n")
+    (root / "b.conf").write_bytes(b"b=1\n")
+    w = pg.plan_write({"a.conf": b"a=2\n", "b.conf": b"b=2\n"})
+    token = press(pg, key, w)
+    _fail_on_second_replace(monkeypatch, lambda: None)
+    with pytest.raises(gt.Refused):
+        pg.execute(token, w)
+    assert (root / "a.conf").read_bytes() == b"a=1\n" and (root / "b.conf").read_bytes() == b"b=1\n"
+    failed = [r for r in log.records() if r["type"] == "write.failed"]
+    assert failed and failed[0]["payload"]["left_changed"] == []
+
+
+def test_a_failed_undo_remakes_the_folders_it_removed(pg, key, root, log, monkeypatch):
+    w = pg.plan_write({"n/a/x.txt": b"x\n"})
+    pg.execute(press(pg, key, w), w)
+    undo = pg.undo_for(ap.action_hash(w))
+    utoken = press(pg, key, undo, ap.Class.UNDO)
+    real_rmdir = gt._remove_dir
+
+    def rmdir(p):
+        if p.name == "n":
+            raise OSError("in use: another process has its working folder here")
+        real_rmdir(p)
+
+    monkeypatch.setattr(gt, "_remove_dir", rmdir)
+    with pytest.raises(gt.Refused):
+        pg.execute_undo(utoken, undo)
+    assert (root / "n" / "a" / "x.txt").read_bytes() == b"x\n"
+    failed = [r for r in log.records() if r["type"] == "undo.failed"]
+    assert failed and failed[0]["payload"]["left_changed"] == []
