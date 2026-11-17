@@ -10,17 +10,19 @@
 |---|---|---|
 | P1-HARNESS | PASS 41 | the oracle under test |
 | P1-DOCS | PASS 18 | reviewer R-1: all 8 must-fixes resolved with evidence |
-| **P1-UNIT** | **FAIL** | every test and its 4 saboteurs pass; it only needs an **evaluator report with VERDICT: PASS and a matching `Code-Hash:`** in `device/evals/evaluator/P1-UNIT.md` (see §3) |
-| P2-GATE | PASS 137, 2 saboteurs | evaluator run 7 was running at handoff |
-| P2-LOG | PASS 41, 2 saboteurs | evaluator run 1 FAIL was fixed; no run 2 yet |
+| P1-UNIT | PASS 179, 4 saboteurs | closed: evaluator run 7 VERDICT PASS, Code-Hash fc884e03… (commit a99fcbc) |
+| P2-GATE | PASS 141, 2 saboteurs | run 7 findings fixed (D-026, e2d6045); **evaluator run 8 not yet run** |
+| P2-LOG | PASS 44, 2 saboteurs | run 2 findings fixed (D-026); **evaluator run 3 not yet run** |
+| P2-GUARDRAILS | PASS 26, 5 saboteurs | built 385e4a6 (D-025: `mas_device/gated.py`); **evaluator run 1 not yet run** |
 | P4-FW-HOST / EMU / RENODE | PASS 328 / 27 / 4 | firmware in C; QEMU mps2-an505 and Renode run the same ELF |
 | P5-PCB | PASS 35 (DESIGN-ONLY) | board evaluator run 2 was running at handoff |
-| everything else | FAIL (not built) | P2-GUARDRAILS, P2-PORTABLE, P2-ZEROTRACE, P2-FLEET, P2-MODEL, P2-MEMORY, P2-PAIRING, P3-*, P4-SECBOOT, P5-ENCLOSURE, P6-*, P0-SECRETS |
+| everything else | FAIL (not built) | P2-PORTABLE, P2-ZEROTRACE, P2-FLEET, P2-MODEL, P2-MEMORY, P2-PAIRING, P3-*, P4-SECBOOT, P5-ENCLOSURE, P6-*, P0-SECRETS |
 
-Evaluators running at handoff (their reports are lost if the session ends; just re-run them):
-- **P1-UNIT run 7** at commit 0d288d6, expected Code-Hash `fc884e03e614f88af6149c1c06a43bffda9893b0b25ce32d2a7425a2f1053fa3`
-  (approval.py and keymodel.py have not changed since, so the hash still holds at f2ad136).
-- **P2-GATE run 7** and **P5-PCB run 2** at f2ad136.
+Updated 2026-11-17 (second account), 10/26 PASS. Evaluators to run next (fresh context; give them the proportionality rule of §3;
+tell them to work in a `git archive HEAD` copy under `runs/eval/` and to write their report to `runs/eval/<ID>.runN.report.md` so it
+survives a usage limit): **P2-GUARDRAILS run 1**, **P2-GATE run 8**, **P2-LOG run 3**. **P5-PCB run 2** was started at a99fcbc; if its
+report is not in `runs/eval/P5-PCB.run2.report.md`, re-run it. The `evaluator` agent type only loads when the session starts in this repo;
+otherwise paste `.claude/agents/evaluator.md` into a general-purpose agent and tell it not to run `device_accept.py run`.
 
 ## 2. How to resume (in order)
 
