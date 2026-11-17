@@ -1,6 +1,6 @@
 # CLAUDE.md — MAS portable device (branch `device/v0`)
 
-Source of truth: `MISSION.md`. Every session reads, in order: `MISSION.md`, `STEER.md`, the last entry of `PROGRESS.md`, `DECISIONS.md`, `NEEDS_HUMAN.md`.
+**Start with `HANDOFF.md`** (where things stand, what is running, gotchas). Source of truth: `MISSION.md`. Every session reads, in order: `MISSION.md`, `STEER.md`, the last entry of `PROGRESS.md`, `DECISIONS.md`, `NEEDS_HUMAN.md`.
 If `AGENT_STOP` exists: commit, add a note to `PROGRESS.md`, end.
 
 ## Rules that bite
