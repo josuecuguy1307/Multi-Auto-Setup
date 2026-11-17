@@ -78,3 +78,20 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   printable-check saboteur left `printable()` unused and -Werror refused to build it (saboteur now keeps the call). A combined shell command
   that also ran a no-op `sed -i` on a vendored file was blocked by the auto-mode classifier; redone as plain copy + Write.
 - Blocked for Phase 5: KiCad (kicad-cli ERC/DRC, D-009) needs the Docker engine or a native install (NEEDS_HUMAN #7, #8).
+- Firmware evaluator run 2: FAIL (a torn first-boot key write could pass the CRC and brick a never-used key; 5 NV guards untested; no B→A
+  test). Fixed test-first (red 2c2607b, green e6d3cbd, D-016): 317 tests, oracle PASS. Run 3 started.
+- PCB (Phase 5): KiCad 10.0.8 installed per-user by winget (Josué approved). Advisor spec A-3. Route: design.py → gen_sch.py (.kicad_sch,
+  ERC 0 with every severity) → kicad-cli netlist → gen_pcb.py under KiCad's Python (board from the netlist, own A* grid router).
+  Failed attempts, in order: Fable's button footprint name was wrong (SW_SPST_PTS645 → SW_SPST_PTS645Sx43SMTR92); the stock U585 LQFP48
+  symbol has no VDDUSB pin (pin 36 is VDD: flagged UNVERIFIED); I split USB D± into connector-side and MCU-side nets although the USBLC6
+  is flow-through (ERC caught it: isolated labels); ERC lib-table warnings until a .kicad_pro existed; parts overlapped on 20×48 mm (board
+  now 20×54); 27 parity "missing field" until symbol fields were copied to footprints (`FOOTPRINT.SetField`, `GetField` in v10, not
+  `GetFieldByName`); the stock USB4105 land pattern itself violates 0.25 mm hole clearance (0.194 mm) → one scoped custom rule, listed for
+  human review; NPTH clearance in my router was 0.05 mm short; first routing pass failed USB D±, LED and 3 MCU ground pins → rip-up/retry
+  passes; MCU ground then SWD → MCU ground vias moved under the chip.
+- PCB done to the gate: fully routed (19/19 nets) after rip-up passes and MCU ground vias under the chip; generation made deterministic
+  (`pcbnew.KIID.SeedGenerator`: KiCad saves items ordered by UUID); the deleted-track saboteur first picked a 0.15 mm stub inside a pad,
+  then a redundant GND stub — it now removes every I2C_SDA track. **P5-PCB oracle PASS, 20 tests (DESIGN-ONLY).** Renders sent to Josué.
+- Firmware evaluator run 3: FAIL (press during the display redraw approved the new request; no minimum time on screen; TRNG and key-write
+  failures untested). Fixed test-first (red 5747266, D-017): draw first, then clear the latch; 1 s minimum dwell in firmware and keymodel;
+  every Python test that pressed at 0 ms now waits the dwell. P4-FW-HOST 323 tests PASS; P2-GATE/P2-LOG re-run PASS. Run 4 pending.

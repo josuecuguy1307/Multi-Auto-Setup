@@ -369,3 +369,12 @@ remove a decoupling cap → net check fails.
   plus max selection with the maximum in page A while B holds records, and a cut sweep at the B→A rollover.
 - Equivalent mutant, kept and declared: moving `active` to the new page before the read-back is unobservable while the NV latch exists
   (any failure stops all further commits until reboot). The guard stays as defense in depth; the latch is the tested property.
+
+## D-017 What the person sees comes first (2026-11-17; evaluator run 3; amends A-2 §2 and keymodel.py)
+- REQUEST draws the summary first, then clears the press latch and stamps t_req. A press that lands while the screen is still being
+  redrawn is forgotten (A-2 had the opposite order: a press during the redraw approved a request nobody could see yet).
+- A press counts only after the summary has been on screen for **1 s** (`MIN_DWELL_MS`, `KeyModel.MIN_DWELL_S`); an earlier press is
+  consumed and answered `no_press`, and the request stays pending. This closes the bait-and-switch where a host swaps the request just
+  before the press it expects. The press window (≤ 30 s) still runs from the same moment.
+- Tests: a mock display that presses during the redraw; press at 0 ms and 999 ms refused, 1000 ms accepted; bait-and-switch refused;
+  TRNG failure and failed or stuck first-boot key writes give nv_fault with no token.

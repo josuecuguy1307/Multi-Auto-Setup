@@ -19,6 +19,27 @@ open. Tick each item, write the date and your name, and note any change made. So
 | 9 | **Fab capability**: stackup, trace/space, via and drill sizes against the chosen fab's rules; test points; fiducials if assembled. | | |
 | 10 | **BOM**: exact MPNs, lifecycle status, stock on a current date (the snapshot in the repo is dated and goes stale), alternates, DNP marks, licence of any derived design. | | |
 
+## Unverified by the design flow (check each one; they come from `design.py` UNVERIFIED)
+
+- [ ] Every STM32U585CIT6 LQFP48 pin number (taken from KiCad's stock symbol, not checked against DS13086).
+- [ ] VCAP on the LDO (non-Q) STM32U585: presence, count and value (AN5373).
+- [ ] Crystal-less USB FS with HSI48 + CRS on STM32U585 (advisor: confident, not checked against RM0456).
+- [ ] USB-C J1 symbol/footprint names and the GCT USB4105 land pattern.
+- [ ] OLED module pin order (GND/VCC order varies by vendor) and whether the module already carries I2C pull-ups.
+- [ ] AP2112K-3.3 dropout and thermal at worst-case VBUS; VDDA tied to +3V3 without a ferrite (ADC unused).
+- [ ] USB D+/D- routed without impedance control.
+- [ ] Pin 36: the stock LQFP48 symbol names it VDD (no VDDUSB pin); check DS13086 whether it is VDDUSB. Here it is tied to +3V3 with its own 100 nF.
+
+## Deviations and custom rules to review
+
+- [ ] Custom DRC rule **"J1 vendor land pattern"** (`kicad/mas_key.kicad_dru`): inside J1 only, hole clearance 0.19 mm instead of the
+      board's 0.25 mm, because the stock GCT USB4105 land pattern puts the NPTH pegs 0.194 mm from pads A1/A12/B1/B12. Check against GCT's
+      drawing and the fab's NPTH-to-copper capability.
+- [ ] Board is 20 × 54 mm, not the 48 mm of the advisor's spec (A-3): the 1×4 OLED socket did not fit otherwise.
+- [ ] All tracks are 0.2 mm, power included (load < 50 mA); the spec's 0.4 mm power tracks were not used.
+- [ ] Tracks were placed by a small grid router written for this repo (`gen_pcb.py`), not by a person or a commercial router:
+      look at every route, especially USB D+/D− (no impedance control, not length-matched) and anything under the USB-C shell.
+
 Sign-off (only after all ten rows): ______________________ date ________
 
 Until this file is signed, the fabrication outputs in `device/hardware/fab/` must not be sent to any manufacturer.

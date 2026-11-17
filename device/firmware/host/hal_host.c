@@ -6,19 +6,21 @@
  *   MAS_FLASH_FAIL_AFTER=k program calls fail (write nothing) once k bytes have been programmed
  *   MAS_FLASH_STUCK=1      program calls report success but no bit changes (tests the read-back)
  *   MAS_FLASH_FAIL_CALLS=n the first n program calls fail (write nothing); later calls work
- *   MAS_ERASE_STUCK=1      erase calls report success but the page does not change (tests the erase verify) */
+ *   MAS_ERASE_STUCK=1      erase calls report success but the page does not change (tests the erase verify)
+ *   MAS_PRESS_IN_DISPLAY=1 the button is pressed once while the next summary is being drawn */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "mas_hal.h"
 #include "hal_host.h"
+#include "mas_core.h"
 
 #define PAGES 3
 static uint8_t flash[PAGES * MAS_PAGE_SIZE];
 static FILE *ff;
 static uint64_t tick;
 static long cut_after = -1, steps, fail_after = -1, programmed;
-static int erase_mode, stuck, erase_stuck;
+static int erase_mode, stuck, erase_stuck, press_in_display;
 static long fail_calls;
 static uint8_t disp[32];
 static uint64_t disp_next;
@@ -49,6 +51,7 @@ void host_hal_init(void) {
     stuck = (int)env_long("MAS_FLASH_STUCK", 0);
     fail_calls = env_long("MAS_FLASH_FAIL_CALLS", 0);
     erase_stuck = (int)env_long("MAS_ERASE_STUCK", 0);
+    press_in_display = (int)env_long("MAS_PRESS_IN_DISPLAY", 0);
 }
 
 static void persist(size_t off, size_t len) {
@@ -77,6 +80,11 @@ void hal_tx(const uint8_t *buf, size_t len) {
 }
 
 void hal_display(const uint8_t summary[32], uint64_t next) {
+    static const uint8_t blank[32];
+    if (press_in_display && memcmp(summary, blank, 32) != 0) { /* the button ISR fires while the screen is being redrawn */
+        press_in_display = 0;
+        mas_button_isr();
+    }
     memcpy(disp, summary, 32);
     disp_next = next;
 }

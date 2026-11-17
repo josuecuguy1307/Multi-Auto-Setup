@@ -11,7 +11,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-BOARD_W, BOARD_H = 20.0, 48.0          # mm; long axis = y, USB-C at y = 0
+BOARD_W, BOARD_H = 20.0, 54.0          # mm; long axis = y, USB-C mouth at y = 0 (A-3 said 48; the OLED socket needs the length)
+SILK_TEXT_X = 0.9                       # the stamp runs along this strip, 0.9 mm from the left edge (right edge on B.SilkS); keep parts out of it
 STAMP = "NO FABRICAR sin revisión humana"
 BOM_SNAPSHOT_DATE = "2026-11-17"  # parts list frozen on this date; no live distributor lookup was made (bom_snapshot.json)
 
@@ -56,45 +57,43 @@ PARTS = [
     # ---- USB-C, ESD, regulator (top of the board) ----
     Part("J1", "Connector:USB_C_Receptacle_USB2.0_16P", "Connector_USB:USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal",
          "USB-C", "USB4105-GF-A", "GCT",
-         {"VBUS": "VBUS", "GND": "GND", "SHIELD": "GND", "CC1": "CC1", "CC2": "CC2", "D+": "USB_DP", "D-": "USB_DM"},
-         (10.0, 3.7, 0.0)),
+         {"VBUS": "VBUS", "GND": "GND", "SHIELD": "GND", "CC1": "CC1", "CC2": "CC2", "D+": "USB_DP", "D-": "USB_DM"}, (10.0, 3.72, 180.0)),
     Part("U2", "Power_Protection:USBLC6-2SC6", "Package_TO_SOT_SMD:SOT-23-6", "USBLC6-2SC6", "USBLC6-2SC6", "STMicroelectronics",
-         {"I/O1": "USB_DP", "I/O2": "USB_DM", "VBUS": "VBUS", "GND": "GND"}, (10.0, 9.5, 0.0)),
-    R("R1", "5.1k", "CC1", "GND", (5.0, 9.0, 90.0), "RC0603FR-075K1L"),
-    R("R2", "5.1k", "CC2", "GND", (15.0, 9.0, 90.0), "RC0603FR-075K1L"),
+         {"I/O1": "USB_DP", "I/O2": "USB_DM", "VBUS": "VBUS", "GND": "GND"}, (10.0, 10.5, 0.0)),
+    R("R1", "5.1k", "CC1", "GND", (3.0, 10.5, 90.0), "RC0603FR-075K1L"),
+    R("R2", "5.1k", "CC2", "GND", (17.0, 10.5, 90.0), "RC0603FR-075K1L"),
     Part("U3", "Regulator_Linear:AP2112K-3.3", "Package_TO_SOT_SMD:SOT-23-5", "AP2112K-3.3", "AP2112K-3.3TRG1", "Diodes Inc",
-         {"VIN": "VBUS", "EN": "VBUS", "GND": "GND", "VOUT": "+3V3"}, (6.0, 14.0, 0.0)),
-    C("C1", "1uF", "VBUS", "GND", (3.0, 14.0, 90.0), "CL10A105KB8NNNC"),
-    C("C2", "1uF", "+3V3", "GND", (9.5, 14.0, 90.0), "CL10A105KB8NNNC"),
-    C("C3", "4.7uF", "+3V3", "GND", (12.0, 14.0, 90.0), "CL10A475KO8NNNC"),
+         {"VIN": "VBUS", "EN": "VBUS", "GND": "GND", "VOUT": "+3V3"}, (6.5, 15.0, 0.0)),
+    C("C1", "1uF", "VBUS", "GND", (3.0, 15.0, 90.0), "CL10A105KB8NNNC"),
+    C("C2", "1uF", "+3V3", "GND", (11.0, 15.0, 90.0), "CL10A105KB8NNNC"),
+    C("C3", "4.7uF", "+3V3", "GND", (14.0, 15.0, 90.0), "CL10A475KO8NNNC"),
     # ---- MCU and its supply pins (centre) ----
     Part("U1", "MCU_ST_STM32U5:STM32U585CITx", "Package_QFP:LQFP-48_7x7mm_P0.5mm", "STM32U585CIT6", "STM32U585CIT6",
-         "STMicroelectronics", MCU_PINS, (10.0, 24.0, 0.0)),
-    C("C4", "100nF", "+3V3", "GND", (4.0, 20.0, 90.0), "CL10B104KB8NNNC"),
-    C("C5", "100nF", "+3V3", "GND", (16.0, 20.0, 90.0), "CL10B104KB8NNNC"),
-    C("C6", "100nF", "+3V3", "GND", (4.0, 28.0, 90.0), "CL10B104KB8NNNC"),
-    C("C7", "100nF", "+3V3", "GND", (16.0, 28.0, 90.0), "CL10B104KB8NNNC"),
-    C("C8", "1uF", "+3V3", "GND", (2.0, 24.0, 90.0), "CL10A105KB8NNNC"),
-    C("C9", "4.7uF", "VCAP", "GND", (18.0, 24.0, 90.0), "CL10A475KO8NNNC"),
-    R("R3", "10k", "BOOT0", "GND", (13.0, 31.0, 0.0), "RC0603FR-0710KL"),
-    C("C10", "100nF", "NRST", "GND", (7.0, 31.0, 0.0), "CL10B104KB8NNNC"),
+         "STMicroelectronics", MCU_PINS, (10.0, 24.6, 0.0)),
+    C("C4", "100nF", "+3V3", "GND", (3.0, 21.0, 90.0), "CL10B104KB8NNNC"),
+    C("C5", "100nF", "+3V3", "GND", (17.0, 21.0, 90.0), "CL10B104KB8NNNC"),
+    C("C6", "100nF", "+3V3", "GND", (3.0, 24.6, 90.0), "CL10B104KB8NNNC"),
+    C("C7", "100nF", "+3V3", "GND", (17.0, 24.6, 90.0), "CL10B104KB8NNNC"),
+    C("C8", "1uF", "+3V3", "GND", (3.0, 28.2, 90.0), "CL10A105KB8NNNC"),
+    C("C9", "4.7uF", "VCAP", "GND", (17.0, 28.2, 90.0), "CL10A475KO8NNNC"),
+    R("R3", "10k", "BOOT0", "GND", (7.0, 18.0, 0.0), "RC0603FR-0710KL"),
+    C("C10", "100nF", "NRST", "GND", (13.0, 18.0, 0.0), "CL10B104KB8NNNC"),
     # ---- button with RC and pull-up ----
     Part("SW1", "Switch:SW_Push", "Button_Switch_SMD:SW_SPST_PTS645Sx43SMTR92", "PTS645", "PTS645SM43SMTR92LFS", "C&K",
-         {"1": "BTN_RAW", "2": "GND"}, (10.0, 37.0, 0.0)),
-    R("R4", "10k", "+3V3", "BTN_RAW", (3.0, 33.0, 90.0), "RC0603FR-0710KL"),
-    R("R5", "1k", "BTN_RAW", "BTN", (17.0, 33.0, 90.0), "RC0603FR-071KL"),
-    C("C11", "100nF", "BTN", "GND", (17.0, 37.0, 90.0), "CL10B104KB8NNNC"),
+         {"1": "BTN_RAW", "2": "GND"}, (10.0, 42.2, 0.0)),
+    R("R4", "10k", "+3V3", "BTN_RAW", (3.0, 32.0, 90.0), "RC0603FR-0710KL"),
+    R("R5", "1k", "BTN_RAW", "BTN", (3.0, 35.6, 90.0), "RC0603FR-071KL"),
+    C("C11", "100nF", "BTN", "GND", (3.0, 39.2, 90.0), "CL10B104KB8NNNC"),
     # ---- I2C display socket, pull-ups, LED, SWD ----
-    R("R6", "4.7k", "+3V3", "I2C_SCL", (6.0, 42.0, 90.0), "RC0603FR-074K7L"),
-    R("R7", "4.7k", "+3V3", "I2C_SDA", (14.0, 42.0, 90.0), "RC0603FR-074K7L"),
+    R("R6", "4.7k", "+3V3", "I2C_SCL", (17.0, 32.0, 90.0), "RC0603FR-074K7L"),
+    R("R7", "4.7k", "+3V3", "I2C_SDA", (17.0, 35.6, 90.0), "RC0603FR-074K7L"),
     Part("J2", "Connector_Generic:Conn_01x04", "Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical", "OLED SSD1306",
-         "PPTC041LFBN-RC", "Sullins", {"1": "GND", "2": "+3V3", "3": "I2C_SCL", "4": "I2C_SDA"}, (6.2, 45.5, 90.0)),
-    Part("D1", "Device:LED", "LED_SMD:LED_0603_1608Metric", "green", "LTST-C191KGKT", "Lite-On", {"K": "LED_K_DRV", "A": "LED_A"},
-         (2.5, 38.0, 90.0)),
-    R("R8", "1k", "+3V3", "LED_A", (2.5, 42.0, 90.0), "RC0603FR-071KL"),
+         "PPTC041LFBN-RC", "Sullins", {"1": "GND", "2": "+3V3", "3": "I2C_SCL", "4": "I2C_SDA"}, (6.19, 51.3, 90.0)),
+    Part("D1", "Device:LED", "LED_SMD:LED_0603_1608Metric", "green", "LTST-C191KGKT", "Lite-On", {"K": "LED_K_DRV", "A": "LED_A"}, (3.0, 42.8, 90.0)),
+    R("R8", "1k", "+3V3", "LED_A", (3.0, 46.4, 90.0), "RC0603FR-071KL"),
     Part("J3", "Connector_Generic:Conn_02x05_Odd_Even", "Connector_PinHeader_1.27mm:PinHeader_2x05_P1.27mm_Vertical_SMD", "SWD",
          "FTSH-105-01-L-DV-K", "Samtec",
-         {"1": "+3V3", "2": "SWDIO", "3": "GND", "4": "SWCLK", "5": "GND", "6": "SWO", "9": "GND", "10": "NRST"}, (10.0, 31.0, 0.0)),
+         {"1": "+3V3", "2": "SWDIO", "3": "GND", "4": "SWCLK", "5": "GND", "6": "SWO", "9": "GND", "10": "NRST"}, (10.0, 34.6, 0.0)),
 ]
 
 # Nets that only exist as power and that PWR_FLAG must mark as driven (their source is outside the schematic: the USB host).
@@ -111,4 +110,5 @@ UNVERIFIED = [
     "OLED module pin order (GND/VCC order varies by vendor) and whether the module already carries I2C pull-ups.",
     "AP2112K-3.3 dropout and thermal at worst-case VBUS; VDDA tied to +3V3 without a ferrite (ADC unused).",
     "USB D+/D- routed without impedance control.",
+    "Pin 36: the stock LQFP48 symbol names it VDD (no VDDUSB pin); check DS13086 whether it is VDDUSB. Here it is tied to +3V3 with its own 100 nF.",
 ]

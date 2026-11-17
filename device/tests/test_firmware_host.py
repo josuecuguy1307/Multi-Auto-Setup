@@ -344,7 +344,9 @@ def test_no_press_no_signature_and_the_request_survives(fw):
 
 def check_press_before_request_does_not_count(fw):
     fw.press()
+    fw.advance(5000)  # the press lies well before the request, so only the latch clear (not the dwell) can refuse it
     st, seq, _ = fw.request(a_request())
+    fw.advance(DWELL_MS)
     assert fw.sign(seq) == ("no_press", None)
 
 

@@ -12,6 +12,8 @@
 #include "mas_nv.h"
 #include "../host/hal_host.h"
 
+void mas_button_isr(void) {} /* the host HAL's MAS_PRESS_IN_DISPLAY mode calls it; this tool has no core and no button */
+
 int main(void) {
     char line[4096];
     host_hal_init();

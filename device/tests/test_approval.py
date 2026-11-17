@@ -105,9 +105,11 @@ def test_concurrent_double_spend_succeeds_exactly_once(gate, key):
 def test_counter_must_increase_within_a_session(gate, key):
     p1, p2 = gate.begin(ACTION, ap.Class.WRITE), gate.begin(ACTION, ap.Class.WRITE)
     r1 = key.request(p1.key_request())
+    key._clock.t += KeyModel.MIN_DWELL_S  # read the screen first (D-017)
     key.button.press()
     t1 = key.sign(r1)
     r2 = key.request(p2.key_request())
+    key._clock.t += KeyModel.MIN_DWELL_S  # read the screen first (D-017)
     key.button.press()
     t2 = key.sign(r2)
     gate.consume(t2, ACTION)
@@ -224,6 +226,7 @@ def test_summary_that_differs_from_the_action_is_rejected(gate, key):
     req = pending.key_request()
     lying = req._replace(summary=ap.pad_summary("READ host-aaaa 0f harmless"))
     r = key.request(lying)
+    key._clock.t += KeyModel.MIN_DWELL_S  # read the screen first (D-017)
     key.button.press()
     with pytest.raises(ap.Rejected, match="summary_mismatch"):
         gate.consume(key.sign(r), ACTION)
@@ -280,6 +283,7 @@ def test_a_press_before_the_request_does_not_count(gate, key):
 
 def test_one_press_signs_one_request(gate, key):
     req = key.request(gate.begin(ACTION, ap.Class.WRITE).key_request())
+    key._clock.t += KeyModel.MIN_DWELL_S  # read the screen first (D-017)
     key.button.press()
     key.sign(req)
     with pytest.raises(KeyRefused):
@@ -289,6 +293,7 @@ def test_one_press_signs_one_request(gate, key):
 def test_a_new_request_cancels_the_pending_one(gate, key):
     r1 = key.request(gate.begin(ACTION, ap.Class.WRITE).key_request())
     r2 = key.request(gate.begin(dict(ACTION, target="host-z"), ap.Class.WRITE).key_request())
+    key._clock.t += KeyModel.MIN_DWELL_S  # read the screen first (D-017)
     key.button.press()
     with pytest.raises(KeyRefused, match="stale_request"):
         key.sign(r1)
@@ -327,6 +332,7 @@ def test_key_counter_is_monotonic_across_restarts(tmp_path, gate, key_clock):
 def test_power_cut_after_counter_commit_never_reuses_a_counter(tmp_path, gate, key_clock, monkeypatch):
     k = KeyModel.create(tmp_path / "k", clock=key_clock)
     req = k.request(gate.begin(ACTION, ap.Class.WRITE).key_request())
+    k._clock.t += KeyModel.MIN_DWELL_S  # read the screen first (D-017)
     k.button.press()
     monkeypatch.setattr(k, "_release", lambda tok: (_ for _ in ()).throw(RuntimeError("power cut")))
     with pytest.raises(RuntimeError):

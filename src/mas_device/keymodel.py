@@ -68,6 +68,7 @@ def _write_atomic(path: Path, data: bytes) -> None:
 
 class KeyModel:
     PRESS_WINDOW_S = 30
+    MIN_DWELL_S = 1  # a press counts only after the summary has been on screen this long (DECISIONS D-017)
 
     def __init__(self, folder: Path, private: Ed25519PrivateKey, counter: int, clock: Callable[[], float]) -> None:
         self._folder, self.__private, self._counter, self._clock = Path(folder), private, counter, clock
@@ -123,6 +124,8 @@ class KeyModel:
         press = self.button._take()
         if press is None or press[0] <= p.event:
             raise KeyRefused("no_press")
+        if press[1] - p.at < self.MIN_DWELL_S:
+            raise KeyRefused("no_press")  # too soon for anyone to have read the screen; the request stays pending
         self._pending = None  # one press, one request
         if press[1] - p.at > min(p.req.press_window_s, self.PRESS_WINDOW_S):
             raise KeyRefused("press_window")

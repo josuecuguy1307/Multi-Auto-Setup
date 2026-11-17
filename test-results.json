@@ -1,7 +1,7 @@
 {
- "checksum": "6b59442461e73e3810cd8c6e958be1e9de580da78b3866cdc18cfe545805df4c",
+ "checksum": "8f19737244196e8fd7dc0b304f5ac44ac505f604ac3214f6631261072b098337",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "2c2607b",
+ "git_head_at_run": "5747266",
  "results": {
   "P1-DOCS": {
    "at": "2026-11-16T23:23:48",
@@ -19,14 +19,14 @@
    "title": "DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice"
   },
   "P1-HARNESS": {
-   "at": "2026-11-16T23:23:15",
+   "at": "2026-11-17T01:06:50",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 25
    },
-   "fingerprint": "c07ae6d543e4fa83ec479e8bda42285478b44bd7c540b8dc1f45190e1ddec62d",
+   "fingerprint": "8f7052955c471111240b379d3218ab8aa82f076b0f1caa3df1a715f1086a0598",
    "label": "REAL",
    "phase": 1,
    "reason": "25 passed",
@@ -49,8 +49,8 @@
    "title": "First unit through the full cycle: signed approval tokens (guardrail 3) with an evaluator report"
   },
   "P2-FLEET": {
-   "at": "2026-11-16T23:27:15",
-   "fingerprint": "decf3cb7570c2ed07b8c3d485959319fb5fe562db7cd4103ce9dbe7ca7c6556d",
+   "at": "2026-11-17T01:05:37",
+   "fingerprint": "495926590732fe8e1812f48a69b619bfdd34438e00ec2d227029cb99409bad08",
    "label": "EMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_fleet.py",
@@ -58,14 +58,14 @@
    "title": "Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers"
   },
   "P2-GATE": {
-   "at": "2026-11-16T23:27:05",
+   "at": "2026-11-17T01:05:30",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 44
    },
-   "fingerprint": "1221709f830beac9aae928ba76968d9aa9f11044278bbfbec8724e2ba0a56761",
+   "fingerprint": "bf2182a1602f9a8cb8feebe05b539d99e5c4708cc1f1e954874dfdc7a4f005d4",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "44 passed",
@@ -73,8 +73,8 @@
    "title": "Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first"
   },
   "P2-GUARDRAILS": {
-   "at": "2026-11-16T23:27:15",
-   "fingerprint": "28b071c3e04644094caaf3a08703bf9afc3b56106ee9ad851765b552f36765df",
+   "at": "2026-11-17T01:05:37",
+   "fingerprint": "cf0219177a19308b3bc911302e7c3449784752b23d570658696524a2a108a856",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_guardrails.py",
@@ -82,14 +82,14 @@
    "title": "Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations"
   },
   "P2-LOG": {
-   "at": "2026-11-16T23:27:10",
+   "at": "2026-11-17T01:05:33",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 41
    },
-   "fingerprint": "7090986c1a7a934415a719af4b2eb2c3f29d33b0f17d341acdb5a3744083cf42",
+   "fingerprint": "7ea3a4edc8292ce5f84009af3dd72a7abd27f850a23bed5054a73ecf836e8e0a",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "41 passed",
@@ -97,8 +97,8 @@
    "title": "Append-only hash-chained log; any edit, rewrite, truncation or reorder is detected against a known head; a broken log is never extended (process separation from the model is P2-GUARDRAILS)"
   },
   "P2-PORTABLE": {
-   "at": "2026-11-16T23:27:15",
-   "fingerprint": "f7e5efc25bc78615798da9000c985edacc94ceb14779a5ac05d9e707d5e28199",
+   "at": "2026-11-17T01:05:37",
+   "fingerprint": "0bbd09ed8af12e6658ed66e66e7527986fc29686bb3488fa201b0893609bbd9b",
    "label": "EMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_portable.py",
@@ -106,8 +106,8 @@
    "title": "One-command launch from a read-only medium in a clean VM/container; profiler picks compute mode"
   },
   "P2-ZEROTRACE": {
-   "at": "2026-11-16T23:27:15",
-   "fingerprint": "071c24a615c4be0d3c099e160bc73f96b5ba76008bb751cb7ad16fbf47fd6f67",
+   "at": "2026-11-17T01:05:37",
+   "fingerprint": "264f53b6f9d90af0659976376efcffd435f102ceb541a9c00b0467ffe5117604",
    "label": "EMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_zerotrace.py",
@@ -115,19 +115,34 @@
    "title": "Filesystem diff of the host before/after a session is empty outside approved writes"
   },
   "P4-FW-HOST": {
-   "at": "2026-11-17T00:28:45",
+   "at": "2026-11-17T01:05:38",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
-    "tests": 317
+    "tests": 323
    },
-   "fingerprint": "8a3957714efb3d5a1149965ce08acf0073bf1c85c22a4bb2a82e24777e3fee63",
+   "fingerprint": "32049ebee7bbc1e24fdf0fde4dbe2a8ba934c89f6b34e1f1522efab7b0c9ae54",
    "label": "SIMULATED",
    "phase": 4,
-   "reason": "317 passed",
+   "reason": "323 passed",
    "status": "PASS",
    "title": "Firmware core (host build, HAL mocks) rejects replayed, altered and expired approvals; signs only after a press"
+  },
+  "P5-PCB": {
+   "at": "2026-11-17T00:56:13",
+   "counts": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 20
+   },
+   "fingerprint": "b49fceacb246fe2ab93e860f04e80480d4b58ca3a05e6cf82846ca9738fb8873",
+   "label": "DESIGN-ONLY",
+   "phase": 5,
+   "reason": "20 passed",
+   "status": "PASS",
+   "title": "ERC, DRC and fabrication checks green; fab outputs marked NO FABRICAR; HUMAN_REVIEW_PCB.md present"
   }
  }
 }

@@ -24,6 +24,7 @@
 #define CLS_AT 144u
 #define PW_AT 145u
 #define MAX_WINDOW_S 30u
+#define MIN_DWELL_MS 1000u /* a press counts only after the summary has been on screen this long (D-017) */
 
 static const uint8_t DOMAIN[15] = "MAS-APPROVE-v1";
 static const uint8_t ZERO32[32];
@@ -122,15 +123,15 @@ static void op_request(const uint8_t *p, size_t n) {
     if (mas_nv_counter() >= UINT64_MAX - 1) { reply(ST_NV_FAULT, 0, 0); return; } /* no next counter to sign: never show "#0" */
     if (!printable(p + 112)) /* SABOTEUR-ANCHOR: printable */ { reply(ST_SUMMARY_NOT_PRINTABLE, 0, 0); return; }
     if (p[CLS_AT] < 1 || p[CLS_AT] > 7 || p[PW_AT] == 0) { reply(ST_MALFORMED, 0, 0); return; }
+    hal_display(p + SUMMARY_AT, mas_nv_counter() + 1); /* first the screen; a press during the redraw is forgotten just below */
     seq++;
     hal_irq_disable();
     press_latched = 0; /* SABOTEUR-ANCHOR: latch clear */
     hal_irq_enable();
     pending.valid = 1;
     pending.seq = seq;
-    pending.t_req = hal_tick_ms();
+    pending.t_req = hal_tick_ms(); /* stamped after the display returned: the dwell and the window start when the summary is visible */
     memcpy(pending.payload, p, REQ_LEN);
-    hal_display(p + SUMMARY_AT, mas_nv_counter() + 1);
     wr_be(out, seq, 4);
     wr_be(out + 4, mas_nv_counter() + 1, 8);
     reply(ST_OK, out, sizeof out);
@@ -156,6 +157,7 @@ static void op_sign(const uint8_t *p, size_t n) {
     press_latched = 0;
     hal_irq_enable();
     if (!pressed) { reply(ST_NO_PRESS, 0, 0); return; }
+    if (t - pending.t_req < MIN_DWELL_MS) { reply(ST_NO_PRESS, 0, 0); return; } /* too soon for anyone to have read the screen */
     pending.valid = 0; /* one press, one request */
     hal_display(ZERO32, 0);
     uint32_t pw = pending.payload[PW_AT] < MAX_WINDOW_S ? pending.payload[PW_AT] : MAX_WINDOW_S;

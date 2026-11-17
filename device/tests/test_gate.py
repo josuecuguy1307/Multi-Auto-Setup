@@ -331,6 +331,7 @@ def test_forged_undo_with_a_signed_undo_token_is_still_refused(pg, key, root):
                                                                     "content_b64": base64.b64encode(b"backdoor=1\n").decode()}], "rmdirs": []}
     pending = pg._approvals.begin(forged, ap.Class.UNDO)  # bypass begin_undo: the attacker reaches the token gate directly
     req = key.request(pending.key_request())
+    key._clock.t += KeyModel.MIN_DWELL_S  # read the screen first (D-017)
     key.button.press()
     token = key.sign(req)
     with pytest.raises(gt.Refused) as e:

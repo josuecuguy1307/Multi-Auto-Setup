@@ -1,0 +1,168 @@
+{
+  "snapshot_date": "2026-11-17",
+  "note": "Availability, price and lifecycle must be checked on a current date before any purchase (HUMAN_REVIEW_PCB.md item 10).",
+  "parts": {
+    "USB4105-GF-A": {
+      "manufacturer": "GCT",
+      "refs": [
+        "J1"
+      ],
+      "footprint": "Connector_USB:USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal",
+      "source": "none",
+      "availability": "not looked up: no live distributor query was made for this snapshot",
+      "lifecycle": "unknown: not looked up"
+    },
+    "USBLC6-2SC6": {
+      "manufacturer": "STMicroelectronics",
+      "refs": [
+        "U2"
+      ],
+      "footprint": "Package_TO_SOT_SMD:SOT-23-6",
+      "source": "none",
+      "availability": "not looked up: no live distributor query was made for this snapshot",
+      "lifecycle": "unknown: not looked up"
+    },
+    "RC0603FR-075K1L": {
+      "manufacturer": "Yageo",
+      "refs": [
+        "R1",
+        "R2"
+      ],
+      "footprint": "Resistor_SMD:R_0603_1608Metric",
+      "source": "none",
+      "availability": "not looked up: no live distributor query was made for this snapshot",
+      "lifecycle": "unknown: not looked up"
+    },
+    "AP2112K-3.3TRG1": {
+      "manufacturer": "Diodes Inc",
+      "refs": [
+        "U3"
+      ],
+      "footprint": "Package_TO_SOT_SMD:SOT-23-5",
+      "source": "none",
+      "availability": "not looked up: no live distributor query was made for this snapshot",
+      "lifecycle": "unknown: not looked up"
+    },
+    "CL10A105KB8NNNC": {
+      "manufacturer": "Samsung",
+      "refs": [
+        "C1",
+        "C2",
+        "C8"
+      ],
+      "footprint": "Capacitor_SMD:C_0603_1608Metric",
+      "source": "none",
+      "availability": "not looked up: no live distributor query was made for this snapshot",
+      "lifecycle": "unknown: not looked up"
+    },
+    "CL10A475KO8NNNC": {
+      "manufacturer": "Samsung",
+      "refs": [
+        "C3",
+        "C9"
+      ],
+      "footprint": "Capacitor_SMD:C_0603_1608Metric",
+      "source": "none",
+      "availability": "not looked up: no live distributor query was made for this snapshot",
+      "lifecycle": "unknown: not looked up"
+    },
+    "STM32U585CIT6": {
+      "manufacturer": "STMicroelectronics",
+      "refs": [
+        "U1"
+      ],
+      "footprint": "Package_QFP:LQFP-48_7x7mm_P0.5mm",
+      "source": "none",
+      "availability": "not looked up: no live distributor query was made for this snapshot",
+      "lifecycle": "unknown: not looked up"
+    },
+    "CL10B104KB8NNNC": {
+      "manufacturer": "Samsung",
+      "refs": [
+        "C4",
+        "C5",
+        "C6",
+        "C7",
+        "C10",
+        "C11"
+      ],
+      "footprint": "Capacitor_SMD:C_0603_1608Metric",
+      "source": "none",
+      "availability": "not looked up: no live distributor query was made for this snapshot",
+      "lifecycle": "unknown: not looked up"
+    },
+    "RC0603FR-0710KL": {
+      "manufacturer": "Yageo",
+      "refs": [
+        "R3",
+        "R4"
+      ],
+      "footprint": "Resistor_SMD:R_0603_1608Metric",
+      "source": "none",
+      "availability": "not looked up: no live distributor query was made for this snapshot",
+      "lifecycle": "unknown: not looked up"
+    },
+    "PTS645SM43SMTR92LFS": {
+      "manufacturer": "C&K",
+      "refs": [
+        "SW1"
+      ],
+      "footprint": "Button_Switch_SMD:SW_SPST_PTS645Sx43SMTR92",
+      "source": "none",
+      "availability": "not looked up: no live distributor query was made for this snapshot",
+      "lifecycle": "unknown: not looked up"
+    },
+    "RC0603FR-071KL": {
+      "manufacturer": "Yageo",
+      "refs": [
+        "R5",
+        "R8"
+      ],
+      "footprint": "Resistor_SMD:R_0603_1608Metric",
+      "source": "none",
+      "availability": "not looked up: no live distributor query was made for this snapshot",
+      "lifecycle": "unknown: not looked up"
+    },
+    "RC0603FR-074K7L": {
+      "manufacturer": "Yageo",
+      "refs": [
+        "R6",
+        "R7"
+      ],
+      "footprint": "Resistor_SMD:R_0603_1608Metric",
+      "source": "none",
+      "availability": "not looked up: no live distributor query was made for this snapshot",
+      "lifecycle": "unknown: not looked up"
+    },
+    "PPTC041LFBN-RC": {
+      "manufacturer": "Sullins",
+      "refs": [
+        "J2"
+      ],
+      "footprint": "Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical",
+      "source": "none",
+      "availability": "not looked up: no live distributor query was made for this snapshot",
+      "lifecycle": "unknown: not looked up"
+    },
+    "LTST-C191KGKT": {
+      "manufacturer": "Lite-On",
+      "refs": [
+        "D1"
+      ],
+      "footprint": "LED_SMD:LED_0603_1608Metric",
+      "source": "none",
+      "availability": "not looked up: no live distributor query was made for this snapshot",
+      "lifecycle": "unknown: not looked up"
+    },
+    "FTSH-105-01-L-DV-K": {
+      "manufacturer": "Samtec",
+      "refs": [
+        "J3"
+      ],
+      "footprint": "Connector_PinHeader_1.27mm:PinHeader_2x05_P1.27mm_Vertical_SMD",
+      "source": "none",
+      "availability": "not looked up: no live distributor query was made for this snapshot",
+      "lifecycle": "unknown: not looked up"
+    }
+  }
+}

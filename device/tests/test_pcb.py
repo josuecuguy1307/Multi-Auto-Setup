@@ -77,14 +77,18 @@ def netlist(path: Path) -> dict[str, set[tuple[str, str]]]:
 # ---- generated, not hand-edited ---------------------------------------------------------------
 
 def test_committed_design_files_are_exactly_what_the_generators_produce(rebuilt):
-    for name in ("mas_key.kicad_sch", "mas_key.kicad_pcb", "mas_key.kicad_pro", "mas_key.net", "sym-lib-table", "fp-lib-table"):
+    for name in ("mas_key.kicad_sch", "mas_key.kicad_pcb", "mas_key.kicad_pro", "mas_key.kicad_dru", "mas_key.net", "sym-lib-table",
+                 "fp-lib-table"):
         assert (KICAD / name).read_bytes() == (rebuilt / "kicad" / name).read_bytes(), f"{name} differs from a fresh generation"
 
 
-def test_generation_is_deterministic(tools, rebuilt, tmp_path):
-    hwbuild.build(tmp_path, tools)
-    for name in ("mas_key.kicad_sch", "mas_key.kicad_pcb"):
-        assert (tmp_path / "kicad" / name).read_bytes() == (rebuilt / "kicad" / name).read_bytes(), name
+def test_generation_is_deterministic(tools, rebuilt):
+    """The committed files came from an earlier run; the test above already requires a fresh run to reproduce them byte for byte. Here the
+    schematic generator alone runs twice more (cheap), so a nondeterminism in it shows up even before anything is committed."""
+    import gen_sch
+    a, _ = gen_sch.generate(tools["share"])
+    b, _ = gen_sch.generate(tools["share"])
+    assert a == b == (rebuilt / "kicad" / "mas_key.kicad_sch").read_text(encoding="utf-8")
 
 
 # ---- KiCad's own checks ------------------------------------------------------------------------
@@ -226,6 +230,15 @@ def test_bom_snapshot_is_dated_honest_and_complete():
             assert "not looked up" in entry["availability"], mpn  # no invented stock numbers
 
 
+def test_every_custom_drc_rule_is_on_the_human_review_list():
+    dru = (KICAD / "mas_key.kicad_dru").read_text(encoding="utf-8")
+    names = re.findall(r'\(rule "([^"]+)"', dru)
+    review = (HW / "HUMAN_REVIEW_PCB.md").read_text(encoding="utf-8")
+    assert names, "the rule file is generated with its rules"
+    for n in names:
+        assert n in review, n
+
+
 def test_human_review_list_is_complete():
     text = (HW / "HUMAN_REVIEW_PCB.md").read_text(encoding="utf-8")
     rows = re.findall(r"^\| (\d+) \|", text, re.M)
@@ -247,9 +260,11 @@ def test_saboteur_deleted_track_is_caught_by_drc(tools, tmp_path):
     proj = _copy_project(tmp_path)
     pcb = proj / "mas_key.kicad_pcb"
     text = pcb.read_text(encoding="utf-8")
-    m = re.search(r"\n\t\(segment\n.*?\n\t\)", text, re.S)
-    assert m, "the board has no tracks"
-    pcb.write_text(text[:m.start()] + text[m.end():], encoding="utf-8", newline="\n")
+    # every track of one signal net (a single short stub can lie inside a pad and change nothing; GND stubs can be redundant with the pours)
+    pat = re.compile(r'\n\t\(segment\n(?:(?!\n\t\)).)*?\(net "I2C_SDA"\)(?:(?!\n\t\)).)*?\n\t\)', re.S)
+    new, n = pat.subn("", text)
+    assert n >= 2, "the board has no I2C_SDA tracks"
+    pcb.write_text(new, encoding="utf-8", newline="\n")
     code, rep = drc(tools, pcb, tmp_path / "drc.json")
     assert code != 0 and rep["unconnected_items"], "deleting a track must leave something unconnected"
 
