@@ -358,3 +358,14 @@ remove a decoupling cap → net check fails.
 - Tick: `hal_tick_ms` is 64-bit; the press window no longer aliases at 2^32 ms (BROKE 3). The STM32 port must keep a 64-bit ms counter.
 - Amends A-2 §5: the libFuzzer target is NOT built (it needs a Linux container; Docker is down). A deterministic 10,000-frame Python fuzz
   and 200 differential scripts run instead. Recorded as a gap, not as done.
+
+## D-016 Firmware fixes after evaluator run 2 (2026-11-17)
+- Key page: a CRC can pass on a torn first-boot write (CRC bytes still FF FF over a page whose CRC is 0xFFFF; ~1 seed in 1000). The seed
+  must now also derive the stored public key, or the page counts as corrupted: regenerated while the counter log is empty, a fault once
+  the key has signed. First-boot cut sweep now covers every byte with two seeds, one of them the evaluator's tearing seed.
+- REQUEST at a saturated counter (≥ 2^64−2) answers nv_fault instead of showing "#0".
+- NV guards now tested on their own through `device/firmware/tests/nv_tool.c` (drives `mas_nv_*` directly) and two new mock fault modes
+  (`MAS_FLASH_FAIL_CALLS`, `MAS_ERASE_STUCK`): the NV latch, erase verify, non-increasing counters, never programming a non-erased slot;
+  plus max selection with the maximum in page A while B holds records, and a cut sweep at the B→A rollover.
+- Equivalent mutant, kept and declared: moving `active` to the new page before the read-back is unobservable while the NV latch exists
+  (any failure stops all further commits until reboot). The guard stays as defense in depth; the latch is the tested property.

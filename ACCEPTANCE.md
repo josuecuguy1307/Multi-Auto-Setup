@@ -50,7 +50,7 @@ k consecutive passing runs of each eval; limitations section lists what was only
 | P2-FLEET | 2 | **FAIL** | EMULATED | Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers | missing test files: device/tests/test_fleet.py |
 | P3-INSPECT | 3 | **FAIL** | SIMULATED | Inventory precision and recall against fixtures with known truth meet thresholds | never run |
 | P3-READONLY | 3 | **FAIL** | EMULATED | Inspection makes zero writes (diff and read-only mount) and never touches the network | never run |
-| P4-FW-HOST | 4 | **PASS** | SIMULATED | Firmware core (host build, HAL mocks) rejects replayed, altered and expired approvals; signs only after a press | 308 passed |
+| P4-FW-HOST | 4 | **PASS** | SIMULATED | Firmware core (host build, HAL mocks) rejects replayed, altered and expired approvals; signs only after a press | 317 passed |
 | P4-FW-EMU | 4 | **FAIL** | EMULATED | Same firmware runs in QEMU and Renode; button is the only approval path | never run |
 | P5-PCB | 5 | **FAIL** | DESIGN-ONLY | ERC, DRC and fabrication checks green; fab outputs marked NO FABRICAR; HUMAN_REVIEW_PCB.md present | never run |
 | P6-EVALS | 6 | **FAIL** | REAL | Evals reproducible with one command; every number in the paper comes from a script over raw results | never run |

@@ -1,7 +1,7 @@
 {
- "checksum": "9c63b3354a25dbcd53788ac4742af85598ae2176f06b1354853b7d770953c86f",
+ "checksum": "6b59442461e73e3810cd8c6e958be1e9de580da78b3866cdc18cfe545805df4c",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "a20a48e",
+ "git_head_at_run": "2c2607b",
  "results": {
   "P1-DOCS": {
    "at": "2026-11-16T23:23:48",
@@ -115,17 +115,17 @@
    "title": "Filesystem diff of the host before/after a session is empty outside approved writes"
   },
   "P4-FW-HOST": {
-   "at": "2026-11-17T00:07:53",
+   "at": "2026-11-17T00:28:45",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
-    "tests": 308
+    "tests": 317
    },
-   "fingerprint": "c9454c94c1713d606906d1ffd5b9c261d2f17516b606d9e83c9adb0474377679",
+   "fingerprint": "8a3957714efb3d5a1149965ce08acf0073bf1c85c22a4bb2a82e24777e3fee63",
    "label": "SIMULATED",
    "phase": 4,
-   "reason": "308 passed",
+   "reason": "317 passed",
    "status": "PASS",
    "title": "Firmware core (host build, HAL mocks) rejects replayed, altered and expired approvals; signs only after a press"
   }

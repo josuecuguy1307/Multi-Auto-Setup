@@ -76,6 +76,13 @@ void mas_init(void) {
     hal_display(ZERO32, 0);
     if (mas_nv_init() != 0) { fault = 1; return; }
     int k = mas_nv_key(seed, pub);
+    if (k == 0) {
+        /* A CRC can pass on a torn write (CRC bytes still FF FF over a page whose CRC happens to be 0xFFFF): the seed must also derive the
+         * stored public key, or the page counts as corrupted. */
+        memcpy(tmp, seed, 32);
+        crypto_ed25519_key_pair(sk, chk, tmp);
+        if (memcmp(chk, pub, 32) != 0) k = -1;
+    }
     if (k != 0) {
         /* A corrupted key page is replaced only if this key never signed anything (empty counter log): a power cut during first-boot
          * key generation. Once a counter exists, the identity is never silently changed. */
@@ -112,6 +119,7 @@ static void op_info(size_t n) {
 static void op_request(const uint8_t *p, size_t n) {
     uint8_t out[12];
     if (n != REQ_LEN) { reply(ST_MALFORMED, 0, 0); return; }
+    if (mas_nv_counter() >= UINT64_MAX - 1) { reply(ST_NV_FAULT, 0, 0); return; } /* no next counter to sign: never show "#0" */
     if (!printable(p + 112)) /* SABOTEUR-ANCHOR: printable */ { reply(ST_SUMMARY_NOT_PRINTABLE, 0, 0); return; }
     if (p[CLS_AT] < 1 || p[CLS_AT] > 7 || p[PW_AT] == 0) { reply(ST_MALFORMED, 0, 0); return; }
     seq++;
