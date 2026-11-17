@@ -1,7 +1,7 @@
 {
- "checksum": "95b581862d16e0f359c72076640f7f91ba94c9c68ce579df9d7db272f23b1851",
+ "checksum": "770084ae4117ab41f3c06150541dcd73e67f74698849afa3e81c49eb3c4c394a",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "1a3e3f2",
+ "git_head_at_run": "a99fcbc",
  "results": {
   "P0-SECRETS": {
    "at": "2026-11-17T02:38:12",
@@ -28,14 +28,14 @@
    "title": "DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice"
   },
   "P1-HARNESS": {
-   "at": "2026-11-17T09:27:25",
+   "at": "2026-11-17T09:55:12",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 41
    },
-   "fingerprint": "34da7bdbf80ddd96b023fe800eed9f8d5ad49d5be8b4b1f7a6b6e2c9919a1165",
+   "fingerprint": "6a737fc05ac6bfc1f6f05338af75e3ade217f216b978863b2c93b49fa83c7a40",
    "label": "REAL",
    "phase": 1,
    "reason": "41 passed",
@@ -92,11 +92,20 @@
    "title": "Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first"
   },
   "P2-GUARDRAILS": {
-   "at": "2026-11-17T02:37:51",
-   "fingerprint": "7a5d4a18cb5627892b5b7c50812fa1d20c7511730dd9ccdc89af64ee83f5ec5d",
+   "at": "2026-11-17T09:57:35",
+   "counts": {
+    "errors": 0,
+    "failures": 19,
+    "skipped": 0,
+    "tests": 26
+   },
+   "fingerprint": "2bd35eaa1eee9bc8551755e61346e3992a71770a889ab6461bb41aec13e436ca",
    "label": "SIMULATED",
    "phase": 2,
-   "reason": "missing test files: device/tests/test_guardrails.py",
+   "reason": "19 failed, 0 errors",
+   "saboteurs": {
+    "read-credentials": "anchor missing"
+   },
    "status": "FAIL",
    "title": "Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations"
   },
