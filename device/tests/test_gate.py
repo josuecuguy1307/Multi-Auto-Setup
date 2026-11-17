@@ -609,7 +609,10 @@ def test_a_nested_write_from_inside_a_write_is_refused(pg, key, root, log, monke
         return out
 
     monkeypatch.setattr(log, "append", hook)
-    pg.execute(t1, w1)
+    worker = threading.Thread(target=pg.execute, args=(t1, w1), daemon=True)
+    worker.start()
+    worker.join(20)
+    assert not worker.is_alive(), "a nested write deadlocked the gate"
     assert nested == ["bad_action"], nested
     assert (root / "etc" / "app.conf").read_bytes() == b"port=2\n"
     assert [r["type"] for r in log.records()] == ["write.approved", "write.done"]
@@ -745,3 +748,81 @@ def test_a_file_that_is_also_a_folder_of_the_same_action_is_refused(pg):
     with pytest.raises(gt.Refused) as e:
         pg.plan_write({"q": b"1", "q/r": b"2"})
     assert e.value.code == "bad_action"
+
+
+
+# ---- evaluator run 4 (device/evals/evaluator/P2-GATE.run4.md) ------------------------------------------
+
+def test_an_os_error_after_the_token_is_spent_is_logged_and_refused(pg, key, root, log, monkeypatch):
+    w = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    token = press(pg, key, w)
+    real = pg._approvals.consume
+
+    def consume_then_lock(*a, **k):
+        out = real(*a, **k)
+
+        def locked(p):
+            raise PermissionError("another process holds the file")
+
+        monkeypatch.setattr(pg, "_current", locked)  # the file becomes unreadable right after the token is spent
+        return out
+
+    monkeypatch.setattr(pg._approvals, "consume", consume_then_lock)
+    with pytest.raises(gt.Refused) as e:
+        pg.execute(token, w)
+    assert e.value.code == "pre_state_changed"
+    recs = log.records()
+    assert [r["type"] for r in recs] == ["write.refused"] and recs[0]["payload"]["counter"] == 1
+
+
+def test_a_folder_created_after_approval_but_before_the_write_is_refused_and_logged(pg, key, root, log, monkeypatch):
+    w = pg.plan_write({"opt/mas/node.toml": b"[node]\n"})
+    token = press(pg, key, w)
+    real = pg._approvals.consume
+
+    def consume_then_mkdir(*a, **k):
+        out = real(*a, **k)
+        (root / "opt").mkdir()
+        return out
+
+    monkeypatch.setattr(pg._approvals, "consume", consume_then_mkdir)
+    with pytest.raises(gt.Refused) as e:
+        pg.execute(token, w)
+    assert e.value.code == "pre_state_changed"
+    assert [r["type"] for r in log.records()] == ["write.refused"]
+
+
+@pytest.mark.parametrize("files", [{"etc/app.conf/x": b"1"}, {"n" * 245: b"1"}, {"d/" + "a" * 300: b"1"}])
+def test_paths_that_could_never_be_written_are_refused_before_the_press(pg, files):
+    with pytest.raises(gt.Refused) as e:
+        pg.plan_write(files)
+    assert e.value.code in ("bad_action", "outside_root")
+
+
+@pytest.mark.parametrize("path", ["etc/app.conf:evil", "etc/app.conf::$DATA", "x:y"])
+def test_alternate_data_streams_are_refused(pg, path):
+    with pytest.raises(gt.Refused):
+        pg.plan_write({path: b"x"})
+
+
+def test_undo_for_after_the_undo_has_run_is_refused(pg, key):
+    w = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    pg.execute(press(pg, key, w), w)
+    u = pg.undo_for(ap.action_hash(w))
+    pg.execute_undo(press(pg, key, u, cls=ap.Class.UNDO), u)
+    with pytest.raises(gt.Refused) as e:
+        pg.undo_for(ap.action_hash(w))
+    assert e.value.code == "undo_not_issued"
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows file attributes")
+def test_files_with_special_attributes_are_refused(pg, root):
+    import ctypes
+    target = root / "etc" / "app.conf"
+    assert ctypes.windll.kernel32.SetFileAttributesW(str(target), 0x2)  # FILE_ATTRIBUTE_HIDDEN
+    try:
+        with pytest.raises(gt.Refused) as e:
+            pg.plan_write({"etc/app.conf": b"port=2\n"})
+        assert e.value.code == "bad_action"
+    finally:
+        ctypes.windll.kernel32.SetFileAttributesW(str(target), 0x80)
