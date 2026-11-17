@@ -17,7 +17,7 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from mas_device import approval as ap
-from mas_device.keymodel import Button, KeyModel, KeyRefused
+from mas_device.keymodel import Button, KeyModel, KeyRefused, RequestHandle
 
 SESSION = ap.session_id(b"\x01" * 32, b"pairing transcript")
 ACTION = {"kind": "write_file", "target": "host-aaaa", "argv": ["mas", "setup", "--recipe", "llamacpp"], "files": {"bin/llama-server": "c" * 64},
@@ -855,3 +855,62 @@ def test_a_huge_integer_clock_reading_is_refused_cleanly(key):
     with pytest.raises(ap.Rejected) as e:
         gate.begin(ACTION, ap.Class.WRITE)
     assert e.value.code == "expired"
+
+
+
+# ---- evaluator run 5 (device/evals/evaluator/P1-UNIT.run5.md) ---------------------------------------
+
+def test_a_spent_token_never_replays_into_a_restarted_gate(key, gate_clock):
+    g1 = ap.Gate({key.key_id: key.public_key}, session=SESSION, clock=gate_clock)
+    tok = sign_request(key, g1.begin(ACTION, ap.Class.WRITE).key_request())
+    g1.consume(tok, ACTION, cls=ap.Class.WRITE)
+    g2 = ap.Gate({key.key_id: key.public_key}, session=SESSION, clock=gate_clock)  # a restart: same key, same session
+    for _ in range(8):
+        g2.begin(ACTION, ap.Class.WRITE)
+    with pytest.raises(ap.Rejected) as e:
+        g2.consume(tok, ACTION, cls=ap.Class.WRITE)
+    assert e.value.code == "unknown_nonce"
+
+
+def test_nonces_never_repeat_across_gates(key):
+    seen = set()
+    for _ in range(20):
+        g = ap.Gate({key.key_id: key.public_key}, session=SESSION)
+        for _ in range(5):
+            n = g.begin(ACTION, ap.Class.WRITE).nonce
+            assert n not in seen
+            seen.add(n)
+
+
+def test_the_key_signs_what_it_showed_not_a_handle_the_host_forges(gate, key):
+    h = key.request(gate.begin(ACTION, ap.Class.WRITE).key_request())
+    evil_action = {"kind": "rm_rf", "target": "host-aaaa", "files": {}, "undo": {"kind": "noop"}}
+    evil = gate.begin(evil_action, ap.Class.WRITE)
+    key._clock.t += KeyModel.MIN_DWELL_S
+    key.button.press()
+    tok = key.sign(RequestHandle(h.seq, h.event, h.at, evil.key_request()))
+    with pytest.raises(ap.Rejected):
+        gate.consume(tok, evil_action, cls=ap.Class.WRITE)
+    assert gate.consume(tok, ACTION, cls=ap.Class.WRITE).counter == 1
+
+
+def test_the_handle_the_key_returns_is_not_its_own_state(gate, key):
+    h = key.request(gate.begin(ACTION, ap.Class.WRITE).key_request())
+    evil = gate.begin(dict(ACTION, target="host-z"), ap.Class.WRITE)
+    object.__setattr__(h, "req", evil.key_request())  # the caller scribbles on what it was handed
+    key._clock.t += KeyModel.MIN_DWELL_S
+    key.button.press()
+    tok = key.sign(h)
+    assert gate.consume(tok, ACTION, cls=ap.Class.WRITE).counter == 1
+
+
+class SneakyRequest(ap.KeyRequest):
+    def __iter__(self):  # iterating gives other bytes than the attributes that were checked
+        yield from (b"\x1b[2J" + b"A" * 28, self.nonce[:15], self.action_hash, self.undo_hash, self.summary, self.cls, self.press_window_s)
+
+
+def test_the_key_validates_the_copy_it_keeps(gate, key):
+    req = gate.begin(ACTION, ap.Class.WRITE).key_request()
+    sneaky = SneakyRequest(*req)
+    h = key.request(sneaky)
+    assert key._pending.req == tuple(req), "the kept copy is exactly the checked fields"

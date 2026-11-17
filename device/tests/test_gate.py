@@ -21,7 +21,7 @@ import pytest
 from mas_device import approval as ap
 from mas_device import gate as gt
 from mas_device.keymodel import KeyModel
-from mas_device.log import AuditLog, verify
+from mas_device.log import AuditLog, LogBroken, verify
 
 SESSION = ap.session_id(b"\x02" * 32, b"pairing transcript for the gate")
 TARGET = "host-test"
@@ -826,3 +826,182 @@ def test_files_with_special_attributes_are_refused(pg, root):
         assert e.value.code == "bad_action"
     finally:
         ctypes.windll.kernel32.SetFileAttributesW(str(target), 0x80)
+
+
+
+# ---- evaluator run 5 (device/evals/evaluator/P2-GATE.run5.md) ------------------------------------------
+
+def _after(log, monkeypatch, kind, fn):
+    real = log.append
+
+    def hook(k, payload):
+        out = real(k, payload)
+        if k == kind:
+            fn()
+        return out
+
+    monkeypatch.setattr(log, "append", hook)
+
+
+def test_an_edit_after_the_approval_is_logged_is_never_overwritten(pg, key, root, log, monkeypatch):
+    w = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    token = press(pg, key, w)
+    _after(log, monkeypatch, "write.approved", lambda: (root / "etc" / "app.conf").write_bytes(b"port=1\nowner_edit=1\n"))
+    with pytest.raises(gt.Refused) as e:
+        pg.execute(token, w)
+    assert e.value.code == "pre_state_changed"
+    assert (root / "etc" / "app.conf").read_bytes() == b"port=1\nowner_edit=1\n"
+    assert [r["type"] for r in log.records()] == ["write.approved", "write.failed"]
+
+
+def test_an_edit_after_the_undo_is_logged_is_never_overwritten(pg, key, root, log, monkeypatch):
+    w = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    pg.execute(press(pg, key, w), w)
+    u = pg.undo_for(ap.action_hash(w))
+    token = press(pg, key, u, cls=ap.Class.UNDO)
+    _after(log, monkeypatch, "undo.approved", lambda: (root / "etc" / "app.conf").write_bytes(b"port=2\nowner_edit=1\n"))
+    with pytest.raises(gt.Refused) as e:
+        pg.execute_undo(token, u)
+    assert e.value.code == "pre_state_changed"
+    assert (root / "etc" / "app.conf").read_bytes() == b"port=2\nowner_edit=1\n"
+
+
+def test_names_are_measured_as_the_filesystem_measures_them(pg):
+    with pytest.raises(gt.Refused) as e:
+        pg.plan_write({"\U0001F600" * 120: b"x"})  # 120 code points, 240 UTF-16 units, 480 UTF-8 bytes
+    assert e.value.code == "bad_action"
+
+
+def test_a_path_too_long_for_the_host_is_refused_before_the_press(pg, root):
+    long = {"d" * 150 + "/" + "e" * 150: b"x", "n" * 200: b"x"}
+    for rel, data in long.items():
+        total = len(str(root / rel)) + gt.TEMP_SUFFIX_LEN
+        if total > gt.PATH_LIMIT:
+            with pytest.raises(gt.Refused) as e:
+                pg.plan_write({rel: data})
+            assert e.value.code == "bad_action", rel
+        else:
+            pg.plan_write({rel: data})
+    assert gt.PATH_LIMIT == (259 if sys.platform == "win32" and not gt._long_paths_enabled() else 4095 if sys.platform != "win32" else 32000)
+
+
+@pytest.mark.parametrize("files", [{"ABCDEFGHIJ.TXT": b"1", "ABCDEF~1.TXT": b"2"}, {"PROGRA~1/x": b"1"}])
+def test_names_that_look_like_short_aliases_are_refused(pg, files):
+    with pytest.raises(gt.Refused) as e:
+        pg.plan_write(files)
+    assert e.value.code == "bad_action"
+
+
+def test_an_undo_whose_folder_is_gone_is_refused_before_the_press(pg, key, root):
+    w = pg.plan_write({"etc/app.conf": None})
+    pg.execute(press(pg, key, w), w)
+    (root / "etc").rmdir()
+    u = pg.undo_for(ap.action_hash(w))
+    with pytest.raises(gt.Refused) as e:
+        pg.begin_undo(u)
+    assert e.value.code == "pre_state_changed"
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows file attributes")
+@pytest.mark.parametrize("attr", [0x1, 0x4, 0x100])  # read-only, system, temporary
+def test_every_non_plain_attribute_is_refused(pg, root, attr):
+    import ctypes
+    target = root / "etc" / "app.conf"
+    assert ctypes.windll.kernel32.SetFileAttributesW(str(target), attr)
+    try:
+        with pytest.raises(gt.Refused) as e:
+            pg.plan_write({"etc/app.conf": b"port=2\n"})
+        assert e.value.code == "bad_action"
+    finally:
+        ctypes.windll.kernel32.SetFileAttributesW(str(target), 0x80)
+
+
+def test_a_stale_undo_is_refused_before_its_token_is_touched(pg, key, root):
+    w = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    pg.execute(press(pg, key, w), w)
+    u = pg.undo_for(ap.action_hash(w))
+    token = press(pg, key, u, cls=ap.Class.UNDO)
+    (root / "etc" / "app.conf").write_bytes(b"port=7\n")
+    with pytest.raises(gt.Refused) as e:
+        pg.execute_undo(token, u)
+    assert e.value.code == "pre_state_changed"
+    (root / "etc" / "app.conf").write_bytes(b"port=2\n")
+    pg.execute_undo(token, u)  # the same token still works: it was never spent
+    assert (root / "etc" / "app.conf").read_bytes() == b"port=1\n"
+
+
+def test_deleting_a_file_that_is_not_there_is_refused(pg):
+    with pytest.raises(gt.Refused) as e:
+        pg.plan_write({"absent.txt": None})
+    assert e.value.code == "bad_action"
+
+
+def test_an_existing_host_file_too_large_to_undo_is_refused(pg, root):
+    (root / "big.bin").write_bytes(b"\0" * (gt.MAX_FILE_BYTES + 1))
+    with pytest.raises(gt.Refused) as e:
+        pg.plan_write({"big.bin": b"small"})
+    assert e.value.code == "too_large"
+
+
+def test_a_failing_refused_record_still_comes_back_as_refused(pg, key, root, log, monkeypatch):
+    w = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    token = press(pg, key, w)
+    real_consume = pg._approvals.consume
+    real_append = log.append
+
+    def consume_then_change(*a, **k):
+        out = real_consume(*a, **k)
+        (root / "etc" / "app.conf").write_bytes(b"port=9\n")
+        return out
+
+    def append(kind, payload):
+        if kind.endswith(".refused"):
+            raise LogBroken("disk full")
+        return real_append(kind, payload)
+
+    monkeypatch.setattr(pg._approvals, "consume", consume_then_change)
+    monkeypatch.setattr(log, "append", append)
+    with pytest.raises(gt.Refused):
+        pg.execute(token, w)
+
+
+def test_folders_are_never_created_through_a_link_swapped_in_after_approval(pg, key, root, log, tmp_path, monkeypatch):
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (root / "a").mkdir()
+    w = pg.plan_write({"a/new/deep/f.txt": b"x"})
+    token = press(pg, key, w)
+    made = []
+    real_make = gt._make_dir
+    monkeypatch.setattr(gt, "_make_dir", lambda p: (made.append(Path(os.path.realpath(p.parent))), real_make(p)))
+
+    def swap():
+        os.rename(root / "a", root / "a_old")
+        _make_junction(root / "a", outside)
+
+    _after(log, monkeypatch, "write.approved", swap)
+    with pytest.raises(gt.Refused):
+        pg.execute(token, w)
+    real_root = Path(os.path.realpath(root))
+    assert all(m == real_root or real_root in m.parents for m in made), made
+    assert list(outside.iterdir()) == []
+
+
+def test_authenticated_tokens_the_gate_refuses_are_logged_with_their_counter(pg, key, root, log, monkeypatch):
+    w1 = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    t1 = press(pg, key, w1)  # counter 1
+    w2 = pg.plan_write({"new.txt": b"x"})
+    t2 = press(pg, key, w2)  # counter 2
+    pg.execute(t2, w2)        # spent out of order
+    with pytest.raises(ap.Rejected) as e:
+        pg.execute(t1, w1)
+    assert e.value.code == "counter_regressed"
+    w3 = pg.plan_write({"other.txt": b"y"})
+    t3 = press(pg, key, w3)  # counter 3
+    clock = pg._approvals.clock
+    monkeypatch.setattr(pg._approvals, "clock", lambda: clock() + ap.MAX_TTL_S + 1)
+    with pytest.raises(ap.Rejected) as e:
+        pg.execute(t3, w3)
+    assert e.value.code == "expired"
+    rejected = [(r["payload"]["counter"], r["payload"]["reason"]) for r in log.records() if r["type"] == "write.rejected"]
+    assert rejected == [(1, "counter_regressed"), (3, "expired")]
