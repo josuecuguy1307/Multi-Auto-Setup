@@ -53,6 +53,11 @@ TEMP_SUFFIX_LEN = 18  # "." + name + ".mas-tmp-" + 8 hex: the temporary file nex
 LOGGED_REJECTIONS = ("expired", "counter_regressed", "wrong_session")  # authenticated tokens that can never be spent: logged with their counter
 
 
+def _path_units(path: str) -> int:
+    """A path's length as the host counts it: UTF-16 units on Windows, UTF-8 bytes elsewhere."""
+    return len(path.encode("utf-16-le")) // 2 if sys.platform == "win32" else len(os.fsencode(path))
+
+
 def _long_paths_enabled() -> bool:
     if sys.platform != "win32":
         return False
@@ -140,7 +145,13 @@ def _is_link(p: Path) -> bool:
 
 # ---- the only functions that write --------------------------------------------------------
 
-def _replace_file(path: Path, data: bytes) -> None:
+_ANY = object()
+
+
+def _replace_file(path: Path, data: bytes, expect=_ANY) -> None:
+    """Write `data` to a temporary file next to `path`, flush it to disk, then (when `expect` is given: the sha256 hex the target must
+    still hold, or None for "must not exist") compare the target one last time and only then os.replace. The window left is the gap
+    between that last read and os.replace, not the temporary file's write and fsync."""
     tmp = path.with_name(f".{path.name}.mas-tmp-{secrets.token_hex(4)}")
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
     fd = os.open(tmp, flags, 0o644)
@@ -149,6 +160,10 @@ def _replace_file(path: Path, data: bytes) -> None:
             f.write(data)
             f.flush()
             os.fsync(f.fileno())
+        if expect is not _ANY:
+            now = hashlib.sha256(path.read_bytes()).hexdigest() if os.path.lexists(path) else None
+            if now != expect:
+                raise Refused("pre_state_changed", f"{path.name} changed while the new content was being written")
         os.replace(tmp, path)
     except BaseException:
         try:
@@ -248,7 +263,7 @@ class PolicyGate:
         for rel in sorted(files):
             data = files[rel]
             p = self._resolve(rel)
-            if len(str(p)) + TEMP_SUFFIX_LEN > PATH_LIMIT:
+            if _path_units(str(p)) + TEMP_SUFFIX_LEN > PATH_LIMIT:
                 raise Refused("bad_action", f"{rel}: the path is too long for this host ({PATH_LIMIT})")
             if data is not None and not isinstance(data, (bytes, bytearray)):
                 raise Refused("bad_action", f"{rel}: content is bytes or None")
@@ -421,11 +436,13 @@ class PolicyGate:
             self._apply(action)
         except (OSError, Refused) as exc:
             code = exc.code if isinstance(exc, Refused) else "apply_failed"
+            left = getattr(exc, "left_changed", [])
             try:
-                self._log.append(f"{kind}.failed", {"action_hash": approval.action_hash.hex(), "reason": code, "error": str(exc)[:200]})
+                self._log.append(f"{kind}.failed", {"action_hash": approval.action_hash.hex(), "reason": code, "error": str(exc)[:200],
+                                                    "left_changed": left})
             except (LogBroken, OSError):
                 pass
-            raise Refused(code, str(exc)[:120]) from None
+            raise Refused(code, str(exc)[:120] + (f"; left changed by someone else: {left}" if left else "")) from None
         with self._lock:
             if cls == ap.Class.WRITE:
                 self._undo_by_write[approval.action_hash] = approval.undo_hash
@@ -458,7 +475,7 @@ class PolicyGate:
                 if os.path.lexists(p):
                     raise Refused("pre_state_changed", f"{d} appeared before it was made")
                 _make_dir(p)
-                done.append(("mkdir", p, None))
+                done.append(("mkdir", p, None, None, d))
             for f in action["files"]:
                 p = self._resolve(f["path"])
                 prev = self._current(p)
@@ -468,25 +485,31 @@ class PolicyGate:
                 if data is None:
                     _remove_file(p)
                 else:
-                    _replace_file(p, data)
-                done.append(("file", p, prev))
+                    _replace_file(p, data, expect=f["pre"])
+                done.append(("file", p, prev, data, f["path"]))
             for d in action.get("rmdirs", []):
                 p = self._resolve(d)
                 _remove_dir(p)
-                done.append(("rmdir", p, None))
+                done.append(("rmdir", p, None, None, d))
         except (OSError, Refused) as exc:
-            for op, p, prev in reversed(done):
+            left: list[str] = []
+            for op, p, prev, written, rel in reversed(done):
                 try:
                     if op == "mkdir":
-                        _remove_dir(p)
+                        _remove_dir(p)  # refuses a folder someone filled meanwhile
                     elif op == "rmdir":
                         _make_dir(p)
-                    elif prev is None:
-                        _remove_file(p)
                     else:
-                        _replace_file(p, prev)
+                        now = p.read_bytes() if os.path.lexists(p) else None
+                        if _sha(now) != _sha(written):  # the owner changed it after the gate did: never undo their change
+                            left.append(rel)
+                        elif prev is None:
+                            _remove_file(p)
+                        else:
+                            _replace_file(p, prev)
                 except OSError:
+                    left.append(rel)
                     print(f"ERROR gate rollback incomplete at {p}", file=sys.stderr)
-            if isinstance(exc, Refused):
-                raise
-            raise OSError(str(exc)) from None
+            err = exc if isinstance(exc, Refused) else Refused("apply_failed", str(exc)[:120])
+            err.left_changed = sorted(left)
+            raise err from None

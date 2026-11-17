@@ -2,7 +2,7 @@
 "Reference","Value","Footprint","MPN","Manufacturer","QUANTITY","DNP"
 "C1,C2,C8","1uF","Capacitor_SMD:C_0603_1608Metric","CL10A105KB8NNNC","Samsung","3",""
 "C3,C9","4.7uF","Capacitor_SMD:C_0603_1608Metric","CL10A475KO8NNNC","Samsung","2",""
-"C4-C7,C10,C11","100nF","Capacitor_SMD:C_0603_1608Metric","CL10B104KB8NNNC","Samsung","6",""
+"C4-C7,C10-C12","100nF","Capacitor_SMD:C_0603_1608Metric","CL10B104KB8NNNC","Samsung","7",""
 "D1","green","LED_SMD:LED_0603_1608Metric","LTST-C191KGKT","Lite-On","1",""
 "J1","USB-C","Connector_USB:USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal","USB4105-GF-A","GCT","1",""
 "J2","OLED SSD1306","Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical","PPTC041LFBN-RC","Sullins","1",""

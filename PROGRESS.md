@@ -114,3 +114,11 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   the evaluator at 52ab72b). P2-GATE evaluator run 4 was still running at the limit (its report, if any, is not recorded). NEXT: P1-UNIT
   evaluator run 5; P5-PCB evaluator findings (device/evals/evaluator/P5-PCB.md: per-pin decoupling incl. pin 24, USB D± on F.Cu only,
   pcbnew silk-stamp check, pin-level netlist tests, .kicad_dru content test, fab equals a fresh build, HUMAN_REVIEW fixes); then Phase 2 units.
+- Board evaluator findings fixed (P5-PCB 35 tests PASS): fifth 100 nF, every MCU supply pin has its own capacitor within 4 mm (2.3-3.7 mm);
+  USB D+/D- top layer only with no vias, routed after the MCU ground and the SWD lines (which take the bottom layer to cross it); 6 nets
+  cross under USB on B.Cu, a declared deviation listed for review (a B.Cu keep-out under USB made 6 nets unroutable: the USB pins sit on
+  the MCU's right side, so nets beyond them must cross). Tests now read the board through pcbnew (stamp, layers, distances) and the
+  netlist pin by pin; every decoupling cap removed is caught. Failed attempts: the keep-out; USB first then SWD (SWD could not cross);
+  KiCad 10 suffixes netlist pinfunctions with the pin number (PA12_33); float equality on capacitor values.
+- Gate evaluator run 6: rollback lost update, pre-fsync compare window, code-point path lengths: fixed (D-024), P2-GATE 137 PASS.
+  P1-UNIT run 6 fixed (nonces across fresh interpreters); evaluator run 7 pending.

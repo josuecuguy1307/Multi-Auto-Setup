@@ -8,7 +8,7 @@ open. Tick each item, write the date and your name, and note any change made. So
 
 | # | Check | Done (date, name) | Notes |
 |---|---|---|---|
-| 1 | **MCU pins**: every STM32U585 pin used against the datasheet pinout for the exact package and part number. BOOT0 strap, NRST, VCAP/SMPS pins, every VDD/VSS/VDDA/VDDUSB pin. Any pin marked UNVERIFIED in `pinmap.md` checked one by one. | | |
+| 1 | **MCU pins**: every STM32U585 pin used against the datasheet pinout for the exact package and part number. BOOT0 strap, NRST, VCAP/SMPS pins, every VDD/VSS/VDDA/VDDUSB pin. Every pin listed under "Unverified" below checked one by one (pin numbers come from KiCad's stock symbol; the pin map is in `design.py`, `MCU_PINS`). | | |
 | 2 | **USB-C**: separate 5.1 kΩ pull-downs on CC1 and CC2 (not shared), ESD part at the connector, shield termination, D+/D− routed as a pair and swapped correctly on both receptacle rows. | | |
 | 3 | **Power**: LDO dropout at the worst-case VBUS and its thermal dissipation; no more than 10 µF total on VBUS (USB inrush limit); decoupling per supply pin, close to the pin; VDDA filtering. | | |
 | 4 | **Button**: wired directly to one MCU GPIO that can be assigned to the secure world; reads "not pressed" if the button or a joint is open; not shared with a boot strap; no other driver on the net. | | |
@@ -39,6 +39,18 @@ open. Tick each item, write the date and your name, and note any change made. So
 - [ ] All tracks are 0.2 mm, power included (load < 50 mA); the spec's 0.4 mm power tracks were not used.
 - [ ] Tracks were placed by a small grid router written for this repo (`gen_pcb.py`), not by a person or a commercial router:
       look at every route, especially USB D+/D− (no impedance control, not length-matched) and anything under the USB-C shell.
+
+- [ ] No reference designators on the silkscreen: they are on F.Fab only (assembly drawings need them; silk was kept clear of pads).
+- [ ] J1 (USB-C) courtyard sits about 0.5 mm past the board edge on purpose (the receptacle mouth overhangs): check against GCT's drawing
+      and the enclosure.
+- [ ] CC1/CC2 and D+ tracks and two CC2 vias run under the USB-C body: check clearance to the shell and the mounting pegs.
+- [ ] ATECC608B DNP footprint (D-008) was dropped from v0; add it back only if the review wants the option.
+- [ ] J3 (SWD) sits in the middle of the board below the MCU, not on the long edge as A-3 suggested (routing space); check access for a probe.
+- [ ] Decoupling: one 100 nF per supply pin (pins 1, 9, 24, 36, 48) within 4 mm of the pin, plus 1 µF on VDDA and 4.7 µF on VCAP (pin 22)
+      (fixed after the board evaluator's run 1). USB D+/D- run on the top layer only, with no vias.
+- [ ] Nets that cross under the USB D+/D- tracks on B.Cu: +3V3, CC1, CC2, I2C_SCL, I2C_SDA, VBUS. A deviation from A-3 ("unbroken
+      bottom GND" under D+/D-): the USB pins are on the MCU's right side, so nets beyond them must cross. Acceptable for USB full speed
+      (12 Mbit/s) over these short runs; a reviewer may prefer moving the crossings or adding stitching vias beside them.
 
 Sign-off (only after all ten rows): ______________________ date ________
 

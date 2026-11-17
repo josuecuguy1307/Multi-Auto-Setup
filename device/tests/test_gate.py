@@ -268,11 +268,11 @@ def test_failure_midway_rolls_back_and_registers_no_undo(pg, key, root, log, mon
     real = gt._replace_file
     calls = []
 
-    def flaky(path, data):
+    def flaky(path, data, *a, **k):
         calls.append(path)
         if len(calls) == 2:
             raise OSError("disk full")
-        return real(path, data)
+        return real(path, data, *a, **k)
 
     monkeypatch.setattr(gt, "_replace_file", flaky)
     with pytest.raises(gt.Refused) as e:
@@ -1005,3 +1005,129 @@ def test_authenticated_tokens_the_gate_refuses_are_logged_with_their_counter(pg,
     assert e.value.code == "expired"
     rejected = [(r["payload"]["counter"], r["payload"]["reason"]) for r in log.records() if r["type"] == "write.rejected"]
     assert rejected == [(1, "counter_regressed"), (3, "expired")]
+
+
+
+# ---- evaluator run 6 (device/evals/evaluator/P2-GATE.run6.md) ------------------------------------------
+
+def _fail_on_second_replace(monkeypatch, before_fail):
+    real = gt._replace_file
+    calls = []
+
+    def flaky(path, data, *a, **k):
+        calls.append(path)
+        if len(calls) == 2:
+            before_fail()
+            raise OSError("disk full")
+        return real(path, data, *a, **k)
+
+    monkeypatch.setattr(gt, "_replace_file", flaky)
+
+
+def test_the_rollback_never_overwrites_a_file_the_owner_saved_meanwhile(pg, key, root, log, monkeypatch):
+    (root / "a.conf").write_bytes(b"a=1\n")
+    (root / "b.conf").write_bytes(b"b=1\n")
+    w = pg.plan_write({"a.conf": b"a=2\n", "b.conf": b"b=2\n"})
+    token = press(pg, key, w)
+    _fail_on_second_replace(monkeypatch, lambda: (root / "a.conf").write_bytes(b"a=owner\n"))
+    with pytest.raises(gt.Refused):
+        pg.execute(token, w)
+    assert (root / "a.conf").read_bytes() == b"a=owner\n", "the owner's save survives the rollback"
+    failed = [r for r in log.records() if r["type"] == "write.failed"]
+    assert failed and failed[0]["payload"]["left_changed"] == ["a.conf"]
+
+
+def test_the_rollback_never_deletes_a_created_file_the_owner_then_saved(pg, key, root, log, monkeypatch):
+    (root / "b.conf").write_bytes(b"b=1\n")
+    w = pg.plan_write({"a_new.txt": b"gate\n", "b.conf": b"b=2\n"})
+    token = press(pg, key, w)
+    _fail_on_second_replace(monkeypatch, lambda: (root / "a_new.txt").write_bytes(b"mine\n"))
+    with pytest.raises(gt.Refused):
+        pg.execute(token, w)
+    assert (root / "a_new.txt").read_bytes() == b"mine\n"
+
+
+def test_a_failed_write_leaves_no_folders_it_created(pg, key, root, monkeypatch):
+    (root / "z.conf").write_bytes(b"z=1\n")
+    w = pg.plan_write({"new/deep/f.txt": b"x", "z.conf": b"z=2\n"})
+    token = press(pg, key, w)
+    _fail_on_second_replace(monkeypatch, lambda: None)
+    with pytest.raises(gt.Refused):
+        pg.execute(token, w)
+    assert not (root / "new").exists()
+
+
+def test_the_final_compare_happens_after_the_temporary_file_is_on_disk(pg, key, root, monkeypatch):
+    w = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    token = press(pg, key, w)
+    real_fsync = os.fsync
+
+    def fsync_then_owner_edit(fd):
+        real_fsync(fd)
+        if any(f.function == "_replace_file" for f in inspect.stack()[1:3]):  # only the gate's temporary file, not the log's fsync
+            (root / "etc" / "app.conf").write_bytes(b"port=1\nowner_edit=1\n")
+
+    monkeypatch.setattr(gt.os, "fsync", fsync_then_owner_edit)
+    with pytest.raises(gt.Refused) as e:
+        pg.execute(token, w)
+    assert e.value.code == "pre_state_changed"
+    assert (root / "etc" / "app.conf").read_bytes() == b"port=1\nowner_edit=1\n"
+    assert not [q for q in (root / "etc").iterdir() if "mas-tmp" in q.name], "no temporary file left behind"
+
+
+@pytest.mark.skipif(not (sys.platform == "win32" and gt.PATH_LIMIT == 259), reason="the Windows MAX_PATH boundary")
+def test_the_path_limit_counts_the_temporary_suffix_and_utf16_units(pg, root):
+    base = len(str(root).encode("utf-16-le")) // 2 + 1
+    n = 259 - base - 5  # fits without the 18-character temporary suffix, not with it
+    assert 0 < n <= gt.MAX_NAME
+    with pytest.raises(gt.Refused) as e:
+        pg.plan_write({"n" * n: b"x"})
+    assert e.value.code == "bad_action"
+    k = (259 - base - 3) // 2 // 2  # astral characters count twice in UTF-16
+    astral = "\U0001F600" * k + "/" + "\U0001F600" * k + "/x"
+    assert base + len(astral) + 18 <= 259 < base + len(astral.encode("utf-16-le")) // 2 + 18 + 10
+    with pytest.raises(gt.Refused) as e:
+        pg.plan_write({"\U0001F600" * 50 + "/" + "\U0001F600" * 50 + "/x": b"x"})
+    assert e.value.code == "bad_action"
+
+
+def test_two_approved_writes_released_together_never_share_a_pre_state(pg, key, root, monkeypatch):
+    w1 = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    w2 = pg.plan_write({"etc/app.conf": b"port=3\n"})
+    t1, t2 = press(pg, key, w1), press(pg, key, w2)
+    real = gt._replace_file
+    barrier = threading.Barrier(2)
+
+    def meet(path, data, *a, **k):
+        try:
+            barrier.wait(timeout=1.0)  # without the run lock both writers arrive here together
+        except threading.BrokenBarrierError:
+            pass
+        return real(path, data, *a, **k)
+
+    monkeypatch.setattr(gt, "_replace_file", meet)
+    results = []
+
+    def go(tok, w):
+        try:
+            pg.execute(tok, w)
+            results.append("ok")
+        except gt.Refused as exc:
+            results.append(exc.code)
+
+    ts = [threading.Thread(target=go, args=a) for a in ((t1, w1), (t2, w2))]
+    [t.start() for t in ts]
+    [t.join(30) for t in ts]
+    assert sorted(results) == ["ok", "pre_state_changed"], results
+
+
+def test_a_wrong_session_token_is_logged_with_its_counter(pg, key, root, log):
+    w = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    pending = pg._approvals.begin(w, ap.Class.WRITE)
+    req = key.request(pending.key_request()._replace(session_id=b"\x42" * 32))
+    key._clock.t += KeyModel.MIN_DWELL_S
+    key.button.press()
+    with pytest.raises(ap.Rejected) as e:
+        pg.execute(key.sign(req), w)
+    assert e.value.code == "wrong_session"
+    assert [(r["type"], r["payload"]["reason"], r["payload"]["counter"]) for r in log.records()] == [("write.rejected", "wrong_session", 1)]

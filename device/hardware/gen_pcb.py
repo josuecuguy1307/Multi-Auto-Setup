@@ -149,7 +149,7 @@ DIRS = [(0, 1, 1.0), (1, 0, 1.0), (0, -1, 1.0), (-1, 0, 1.0), (1, 1, math.sqrt(2
         (-1, -1, math.sqrt(2))]
 
 
-def astar(grid: Grid, net: int, starts, targets, box, allow_via=True):
+def astar(grid: Grid, net: int, starts, targets, box, allow_via=True, b_cost: float = B_COST):
     """starts: [(L,i,j)], targets: bool arrays per layer. Returns the cell path or None."""
     (i0, i1), (j0, j1) = box
     tpts = np.argwhere(targets[0] | targets[1])
@@ -192,7 +192,7 @@ def astar(grid: Grid, net: int, starts, targets, box, allow_via=True):
             if i0 <= ni < i1 and j0 <= nj < j1 and ok(L, ni, nj):
                 if di and dj and not (ok(L, i + di, j) or ok(L, i, j + dj)):
                     continue
-                nbrs.append(((L, ni, nj), c * (B_COST if L == 1 else 1.0)))
+                nbrs.append(((L, ni, nj), c * (b_cost if L == 1 else 1.0)))
         if allow_via and via[0][i, j] in (FREE, net) and via[1][i, j] in (FREE, net) and not grid.hole[i, j]:
             nbrs.append(((1 - L, i, j), VIA_COST))
         for nxt, c in nbrs:
@@ -373,6 +373,8 @@ def build(netlist: Path, share: Path, route: bool = True):
 
 
 MAX_PASSES = 8
+USB_NETS = ("USB_DP", "USB_DM")
+BOTTOM_FIRST = ("SWDIO", "SWCLK")  # routed before USB, preferring B.Cu, because they must cross it
 
 
 def build_grid(fps, codes):
@@ -412,7 +414,9 @@ def mark(grid, code, path):
 
 def route_board(board, fps, nets, codes):
     grid, pads_by_net = build_grid(fps, codes)
-    signal = [n for n in pads_by_net if n != "GND" and len(pads_by_net[n]) > 1]
+    usb = [n for n in USB_NETS if n in pads_by_net]
+    under_usb = [n for n in BOTTOM_FIRST if n in pads_by_net]
+    signal = [n for n in pads_by_net if n != "GND" and n not in usb and n not in under_usb and len(pads_by_net[n]) > 1]
     order = sorted(signal, key=lambda n: (n in ("+3V3", "VBUS"), hpwl(pads_by_net[n]), n))
     best = None
     for attempt in range(MAX_PASSES):
@@ -423,6 +427,14 @@ def route_board(board, fps, nets, codes):
         ux, uy = (v for v in next(p for p in design.PARTS if p.ref == "U1").at[:2])
         under = (ux - 2.6, uy - 2.6, ux + 2.6, uy + 2.6)  # inside the LQFP pad ring: vias here block no escape route
         failed += stitch_gnd(grid, codes["GND"], mcu, plan, region=under)  # the MCU's ground pins first, with their vias under the chip
+        # then USB D+/D-, top layer only, no vias (A-3). Other nets may cross under them on B.Cu: with the USB pins on the MCU's right
+        # side every net beyond them must cross somewhere (declared deviation, bounded by test_pcb, listed in HUMAN_REVIEW_PCB.md)
+        for name in under_usb:  # the debug lines must cross the USB pair: they take the bottom layer before USB takes the top
+            if not route_net(grid, codes[name], pads_by_net[name], plan, name, b_cost=0.5):
+                failed.append(name)
+        for name in usb:
+            if not route_net(grid, codes[name], pads_by_net[name], plan, name, top_only=True):
+                failed.append(name)
         for name in order:
             if not route_net(grid, codes[name], pads_by_net[name], plan, name):
                 failed.append(name)
@@ -433,6 +445,8 @@ def route_board(board, fps, nets, codes):
             break
         bad = [n for n in failed if n in order]
         order = bad + [n for n in order if n not in bad] if bad else order[::-1]
+        if any(n in usb for n in failed):
+            usb = usb[::-1]
     plan, failed, attempt = best
     for kind, name, *rest in plan:
         if kind == "path":
@@ -484,7 +498,7 @@ def box_around(grid, pts, margin):
     return ((max(0, int(ys.min()) - m), min(grid.ny, int(ys.max()) + m + 1)), (max(0, int(xs.min()) - m), min(grid.nx, int(xs.max()) + m + 1)))
 
 
-def route_net(grid, code, pads, plan, name) -> bool:
+def route_net(grid, code, pads, plan, name, top_only: bool = False, b_cost: float = B_COST) -> bool:
     pads = sorted(pads, key=lambda p: (p.GetParentFootprint().GetReference(), p.GetNumber(), p.GetPosition().x, p.GetPosition().y))
     tree = [np.zeros((grid.ny, grid.nx), bool) for _ in range(2)]
     i, j = pad_cell(grid, pads[0])
@@ -498,11 +512,11 @@ def route_net(grid, code, pads, plan, name) -> bool:
         i, j = pad_cell(grid, p)
         if any(tree[L][i, j] for L in pad_layers(p)):
             continue
-        starts = [(L, i, j) for L in pad_layers(p)]
+        starts = [(L, i, j) for L in pad_layers(p) if not (top_only and L == 1)]
         allp = np.vstack([pts, [[i, j]]])
         path = None
         for margin in (2.0, 6.0, 100.0):
-            path = astar(grid, code, starts, tree, box_around(grid, allp, margin))
+            path = astar(grid, code, starts, tree, box_around(grid, allp, margin), allow_via=not top_only, b_cost=b_cost)
             if path:
                 break
         if not path:

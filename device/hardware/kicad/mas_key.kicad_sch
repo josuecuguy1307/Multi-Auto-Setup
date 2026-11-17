@@ -7543,17 +7543,17 @@
 		(uuid "7f39063a-89be-5569-a0e3-de82e4476226")
 	)
 	(symbol
-		(lib_id "Device:R")
+		(lib_id "Device:C")
 		(at 896.62 45.72 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "f0a9c7d1-ba4a-5d27-937a-80789c133bc9")
+		(uuid "737e35f6-7c58-5cb7-9433-a86fc0dbaf9d")
 		(property
 			"Reference"
-			"R3"
+			"C12"
 			(at 896.62 40.64 0)
 			(effects
 				(font
@@ -7563,7 +7563,7 @@
 		)
 		(property
 			"Value"
-			"10k"
+			"100nF"
 			(at 896.62 50.8 0)
 			(effects
 				(font
@@ -7573,7 +7573,7 @@
 		)
 		(property
 			"Footprint"
-			"Resistor_SMD:R_0603_1608Metric"
+			"Capacitor_SMD:C_0603_1608Metric"
 			(at 896.62 45.72 0)
 			(effects
 				(font
@@ -7606,7 +7606,7 @@
 		)
 		(property
 			"MPN"
-			"RC0603FR-0710KL"
+			"CL10B104KB8NNNC"
 			(at 896.62 45.72 0)
 			(effects
 				(font
@@ -7617,8 +7617,137 @@
 		)
 		(property
 			"Manufacturer"
-			"Yageo"
+			"Samsung"
 			(at 896.62 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin
+			"1"
+			(uuid "4a30eddf-2b26-5ad9-8c59-21eb7d63f15f")
+		)
+		(pin
+			"2"
+			(uuid "c52c076a-be42-5f77-b879-277d78678dd9")
+		)
+		(instances
+			(project
+				"mas_key"
+				(path
+					"/432e91a8-5398-5e26-a38b-151770ab0339"
+					(reference "C12")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(global_label
+		"+3V3"
+		(shape passive)
+		(at 896.62 41.91 90)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "9ab53948-b0d9-55c8-8b7c-ff1b70af2c5a")
+	)
+	(global_label
+		"GND"
+		(shape passive)
+		(at 896.62 49.53 270)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "40f425c6-9c93-5614-9e6b-8f6de99a3395")
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 947.42 45.72 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "f0a9c7d1-ba4a-5d27-937a-80789c133bc9")
+		(property
+			"Reference"
+			"R3"
+			(at 947.42 40.64 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property
+			"Value"
+			"10k"
+			(at 947.42 50.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property
+			"Footprint"
+			"Resistor_SMD:R_0603_1608Metric"
+			(at 947.42 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property
+			"Datasheet"
+			""
+			(at 947.42 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property
+			"Description"
+			""
+			(at 947.42 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property
+			"MPN"
+			"RC0603FR-0710KL"
+			(at 947.42 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property
+			"Manufacturer"
+			"Yageo"
+			(at 947.42 45.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7648,7 +7777,7 @@
 	(global_label
 		"BOOT0"
 		(shape passive)
-		(at 896.62 41.91 90)
+		(at 947.42 41.91 90)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -7661,7 +7790,7 @@
 	(global_label
 		"GND"
 		(shape passive)
-		(at 896.62 49.53 270)
+		(at 947.42 49.53 270)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -7673,7 +7802,7 @@
 	)
 	(symbol
 		(lib_id "Device:C")
-		(at 947.42 45.72 0)
+		(at 998.22 45.72 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -7683,7 +7812,7 @@
 		(property
 			"Reference"
 			"C10"
-			(at 947.42 40.64 0)
+			(at 998.22 40.64 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7693,7 +7822,7 @@
 		(property
 			"Value"
 			"100nF"
-			(at 947.42 50.8 0)
+			(at 998.22 50.8 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7703,7 +7832,7 @@
 		(property
 			"Footprint"
 			"Capacitor_SMD:C_0603_1608Metric"
-			(at 947.42 45.72 0)
+			(at 998.22 45.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7714,7 +7843,7 @@
 		(property
 			"Datasheet"
 			""
-			(at 947.42 45.72 0)
+			(at 998.22 45.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7725,7 +7854,7 @@
 		(property
 			"Description"
 			""
-			(at 947.42 45.72 0)
+			(at 998.22 45.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7736,7 +7865,7 @@
 		(property
 			"MPN"
 			"CL10B104KB8NNNC"
-			(at 947.42 45.72 0)
+			(at 998.22 45.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7747,7 +7876,7 @@
 		(property
 			"Manufacturer"
 			"Samsung"
-			(at 947.42 45.72 0)
+			(at 998.22 45.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7777,7 +7906,7 @@
 	(global_label
 		"NRST"
 		(shape passive)
-		(at 947.42 41.91 90)
+		(at 998.22 41.91 90)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -7790,7 +7919,7 @@
 	(global_label
 		"GND"
 		(shape passive)
-		(at 947.42 49.53 270)
+		(at 998.22 49.53 270)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -7802,7 +7931,7 @@
 	)
 	(symbol
 		(lib_id "Switch:SW_Push")
-		(at 1003.3 43.18 0)
+		(at 1054.1 43.18 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -7812,7 +7941,7 @@
 		(property
 			"Reference"
 			"SW1"
-			(at 1003.3 38.1 0)
+			(at 1054.1 38.1 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7822,7 +7951,7 @@
 		(property
 			"Value"
 			"PTS645"
-			(at 1003.3 48.26 0)
+			(at 1054.1 48.26 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7832,7 +7961,7 @@
 		(property
 			"Footprint"
 			"Button_Switch_SMD:SW_SPST_PTS645Sx43SMTR92"
-			(at 1003.3 43.18 0)
+			(at 1054.1 43.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7843,7 +7972,7 @@
 		(property
 			"Datasheet"
 			""
-			(at 1003.3 43.18 0)
+			(at 1054.1 43.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7854,7 +7983,7 @@
 		(property
 			"Description"
 			""
-			(at 1003.3 43.18 0)
+			(at 1054.1 43.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7865,7 +7994,7 @@
 		(property
 			"MPN"
 			"PTS645SM43SMTR92LFS"
-			(at 1003.3 43.18 0)
+			(at 1054.1 43.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7876,7 +8005,7 @@
 		(property
 			"Manufacturer"
 			"C&K"
-			(at 1003.3 43.18 0)
+			(at 1054.1 43.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7906,7 +8035,7 @@
 	(global_label
 		"BTN_RAW"
 		(shape passive)
-		(at 998.22 43.18 180)
+		(at 1049.02 43.18 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -7919,7 +8048,7 @@
 	(global_label
 		"GND"
 		(shape passive)
-		(at 1008.38 43.18 0)
+		(at 1059.18 43.18 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -7931,7 +8060,7 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 1059.18 45.72 0)
+		(at 55.88 152.4 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -7941,135 +8070,6 @@
 		(property
 			"Reference"
 			"R4"
-			(at 1059.18 40.64 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property
-			"Value"
-			"10k"
-			(at 1059.18 50.8 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property
-			"Footprint"
-			"Resistor_SMD:R_0603_1608Metric"
-			(at 1059.18 45.72 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property
-			"Datasheet"
-			""
-			(at 1059.18 45.72 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property
-			"Description"
-			""
-			(at 1059.18 45.72 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property
-			"MPN"
-			"RC0603FR-0710KL"
-			(at 1059.18 45.72 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property
-			"Manufacturer"
-			"Yageo"
-			(at 1059.18 45.72 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin
-			"1"
-			(uuid "6ef9b64a-8d28-5c31-a2f7-656be9e8ee51")
-		)
-		(pin
-			"2"
-			(uuid "71877dc0-db3d-56d7-a42a-1674629ddb7b")
-		)
-		(instances
-			(project
-				"mas_key"
-				(path
-					"/432e91a8-5398-5e26-a38b-151770ab0339"
-					(reference "R4")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(global_label
-		"+3V3"
-		(shape passive)
-		(at 1059.18 41.91 90)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "7ee070c7-1d50-59aa-92af-f7844379cb0e")
-	)
-	(global_label
-		"BTN_RAW"
-		(shape passive)
-		(at 1059.18 49.53 270)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "47fc1191-6a51-5d15-ae97-8cf95131de17")
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 55.88 152.4 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "b20f41ab-6a9b-5ac6-a22a-570faedd38a5")
-		(property
-			"Reference"
-			"R5"
 			(at 55.88 147.32 0)
 			(effects
 				(font
@@ -8079,7 +8079,7 @@
 		)
 		(property
 			"Value"
-			"1k"
+			"10k"
 			(at 55.88 157.48 0)
 			(effects
 				(font
@@ -8122,7 +8122,7 @@
 		)
 		(property
 			"MPN"
-			"RC0603FR-071KL"
+			"RC0603FR-0710KL"
 			(at 55.88 152.4 0)
 			(effects
 				(font
@@ -8135,6 +8135,135 @@
 			"Manufacturer"
 			"Yageo"
 			(at 55.88 152.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin
+			"1"
+			(uuid "6ef9b64a-8d28-5c31-a2f7-656be9e8ee51")
+		)
+		(pin
+			"2"
+			(uuid "71877dc0-db3d-56d7-a42a-1674629ddb7b")
+		)
+		(instances
+			(project
+				"mas_key"
+				(path
+					"/432e91a8-5398-5e26-a38b-151770ab0339"
+					(reference "R4")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(global_label
+		"+3V3"
+		(shape passive)
+		(at 55.88 148.59 90)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "7ee070c7-1d50-59aa-92af-f7844379cb0e")
+	)
+	(global_label
+		"BTN_RAW"
+		(shape passive)
+		(at 55.88 156.21 270)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "47fc1191-6a51-5d15-ae97-8cf95131de17")
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 106.68 152.4 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "b20f41ab-6a9b-5ac6-a22a-570faedd38a5")
+		(property
+			"Reference"
+			"R5"
+			(at 106.68 147.32 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property
+			"Value"
+			"1k"
+			(at 106.68 157.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property
+			"Footprint"
+			"Resistor_SMD:R_0603_1608Metric"
+			(at 106.68 152.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property
+			"Datasheet"
+			""
+			(at 106.68 152.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property
+			"Description"
+			""
+			(at 106.68 152.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property
+			"MPN"
+			"RC0603FR-071KL"
+			(at 106.68 152.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property
+			"Manufacturer"
+			"Yageo"
+			(at 106.68 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8164,7 +8293,7 @@
 	(global_label
 		"BTN_RAW"
 		(shape passive)
-		(at 55.88 148.59 90)
+		(at 106.68 148.59 90)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -8177,7 +8306,7 @@
 	(global_label
 		"BTN"
 		(shape passive)
-		(at 55.88 156.21 270)
+		(at 106.68 156.21 270)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -8189,7 +8318,7 @@
 	)
 	(symbol
 		(lib_id "Device:C")
-		(at 106.68 152.4 0)
+		(at 157.48 152.4 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -8199,7 +8328,7 @@
 		(property
 			"Reference"
 			"C11"
-			(at 106.68 147.32 0)
+			(at 157.48 147.32 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8209,7 +8338,7 @@
 		(property
 			"Value"
 			"100nF"
-			(at 106.68 157.48 0)
+			(at 157.48 157.48 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8219,7 +8348,7 @@
 		(property
 			"Footprint"
 			"Capacitor_SMD:C_0603_1608Metric"
-			(at 106.68 152.4 0)
+			(at 157.48 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8230,7 +8359,7 @@
 		(property
 			"Datasheet"
 			""
-			(at 106.68 152.4 0)
+			(at 157.48 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8241,7 +8370,7 @@
 		(property
 			"Description"
 			""
-			(at 106.68 152.4 0)
+			(at 157.48 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8252,7 +8381,7 @@
 		(property
 			"MPN"
 			"CL10B104KB8NNNC"
-			(at 106.68 152.4 0)
+			(at 157.48 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8263,7 +8392,7 @@
 		(property
 			"Manufacturer"
 			"Samsung"
-			(at 106.68 152.4 0)
+			(at 157.48 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8293,7 +8422,7 @@
 	(global_label
 		"BTN"
 		(shape passive)
-		(at 106.68 148.59 90)
+		(at 157.48 148.59 90)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -8306,7 +8435,7 @@
 	(global_label
 		"GND"
 		(shape passive)
-		(at 106.68 156.21 270)
+		(at 157.48 156.21 270)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -8318,7 +8447,7 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 157.48 152.4 0)
+		(at 208.28 152.4 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -8328,135 +8457,6 @@
 		(property
 			"Reference"
 			"R6"
-			(at 157.48 147.32 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property
-			"Value"
-			"4.7k"
-			(at 157.48 157.48 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property
-			"Footprint"
-			"Resistor_SMD:R_0603_1608Metric"
-			(at 157.48 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property
-			"Datasheet"
-			""
-			(at 157.48 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property
-			"Description"
-			""
-			(at 157.48 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property
-			"MPN"
-			"RC0603FR-074K7L"
-			(at 157.48 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property
-			"Manufacturer"
-			"Yageo"
-			(at 157.48 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin
-			"1"
-			(uuid "1d5b001f-d677-59f9-a1b1-d0cd309f4d0e")
-		)
-		(pin
-			"2"
-			(uuid "0ae4f573-b5b5-59e2-9ae4-73d5bd55fdaf")
-		)
-		(instances
-			(project
-				"mas_key"
-				(path
-					"/432e91a8-5398-5e26-a38b-151770ab0339"
-					(reference "R6")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(global_label
-		"+3V3"
-		(shape passive)
-		(at 157.48 148.59 90)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "61cfba95-64a2-5eba-a989-ce75b5a15a8a")
-	)
-	(global_label
-		"I2C_SCL"
-		(shape passive)
-		(at 157.48 156.21 270)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "cbce0620-a5a7-5ee6-b74a-8367c3e87a1a")
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 208.28 152.4 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "ad1405f5-e1b1-5e1e-94f6-6ce8a5b21668")
-		(property
-			"Reference"
-			"R7"
 			(at 208.28 147.32 0)
 			(effects
 				(font
@@ -8531,6 +8531,135 @@
 		)
 		(pin
 			"1"
+			(uuid "1d5b001f-d677-59f9-a1b1-d0cd309f4d0e")
+		)
+		(pin
+			"2"
+			(uuid "0ae4f573-b5b5-59e2-9ae4-73d5bd55fdaf")
+		)
+		(instances
+			(project
+				"mas_key"
+				(path
+					"/432e91a8-5398-5e26-a38b-151770ab0339"
+					(reference "R6")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(global_label
+		"+3V3"
+		(shape passive)
+		(at 208.28 148.59 90)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "61cfba95-64a2-5eba-a989-ce75b5a15a8a")
+	)
+	(global_label
+		"I2C_SCL"
+		(shape passive)
+		(at 208.28 156.21 270)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "cbce0620-a5a7-5ee6-b74a-8367c3e87a1a")
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 259.08 152.4 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "ad1405f5-e1b1-5e1e-94f6-6ce8a5b21668")
+		(property
+			"Reference"
+			"R7"
+			(at 259.08 147.32 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property
+			"Value"
+			"4.7k"
+			(at 259.08 157.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property
+			"Footprint"
+			"Resistor_SMD:R_0603_1608Metric"
+			(at 259.08 152.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property
+			"Datasheet"
+			""
+			(at 259.08 152.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property
+			"Description"
+			""
+			(at 259.08 152.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property
+			"MPN"
+			"RC0603FR-074K7L"
+			(at 259.08 152.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property
+			"Manufacturer"
+			"Yageo"
+			(at 259.08 152.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin
+			"1"
 			(uuid "0299c3a0-38fe-5c31-abcf-a1076a302361")
 		)
 		(pin
@@ -8551,7 +8680,7 @@
 	(global_label
 		"+3V3"
 		(shape passive)
-		(at 208.28 148.59 90)
+		(at 259.08 148.59 90)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -8564,7 +8693,7 @@
 	(global_label
 		"I2C_SDA"
 		(shape passive)
-		(at 208.28 156.21 270)
+		(at 259.08 156.21 270)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -8576,7 +8705,7 @@
 	)
 	(symbol
 		(lib_id "Connector_Generic:Conn_01x04")
-		(at 264.16 152.4 0)
+		(at 314.96 152.4 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -8586,7 +8715,7 @@
 		(property
 			"Reference"
 			"J2"
-			(at 264.16 147.32 0)
+			(at 314.96 147.32 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8596,7 +8725,7 @@
 		(property
 			"Value"
 			"OLED SSD1306"
-			(at 264.16 157.48 0)
+			(at 314.96 157.48 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8606,7 +8735,7 @@
 		(property
 			"Footprint"
 			"Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical"
-			(at 264.16 152.4 0)
+			(at 314.96 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8617,7 +8746,7 @@
 		(property
 			"Datasheet"
 			""
-			(at 264.16 152.4 0)
+			(at 314.96 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8628,7 +8757,7 @@
 		(property
 			"Description"
 			""
-			(at 264.16 152.4 0)
+			(at 314.96 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8639,7 +8768,7 @@
 		(property
 			"MPN"
 			"PPTC041LFBN-RC"
-			(at 264.16 152.4 0)
+			(at 314.96 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8650,7 +8779,7 @@
 		(property
 			"Manufacturer"
 			"Sullins"
-			(at 264.16 152.4 0)
+			(at 314.96 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8688,7 +8817,7 @@
 	(global_label
 		"GND"
 		(shape passive)
-		(at 259.08 149.86 180)
+		(at 309.88 149.86 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -8701,7 +8830,7 @@
 	(global_label
 		"+3V3"
 		(shape passive)
-		(at 259.08 152.4 180)
+		(at 309.88 152.4 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -8714,7 +8843,7 @@
 	(global_label
 		"I2C_SCL"
 		(shape passive)
-		(at 259.08 154.94 180)
+		(at 309.88 154.94 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -8727,7 +8856,7 @@
 	(global_label
 		"I2C_SDA"
 		(shape passive)
-		(at 259.08 157.48 180)
+		(at 309.88 157.48 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -8739,7 +8868,7 @@
 	)
 	(symbol
 		(lib_id "Device:LED")
-		(at 314.96 149.86 0)
+		(at 365.76 149.86 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -8749,7 +8878,7 @@
 		(property
 			"Reference"
 			"D1"
-			(at 314.96 144.78 0)
+			(at 365.76 144.78 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8759,7 +8888,7 @@
 		(property
 			"Value"
 			"green"
-			(at 314.96 154.94 0)
+			(at 365.76 154.94 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8769,7 +8898,7 @@
 		(property
 			"Footprint"
 			"LED_SMD:LED_0603_1608Metric"
-			(at 314.96 149.86 0)
+			(at 365.76 149.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8780,7 +8909,7 @@
 		(property
 			"Datasheet"
 			""
-			(at 314.96 149.86 0)
+			(at 365.76 149.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8791,7 +8920,7 @@
 		(property
 			"Description"
 			""
-			(at 314.96 149.86 0)
+			(at 365.76 149.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8802,7 +8931,7 @@
 		(property
 			"MPN"
 			"LTST-C191KGKT"
-			(at 314.96 149.86 0)
+			(at 365.76 149.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8813,7 +8942,7 @@
 		(property
 			"Manufacturer"
 			"Lite-On"
-			(at 314.96 149.86 0)
+			(at 365.76 149.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8843,7 +8972,7 @@
 	(global_label
 		"LED_K_DRV"
 		(shape passive)
-		(at 311.15 149.86 180)
+		(at 361.95 149.86 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -8856,7 +8985,7 @@
 	(global_label
 		"LED_A"
 		(shape passive)
-		(at 318.77 149.86 0)
+		(at 369.57 149.86 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -8868,7 +8997,7 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 368.3 152.4 0)
+		(at 419.1 152.4 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -8878,7 +9007,7 @@
 		(property
 			"Reference"
 			"R8"
-			(at 368.3 147.32 0)
+			(at 419.1 147.32 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8888,7 +9017,7 @@
 		(property
 			"Value"
 			"1k"
-			(at 368.3 157.48 0)
+			(at 419.1 157.48 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8898,7 +9027,7 @@
 		(property
 			"Footprint"
 			"Resistor_SMD:R_0603_1608Metric"
-			(at 368.3 152.4 0)
+			(at 419.1 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8909,7 +9038,7 @@
 		(property
 			"Datasheet"
 			""
-			(at 368.3 152.4 0)
+			(at 419.1 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8920,7 +9049,7 @@
 		(property
 			"Description"
 			""
-			(at 368.3 152.4 0)
+			(at 419.1 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8931,7 +9060,7 @@
 		(property
 			"MPN"
 			"RC0603FR-071KL"
-			(at 368.3 152.4 0)
+			(at 419.1 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8942,7 +9071,7 @@
 		(property
 			"Manufacturer"
 			"Yageo"
-			(at 368.3 152.4 0)
+			(at 419.1 152.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8972,7 +9101,7 @@
 	(global_label
 		"+3V3"
 		(shape passive)
-		(at 368.3 148.59 90)
+		(at 419.1 148.59 90)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -8985,7 +9114,7 @@
 	(global_label
 		"LED_A"
 		(shape passive)
-		(at 368.3 156.21 270)
+		(at 419.1 156.21 270)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -8997,7 +9126,7 @@
 	)
 	(symbol
 		(lib_id "Connector_Generic:Conn_02x05_Odd_Even")
-		(at 424.18 154.94 0)
+		(at 474.98 154.94 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -9007,7 +9136,7 @@
 		(property
 			"Reference"
 			"J3"
-			(at 424.18 149.86 0)
+			(at 474.98 149.86 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9017,7 +9146,7 @@
 		(property
 			"Value"
 			"SWD"
-			(at 424.18 160.02 0)
+			(at 474.98 160.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9027,7 +9156,7 @@
 		(property
 			"Footprint"
 			"Connector_PinHeader_1.27mm:PinHeader_2x05_P1.27mm_Vertical_SMD"
-			(at 424.18 154.94 0)
+			(at 474.98 154.94 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9038,7 +9167,7 @@
 		(property
 			"Datasheet"
 			""
-			(at 424.18 154.94 0)
+			(at 474.98 154.94 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9049,7 +9178,7 @@
 		(property
 			"Description"
 			""
-			(at 424.18 154.94 0)
+			(at 474.98 154.94 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9060,7 +9189,7 @@
 		(property
 			"MPN"
 			"FTSH-105-01-L-DV-K"
-			(at 424.18 154.94 0)
+			(at 474.98 154.94 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9071,7 +9200,7 @@
 		(property
 			"Manufacturer"
 			"Samtec"
-			(at 424.18 154.94 0)
+			(at 474.98 154.94 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9133,7 +9262,7 @@
 	(global_label
 		"+3V3"
 		(shape passive)
-		(at 419.1 149.86 180)
+		(at 469.9 149.86 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -9146,7 +9275,7 @@
 	(global_label
 		"SWDIO"
 		(shape passive)
-		(at 431.8 149.86 0)
+		(at 482.6 149.86 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -9159,7 +9288,7 @@
 	(global_label
 		"GND"
 		(shape passive)
-		(at 419.1 152.4 180)
+		(at 469.9 152.4 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -9172,7 +9301,7 @@
 	(global_label
 		"SWCLK"
 		(shape passive)
-		(at 431.8 152.4 0)
+		(at 482.6 152.4 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -9185,7 +9314,7 @@
 	(global_label
 		"GND"
 		(shape passive)
-		(at 419.1 154.94 180)
+		(at 469.9 154.94 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -9198,7 +9327,7 @@
 	(global_label
 		"SWO"
 		(shape passive)
-		(at 431.8 154.94 0)
+		(at 482.6 154.94 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -9209,17 +9338,17 @@
 		(uuid "b4a28f32-05e3-51ec-aeb6-92007e6491f5")
 	)
 	(no_connect
-		(at 419.1 157.48)
+		(at 469.9 157.48)
 		(uuid "dd3a0e2a-59f7-5f5e-8874-8e58c887534a")
 	)
 	(no_connect
-		(at 431.8 157.48)
+		(at 482.6 157.48)
 		(uuid "0c351cdf-967f-5a9d-aad2-332fbe18e4be")
 	)
 	(global_label
 		"GND"
 		(shape passive)
-		(at 419.1 160.02 180)
+		(at 469.9 160.02 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -9232,7 +9361,7 @@
 	(global_label
 		"NRST"
 		(shape passive)
-		(at 431.8 160.02 0)
+		(at 482.6 160.02 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -9244,7 +9373,7 @@
 	)
 	(symbol
 		(lib_id "power:PWR_FLAG")
-		(at 482.6 149.86 0)
+		(at 533.4 149.86 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom no)
@@ -9254,98 +9383,6 @@
 		(property
 			"Reference"
 			"#FLG01"
-			(at 482.6 144.78 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property
-			"Value"
-			"PWR_FLAG"
-			(at 482.6 154.94 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property
-			"Footprint"
-			""
-			(at 482.6 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property
-			"Datasheet"
-			""
-			(at 482.6 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property
-			"Description"
-			""
-			(at 482.6 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin
-			"1"
-			(uuid "6f042c0d-3119-5a9b-8824-a445eade04cb")
-		)
-		(instances
-			(project
-				"mas_key"
-				(path
-					"/432e91a8-5398-5e26-a38b-151770ab0339"
-					(reference "#FLG01")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(global_label
-		"VBUS"
-		(shape passive)
-		(at 482.6 149.86 270)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "4e950320-21d5-5821-8579-abd19fa54bc2")
-	)
-	(symbol
-		(lib_id "power:PWR_FLAG")
-		(at 533.4 149.86 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom no)
-		(on_board no)
-		(dnp no)
-		(uuid "abc8ddb7-6108-5ff8-b3cb-1721e14b86fa")
-		(property
-			"Reference"
-			"#FLG02"
 			(at 533.4 144.78 0)
 			(effects
 				(font
@@ -9400,6 +9437,98 @@
 		)
 		(pin
 			"1"
+			(uuid "6f042c0d-3119-5a9b-8824-a445eade04cb")
+		)
+		(instances
+			(project
+				"mas_key"
+				(path
+					"/432e91a8-5398-5e26-a38b-151770ab0339"
+					(reference "#FLG01")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(global_label
+		"VBUS"
+		(shape passive)
+		(at 533.4 149.86 270)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "4e950320-21d5-5821-8579-abd19fa54bc2")
+	)
+	(symbol
+		(lib_id "power:PWR_FLAG")
+		(at 584.2 149.86 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board no)
+		(dnp no)
+		(uuid "abc8ddb7-6108-5ff8-b3cb-1721e14b86fa")
+		(property
+			"Reference"
+			"#FLG02"
+			(at 584.2 144.78 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property
+			"Value"
+			"PWR_FLAG"
+			(at 584.2 154.94 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property
+			"Footprint"
+			""
+			(at 584.2 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property
+			"Datasheet"
+			""
+			(at 584.2 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property
+			"Description"
+			""
+			(at 584.2 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin
+			"1"
 			(uuid "d4513b3e-47bc-5a37-9d57-49c3531b2c0f")
 		)
 		(instances
@@ -9416,7 +9545,7 @@
 	(global_label
 		"GND"
 		(shape passive)
-		(at 533.4 149.86 270)
+		(at 584.2 149.86 270)
 		(fields_autoplaced yes)
 		(effects
 			(font

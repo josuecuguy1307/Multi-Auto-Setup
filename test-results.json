@@ -1,7 +1,7 @@
 {
- "checksum": "d0d1d1a49edc791af52ea5645c5e04f48aa575f99835f51bf12399459dce339d",
+ "checksum": "6e994260d5b1b39579226d13b56fea9b97a244a33eeab2f40f4c7cda4639d6fe",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "efd4776",
+ "git_head_at_run": "0d288d6",
  "results": {
   "P0-SECRETS": {
    "at": "2026-11-17T02:38:12",
@@ -13,14 +13,14 @@
    "title": "No credentials, keys or tokens anywhere in the repository (secret scan over the whole tree and history)"
   },
   "P1-DOCS": {
-   "at": "2026-11-17T08:32:37",
+   "at": "2026-11-17T09:25:37",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 18
    },
-   "fingerprint": "710613bc68af37df703c52dee6894483b3036f8c531a9d220f0c25a7668e11a5",
+   "fingerprint": "34cde6e1540987bdf115820fb71ac4774c6fdf3b713acfcd4676aa247fdf7ab8",
    "label": "REAL",
    "phase": 1,
    "reason": "18 passed",
@@ -28,7 +28,7 @@
    "title": "DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice"
   },
   "P1-HARNESS": {
-   "at": "2026-11-17T02:34:51",
+   "at": "2026-11-17T09:14:27",
    "counts": {
     "errors": 0,
     "failures": 0,
@@ -43,14 +43,14 @@
    "title": "The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist"
   },
   "P1-UNIT": {
-   "at": "2026-11-17T08:53:50",
+   "at": "2026-11-17T09:22:19",
    "counts": {
     "errors": 0,
     "failures": 1,
     "skipped": 0,
-    "tests": 169
+    "tests": 179
    },
-   "fingerprint": "91affff3c418afe6e7dc95658d50abb7342cf5b1e39eebb69a5a26b49d01791a",
+   "fingerprint": "09b852e1dff2ec911fb0538a6441f9bde5a13a0f0c405a2013ce019d46edcb8e",
    "label": "SIMULATED",
    "phase": 1,
    "reason": "1 failed, 0 errors",
@@ -73,17 +73,17 @@
    "title": "Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers"
   },
   "P2-GATE": {
-   "at": "2026-11-17T08:55:06",
+   "at": "2026-11-17T09:24:25",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
-    "tests": 130
+    "tests": 137
    },
-   "fingerprint": "ca704d40329c32e63a949a55bd38f3012c1c867b6fb7fd42d697034d5d92b796",
+   "fingerprint": "b4bbb2ea5abc7011c126b2adb63a37bac153dd5535f9dec6b39cfe626a3b4387",
    "label": "SIMULATED",
    "phase": 2,
-   "reason": "130 passed, 2 saboteurs killed",
+   "reason": "137 passed, 2 saboteurs killed",
    "saboteurs": {
     "skip-post-consume-recheck": "killed",
     "skip-validate-in-run": "killed"
@@ -101,14 +101,14 @@
    "title": "Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations"
   },
   "P2-LOG": {
-   "at": "2026-11-17T08:55:29",
+   "at": "2026-11-17T09:25:02",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 41
    },
-   "fingerprint": "8da28802b0a15e716e8575350fac941846c30d5d7bf1bc6cbcb5f77fbb40d370",
+   "fingerprint": "5d8772e6585429ddd9ba6191bbc14f5848c65633ed0933fee252cc7047bbb702",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "41 passed, 2 saboteurs killed",
@@ -216,7 +216,7 @@
    "title": "Same firmware runs in QEMU (mps2-an505, Cortex-M33) with transcripts identical to the host build; button is the only approval path"
   },
   "P4-FW-HOST": {
-   "at": "2026-11-17T02:53:37",
+   "at": "2026-11-17T09:17:32",
    "counts": {
     "errors": 0,
     "failures": 0,
@@ -264,17 +264,17 @@
    "title": "Parametric enclosure fits the board (clearances, USB-C opening, button access) by automatic check"
   },
   "P5-PCB": {
-   "at": "2026-11-17T02:15:44",
+   "at": "2026-11-17T09:18:54",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
-    "tests": 20
+    "tests": 35
    },
-   "fingerprint": "7fb812f195a8dd71ad3a9844bea8d811e6961f207d03a3cb1ec7ee44be32948b",
+   "fingerprint": "328c0a82e725ab4754759817ef0d9be419269bfeaf6e3bbb5a8082a4f171f430",
    "label": "DESIGN-ONLY",
    "phase": 5,
-   "reason": "20 passed",
+   "reason": "35 passed",
    "status": "PASS",
    "title": "ERC, DRC and fabrication checks green; fab outputs marked NO FABRICAR; HUMAN_REVIEW_PCB.md present"
   },

@@ -443,3 +443,15 @@ remove a decoupling cap → net check fails.
   Windows without long paths, 32000 with, 4095 on POSIX), names that look like 8.3 aliases, paths through a file, deleting what is absent,
   files over 1 MiB, non-plain attributes, an undo whose folder is gone. It still does not cover every filesystem quirk (e.g. a full disk).
 
+## D-024 Gate after evaluator run 6; corrections to D-023 (2026-11-17)
+- Rollback never undoes the owner: when a multi-file write fails, the rollback restores or deletes a file only if it still holds exactly
+  what the gate wrote; anything changed meanwhile is left alone and named in `write.failed` (`left_changed`). Folders are removed only if
+  empty.
+- The final pre-state compare now happens inside `_replace_file`, after the temporary file is written and fsynced, immediately before
+  `os.replace`. D-023's "microseconds" was wrong: the window was milliseconds and included an fsync. What remains is the gap between that
+  last read and `os.replace` (no write or fsync in it); declared, not closed.
+- The host path limit is measured as the host counts it (UTF-16 units on Windows, UTF-8 bytes elsewhere), with the temporary suffix.
+- Correction to D-023's logging claim: logged are spent tokens (approved/refused/failed/done) and authenticated tokens refused as expired,
+  counter_regressed or wrong_session. NOT logged: a pressed token never presented to the gate, one whose pending was swept or lost at a
+  restart before it was presented, and one whose signed action, summary or class differs from its pending. Their counters show as gaps.
+

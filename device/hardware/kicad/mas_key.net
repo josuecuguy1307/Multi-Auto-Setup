@@ -781,6 +781,72 @@
 			)
 		)
 		(comp
+			(ref "C12")
+			(value "100nF")
+			(footprint "Capacitor_SMD:C_0603_1608Metric")
+			(fields
+				(field
+					(name "MPN") "CL10B104KB8NNNC")
+				(field
+					(name "Manufacturer") "Samsung")
+				(field
+					(name "Footprint") "Capacitor_SMD:C_0603_1608Metric")
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "C")
+				(description "Unpolarized capacitor")
+			)
+			(property
+				(name "MPN")
+				(value "CL10B104KB8NNNC")
+			)
+			(property
+				(name "Manufacturer")
+				(value "Samsung")
+			)
+			(property
+				(name "Sheetname")
+				(value "mas_key")
+			)
+			(property
+				(name "Sheetfile")
+				(value "mas_key.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "cap capacitor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "C_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "737e35f6-7c58-5cb7-9433-a86fc0dbaf9d")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
 			(ref "D1")
 			(value "green")
 			(footprint "LED_SMD:LED_0603_1608Metric")
@@ -2835,6 +2901,11 @@
 			(name "+3V3")
 			(class "Default")
 			(node
+				(ref "C12")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
 				(ref "C2")
 				(pin "1")
 				(pintype "passive")
@@ -3044,6 +3115,11 @@
 			)
 			(node
 				(ref "C11")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "C12")
 				(pin "2")
 				(pintype "passive")
 			)

@@ -73,14 +73,15 @@ PARTS = [
     C("C4", "100nF", "+3V3", "GND", (3.0, 21.0, 90.0), "CL10B104KB8NNNC"),
     C("C5", "100nF", "+3V3", "GND", (17.0, 21.0, 90.0), "CL10B104KB8NNNC"),
     C("C6", "100nF", "+3V3", "GND", (3.0, 24.6, 90.0), "CL10B104KB8NNNC"),
-    C("C7", "100nF", "+3V3", "GND", (17.0, 24.6, 90.0), "CL10B104KB8NNNC"),
+    C("C7", "100nF", "+3V3", "GND", (13.0, 31.0, 0.0), "CL10B104KB8NNNC"),
     C("C8", "1uF", "+3V3", "GND", (3.0, 28.2, 90.0), "CL10A105KB8NNNC"),
-    C("C9", "4.7uF", "VCAP", "GND", (17.0, 28.2, 90.0), "CL10A475KO8NNNC"),
-    R("R3", "10k", "BOOT0", "GND", (7.0, 18.0, 0.0), "RC0603FR-0710KL"),
-    C("C10", "100nF", "NRST", "GND", (13.0, 18.0, 0.0), "CL10B104KB8NNNC"),
+    C("C9", "4.7uF", "VCAP", "GND", (9.6, 31.0, 0.0), "CL10A475KO8NNNC"),
+    C("C12", "100nF", "+3V3", "GND", (7.0, 18.0, 0.0), "CL10B104KB8NNNC"),  # pin 48 VDD: one 100 nF per supply pin (A-3, evaluator P5 run 1)
+    R("R3", "10k", "BOOT0", "GND", (10.3, 18.0, 0.0), "RC0603FR-0710KL"),
+    C("C10", "100nF", "NRST", "GND", (13.6, 18.0, 0.0), "CL10B104KB8NNNC"),
     # ---- button with RC and pull-up ----
     Part("SW1", "Switch:SW_Push", "Button_Switch_SMD:SW_SPST_PTS645Sx43SMTR92", "PTS645", "PTS645SM43SMTR92LFS", "C&K",
-         {"1": "BTN_RAW", "2": "GND"}, (10.0, 42.2, 0.0)),
+         {"1": "BTN_RAW", "2": "GND"}, (10.0, 43.6, 0.0)),
     R("R4", "10k", "+3V3", "BTN_RAW", (3.0, 32.0, 90.0), "RC0603FR-0710KL"),
     R("R5", "1k", "BTN_RAW", "BTN", (3.0, 35.6, 90.0), "RC0603FR-071KL"),
     C("C11", "100nF", "BTN", "GND", (3.0, 39.2, 90.0), "CL10B104KB8NNNC"),
@@ -93,7 +94,7 @@ PARTS = [
     R("R8", "1k", "+3V3", "LED_A", (3.0, 46.4, 90.0), "RC0603FR-071KL"),
     Part("J3", "Connector_Generic:Conn_02x05_Odd_Even", "Connector_PinHeader_1.27mm:PinHeader_2x05_P1.27mm_Vertical_SMD", "SWD",
          "FTSH-105-01-L-DV-K", "Samtec",
-         {"1": "+3V3", "2": "SWDIO", "3": "GND", "4": "SWCLK", "5": "GND", "6": "SWO", "9": "GND", "10": "NRST"}, (10.0, 34.6, 0.0)),
+         {"1": "+3V3", "2": "SWDIO", "3": "GND", "4": "SWCLK", "5": "GND", "6": "SWO", "9": "GND", "10": "NRST"}, (10.0, 36.0, 0.0)),
 ]
 
 # Nets that only exist as power and that PWR_FLAG must mark as driven (their source is outside the schematic: the USB host).
