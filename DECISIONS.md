@@ -496,3 +496,17 @@ remove a decoupling cap → net check fails.
 - Log: a repair is checked against the known head before anything is cut or appended; a refused repair leaves the file byte for byte as it
   was. Tests now cover a repair below a known head, `records()` after a same-length re-chained rewrite, a repair that keeps a complete
   record lacking only its newline, and the seq/at type checks on a one-record log.
+
+## D-027 Board after the board evaluator's run 2 (2026-11-17; P5-PCB, DESIGN-ONLY)
+- USB ESD path: D- reached the MCU by a direct path with U2 on a stub. The router now routes each data line as a chain J1 -> U2's
+  connector-side pin -> across U2 -> U2's MCU-side pin -> U1, each link fenced off from that net's earlier links, so no copper joins J1 to
+  U1 except through U2's pads. On one layer the two chains only nest if U2's D- row is above its D+ row (U1's D+ pin is above its D- pin),
+  so U2 is turned 180°; D+ bridges the interleaved receptacle pads on the north side and D- on the south. D+ 25.6 mm, D- 24.4 mm
+  (was 23.8 / 39.4). A test cuts U2's pad copper out of each net and requires J1 and U1 to fall apart.
+- No via in any pad (A-3 "beside"): every pad is a no-via zone for the router; U2's GND and VBUS pins get their vias before USB is
+  routed (USB would wall them in); the router may pass through a via its net already has, and each via is emitted once. GND stitching
+  alternates between before and after the signals across passes (12 passes max). A test checks every via against every pad.
+- Tests now cover the power path (U3 VIN/EN on VBUS, VOUT on +3V3, >= 1 uF within 5 mm of VIN, VOUT and VDDA), the button path (SW1,
+  10k pull-up, 1k series, 100 nF), D1's polarity and its 1k, J3's SWD pins against U1's, U2's VBUS/GND, and every passive's MPN against
+  its value; each of the evaluator's mutations (regulator EN to GND, R5 deleted, D1 reversed, SWDIO/SWCLK swapped, VDDA 1 uF removed,
+  LDO caps at 100 nF) is shown to fail the checks. HUMAN_REVIEW's line on what sits under the USB-C body is corrected.

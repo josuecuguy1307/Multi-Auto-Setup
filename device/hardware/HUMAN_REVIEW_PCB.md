@@ -43,12 +43,19 @@ open. Tick each item, write the date and your name, and note any change made. So
 - [ ] No reference designators on the silkscreen: they are on F.Fab only (assembly drawings need them; silk was kept clear of pads).
 - [ ] J1 (USB-C) courtyard sits about 0.5 mm past the board edge on purpose (the receptacle mouth overhangs): check against GCT's drawing
       and the enclosure.
-- [ ] CC1/CC2 and D+ tracks and two CC2 vias run under the USB-C body: check clearance to the shell and the mounting pegs.
+- [ ] Inside J1's courtyard (under the USB-C body and its pad row): the D+ bridge between B6 and A6 and the D− bridge between A7 and B7,
+      the VBUS bridge, CC1 (tracks on both layers and two vias, at about (10.45, 6.05) and (9.40, 5.40) mm from the board's top-left),
+      CC2, and four GND stitching vias at the courtyard's lower edge beside J1's GND pads. Check clearance to the shell and the pegs.
+      (Corrected after the board evaluator's run 2, which found the earlier line incomplete.)
 - [ ] ATECC608B DNP footprint (D-008) was dropped from v0; add it back only if the review wants the option.
 - [ ] J3 (SWD) sits in the middle of the board below the MCU, not on the long edge as A-3 suggested (routing space); check access for a probe.
 - [ ] Decoupling: one 100 nF per supply pin (pins 1, 9, 24, 36, 48) within 4 mm of the pin, plus 1 µF on VDDA and 4.7 µF on VCAP (pin 22)
       (fixed after the board evaluator's run 1). USB D+/D- run on the top layer only, with no vias.
-- [ ] Nets that cross under the USB D+/D- tracks on B.Cu: +3V3, CC1, CC2, I2C_SCL, I2C_SDA, VBUS. A deviation from A-3 ("unbroken
+- [ ] USB ESD path (fixed after the board evaluator's run 2): each data line runs J1 → U2's connector-side pin → across U2 → U2's
+      MCU-side pin → U1, with no other copper from J1 to U1 (tested). U2 is turned 180° so the two lines nest without crossing; D+ is
+      about 25.6 mm and D− about 24.4 mm of copper (paired by routing, not length-tuned). No via sits in any pad (tested); U2's GND and
+      VBUS pins have their vias beside the pads, U2's GND via under the package between the pad rows.
+- [ ] Nets that cross under the USB D+/D- tracks on B.Cu: +3V3, I2C_SCL, I2C_SDA, VBUS. A deviation from A-3 ("unbroken
       bottom GND" under D+/D-): the USB pins are on the MCU's right side, so nets beyond them must cross. Acceptable for USB full speed
       (12 Mbit/s) over these short runs; a reviewer may prefer moving the crossings or adding stitching vias beside them.
 

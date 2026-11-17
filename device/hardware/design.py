@@ -59,7 +59,8 @@ PARTS = [
          "USB-C", "USB4105-GF-A", "GCT",
          {"VBUS": "VBUS", "GND": "GND", "SHIELD": "GND", "CC1": "CC1", "CC2": "CC2", "D+": "USB_DP", "D-": "USB_DM"}, (10.0, 3.72, 180.0)),
     Part("U2", "Power_Protection:USBLC6-2SC6", "Package_TO_SOT_SMD:SOT-23-6", "USBLC6-2SC6", "USBLC6-2SC6", "STMicroelectronics",
-         {"I/O1": "USB_DP", "I/O2": "USB_DM", "VBUS": "VBUS", "GND": "GND"}, (10.0, 10.5, 0.0)),
+         {"I/O1": "USB_DP", "I/O2": "USB_DM", "VBUS": "VBUS", "GND": "GND"}, (10.0, 10.5, 180.0)),  # turned so D- exits above D+:
+    # the two chains J1 -> U2 -> U1 then nest without crossing on the top layer (U1's D+ pin is above its D- pin; board evaluator run 2)
     R("R1", "5.1k", "CC1", "GND", (3.0, 10.5, 90.0), "RC0603FR-075K1L"),
     R("R2", "5.1k", "CC2", "GND", (17.0, 10.5, 90.0), "RC0603FR-075K1L"),
     Part("U3", "Regulator_Linear:AP2112K-3.3", "Package_TO_SOT_SMD:SOT-23-5", "AP2112K-3.3", "AP2112K-3.3TRG1", "Diodes Inc",

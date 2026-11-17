@@ -135,3 +135,7 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
 - P5-PCB board evaluator run 2: FAIL. BROKE: USB D- reaches the MCU by a direct path that skips the ESD part U2 (U2 on a 15 mm stub);
   31 vias inside SMD pads (A-3 says beside; one overlaps U1 pin 36). WEAK: power path (U3 EN, LDO caps, VDDA), button path (R5/C11),
   SWD pin order, D1 polarity untested. Run-1 items all fixed. Not yet fixed; report in device/evals/evaluator/P5-PCB.run2.md.
+- Board evaluator run 2 fixed (D-027): D- now passes through U2's pads (U2 turned 180°, chain routing with fenced links; failed attempts:
+  the plain chain crossed itself with U2 at 0°; D- first boxed D+ in; D+'s bridge on the wrong side walled in a D- pad; U2's VBUS pin got
+  walled in by USB until its via went in first; the router could not use an existing same-net via; a duplicate VBUS via failed DRC).
+  No via in any pad; power/button/LED/SWD/MPN tests with mutations. P5-PCB 47 tests.

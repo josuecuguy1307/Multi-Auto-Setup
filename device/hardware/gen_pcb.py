@@ -6,8 +6,10 @@ symbol's UUID), value and every pad's net come from the netlist; only placement 
 Routing: a deterministic two-layer grid router (A* on a 0.05 mm grid). Each net is routed as a tree (Prim order); a cell is usable by a
 net only if no copper of another net, inflated by half the track width plus the clearance plus a grid margin, covers it; vias need the
 larger via clearance on both layers and the hole-to-hole distance. Bottom-layer moves cost more, so B.Cu stays mostly a solid GND pour.
-GND is connected through pours on both layers plus a stitching via beside each GND pad. Then zones are filled and the file is saved
-with deterministic UUIDs. KiCad's DRC is the judge, not this script.
+GND is connected through pours on both layers plus a stitching via beside each GND pad. No via may overlap any pad (an open hole in a
+pad wicks solder at reflow). USB D+/D- are routed as a chain, J1 -> U2's connector-side pin -> U2's MCU-side pin -> U1, each link
+forbidden to touch the earlier links' copper, so the MCU can only be reached through the ESD part's pads. Then zones are filled and the
+file is saved with deterministic UUIDs. KiCad's DRC is the judge, not this script.
 
     <kicad>/bin/python.exe device/hardware/gen_pcb.py --netlist kicad/mas_key.net --out kicad [--kicad-share DIR]
 """
@@ -15,6 +17,7 @@ with deterministic UUIDs. KiCad's DRC is the judge, not this script.
 from __future__ import annotations
 
 import argparse
+import copy
 import heapq
 import json
 import math
@@ -38,7 +41,7 @@ TRACK_W, CLR, MARGIN = 0.2, 0.15, 0.05
 VIA_D, VIA_DRILL, HOLE_HOLE, EDGE_CLR, HOLE_CLR = 0.6, 0.3, 0.5, 0.3, 0.25
 B_COST, VIA_COST = 4.0, 30.0
 NS = uuid.UUID("0c0f3d2a-91a4-4c1b-8f0e-9a5d1f2e7b33")
-FREE, MULTI = -1, -2
+FREE, MULTI, BLOCK = -1, -2, -3  # BLOCK: a stand-in net used to fence off copper on a scratch copy of the grid
 
 # Custom DRC rules: each scoped as tightly as possible and listed in HUMAN_REVIEW_PCB.md (tested). No exclusions anywhere.
 CUSTOM_RULES = """(version 1)
@@ -87,6 +90,7 @@ class Grid:
         self.trk = [np.full((self.ny, self.nx), FREE, np.int32) for _ in range(2)]  # who may put a track centre here
         self.via = [np.full((self.ny, self.nx), FREE, np.int32) for _ in range(2)]  # who may put a via centre here
         self.hole = np.zeros((self.ny, self.nx), bool)                               # too close to any hole for a new via
+        self.vias: dict = {}                                                         # cell -> net of a via already placed there
         xs, ys = np.arange(self.nx) * G, np.arange(self.ny) * G
         self.X, self.Y = np.meshgrid(xs, ys)
         edge = np.minimum(np.minimum(self.X, w - self.X), np.minimum(self.Y, h - self.Y))
@@ -134,7 +138,17 @@ class Grid:
         sl = self._window(x, y, x, y, r)
         self.hole[sl] |= np.hypot(self.X[sl] - x, self.Y[sl] - y) < r
 
+    def no_via_near(self, x0, y0, x1, y1):
+        """No via centre where the via's copper would overlap this box (plus a grid margin)."""
+        r = VIA_D / 2 + MARGIN
+        sl = self._window(x0, y0, x1, y1, r)
+        X, Y = self.X[sl], self.Y[sl]
+        dx = np.maximum(np.maximum(x0 - X, 0), X - x1)
+        dy = np.maximum(np.maximum(y0 - Y, 0), Y - y1)
+        self.hole[sl] |= np.hypot(dx, dy) < r
+
     def via_at(self, x, y, net):
+        self.vias[self.cell(x, y)] = net
         for L in range(2):
             self.seg(L, x, y, x, y, VIA_D, net)
         self.circle_hole(x, y, VIA_DRILL)
@@ -193,7 +207,8 @@ def astar(grid: Grid, net: int, starts, targets, box, allow_via=True, b_cost: fl
                 if di and dj and not (ok(L, i + di, j) or ok(L, i, j + dj)):
                     continue
                 nbrs.append(((L, ni, nj), c * (b_cost if L == 1 else 1.0)))
-        if allow_via and via[0][i, j] in (FREE, net) and via[1][i, j] in (FREE, net) and not grid.hole[i, j]:
+        if allow_via and ((via[0][i, j] in (FREE, net) and via[1][i, j] in (FREE, net) and not grid.hole[i, j])
+                          or grid.vias.get((i, j)) == net):  # a new via, or one this net already has
             nbrs.append(((1 - L, i, j), VIA_COST))
         for nxt, c in nbrs:
             ng = gc + c
@@ -372,7 +387,7 @@ def build(netlist: Path, share: Path, route: bool = True):
     return board, report
 
 
-MAX_PASSES = 8
+MAX_PASSES = 12
 USB_NETS = ("USB_DP", "USB_DM")
 BOTTOM_FIRST = ("SWDIO", "SWCLK")  # routed before USB, preferring B.Cu, because they must cross it
 
@@ -389,6 +404,7 @@ def build_grid(fps, codes):
             real = bool(net) and not net.startswith("unconnected-")
             if layers:
                 grid.rect(layers, x0, y0, x1, y1, codes[net] if real else None)
+                grid.no_via_near(x0, y0, x1, y1)  # vias beside pads, never in them (board evaluator run 2)
             if pad.GetDrillSize().x > 0:
                 d = tomm(max(pad.GetDrillSize().x, pad.GetDrillSize().y))
                 cx, cy = tomm(pad.GetPosition().x) - OX, tomm(pad.GetPosition().y) - OY
@@ -432,27 +448,32 @@ def route_board(board, fps, nets, codes):
         for name in under_usb:  # the debug lines must cross the USB pair: they take the bottom layer before USB takes the top
             if not route_net(grid, codes[name], pads_by_net[name], plan, name, b_cost=0.5):
                 failed.append(name)
-        for name in usb:
-            if not route_net(grid, codes[name], pads_by_net[name], plan, name, top_only=True):
-                failed.append(name)
+        for net in ("GND", "VBUS"):  # U2's middle pins sit between the USB lines: their vias go in before USB walls them in
+            failed += stitch_gnd(grid, codes[net], [p for p in pads_by_net.get(net, []) if p.GetParentFootprint().GetReference() == "U2"], plan,
+                                 name=net)
+        failed += route_usb(grid, codes, pads_by_net, plan)
+        rest = [p for p in gnd if p not in mcu and p.GetParentFootprint().GetReference() != "U2"]
+        early = attempt % 2 == 1  # alternate passes: GND vias placed before the signals (reserving room beside crowded pads) or after
+        if early:
+            failed += stitch_gnd(grid, codes["GND"], rest, plan)
         for name in order:
             if not route_net(grid, codes[name], pads_by_net[name], plan, name):
                 failed.append(name)
-        failed += stitch_gnd(grid, codes["GND"], [p for p in gnd if p not in mcu], plan)
+        if not early:
+            failed += stitch_gnd(grid, codes["GND"], rest, plan)
         if best is None or len(failed) < len(best[1]):
             best = (plan, failed, attempt)
         if not failed:
             break
         bad = [n for n in failed if n in order]
         order = bad + [n for n in order if n not in bad] if bad else order[::-1]
-        if any(n in usb for n in failed):
-            usb = usb[::-1]
     plan, failed, attempt = best
+    placed: set = set()  # a link may pass through a via an earlier link placed: emit each via once
     for kind, name, *rest in plan:
         if kind == "path":
-            emit_path(board, nets[name], rest[0])
+            emit_path(board, nets[name], rest[0], placed)
         else:
-            emit_via(board, nets[name], *rest)
+            emit_via(board, nets[name], *rest, placed=placed)
     return {"routed": sorted(set(n for _, n, *_ in plan)), "failed": failed, "passes": attempt + 1}
 
 
@@ -467,7 +488,7 @@ def pad_cell(grid, pad):
     return grid.cell(x, y)
 
 
-def emit_path(board, net, path):
+def emit_path(board, net, path, placed=None):
     segs, vias = path_to_items(path)
     for L, a, b in segs:
         t = pcbnew.PCB_TRACK(board)
@@ -478,10 +499,15 @@ def emit_path(board, net, path):
         t.SetNet(net)
         board.Add(t)
     for i, j in vias:
-        emit_via(board, net, j * G, i * G)
+        emit_via(board, net, j * G, i * G, placed=placed)
 
 
-def emit_via(board, net, x, y):
+def emit_via(board, net, x, y, placed=None):
+    if placed is not None:
+        key = (round(x / G), round(y / G))
+        if key in placed:
+            return
+        placed.add(key)
     v = pcbnew.PCB_VIA(board)
     v.SetPosition(pcbnew.VECTOR2I(mm(OX + x), mm(OY + y)))
     v.SetViaType(pcbnew.VIATYPE_THROUGH)
@@ -531,7 +557,98 @@ def route_net(grid, code, pads, plan, name, top_only: bool = False, b_cost: floa
     return ok
 
 
-def stitch_gnd(grid, code, pads, plan, region=None) -> list[str]:
+def fenced(grid, paths, block_pads, keep_pads, walls=()):
+    """A scratch copy of the grid where earlier copper (paths) and some pads count as another net's: a new link cannot run over them.
+    The pads the new link starts and ends on stay reachable."""
+    g = copy.copy(grid)
+    g.trk = [a.copy() for a in grid.trk]
+    g.via = [a.copy() for a in grid.via]
+    for path in paths:
+        for L, a, b in path_to_items(path)[0]:
+            g.seg(L, a[1] * G, a[0] * G, b[1] * G, b[0] * G, TRACK_W, BLOCK)
+    for pad in block_pads:
+        g.rect(pad_layers(pad), *pad_box(pad), BLOCK)
+    for pad in keep_pads:
+        x0, y0, x1, y1 = pad_box(pad)
+        r = TRACK_W / 2 + MARGIN
+        sl = g._window(x0, y0, x1, y1, r)
+        X, Y = g.X[sl], g.Y[sl]
+        m = (X >= x0 - r) & (X <= x1 + r) & (Y >= y0 - r) & (Y <= y1 + r)
+        for L in pad_layers(pad):
+            g.trk[L][sl][m] = grid.trk[L][sl][m]
+    for x0, y0, x1, y1 in walls:  # areas no track centre of this link may enter
+        sl = g._window(x0, y0, x1, y1, 0)
+        X, Y = g.X[sl], g.Y[sl]
+        m = (X >= x0) & (X <= x1) & (Y >= y0) & (Y <= y1)
+        for L in range(2):
+            g.trk[L][sl][m] = BLOCK
+    return g
+
+
+def usb_links(pads):
+    """The three links of one USB line's chain: (pads to join, pads fenced off, pads kept reachable). None if the net is not J1-U2-U1."""
+    ref = lambda p: p.GetParentFootprint().GetReference()
+    j1 = [p for p in pads if ref(p) == "J1"]
+    u2 = sorted((p for p in pads if ref(p) == "U2"), key=lambda p: p.GetNumber())
+    u1 = [p for p in pads if ref(p) == "U1"]
+    if len(u2) != 2 or not j1 or len(u1) != 1:
+        return None
+    ux, uy = u1[0].GetPosition().x, u1[0].GetPosition().y
+    far, near = sorted(u2, key=lambda p: (math.hypot(p.GetPosition().x - ux, p.GetPosition().y - uy), p.GetNumber()))  # far: MCU side
+    return [(j1 + [near], [far] + u1, j1 + [near]), ([near, far], j1 + u1, [near, far]), ([far] + u1, j1 + [near], [far] + u1)]
+
+
+# Link order and walls. The receptacle's rows interleave the data pads (B6 D+, A7 D-, A6 D+, B7 D-, left to right), so the two bridges
+# must take opposite sides of the pads: D+ bridges north (the space south of the inner pads is walled while it routes) and leaves from its
+# outer pad down the west side; D- bridges south. Neither crosses U2's body on its way in (walled), so each hops across U2 inside its own
+# row. Then D+ takes the inner lane to U1 (its D+ pin is above its D- pin) and D- the outer one.
+USB_STAGES = (("USB_DP", 0, ("u2_body", "j1_south")), ("USB_DM", 0, ("u2_body",)), ("USB_DM", 1, ()), ("USB_DP", 1, ()),
+              ("USB_DP", 2, ()), ("USB_DM", 2, ()))
+
+
+def usb_walls(pads_by_net) -> dict:
+    ref = lambda p: p.GetParentFootprint().GetReference()
+    j1 = sorted((pad_box(p) for n in USB_NETS for p in pads_by_net.get(n, []) if ref(p) == "J1"), key=lambda b: b[0])
+    u2 = [pad_box(p) for n in USB_NETS for p in pads_by_net.get(n, []) if ref(p) == "U2"]
+    walls = {}
+    if len(j1) >= 3:
+        y = max(b[3] for b in j1)
+        walls["j1_south"] = (j1[1][0], y + 0.2, j1[-1][2], y + 1.4)
+    if len(u2) == 4:
+        cx = sum((b[0] + b[2]) / 2 for b in u2) / 4
+        left, right = max(b[2] for b in u2 if b[2] < cx), min(b[0] for b in u2 if b[0] > cx)
+        walls["u2_body"] = (left + 0.1, min(b[1] for b in u2), right - 0.1, max(b[3] for b in u2))
+    return walls
+
+
+def route_usb(grid, codes, pads_by_net, plan, stages=USB_STAGES) -> list[str]:
+    """Each USB line as a chain J1 -> U2 connector-side pin -> U2 MCU-side pin -> U1, top layer only, no vias (A-3); each link is fenced
+    off from its own net's earlier links so no copper joins J1 to U1 except through U2's pads (A-1 §6 item 2: ESD part at the
+    connector). Returns the nets that failed."""
+    failed, done = [], {}
+    links = {n: usb_links(pads_by_net[n]) for n in {s[0] for s in stages} if n in pads_by_net}
+    walls = usb_walls(pads_by_net)
+    for name, k, wall_names in stages:
+        if name not in links or name in failed:
+            continue
+        if links[name] is None:
+            if k == 0 and not route_net(grid, codes[name], pads_by_net[name], plan, name, top_only=True):
+                failed.append(name)
+            continue
+        join, block, keep = links[name][k]
+        g = fenced(grid, done.setdefault(name, []), block, keep, [walls[w] for w in wall_names if w in walls])
+        n0 = len(plan)
+        if not route_net(g, codes[name], join, plan, name, top_only=True):
+            del plan[n0:]
+            failed.append(name)
+            continue
+        for _, _, path in plan[n0:]:
+            mark(grid, codes[name], path)
+            done[name].append(path)
+    return failed
+
+
+def stitch_gnd(grid, code, pads, plan, region=None, name="GND") -> list[str]:
     """B.Cu is the GND plane. Each SMD GND pad gets a short track to a via of its own; a pad with no room for a via joins GND copper that
     already reaches a via (never another unstitched pad, so no isolated GND islands). THT GND pads reach B.Cu directly."""
     grounded = np.zeros((grid.ny, grid.nx), bool)  # F.Cu cells of GND copper known to reach the plane
@@ -563,16 +680,16 @@ def stitch_gnd(grid, code, pads, plan, region=None) -> list[str]:
             if not path:
                 retry.append(p)
                 continue
-            plan.append(("path", "GND", path))
+            plan.append(("path", name, path))
             mark(grid, code, path)
             if not second:
                 L, a, b = path[-1]
-                plan.append(("via", "GND", b * G, a * G))
+                plan.append(("via", name, b * G, a * G))
                 grid.via_at(b * G, a * G, code)
             for L, a, b in path:
                 grounded[a, b] = True
         failed_pads = retry
-    return [f"GND:{p.GetParentFootprint().GetReference()}.{p.GetNumber()}" for p in failed_pads]
+    return [f"{name}:{p.GetParentFootprint().GetReference()}.{p.GetNumber()}" for p in failed_pads]
 
 
 def deterministic_uuids(text: str) -> str:
