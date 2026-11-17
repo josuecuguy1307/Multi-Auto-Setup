@@ -43,3 +43,28 @@ REQUIRED BEFORE PASS:
    request time; fix the Button docstring.
 8. Run the evaluator again from a fresh context.
 ```
+
+---
+
+# Evaluator report — P1-UNIT, run 7 (2026-11-17, project `evaluator` agent, fresh context). Evaluated commit 0d288d6.
+
+Runs 2-6 are summarised in P1-UNIT.run2.md .. P1-UNIT.run6.md. This is the report that closes the unit.
+
+```
+UNIT: P1-UNIT
+VERDICT: PASS
+RAN: pytest device/tests/test_approval.py (175 passed); test_unit_cycle red-before-green; judged_hash() at 0d288d6;
+     82 mutants each in its own copy (mas_device.__file__ checked, fresh interpreters import the copy); atk1-atk4 attack scripts
+BROKE: nothing on a path the model can reach. Run-6 items verified (process-global and seeded nonce sources killed by the
+     fresh-interpreter test; check-then-copy restored is killed; Gate.begin returning its own pending is killed; class names
+     shown). All 4 criteria saboteurs killed. Held: replay (same gate, restarted gate, fresh interpreters), every body field
+     re-signed with the real secret, S+L malleation, TTL edges, odd clock types, class confusion, parse edges, 32-thread
+     spending, odd token objects, buffer rewrites, swaps 0.2 s before the press, presses before the request, double sign.
+WEAK TESTS: none that fail open on guard removal. 71/82 killed; survivors redundant (event order + take-in-request, killed
+     together) or equivalent; nonce-source substitutions (pid||counter, time_ns, 4 random + 12 zero bytes) are notes.
+LABELS: ok (SIMULATED in keymodel.py, test_approval.py, ACCEPTANCE.md; Button convention stated).
+NOTES: small-order public keys accepted at pin time (belongs to P2-PAIRING: refuse them there); duplicate JSON keys in the key
+     model's own state file; misleading display with a crafted target (gate.py pins the target); nonce entropy not tested.
+REQUIRED BEFORE PASS: (none)
+Code-Hash: fc884e03e614f88af6149c1c06a43bffda9893b0b25ce32d2a7425a2f1053fa3
+```

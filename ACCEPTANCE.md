@@ -41,7 +41,7 @@ k consecutive passing runs of each eval; limitations section lists what was only
 |---|---|---|---|---|---|
 | P1-HARNESS | 1 | **PASS** | REAL | The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist | 41 passed |
 | P1-DOCS | 1 | **PASS** | REAL | DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice | 18 passed |
-| P1-UNIT | 1 | **FAIL** | SIMULATED | First unit through the full cycle: signed approval tokens (guardrail 3) with an evaluator report | 1 failed, 0 errors |
+| P1-UNIT | 1 | **PASS** | SIMULATED | First unit through the full cycle: signed approval tokens (guardrail 3) with an evaluator report | 179 passed, 4 saboteurs killed |
 | P2-GATE | 2 | **PASS** | SIMULATED | Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first | 137 passed, 2 saboteurs killed |
 | P2-LOG | 2 | **PASS** | SIMULATED | Append-only hash-chained log; any edit, rewrite, truncation or reorder is detected against a known head; a broken log is never extended (process separation from the model is P2-GUARDRAILS) | 41 passed, 2 saboteurs killed |
 | P2-GUARDRAILS | 2 | **FAIL** | SIMULATED | Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations | missing test files: device/tests/test_guardrails.py |

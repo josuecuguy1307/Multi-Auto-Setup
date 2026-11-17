@@ -122,3 +122,6 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   KiCad 10 suffixes netlist pinfunctions with the pin number (PA12_33); float equality on capacitor values.
 - Gate evaluator run 6: rollback lost update, pre-fsync compare window, code-point path lengths: fixed (D-024), P2-GATE 137 PASS.
   P1-UNIT run 6 fixed (nonces across fresh interpreters); evaluator run 7 pending.
+- P1-UNIT closed: evaluator run 7 (fresh context, at 0d288d6) VERDICT PASS, Code-Hash fc884e03...1053fa3 matches judged_hash();
+  oracle P1-UNIT PASS 179 tests, 4 saboteurs killed (9/26 PASS). Handover to a new account via HANDOFF.md; P2-GATE run 7 and P5-PCB
+  run 2 were lost at the usage limit and are being re-run.

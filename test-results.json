@@ -1,7 +1,7 @@
 {
- "checksum": "01ff7fc77b9400f30943b520be68202476ae0a95149bd137bd53fda7f6412892",
+ "checksum": "95b581862d16e0f359c72076640f7f91ba94c9c68ce579df9d7db272f23b1851",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "9818c23",
+ "git_head_at_run": "1a3e3f2",
  "results": {
   "P0-SECRETS": {
    "at": "2026-11-17T02:38:12",
@@ -43,24 +43,24 @@
    "title": "The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist"
   },
   "P1-UNIT": {
-   "at": "2026-11-17T09:22:19",
+   "at": "2026-11-17T09:28:46",
    "counts": {
     "errors": 0,
-    "failures": 1,
+    "failures": 0,
     "skipped": 0,
     "tests": 179
    },
-   "fingerprint": "09b852e1dff2ec911fb0538a6441f9bde5a13a0f0c405a2013ce019d46edcb8e",
+   "fingerprint": "a00f72317acd6fd0b2ccb8b160e90b09088fa63db52c996cdac0ba4ee2d22d35",
    "label": "SIMULATED",
    "phase": 1,
-   "reason": "1 failed, 0 errors",
+   "reason": "179 passed, 4 saboteurs killed",
    "saboteurs": {
     "keep-nonce-after-use": "killed",
     "skip-signature-check": "killed",
     "skip-summary-check": "killed",
     "skip-ttl-check": "killed"
    },
-   "status": "FAIL",
+   "status": "PASS",
    "title": "First unit through the full cycle: signed approval tokens (guardrail 3) with an evaluator report"
   },
   "P2-FLEET": {
