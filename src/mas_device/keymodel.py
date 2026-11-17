@@ -105,6 +105,8 @@ class KeyModel:
         _write_atomic(self._folder / "state.json", json.dumps(state).encode())
 
     def request(self, req: KeyRequest) -> RequestHandle:
+        # copy first (each field read exactly once), then check the copy: what is checked is exactly what is kept and signed
+        req = KeyRequest(*(bytes(v) if type(v) is bytearray else v for v in [getattr(req, n) for n in KeyRequest._fields]))
         fields = (req.session_id, req.nonce, req.action_hash, req.undo_hash, req.summary)
         if not all(type(f) in (bytes, bytearray) for f in fields):
             raise KeyRefused("malformed")  # bytes only: a str or list of the right length is not a field
@@ -119,7 +121,6 @@ class KeyModel:
             raise KeyRefused("malformed")
         if self._counter >= 2**64 - 2:
             raise KeyRefused("counter_exhausted")  # no next counter to sign (the firmware answers nv_fault)
-        req = KeyRequest(*(bytes(v) if type(v) is bytearray else v for v in (getattr(req, n) for n in KeyRequest._fields)))  # its own copy of the checked fields
         self._seq += 1
         self.button._take()  # a press latched before this request never counts for it
         self._pending = RequestHandle(self._seq, _next_event(), self._clock(), req)

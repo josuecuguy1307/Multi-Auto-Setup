@@ -13,6 +13,7 @@ wall clock). The key's counter orders approvals for the log and detects gaps; it
 
 from __future__ import annotations
 
+import dataclasses
 import enum
 import hashlib
 import json
@@ -284,7 +285,7 @@ class Gate:
                 raise Rejected("too_many_pending", f"{MAX_PENDING} {cls.name} approvals are already waiting")
             p = Pending(secrets.token_bytes(16), self.session, ah, uh, summary, cls, PRESS_WINDOW_S, now)
             self._pending[p.nonce] = p
-        return p
+        return dataclasses.replace(p)  # a copy: the caller can never touch the gate's own record (its creation time, its hashes)
 
     def consume(self, token: Any, action: dict, *, cls: Class) -> Approval:
         if not isinstance(token, (bytes, bytearray)) or len(token) != BODY_LEN + SIG_LEN:
