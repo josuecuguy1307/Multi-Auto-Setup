@@ -1,11 +1,11 @@
 {
- "checksum": "2cfbac9a1db95f7f44c9c16de03a7ef42de1f60596fc48182b809bac3a818407",
+ "checksum": "d7ec2c3cc0e56b23a3a475f3d6cef2d4c9f22080acfe58a106e8b063ae8ed051",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "4a5c13c",
+ "git_head_at_run": "b2be85e",
  "results": {
   "P0-SECRETS": {
-   "at": "2026-11-17T02:18:05",
-   "fingerprint": "35b2a2f7adc8bbcba1dcfbbe6358add288a95a90b396f093743668c3529e2c46",
+   "at": "2026-11-17T02:38:12",
+   "fingerprint": "3d4ff8ba9d01b0e4498e91e4cf4f706680b71f35cc8a90bb89aaaff453409f81",
    "label": "REAL",
    "phase": 1,
    "reason": "missing test files: device/tests/test_secrets.py",
@@ -13,7 +13,7 @@
    "title": "No credentials, keys or tokens anywhere in the repository (secret scan over the whole tree and history)"
   },
   "P1-DOCS": {
-   "at": "2026-11-17T02:10:23",
+   "at": "2026-11-17T02:35:46",
    "counts": {
     "errors": 0,
     "failures": 0,
@@ -28,14 +28,14 @@
    "title": "DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice"
   },
   "P1-HARNESS": {
-   "at": "2026-11-17T02:19:29",
+   "at": "2026-11-17T02:34:51",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 41
    },
-   "fingerprint": "b1c6304be36a6f6d19486ee7142ddcef06ec41691996ea0fb493ec31695a68d8",
+   "fingerprint": "a624c5a787b859c48611421f19d105278014561c41adfa19642c0bbe26cf785b",
    "label": "REAL",
    "phase": 1,
    "reason": "41 passed",
@@ -43,14 +43,14 @@
    "title": "The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist"
   },
   "P1-UNIT": {
-   "at": "2026-11-17T02:20:19",
+   "at": "2026-11-17T02:35:48",
    "counts": {
     "errors": 0,
     "failures": 1,
     "skipped": 0,
-    "tests": 143
+    "tests": 159
    },
-   "fingerprint": "e5a15b46b9880ee0cb669451e987a562384d0316eb83ffdcb25f65f2f5edf469",
+   "fingerprint": "c3d9cafd8d2610a4b7436ab6ee1bba859aa0a42e8c52b9a092fe82c265fbd580",
    "label": "SIMULATED",
    "phase": 1,
    "reason": "1 failed, 0 errors",
@@ -64,8 +64,8 @@
    "title": "First unit through the full cycle: signed approval tokens (guardrail 3) with an evaluator report"
   },
   "P2-FLEET": {
-   "at": "2026-11-17T02:12:10",
-   "fingerprint": "b05c3c8a1e23411841d4d07851338059bde533b0506bfd6433a37567f2b8c9f2",
+   "at": "2026-11-17T02:37:51",
+   "fingerprint": "c797f731fed808faa02fd00133198d272202c08411747cdb5c8b128744966e71",
    "label": "EMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_fleet.py",
@@ -73,17 +73,17 @@
    "title": "Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers"
   },
   "P2-GATE": {
-   "at": "2026-11-17T02:11:33",
+   "at": "2026-11-17T02:37:09",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
-    "tests": 82
+    "tests": 104
    },
-   "fingerprint": "c43de7b1f1d1f1e2e18ef6f504ff01d1586b8c5cc3730f1d09ec72df9747be26",
+   "fingerprint": "48de5fe538551662916911d058ff8884eca8a8a11a69825db9f6272ad28f6e6d",
    "label": "SIMULATED",
    "phase": 2,
-   "reason": "82 passed, 2 saboteurs killed",
+   "reason": "104 passed, 2 saboteurs killed",
    "saboteurs": {
     "skip-post-consume-recheck": "killed",
     "skip-validate-in-run": "killed"
@@ -92,8 +92,8 @@
    "title": "Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first"
   },
   "P2-GUARDRAILS": {
-   "at": "2026-11-17T02:12:10",
-   "fingerprint": "b16059e9d5df18dcd2efaba358394ea4b818c510186f8c52d67ab3178fb717e3",
+   "at": "2026-11-17T02:37:51",
+   "fingerprint": "7a5d4a18cb5627892b5b7c50812fa1d20c7511730dd9ccdc89af64ee83f5ec5d",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_guardrails.py",
@@ -101,14 +101,14 @@
    "title": "Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations"
   },
   "P2-LOG": {
-   "at": "2026-11-17T02:11:52",
+   "at": "2026-11-17T02:37:31",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 41
    },
-   "fingerprint": "964cc809bbea03fc5e31033df79ad671d66e1ea7e44608f82b76c8e697b2b432",
+   "fingerprint": "0fef7fd1aa64a730785f42d5cd4c6fdf630816fabed6af876bd625565808ac84",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "41 passed, 2 saboteurs killed",
@@ -120,8 +120,8 @@
    "title": "Append-only hash-chained log; any edit, rewrite, truncation or reorder is detected against a known head; a broken log is never extended (process separation from the model is P2-GUARDRAILS)"
   },
   "P2-MEMORY": {
-   "at": "2026-11-17T02:18:05",
-   "fingerprint": "9661537618b5ac99cceb360c92b6f0c07e9e25ef44a9cae1087eb38d9c7a2cde",
+   "at": "2026-11-17T02:38:12",
+   "fingerprint": "c424cebaf7afbbd5f14f5eb5bd96b7697e253f179a436c64a9b37737613fbfea",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_memory.py",
@@ -129,8 +129,8 @@
    "title": "Portable memory in an open format round-trips and is encrypted at rest"
   },
   "P2-MODEL": {
-   "at": "2026-11-17T02:18:05",
-   "fingerprint": "774a454e7edd52f67f2ec452193b8c611bc4b8c78444db799e20bc6e3f304516",
+   "at": "2026-11-17T02:38:12",
+   "fingerprint": "5790ab2372a265c69be8b42afdb06fce631317f7454dd406b7f8fc5cfbe2e4f1",
    "label": "EMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_model_portable.py",
@@ -138,8 +138,8 @@
    "title": "The local model answers from the read-only medium with nothing installed on the host"
   },
   "P2-PAIRING": {
-   "at": "2026-11-17T02:18:05",
-   "fingerprint": "49bb0e6a8ed7998ddce6c74c4fed8778ebe8c3b11a900109300a5f05681ca382",
+   "at": "2026-11-17T02:38:12",
+   "fingerprint": "bb7a8485f42923845133f086d1e25429b8b762efa5eefd80075e63e079565f34",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_pairing.py",
@@ -147,8 +147,8 @@
    "title": "The gate accepts only the paired key_id; MAS chat_choice approvals are absent from the device build; the host owner's launch is the session consent (D-021)"
   },
   "P2-PORTABLE": {
-   "at": "2026-11-17T02:12:10",
-   "fingerprint": "9337454ada240309f542a8a70aca5ff851378eeb1500bf6a3e0348f3bbf661bb",
+   "at": "2026-11-17T02:37:51",
+   "fingerprint": "f57c2986ad16340de2807a0078663fdc1e71f26571e11b4c1d70c0d4cb3e7a06",
    "label": "EMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_portable.py",
@@ -156,8 +156,8 @@
    "title": "One-command launch from a read-only medium in a clean VM/container; profiler picks compute mode"
   },
   "P2-ZEROTRACE": {
-   "at": "2026-11-17T02:12:10",
-   "fingerprint": "f954529fc162639a9c94ef1ca56a4a128e82e579e4e3b09200d1d954b5d88133",
+   "at": "2026-11-17T02:37:51",
+   "fingerprint": "73cce4c72ceca503e33cc6322650562bedd4c12d521391a65ff991d3445003c2",
    "label": "EMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_zerotrace.py",

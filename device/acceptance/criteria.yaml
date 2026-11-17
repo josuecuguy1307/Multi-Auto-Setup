@@ -46,7 +46,7 @@ criteria:
     min_tests: 62
     saboteurs:
       - {name: skip-validate-in-run, file: src/mas_device/gate.py, old: "            self._validate_write(action)          # stale or forged: refused before the token is touched", new: "            pass"}
-      - {name: skip-post-consume-recheck, file: src/mas_device/gate.py, old: "        self._check_state(action)                 # again, after the token is spent", new: "        pass"}
+      - {name: skip-post-consume-recheck, file: src/mas_device/gate.py, old: "            self._check_state(action)                 # again, after the token is spent", new: "            pass"}
   - id: P2-LOG
     phase: 2
     title: Append-only hash-chained log; any edit, rewrite, truncation or reorder is detected against a known head; a broken log is never extended (process separation from the model is P2-GUARDRAILS)

@@ -97,7 +97,7 @@ def _check_rel(rel) -> list[str]:
     for part in parts:
         if part in ("", ".", ".."):
             raise Refused("outside_root", rel)
-        if part.split(".")[0].lower() in _RESERVED or part[-1] in ". ":
+        if part.split(".")[0].rstrip(" ").lower() in _RESERVED or part[-1] in ". ":  # "CON .txt" is CON on older Windows
             raise Refused("bad_action", f"{part!r} is not portable")
     return parts
 
@@ -209,6 +209,10 @@ class PolicyGate:
                 key = unicodedata.normalize("NFC", prefix).casefold()
                 if spelled.setdefault(key, prefix) != prefix:
                     raise Refused("bad_action", f"{prefix!r} and {spelled[key]!r} are the same entry on a case-insensitive host")
+        folders = {unicodedata.normalize("NFC", "/".join(r.split("/")[:i])).casefold() for r in files for i in range(1, len(r.split("/")))}
+        clash = [r for r in files if unicodedata.normalize("NFC", r).casefold() in folders]
+        if clash:
+            raise Refused("bad_action", f"{clash[0]!r} would be both a file and a folder of this action")
         for rel in sorted(files):
             data = files[rel]
             p = self._resolve(rel)
@@ -313,8 +317,9 @@ class PolicyGate:
         return self._run(token, action, ap.Class.WRITE)
 
     def undo_for(self, write_action_hash: bytes) -> dict:
-        if not isinstance(write_action_hash, (bytes, bytearray)):
+        if type(write_action_hash) not in (bytes, bytearray):
             raise Refused("undo_not_issued", "an action hash is bytes")
+        write_action_hash = bytes(write_action_hash)
         with self._lock:
             uh = self._undo_by_write.get(write_action_hash)
             if uh is None or uh not in self._undoable:
@@ -350,8 +355,16 @@ class PolicyGate:
             self._shape(action, RESTORE_KEYS, "files.restore", "rmdirs")
             self._check_state(action)
         approval = self._approvals.consume(token, action, cls=cls)
-        self._check_state(action)                 # again, after the token is spent
         kind = "write" if cls == ap.Class.WRITE else "undo"
+        try:
+            self._check_state(action)                 # again, after the token is spent
+        except Refused as exc:  # the token is spent: the log says so, so no counter goes missing from it (rule 5)
+            try:
+                self._log.append(f"{kind}.refused", {"action_hash": approval.action_hash.hex(), "counter": approval.counter,
+                                                     "key_id": approval.key_id.hex(), "nonce": approval.nonce.hex(), "reason": exc.code})
+            except (LogBroken, OSError):
+                pass
+            raise
         try:
             self._log.append(f"{kind}.approved", {
                 "action_hash": approval.action_hash.hex(), "undo_hash": approval.undo_hash.hex(), "key_id": approval.key_id.hex(),
