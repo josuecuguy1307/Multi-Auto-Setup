@@ -805,3 +805,53 @@ def test_a_token_whose_length_lies_is_malformed(gate):
     with pytest.raises(ap.Rejected) as e:
         gate.consume(LyingLength(b"x" * 10), ACTION, cls=ap.Class.WRITE)
     assert e.value.code == "malformed"
+
+
+
+# ---- evaluator run 4 (device/evals/evaluator/P1-UNIT.run4.md) ---------------------------------------
+
+def test_the_key_signs_exactly_what_it_showed_even_if_the_host_changes_its_buffers(gate, key):
+    benign = gate.begin(ACTION, ap.Class.WRITE)
+    evil_action = {"kind": "rm_rf", "target": "host-aaaa", "files": {}, "undo": {"kind": "noop"}}
+    evil = gate.begin(evil_action, ap.Class.WRITE)
+    rq = benign.key_request()
+    rq = rq._replace(**{f: bytearray(getattr(rq, f)) for f in ("session_id", "nonce", "action_hash", "undo_hash", "summary")})
+    h = key.request(rq)
+    shown = key.display_text()
+    key._clock.t += KeyModel.MIN_DWELL_S
+    key.button.press()
+    for f in ("nonce", "action_hash", "undo_hash", "summary"):  # the host rewrites its buffers after the press
+        getattr(rq, f)[:] = getattr(evil.key_request(), f)
+    tok = key.sign(h)
+    assert key.display_text() == "" and shown.startswith("WRITE")
+    with pytest.raises(ap.Rejected):
+        gate.consume(tok, evil_action, cls=ap.Class.WRITE)
+    assert gate.consume(tok, ACTION, cls=ap.Class.WRITE).counter == 1, "the token covers the request that was shown"
+
+
+def test_nonces_are_sixteen_random_bytes_and_never_overwrite_a_pending(gate):
+    seen = set()
+    for _ in range(ap.MAX_PENDING):
+        n = gate.begin(ACTION, ap.Class.WRITE).nonce
+        assert type(n) is bytes and len(n) == 16
+        seen.add(n)
+    assert len(seen) == ap.MAX_PENDING == len(gate._pending)
+
+
+def test_a_session_id_is_exactly_32_bytes(key):
+    for bad in (b"x" * 31, b"x" * 33, "x" * 32):
+        with pytest.raises((ValueError, TypeError)):
+            ap.Gate({key.key_id: key.public_key}, session=bad)
+
+
+def test_a_string_of_token_length_is_malformed(gate):
+    with pytest.raises(ap.Rejected) as e:
+        gate.consume("x" * (ap.BODY_LEN + ap.SIG_LEN), ACTION, cls=ap.Class.WRITE)
+    assert e.value.code == "malformed"
+
+
+def test_a_huge_integer_clock_reading_is_refused_cleanly(key):
+    gate = ap.Gate({key.key_id: key.public_key}, session=SESSION, clock=lambda: 2**1100)
+    with pytest.raises(ap.Rejected) as e:
+        gate.begin(ACTION, ap.Class.WRITE)
+    assert e.value.code == "expired"
