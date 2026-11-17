@@ -268,13 +268,13 @@ D-004 approval token (fixed-width signed struct, pure Ed25519 with monocypher-ed
 
 ### R-1 resolutions (builder; P1-DOCS stays FAIL while any line says OPEN)
 
-- M1: OPEN
-- M2: OPEN
-- M3: OPEN
-- M4: OPEN
-- M5: OPEN
-- M6: OPEN
-- M7: OPEN
+- M1: RESOLVED — fingerprint ignores generated blocks; `status` and `verify` write nothing; device/tests/test_harness.py::test_m1_a_criterion_that_covers_its_own_table_stays_pass and ::test_m1_status_and_verify_write_nothing
+- M2: RESOLVED — `device_accept.py confirm` (clean tree, fresh worktree at HEAD, recorded results ignored) is the loop's only stop condition; device/tests/test_harness.py::test_m2_*
+- M3: RESOLVED — hermetic pytest (oracle's own ini, no PYTEST_* env, plugin autoload off, conftest refusal, the tree's own src first on PYTHONPATH), min_tests, timeouts, oracle and criterion in the fingerprint; device/tests/test_harness.py::test_m3_*
+- M4: RESOLVED — `saboteurs:` in criteria.yaml (P1-UNIT 4, P2-GATE 2, P2-LOG 2), applied to a copy, a passing test must fail; device/tests/test_harness.py::test_m4_*. `requires:` not added: every tool-dependent test fails (never skips) when its tool is missing
+- M5: RESOLVED — the red commit's tests are run at that commit (must fail, at least 10 tests) and the green commit's at theirs (must pass); the evaluator report must carry the Code-Hash of the judged code; device/tests/test_unit_cycle.py
+- M6: RESOLVED — criteria P0-SECRETS, P2-MODEL, P2-MEMORY, P2-PAIRING, P3-REPORT, P3-NOCREDS, P4-SECBOOT, P5-ENCLOSURE, P6-PAPER added (FAIL until built); thresholds pinned in criteria.yaml; P2-ZEROTRACE retitled to D-010; device/tests/test_docs.py::test_r1_m6_criteria_and_thresholds_exist
+- M7: RESOLVED (decision; enforcement FAIL until built) — D-021, criterion P2-PAIRING; device/tests/test_docs.py::test_r1_m7_consent_decision_recorded
 - M8: RESOLVED — `run.sh` advisor is opt-in (`MAS_ADVISOR` default off); device/tests/test_harness.py::test_unattended_loop_spends_no_advisor_credits_by_default
 
 ## A-2 Advisor — Fable 5.2, 2026-11-17: firmware core spec for P4-FW-HOST (condensed faithfully; builder follows it)
@@ -374,8 +374,8 @@ remove a decoupling cap → net check fails.
 - REQUEST draws the summary first, then clears the press latch and stamps t_req. A press that lands while the screen is still being
   redrawn is forgotten (A-2 had the opposite order: a press during the redraw approved a request nobody could see yet).
 - A press counts only after the summary has been on screen for **1 s** (`MIN_DWELL_MS`, `KeyModel.MIN_DWELL_S`); an earlier press is
-  consumed and answered `no_press`, and the request stays pending. This closes the bait-and-switch where a host swaps the request just
-  before the press it expects. The press window (≤ 30 s) still runs from the same moment.
+  consumed and answered `no_press`, and the request stays pending. This **narrows** the bait-and-switch (a host swapping the request just
+  before the press it expects): a swap made 1 s or more before the press is still signed (evaluator run 4). Not closed. The press window (≤ 30 s) still runs from the same moment.
 - Tests: a mock display that presses during the redraw; press at 0 ms and 999 ms refused, 1000 ms accepted; bait-and-switch refused;
   TRNG failure and failed or stuck first-boot key writes give nv_fault with no token.
 
@@ -400,3 +400,20 @@ remove a decoupling cap → net check fails.
   socket terminal. Renode starts in ~20 s, so each instance runs ten scripts back to back.
 - P4-FW-RENODE tests: transcripts identical to the host build over the same 20 scripts as QEMU (≥ 30 signatures per block), no token
   without a press, the dwell, the gate accepting a token once, and a frozen-clock saboteur that must differ.
+
+## D-020 Gate and approvals after evaluator runs 2 (2026-11-17)
+- Approvals: clock read under the gate lock; the sweep removes only entries past their TTL (a newer pending is never swept); the cap is per
+  class (64), so a flood of one class never blocks a person's UNDO; classes are exact `int`/`Class` only; non-text actions and an
+  oversized TTL are refused cleanly; an undo kind matches `[a-z][a-z0-9_.-]{0,63}`; the key model never signs on a NaN tick.
+- Gate: a plain Lock plus a same-thread refusal (a nested write from a log hook is refused); the realpath containment check is tested on
+  its own; all Windows device names refused (COM0-9, LPT0-9, COM¹²³, LPT¹²³, CONIN$, CONOUT$, CLOCK$); lone surrogates refused.
+- Declared, not tested separately: `_own` copies in `begin`/`begin_undo` (consume recomputes everything from its own copy).
+- Process: the run-2 P1 tests were seen red but committed together with the fix (29c97cd); every other unit kept red-then-green commits.
+
+## D-021 Whose action counts on someone else's machine (2026-11-17; reviewer R-1 M7)
+- The host owner's own launch of the runtime from the device is the session consent (MISSION 4.1 rule 1); the launcher shows the terms
+  (read-only by default, what a press approves, how to unplug) before anything else and logs that it was shown.
+- Every write still needs the device's button (rule 2). JOIN_FLEET (rule 7) additionally needs a confirmation typed on the host by its owner,
+  recorded in the audit log next to the press: the device owner alone can never add a borrowed machine to the fleet.
+- Enforced by P2-PAIRING and P2-FLEET (both FAIL until built).
+

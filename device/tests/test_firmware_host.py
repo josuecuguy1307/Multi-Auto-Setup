@@ -694,13 +694,15 @@ def test_a_corrupted_key_page_is_never_silently_replaced_once_the_key_has_signed
 
 # ---- saboteurs: a deliberately weakened firmware must fail these checks ---------------------
 
-def _saboteur(tmp_path, old: str, new: str, file: str = "core/mas_core.c") -> Path:
+def _saboteur(tmp_path, old: str, new: str, file: str = "core/mas_core.c", also: tuple = ()) -> Path:
     src = tmp_path / "fw"
     shutil.copytree(FW, src, ignore=shutil.ignore_patterns("__pycache__"))
     p = src / file
     text = p.read_text(encoding="utf-8")
-    assert text.count(old) == 1, f"saboteur anchor not found once in {file}: {old!r}"
-    p.write_text(text.replace(old, new), encoding="utf-8")
+    for o, n in ((old, new),) + tuple(also):
+        assert text.count(o) == 1, f"saboteur anchor not found once in {file}: {o!r}"
+        text = text.replace(o, n)
+    p.write_text(text, encoding="utf-8")
     try:
         return fwb.build(src, tmp_path / "out")
     except fwb.BuildError as exc:
@@ -708,7 +710,10 @@ def _saboteur(tmp_path, old: str, new: str, file: str = "core/mas_core.c") -> Pa
 
 
 def test_saboteur_no_latch_clear_on_request_is_caught(tmp_path):
-    bad = _saboteur(tmp_path, "press_latched = 0; /* SABOTEUR-ANCHOR: latch clear */", "/* removed */")
+    # both guards of "a press before the request never counts" removed: the latch clear and the press-before-stamp check (D-017;
+    # either one alone is equivalent while the other holds)
+    bad = _saboteur(tmp_path, "press_latched = 0; /* SABOTEUR-ANCHOR: latch clear */", "/* removed */",
+                    also=(("if (t < pending.t_req || t - pending.t_req < MIN_DWELL_MS)", "if (t - pending.t_req < MIN_DWELL_MS)"),))
     f = Fw(bad, tmp_path / "s.bin")
     with pytest.raises(AssertionError):
         check_press_before_request_does_not_count(f)  # the suite's own check fails on the weakened build

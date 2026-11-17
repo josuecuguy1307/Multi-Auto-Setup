@@ -43,8 +43,10 @@ Before ending: append a dated PROGRESS.md entry (what you did, what failed, what
 
 for i in $(seq 1 "${MAS_MAX_SESSIONS:-200}"); do
   [ -f AGENT_STOP ] && { echo "AGENT_STOP found; stopping."; break; }
-  if py scripts/device_accept.py status > "$LOGDIR/status.txt" 2>&1; then
-    echo "every criterion PASS; stopping."; break
+  # stop condition: only `confirm` (clean tree, fresh worktree at HEAD, every criterion re-run) ends the loop; `status` only reports
+  py scripts/device_accept.py status > "$LOGDIR/status.txt" 2>&1
+  if py scripts/device_accept.py confirm > "$LOGDIR/confirm.txt" 2>&1; then
+    echo "confirmed at $(git rev-parse --short HEAD): every criterion PASS; stopping."; break
   fi
   stamp=$(date +%Y%m%dT%H%M%S)
   echo "session $i ($stamp): $(tail -1 "$LOGDIR/status.txt")"

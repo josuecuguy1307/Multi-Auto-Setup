@@ -157,7 +157,7 @@ static void op_sign(const uint8_t *p, size_t n) {
     press_latched = 0;
     hal_irq_enable();
     if (!pressed) { reply(ST_NO_PRESS, 0, 0); return; }
-    if (t - pending.t_req < MIN_DWELL_MS) { reply(ST_NO_PRESS, 0, 0); return; } /* too soon for anyone to have read the screen */
+    if (t < pending.t_req || t - pending.t_req < MIN_DWELL_MS) { reply(ST_NO_PRESS, 0, 0); return; } /* before the summary was up, or too soon to have read it */
     pending.valid = 0; /* one press, one request */
     hal_display(ZERO32, 0);
     uint32_t pw = pending.payload[PW_AT] < MAX_WINDOW_S ? pending.payload[PW_AT] : MAX_WINDOW_S;

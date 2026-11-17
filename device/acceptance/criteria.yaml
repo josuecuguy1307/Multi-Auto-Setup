@@ -16,6 +16,7 @@ criteria:
     tests: [device/tests/test_harness.py]
     covers: [scripts/device_accept.py, device/acceptance/criteria.yaml, CLAUDE.md, .claude/settings.json, .claude/agents]
     label: REAL
+    min_tests: 41
   - id: P1-DOCS
     phase: 1
     title: DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice
@@ -28,6 +29,12 @@ criteria:
     tests: [device/tests/test_approval.py, device/tests/test_unit_cycle.py]
     covers: [src/mas_device/approval.py, src/mas_device/keymodel.py, device/evals/evaluator]
     label: SIMULATED
+    min_tests: 100
+    saboteurs:
+      - {name: skip-signature-check, file: src/mas_device/approval.py, old: "            pub.verify(sig, body_bytes)", new: "            pass"}
+      - {name: keep-nonce-after-use, file: src/mas_device/approval.py, old: "            del self._pending[p.nonce]\n            self._last_counter", new: "            self._last_counter"}
+      - {name: skip-summary-check, file: src/mas_device/approval.py, old: "if not (b.req.summary == p.summary == summary_for(action, p.cls)) or b.req.press_window_s != p.press_window_s:", new: "if False:"}
+      - {name: skip-ttl-check, file: src/mas_device/approval.py, old: "            if not self._live(p, self.clock()):", new: "            if False:"}
 
   # ---- Phase 2: software v0 -----------------------------------------------------------------
   - id: P2-GATE
@@ -36,12 +43,20 @@ criteria:
     tests: [device/tests/test_gate.py]
     covers: [src/mas_device]
     label: SIMULATED
+    min_tests: 62
+    saboteurs:
+      - {name: skip-validate-in-run, file: src/mas_device/gate.py, old: "            self._validate_write(action)          # stale or forged: refused before the token is touched", new: "            pass"}
+      - {name: skip-post-consume-recheck, file: src/mas_device/gate.py, old: "        self._check_state(action)                 # again, after the token is spent", new: "        pass"}
   - id: P2-LOG
     phase: 2
     title: Append-only hash-chained log; any edit, rewrite, truncation or reorder is detected against a known head; a broken log is never extended (process separation from the model is P2-GUARDRAILS)
     tests: [device/tests/test_log.py]
     covers: [src/mas_device]
     label: SIMULATED
+    min_tests: 41
+    saboteurs:
+      - {name: skip-known-head-hash, file: src/mas_device/log.py, old: "        if hashes[expected.seq] != expected.hash:", new: "        if False:"}
+      - {name: skip-byte-exact-line, file: src/mas_device/log.py, old: " and _line(rec) == raw + b\"\\n\":", new: ":"}
   - id: P2-GUARDRAILS
     phase: 2
     title: Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations
@@ -56,7 +71,8 @@ criteria:
     label: EMULATED
   - id: P2-ZEROTRACE
     phase: 2
-    title: Filesystem diff of the host before/after a session is empty outside approved writes
+    title: Nothing installed after unplug (no service, driver, autostart, PATH change or file outside the declared temp dir); OS residue only from the enumerated allowlist (D-010 three-arm diff)
+    thresholds: {residue_allowlist: device/acceptance/residue_allowlist.yaml}
     tests: [device/tests/test_zerotrace.py]
     covers: [src/mas_device, device/medium]
     label: EMULATED
@@ -88,18 +104,21 @@ criteria:
     tests: [device/tests/test_firmware_host.py]
     covers: [device/firmware]
     label: SIMULATED
+    min_tests: 323
   - id: P4-FW-EMU
     phase: 4
     title: Same firmware runs in QEMU (mps2-an505, Cortex-M33) with transcripts identical to the host build; button is the only approval path
     tests: [device/tests/test_firmware_emu.py]
     covers: [device/firmware]
     label: EMULATED
+    min_tests: 27
   - id: P4-FW-RENODE
     phase: 4
     title: Same firmware runs in Renode with transcripts identical to the host build and QEMU
     tests: [device/tests/test_firmware_renode.py]
     covers: [device/firmware]
     label: EMULATED
+    min_tests: 4
 
   # ---- Phase 5: hardware --------------------------------------------------------------------
   - id: P5-PCB
@@ -108,6 +127,8 @@ criteria:
     tests: [device/tests/test_pcb.py]
     covers: [device/hardware]
     label: DESIGN-ONLY
+    min_tests: 20
+    timeout_s: 2400
 
   # ---- Phase 6: evals and paper -------------------------------------------------------------
   - id: P6-EVALS
@@ -122,3 +143,66 @@ criteria:
     tests: [device/tests/test_repo.py]
     covers: [README.md, THIRD_PARTY.md, device]
     label: REAL
+
+  # ---- added after reviewer R-1 M6 (2026-11-17): every MISSION section 2/7 item has a criterion; numbers pinned before any run ----
+  - id: P0-SECRETS
+    phase: 1
+    title: No credentials, keys or tokens anywhere in the repository (secret scan over the whole tree and history)
+    tests: [device/tests/test_secrets.py]
+    covers: [.]
+    label: REAL
+  - id: P2-MODEL
+    phase: 2
+    title: The local model answers from the read-only medium with nothing installed on the host
+    tests: [device/tests/test_model_portable.py]
+    covers: [src/mas_device, device/medium]
+    label: EMULATED
+  - id: P2-MEMORY
+    phase: 2
+    title: Portable memory in an open format round-trips and is encrypted at rest
+    tests: [device/tests/test_memory.py]
+    covers: [src/mas_device]
+    label: SIMULATED
+  - id: P2-PAIRING
+    phase: 2
+    title: The gate accepts only the paired key_id; MAS chat_choice approvals are absent from the device build; the host owner's launch is the session consent (D-021)
+    tests: [device/tests/test_pairing.py]
+    covers: [src/mas_device]
+    label: SIMULATED
+  - id: P3-REPORT
+    phase: 3
+    title: The inspection report is readable by the owner and consumable by the agent (schema-checked)
+    tests: [device/tests/test_inspect_report.py]
+    covers: [src/mas_device]
+    label: SIMULATED
+  - id: P3-NOCREDS
+    phase: 3
+    title: Inspection never collects credentials; planted secrets never reach the report or the model context
+    tests: [device/tests/test_inspect_nocreds.py]
+    covers: [src/mas_device]
+    label: SIMULATED
+  - id: P4-SECBOOT
+    phase: 4
+    title: Secure boot and lock design documented (RDP, TrustZone option bytes, key identity) and checked against the firmware's assumptions
+    tests: [device/tests/test_secboot_doc.py]
+    covers: [device/firmware]
+    label: DESIGN-ONLY
+  - id: P5-ENCLOSURE
+    phase: 5
+    title: Parametric enclosure fits the board (clearances, USB-C opening, button access) by automatic check
+    tests: [device/tests/test_enclosure.py]
+    covers: [device/hardware]
+    label: DESIGN-ONLY
+  - id: P6-PAPER
+    phase: 6
+    title: Paper regenerates from raw results (LaTeX source, authors, arXiv variant with methods statement, manual-README baseline, error bars, outside judge, limitations)
+    tests: [device/tests/test_paper.py]
+    covers: [device/paper, device/evals]
+    label: REAL
+
+# Thresholds fixed before any result exists (R-1 M6). A criterion's tests read them from here; changing one stales its PASS.
+thresholds:
+  P3-INSPECT: {precision_min: 0.95, recall_min: 0.90}
+  P6-EVALS: {k_consecutive_runs: 3}
+  P4-FW-HOST: {fuzz_frames_min: 10000, differential_scripts_min: 200}
+  P2-FLEET: {min_isolated_machines: 2}

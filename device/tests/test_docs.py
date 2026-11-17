@@ -70,3 +70,21 @@ def test_needs_human_covers_the_mission_items():
     n = read("NEEDS_HUMAN.md").lower()
     for word in ("physical machines", "buying boards", "review of the pcb", "arxiv", "license"):
         assert word in n
+
+
+def test_r1_m6_criteria_and_thresholds_exist():
+    import yaml
+    doc = yaml.safe_load(read("device/acceptance/criteria.yaml"))
+    ids = {c["id"] for c in doc["criteria"]}
+    for cid in ("P0-SECRETS", "P2-MODEL", "P2-MEMORY", "P2-PAIRING", "P3-REPORT", "P3-NOCREDS", "P4-SECBOOT", "P5-ENCLOSURE", "P6-PAPER"):
+        assert cid in ids, cid
+    t = doc["thresholds"]
+    assert t["P3-INSPECT"]["precision_min"] > 0 and t["P3-INSPECT"]["recall_min"] > 0 and t["P6-EVALS"]["k_consecutive_runs"] >= 2
+    zt = next(c for c in doc["criteria"] if c["id"] == "P2-ZEROTRACE")
+    assert "allowlist" in zt["title"] and "empty outside approved writes" not in zt["title"]
+
+
+def test_r1_m7_consent_decision_recorded():
+    d = read("DECISIONS.md")
+    block = d.split("## D-021", 1)[1].split("\n## ", 1)[0]
+    assert "host owner" in block and "JOIN_FLEET" in block and "P2-PAIRING" in block

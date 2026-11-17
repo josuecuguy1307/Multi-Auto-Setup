@@ -101,3 +101,11 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   transcript test compared mostly refusals (1 signature in 20 scripts) and missed a frozen clock — fixed with approval flows and a saboteur.
   27 tests pass. Renode split into P4-FW-RENODE (FAIL until installed).
 - Renode 1.17.0 portable (approved by Josué) runs the same an505 ELF on its stock MPS2 TrustZone platform: P4-FW-RENODE 4 tests.
+- Software findings round (Josué: "fix software findings"): P1-UNIT runs 1-2, P2-GATE runs 1-2, P4-FW-HOST run 4 and all 7 reviewer R-1
+  must-fixes resolved test-first (D-020, D-021, R-1 resolutions). Oracle rewritten: hermetic pytest, `confirm` (fresh worktree at HEAD) as
+  the loop's only stop condition, saboteurs in criteria (8, all killed), min_tests, timeouts, oracle identity and criterion in the
+  fingerprint, status/verify read-only, 9 new criteria with pinned thresholds. P1-DOCS now PASS. Failed attempts: ini `pythonpath` resolves
+  relative to the ini file, so the first hermetic runs and worktree/saboteur copies imported the installed code (fixed with PYTHONPATH =
+  the tree's own src); the oracle's default arguments captured module constants at definition time (status wrote the real ACCEPTANCE.md
+  from a test); a test fixture named src/code.py shadowed the stdlib `code` module once src came first on the path; `git show` output
+  decoded with the console code page returned None. Evaluator runs 3 (P1-UNIT, P2-GATE) next; then the board evaluator's findings.

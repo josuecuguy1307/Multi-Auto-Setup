@@ -14,8 +14,9 @@ An undo runs only if its hash equals the undo_hash of a write approval this gate
 Entries in the log, or tokens of class UNDO for any other undo, do not make an undo valid. A restart forgets every right to undo
 (recovery from a key-countersigned log head is later work: DECISIONS D-006, LOG_HEAD).
 
-The gate copies every action it is handed (it never reads the caller's object again), serialises writes and undos (one at a time,
-from validation to undo registration), refuses paths that collide without case or reach an entry through an alias (case variant, 8.3
+The gate copies every action it is handed (it never reads the caller's object again; the copies in begin/begin_undo are defence in
+depth, since consume recomputes everything from its own copy), serialises writes and undos (one at a time, from validation to undo
+registration, across threads; a nested call from the same thread, e.g. from a log hook, is refused), refuses paths that collide without case or reach an entry through an alias (case variant, 8.3
 name), and refuses files with other hard links.
 
 SIMULATED: the host is a folder (`root`) on the dev machine; on the device the gate runs in its own process and the model reaches it only
@@ -47,7 +48,8 @@ REASONS = ("bad_action", "outside_root", "pre_state_changed", "undo_mismatch", "
 WRITE_KEYS = {"kind", "target", "files", "mkdirs", "undo"}
 RESTORE_KEYS = {"kind", "target", "files", "rmdirs"}
 FILE_KEYS = {"path", "pre", "content_b64"}
-_RESERVED = {"con", "prn", "aux", "nul"} | {f"com{i}" for i in range(1, 10)} | {f"lpt{i}" for i in range(1, 10)}
+_RESERVED = ({"con", "prn", "aux", "nul", "conin$", "conout$", "clock$"} | {f"com{i}" for i in "0123456789\u00b9\u00b2\u00b3"}
+             | {f"lpt{i}" for i in "0123456789\u00b9\u00b2\u00b3"})
 
 
 class Refused(Exception):
@@ -83,6 +85,8 @@ def _check_rel(rel) -> list[str]:
     """A relative POSIX path with no '.', '..', empty part, drive, backslash, NUL, non-NFC text or Windows device name."""
     if not isinstance(rel, str) or not rel:
         raise Refused("bad_action", "a path is a non-empty string")
+    if any(0xD800 <= ord(c) <= 0xDFFF for c in rel):
+        raise Refused("bad_action", "path has a lone surrogate")
     if unicodedata.normalize("NFC", rel) != rel or any(ord(c) < 0x20 for c in rel):
         raise Refused("bad_action", "path is not NFC or has control characters")
     if rel.startswith("/") or "\\" in rel or ":" in rel:
@@ -150,7 +154,8 @@ class PolicyGate:
         self._undo_by_write: dict[bytes, bytes] = {}   # write action_hash -> undo_hash, for executed writes
         self._undoable: dict[bytes, dict] = {}         # undo_hash -> undo action, until it runs once
         self._lock = threading.Lock()
-        self._run_lock = threading.RLock()  # one write or undo at a time, from validation to the undo registration
+        self._run_lock = threading.Lock()  # one write or undo at a time, from validation to the undo registration
+        self._run_owner: int | None = None   # a nested call from the same thread (a log hook) is refused, not run
 
     # -- paths and state
 
@@ -308,6 +313,8 @@ class PolicyGate:
         return self._run(token, action, ap.Class.WRITE)
 
     def undo_for(self, write_action_hash: bytes) -> dict:
+        if not isinstance(write_action_hash, (bytes, bytearray)):
+            raise Refused("undo_not_issued", "an action hash is bytes")
         with self._lock:
             uh = self._undo_by_write.get(write_action_hash)
             if uh is None or uh not in self._undoable:
@@ -326,8 +333,14 @@ class PolicyGate:
 
     def _run(self, token, action, cls: ap.Class) -> dict:
         action = self._own(action)
+        if self._run_owner == threading.get_ident():
+            raise Refused("bad_action", "a write cannot start inside another write")
         with self._run_lock:
-            return self._run_locked(token, action, cls)
+            self._run_owner = threading.get_ident()
+            try:
+                return self._run_locked(token, action, cls)
+            finally:
+                self._run_owner = None
 
     def _run_locked(self, token, action, cls: ap.Class) -> dict:
         if cls == ap.Class.WRITE:
