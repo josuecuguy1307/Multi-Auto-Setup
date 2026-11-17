@@ -109,3 +109,8 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   the tree's own src); the oracle's default arguments captured module constants at definition time (status wrote the real ACCEPTANCE.md
   from a test); a test fixture named src/code.py shadowed the stdlib `code` module once src came first on the path; `git show` output
   decoded with the console code page returned None. Evaluator runs 3 (P1-UNIT, P2-GATE) next; then the board evaluator's findings.
+- Session end (usage limit): P1-UNIT evaluator runs 3-4 and P2-GATE run 3 fixed test-first and pushed (52ab72b). P1-UNIT passes every test
+  and saboteur; it needs an evaluator PASS whose Code-Hash is 386ca88241a01442e0b434d1c51039b692f0866916aeb969a4a0c6aa161438ff (re-run
+  the evaluator at 52ab72b). P2-GATE evaluator run 4 was still running at the limit (its report, if any, is not recorded). NEXT: P1-UNIT
+  evaluator run 5; P5-PCB evaluator findings (device/evals/evaluator/P5-PCB.md: per-pin decoupling incl. pin 24, USB D± on F.Cu only,
+  pcbnew silk-stamp check, pin-level netlist tests, .kicad_dru content test, fab equals a fresh build, HUMAN_REVIEW fixes); then Phase 2 units.
