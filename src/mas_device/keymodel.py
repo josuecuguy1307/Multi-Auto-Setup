@@ -105,7 +105,10 @@ class KeyModel:
         _write_atomic(self._folder / "state.json", json.dumps(state).encode())
 
     def request(self, req: KeyRequest) -> RequestHandle:
-        lens = (len(req.session_id), len(req.nonce), len(req.action_hash), len(req.undo_hash), len(req.summary))
+        fields = (req.session_id, req.nonce, req.action_hash, req.undo_hash, req.summary)
+        if not all(type(f) in (bytes, bytearray) for f in fields):
+            raise KeyRefused("malformed")  # bytes only: a str or list of the right length is not a field
+        lens = tuple(len(f) for f in fields)
         if lens != (32, 16, 32, 32, 32):
             raise KeyRefused("malformed")
         if not all(0x20 <= c < 0x7F for c in req.summary):
@@ -140,9 +143,9 @@ class KeyModel:
         self._pending = None  # one press, one request
         if press[1] - p.at > min(p.req.press_window_s, self.PRESS_WINDOW_S):
             raise KeyRefused("press_window")
+        body = pack_body(self.key_id, self._counter + 1, p.req)  # built first: no counter is spent on a body that cannot exist
         self._counter += 1
         self._save()  # committed before the signature exists
-        body = pack_body(self.key_id, self._counter, p.req)
         return self._release(body + self.__private.sign(body))
 
     def _release(self, token: bytes) -> bytes:

@@ -255,10 +255,12 @@ class Gate:
         elapsed = now - p.created
         return math.isfinite(elapsed) and 0 <= elapsed < self.ttl_s
 
-    def _expired_by_age(self, p: Pending, now: float) -> bool:
-        """For the sweep only: past its TTL, or a non-finite age. A negative age (a pending newer than `now`) is kept."""
-        elapsed = now - p.created
-        return not math.isfinite(elapsed) or elapsed >= self.ttl_s
+    def _now(self) -> float:
+        """One clock reading, refused unless it is a real finite number: a bad reading is never stored and never wedges the gate."""
+        v = self.clock()
+        if type(v) not in (int, float) or not math.isfinite(v):
+            raise Rejected("expired", "the gate's clock gave an unusable reading")
+        return float(v)
 
     def begin(self, action: dict, cls: Class) -> Pending:
         cls = as_class(cls)
@@ -269,8 +271,10 @@ class Gate:
             raise Rejected("no_undo", "a write whose undo cannot be stated is never offered")
         summary = summary_for(action, cls)
         with self._lock:
-            now = self.clock()  # read under the lock: no begin can sweep with a time older than a pending another one just made
-            for nonce in [n for n, q in self._pending.items() if self._expired_by_age(q, now)]:
+            now = self._now()  # read under the lock: no begin can sweep with a time older than a pending another one just made
+            # the sweep agrees with consume: whatever could never be consumed now (past its TTL, or from the future after a clock
+            # rollback) is dropped and holds no slot of the cap
+            for nonce in [n for n, q in self._pending.items() if not self._live(q, now)]:
                 del self._pending[nonce]
             if sum(1 for q in self._pending.values() if q.cls == cls) >= MAX_PENDING:
                 raise Rejected("too_many_pending", f"{MAX_PENDING} {cls.name} approvals are already waiting")
@@ -282,6 +286,8 @@ class Gate:
         if not isinstance(token, (bytes, bytearray)) or len(token) != BODY_LEN + SIG_LEN:
             raise Rejected("malformed", "a token is exactly %d bytes" % (BODY_LEN + SIG_LEN))
         token = bytes(token)
+        if len(token) != BODY_LEN + SIG_LEN:  # its real length, whatever the object claimed
+            raise Rejected("malformed", "a token is exactly %d bytes" % (BODY_LEN + SIG_LEN))
         body_bytes, sig = token[:BODY_LEN], token[BODY_LEN:]
         b = unpack_body(body_bytes)
         pub = self._keys.get(b.key_id)
@@ -301,7 +307,7 @@ class Gate:
                 raise Rejected("unknown_nonce", "never issued here, already used, or forgotten at restart")
             if b.req.session_id != self.session or p.session != self.session:
                 raise Rejected("wrong_session")
-            if not self._live(p, self.clock()):
+            if not self._live(p, self._now()):
                 del self._pending[p.nonce]
                 raise Rejected("expired")
             if b.req.cls != p.cls or cls != p.cls:

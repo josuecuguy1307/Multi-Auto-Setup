@@ -34,7 +34,7 @@ criteria:
       - {name: skip-signature-check, file: src/mas_device/approval.py, old: "            pub.verify(sig, body_bytes)", new: "            pass"}
       - {name: keep-nonce-after-use, file: src/mas_device/approval.py, old: "            del self._pending[p.nonce]\n            self._last_counter", new: "            self._last_counter"}
       - {name: skip-summary-check, file: src/mas_device/approval.py, old: "if not (b.req.summary == p.summary == summary_for(action, p.cls)) or b.req.press_window_s != p.press_window_s:", new: "if False:"}
-      - {name: skip-ttl-check, file: src/mas_device/approval.py, old: "            if not self._live(p, self.clock()):", new: "            if False:"}
+      - {name: skip-ttl-check, file: src/mas_device/approval.py, old: "            if not self._live(p, self._now()):", new: "            if False:"}
 
   # ---- Phase 2: software v0 -----------------------------------------------------------------
   - id: P2-GATE
