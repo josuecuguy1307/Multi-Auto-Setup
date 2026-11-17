@@ -39,9 +39,9 @@ k consecutive passing runs of each eval; limitations section lists what was only
 <!-- BEGIN GENERATED: device_accept.py -->
 | ID | Phase | Status | Label | Criterion | Reason |
 |---|---|---|---|---|---|
-| P1-HARNESS | 1 | **FAIL** | REAL | The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist | never run |
-| P1-DOCS | 1 | **FAIL** | REAL | DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice | never run |
-| P1-UNIT | 1 | **FAIL** | SIMULATED | First unit through the full cycle: signed approval tokens (guardrail 3) with an evaluator report | never run |
+| P1-HARNESS | 1 | **PASS** | REAL | The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist | 24 passed |
+| P1-DOCS | 1 | **FAIL** | REAL | DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice | 1 failed, 0 errors |
+| P1-UNIT | 1 | **FAIL** | SIMULATED | First unit through the full cycle: signed approval tokens (guardrail 3) with an evaluator report | 1 failed, 0 errors |
 | P2-GATE | 2 | **FAIL** | SIMULATED | Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first | never run |
 | P2-LOG | 2 | **FAIL** | SIMULATED | Append-only hash-chained log; any edit, truncation or reorder is detected; model process cannot write it | never run |
 | P2-GUARDRAILS | 2 | **FAIL** | SIMULATED | Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations | never run |

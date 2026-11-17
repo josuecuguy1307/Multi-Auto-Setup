@@ -25,3 +25,6 @@ Each item: what, why, exact steps. The run keeps going on other units meanwhile.
 - Buying boards (STM32U585 dev board + SSD1306 + button) — never bought by the agent.
 - Human review of the PCB before any fabrication (`HUMAN_REVIEW_PCB.md`, Phase 5).
 - arXiv submission and endorsement by an established author (Phase 6).
+
+7. **Docker Desktop is not running** (`dockerDesktopLinuxEngine` pipe missing). Start it once so the container harness, QEMU/Renode and
+   KiCad can run in containers.

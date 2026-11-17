@@ -1,0 +1,52 @@
+{
+ "checksum": "fa1d254409ea3fee70c045e8e48590b221acbd2370b816815ae77f069f810004",
+ "generated_by": "scripts/device_accept.py (do not edit by hand)",
+ "git_head_at_run": "19bc4ca",
+ "results": {
+  "P1-DOCS": {
+   "at": "2026-11-16T23:05:50",
+   "counts": {
+    "errors": 0,
+    "failures": 1,
+    "skipped": 0,
+    "tests": 15
+   },
+   "fingerprint": "eb7375dbf0be5ed0fd264bef011a541ed2f9a87923a7fb77bc82d01986420392",
+   "label": "REAL",
+   "phase": 1,
+   "reason": "1 failed, 0 errors",
+   "status": "FAIL",
+   "title": "DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice"
+  },
+  "P1-HARNESS": {
+   "at": "2026-11-16T23:05:37",
+   "counts": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 24
+   },
+   "fingerprint": "e4f0c53da74858d1c1de4808910b2904cb2fbe4321f92c91333d925c1554c579",
+   "label": "REAL",
+   "phase": 1,
+   "reason": "24 passed",
+   "status": "PASS",
+   "title": "The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist"
+  },
+  "P1-UNIT": {
+   "at": "2026-11-16T23:06:55",
+   "counts": {
+    "errors": 0,
+    "failures": 1,
+    "skipped": 0,
+    "tests": 55
+   },
+   "fingerprint": "f99f7ebfa2636caec0775fd394fa3e292b9d30c2d0f649f9db8ca6a285a5e725",
+   "label": "SIMULATED",
+   "phase": 1,
+   "reason": "1 failed, 0 errors",
+   "status": "FAIL",
+   "title": "First unit through the full cycle: signed approval tokens (guardrail 3) with an evaluator report"
+  }
+ }
+}

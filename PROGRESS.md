@@ -37,3 +37,13 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
 **Next**
 - Reviewer pass on DECISIONS.md/ACCEPTANCE.md; evaluator on P1-UNIT; commit red-then-green; push `device/v0`.
 - Then: container harness image (`device/harness/Dockerfile`), saboteur-patch check in the oracle, Phase 2 gate (P2-GATE).
+
+## 2026-11-17 — Session 1, end (usage limit reached)
+- Red commit 20d4779 proven red in a clean worktree (collection error); green commit 19bc4ca (53 approval tests pass).
+- Oracle, phase 1: P1-HARNESS PASS (24 tests). P1-DOCS FAIL (reviewer section R-1 missing). P1-UNIT FAIL (evaluator report missing).
+- The evaluator and reviewer subagents were started (custom agents load only in a new session, so they ran on the built-in Plan agent)
+  and were **stopped unfinished** at the usage limit. Re-run both first next session; save outputs to device/evals/evaluator/P1-UNIT.md
+  and DECISIONS.md "## R-1 Reviewer pass".
+- Push of device/v0 failed silently (credential prompt cannot show in this shell): nothing is on the remote. NEEDS_HUMAN #4.
+- Docker Desktop not running (daemon pipe missing): container harness blocked. NEEDS_HUMAN #7.
+- P2-LOG: tests written and seen red, then src/mas_device/log.py: 19 pass. Not yet run through the oracle or the evaluator.
