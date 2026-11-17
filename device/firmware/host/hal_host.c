@@ -7,7 +7,9 @@
  *   MAS_FLASH_STUCK=1      program calls report success but no bit changes (tests the read-back)
  *   MAS_FLASH_FAIL_CALLS=n the first n program calls fail (write nothing); later calls work
  *   MAS_ERASE_STUCK=1      erase calls report success but the page does not change (tests the erase verify)
- *   MAS_PRESS_IN_DISPLAY=1 the button is pressed once while the next summary is being drawn */
+ *   MAS_PRESS_IN_DISPLAY=1 the button is pressed once as the next summary finishes drawing
+ *   MAS_DISPLAY_MS=n       drawing a summary takes n ms of tick
+ *   MAS_PRESS_IN_IRQ_ENABLE=1 the button is pressed once when interrupts are re-enabled, then 5 ms pass */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,7 +22,8 @@ static uint8_t flash[PAGES * MAS_PAGE_SIZE];
 static FILE *ff;
 static uint64_t tick;
 static long cut_after = -1, steps, fail_after = -1, programmed;
-static int erase_mode, stuck, erase_stuck, press_in_display;
+static int erase_mode, stuck, erase_stuck, press_in_display, press_in_irq_enable;
+static long display_ms;
 static long fail_calls;
 static uint8_t disp[32];
 static uint64_t disp_next;
@@ -52,6 +55,8 @@ void host_hal_init(void) {
     fail_calls = env_long("MAS_FLASH_FAIL_CALLS", 0);
     erase_stuck = (int)env_long("MAS_ERASE_STUCK", 0);
     press_in_display = (int)env_long("MAS_PRESS_IN_DISPLAY", 0);
+    display_ms = env_long("MAS_DISPLAY_MS", 0);
+    press_in_irq_enable = (int)env_long("MAS_PRESS_IN_IRQ_ENABLE", 0);
 }
 
 static void persist(size_t off, size_t len) {
@@ -81,9 +86,12 @@ void hal_tx(const uint8_t *buf, size_t len) {
 
 void hal_display(const uint8_t summary[32], uint64_t next) {
     static const uint8_t blank[32];
-    if (press_in_display && memcmp(summary, blank, 32) != 0) { /* the button ISR fires while the screen is being redrawn */
-        press_in_display = 0;
-        mas_button_isr();
+    if (memcmp(summary, blank, 32) != 0) {
+        tick += (uint64_t)display_ms; /* a real redraw takes time (e-paper, slow LCD) */
+        if (press_in_display) {       /* the button ISR fires as the redraw finishes */
+            press_in_display = 0;
+            mas_button_isr();
+        }
     }
     memcpy(disp, summary, 32);
     disp_next = next;
@@ -145,4 +153,10 @@ int hal_flash_erase(int page) {
 }
 
 void hal_irq_disable(void) {}
-void hal_irq_enable(void) {}
+void hal_irq_enable(void) {
+    if (press_in_irq_enable) { /* the button ISR fires the moment interrupts come back on, then time passes */
+        press_in_irq_enable = 0;
+        mas_button_isr();
+        tick += 5;
+    }
+}

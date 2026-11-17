@@ -1002,3 +1002,61 @@ def test_first_boot_key_write_failure_is_a_fault_with_no_token(exe, flash, mode)
     assert st == "nv_fault"
     f.close()
     assert f.tokens() == []
+
+
+# ---- evaluator run 4 (device/evals/evaluator/P4-FW-HOST.run4.md): a redraw takes time on a real screen ----------
+
+def check_press_at_the_end_of_a_slow_redraw_is_forgotten(fw):
+    """Run with MAS_DISPLAY_MS=1500 and MAS_PRESS_IN_DISPLAY=1: the button is pressed as the 1.5 s redraw finishes."""
+    st, seq, _ = fw.request(a_request())
+    assert fw.sign(seq) == ("no_press", None)
+
+
+def check_the_dwell_starts_when_the_summary_is_visible(fw):
+    """Run with MAS_DISPLAY_MS=3000: a press 100 ms after a 3 s redraw is too soon."""
+    st, seq, _ = fw.request(a_request())
+    fw.advance(100)
+    fw.press(dwell=False)
+    assert fw.sign(seq) == ("no_press", None)
+
+
+def test_a_press_at_the_end_of_a_slow_redraw_is_forgotten(exe, flash):
+    f = Fw(exe, flash, MAS_DISPLAY_MS=1500, MAS_PRESS_IN_DISPLAY=1)
+    check_press_at_the_end_of_a_slow_redraw_is_forgotten(f)
+    f.close()
+
+
+def test_the_dwell_starts_when_the_summary_is_visible(exe, flash):
+    f = Fw(exe, flash, MAS_DISPLAY_MS=3000)
+    check_the_dwell_starts_when_the_summary_is_visible(f)
+    f.press()
+    assert f.sign(2)[0] in ("stale_request", "ok")
+    f.close()
+
+
+def test_a_press_between_the_latch_clear_and_the_stamp_leaves_the_request_pending(exe, flash):
+    f = Fw(exe, flash, MAS_PRESS_IN_IRQ_ENABLE=1)  # the button fires as interrupts come back on, then 5 ms pass before the stamp
+    st, seq, _ = f.request(a_request())
+    assert f.sign(seq) == ("no_press", None), "a press before the stamp is no press, and the request is not destroyed"
+    f.press()
+    assert f.sign(seq)[0] == "ok"
+    f.close()
+
+
+BLOCK = '    hal_display(p + SUMMARY_AT, mas_nv_counter() + 1); /* first the screen; a press during the redraw is forgotten just below */\n    seq++;\n    hal_irq_disable();\n    press_latched = 0; /* SABOTEUR-ANCHOR: latch clear */\n    hal_irq_enable();\n    pending.valid = 1;\n    pending.seq = seq;\n    pending.t_req = hal_tick_ms(); /* stamped after the display returned: the dwell and the window start when the summary is visible */\n'
+
+
+def test_saboteur_display_after_the_stamp_is_caught(tmp_path):
+    bad = _saboteur(tmp_path, BLOCK, '    seq++;\n    hal_irq_disable();\n    press_latched = 0; /* SABOTEUR-ANCHOR: latch clear */\n    hal_irq_enable();\n    pending.valid = 1;\n    pending.seq = seq;\n    pending.t_req = hal_tick_ms();\n    hal_display(p + SUMMARY_AT, mas_nv_counter() + 1);\n')
+    f = Fw(bad, tmp_path / "s.bin", MAS_DISPLAY_MS=1500, MAS_PRESS_IN_DISPLAY=1)
+    with pytest.raises(AssertionError):
+        check_press_at_the_end_of_a_slow_redraw_is_forgotten(f)
+    f.close()
+
+
+def test_saboteur_stamp_before_the_display_is_caught(tmp_path):
+    bad = _saboteur(tmp_path, BLOCK, '    pending.t_req = hal_tick_ms();\n    hal_display(p + SUMMARY_AT, mas_nv_counter() + 1);\n    seq++;\n    hal_irq_disable();\n    press_latched = 0; /* SABOTEUR-ANCHOR: latch clear */\n    hal_irq_enable();\n    pending.valid = 1;\n    pending.seq = seq;\n')
+    f = Fw(bad, tmp_path / "s.bin", MAS_DISPLAY_MS=3000)
+    with pytest.raises(AssertionError):
+        check_the_dwell_starts_when_the_summary_is_visible(f)
+    f.close()
