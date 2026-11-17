@@ -1,3 +1,6 @@
 # device/v0: shell scripts must keep LF or bash breaks on a Windows checkout
 *.sh text eol=lf
 device/firmware/vendor/** -text
+device/hardware/kicad/** -text
+device/hardware/fab/** -text
+device/hardware/bom_snapshot.json -text

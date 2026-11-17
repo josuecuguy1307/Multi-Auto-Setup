@@ -20,3 +20,5 @@ config/models.local.yaml
 
 # build output
 *.egg-info/
+*.kicad_prl
+device/hardware/kicad/*-backups/
