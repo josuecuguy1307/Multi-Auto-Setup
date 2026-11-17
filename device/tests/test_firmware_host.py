@@ -4,7 +4,7 @@ injected by the harness; no TrustZone, RDP or real entropy). Spec: DECISIONS.md 
 The harness talks to the host binary through tagged records on stdin; only `F` records reach the firmware's byte input:
     F <u16 len> <bytes>   bytes for mas_rx_byte          -> zero or more  R <u16 len> <frame bytes>, then E
     P                     a physical press (ISR)          -> k
-    T <u32 ms>            advance the tick                -> k
+    T <u32 ms>            advance the tick (64-bit on the key) -> k
     D                     dump the display                -> D <summary 32> <next counter u64>
 The C firmware must match the Python reference model (src/mas_device/keymodel.py) byte for byte, and its tokens must satisfy approval.Gate."""
 
@@ -272,7 +272,7 @@ def test_identity_comes_from_the_seed_and_key_id_is_sha256_of_pub(fw):
 # ---- the contract with the reference model ---------------------------------------------------
 
 def test_differential_against_the_python_reference_model(exe, tmp_path):
-    for script in range(60):
+    for script in range(200):  # A-2: ~200 seeded scripts
         rnd = random.Random(1000 + script)
         seed = bytes(rnd.getrandbits(8) for _ in range(32))
         f = Fw(exe, tmp_path / f"f{script}.bin", seed)
@@ -335,10 +335,14 @@ def test_no_press_no_signature_and_the_request_survives(fw):
     assert fw.sign(seq)[0] == "ok"
 
 
-def test_press_before_the_request_does_not_count(fw):
+def check_press_before_request_does_not_count(fw):
     fw.press()
     st, seq, _ = fw.request(a_request())
     assert fw.sign(seq) == ("no_press", None)
+
+
+def test_press_before_the_request_does_not_count(fw):
+    check_press_before_request_does_not_count(fw)
 
 
 def test_press_window_is_strict_and_capped_at_thirty_seconds(fw):
@@ -376,9 +380,13 @@ def test_a_newer_request_makes_the_older_one_stale(fw):
     assert fw.sign(s2)[0] == "ok"
 
 
+def check_summary_printable(fw, bad):
+    assert fw.request(a_request(summary=b"WRITE host" + bytes([bad]) + b" " * 21))[0] == "summary_not_printable"
+
+
 @pytest.mark.parametrize("bad", [0x00, 0x1F, 0x7F, 0x80, 0xFF])
 def test_summary_must_be_printable(fw, bad):
-    assert fw.request(a_request(summary=b"WRITE host" + bytes([bad]) + b" " * 21))[0] == "summary_not_printable"
+    check_summary_printable(fw, bad)
 
 
 @pytest.mark.parametrize("cls,pw", [(0, 30), (8, 30), (255, 30), (1, 0)])
@@ -494,7 +502,7 @@ def test_random_frames_without_a_press_change_nothing_and_sign_nothing(exe, flas
     f.info()
     before = flash.read_bytes()
     rnd = random.Random(11)
-    for i in range(1500):
+    for i in range(10000):  # A-2: 10k random frames
         k = rnd.random()
         if k < 0.3:
             f.call(REQUEST, req_payload(a_request(rnd)))
@@ -691,16 +699,16 @@ def _saboteur(tmp_path, old: str, new: str, file: str = "core/mas_core.c") -> Pa
 def test_saboteur_no_latch_clear_on_request_is_caught(tmp_path):
     bad = _saboteur(tmp_path, "press_latched = 0; /* SABOTEUR-ANCHOR: latch clear */", "/* removed */")
     f = Fw(bad, tmp_path / "s.bin")
-    f.press()
-    st, seq, _ = f.request(a_request())
-    assert f.sign(seq)[0] == "ok", "the weakened build signs on a stale press; the real one is checked by test_press_before_the_request_does_not_count"
+    with pytest.raises(AssertionError):
+        check_press_before_request_does_not_count(f)  # the suite's own check fails on the weakened build
     f.close()
 
 
 def test_saboteur_no_printable_check_is_caught(tmp_path):
     bad = _saboteur(tmp_path, "if (!printable(p + 112)) /* SABOTEUR-ANCHOR: printable */", "if (!printable(p + 112) && 0)")
     f = Fw(bad, tmp_path / "s.bin")
-    assert f.request(a_request(summary=b"A" * 31 + b"\x1f"))[0] == "ok"
+    with pytest.raises(AssertionError):
+        check_summary_printable(f, 0x1F)  # the suite's own check fails on the weakened build
     f.close()
 
 
@@ -713,3 +721,102 @@ def test_saboteur_sign_before_commit_is_caught_by_the_power_cut_sweep(tmp_path):
     f.close()
     with pytest.raises(AssertionError, match="released counter was lost|nxt"):
         _sweep(bad, flash.read_bytes(), flash, 16)
+
+
+# ---- evaluator run 1 (device/evals/evaluator/P4-FW-HOST.md) ----------------------------------------
+
+def fill_page_a(exe, flash, upto: int):
+    boot(exe, flash)
+    data = bytearray(flash.read_bytes())
+    for i in range(upto):
+        data[PAGE + 16 * i:PAGE + 16 * (i + 1)] = counter_record(i + 1)
+    flash.write_bytes(bytes(data))
+
+
+def test_failed_commits_never_erase_the_page_holding_the_maximum(exe, flash):
+    fill_page_a(exe, flash, PAGE // 16)
+    f = Fw(exe, flash, MAS_FLASH_FAIL_AFTER=0)
+    for k in range(PAGE // 16 + 2):
+        st, seq, _ = f.request(a_request(random.Random(k)))
+        if st == "ok":
+            f.press()
+            assert f.sign(seq)[0] != "ok"
+    f.close()
+    assert f.tokens() == []
+    assert boot(exe, flash) == PAGE // 16, "a released counter came back after failed writes"
+    f = Fw(exe, flash)
+    assert int.from_bytes(approve(f, a_request())[23:31], "big") == PAGE // 16 + 1
+    f.close()
+
+
+def test_one_failed_commit_latches_a_fault_until_reboot(exe, flash):
+    boot(exe, flash)
+    f = Fw(exe, flash, MAS_FLASH_FAIL_AFTER=0)
+    st, seq, _ = f.request(a_request())
+    f.press()
+    assert f.sign(seq)[0] == "nv_fault"
+    assert f.call(REQUEST, req_payload(a_request()))[0] == "nv_fault"
+    f.close()
+
+
+def test_erased_key_page_after_signing_is_a_fault_not_a_new_identity(exe, flash):
+    f = Fw(exe, flash)
+    approve(f, a_request())
+    f.close()
+    data = bytearray(flash.read_bytes())
+    data[:PAGE] = b"\xff" * PAGE
+    flash.write_bytes(bytes(data))
+    f = Fw(exe, flash, seed=bytes(range(100, 132)))
+    assert f.call(GET_INFO)[0] == "nv_fault"
+    f.close()
+    assert flash.read_bytes() == bytes(data)
+
+
+def test_program_that_reports_success_but_does_not_stick_releases_no_token(exe, flash):
+    boot(exe, flash)
+    f = Fw(exe, flash, MAS_FLASH_STUCK=1)
+    st, seq, _ = f.request(a_request())
+    f.press()
+    assert f.sign(seq) == ("nv_fault", None)
+    f.close()
+    assert f.tokens() == []
+
+
+@pytest.mark.parametrize("start,expect", [(2**64 - 3, [2**64 - 2]), (2**64 - 2, []), (2**64 - 1, [])])
+def test_counter_never_wraps(exe, flash, start, expect):
+    boot(exe, flash)
+    data = bytearray(flash.read_bytes())
+    data[PAGE:PAGE + 16] = counter_record(start)
+    flash.write_bytes(bytes(data))
+    got = []
+    for k in range(3):
+        f = Fw(exe, flash)
+        st, seq, _ = f.request(a_request(random.Random(k)))
+        if st == "ok":
+            f.press()
+            st, tok = f.sign(seq)
+            if st == "ok":
+                got.append(int.from_bytes(tok[23:31], "big"))
+        f.close()
+    assert got == expect
+
+
+@pytest.mark.parametrize("byte", [0, 31, 32, 63])
+def test_key_page_with_valid_crc_but_inconsistent_seed_and_pub_is_a_fault(exe, flash, byte):
+    boot(exe, flash)
+    data = bytearray(flash.read_bytes())
+    data[byte] ^= 0x01
+    data[64:66] = crc(bytes(data[:64]))
+    flash.write_bytes(bytes(data))
+    f = Fw(exe, flash)
+    assert f.call(GET_INFO)[0] == "nv_fault"
+    f.close()
+    assert flash.read_bytes() == bytes(data)
+
+
+def test_press_window_survives_the_32_bit_tick_wrap(fw):
+    st, seq, _ = fw.request(a_request())
+    fw.advance(0xFFFFFFFF)
+    fw.advance(1001)
+    fw.press()
+    assert fw.sign(seq)[0] == "press_window"
