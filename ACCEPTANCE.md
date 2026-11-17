@@ -42,8 +42,8 @@ k consecutive passing runs of each eval; limitations section lists what was only
 | P1-HARNESS | 1 | **PASS** | REAL | The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist | 41 passed |
 | P1-DOCS | 1 | **PASS** | REAL | DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice | 18 passed |
 | P1-UNIT | 1 | **PASS** | SIMULATED | First unit through the full cycle: signed approval tokens (guardrail 3) with an evaluator report | 179 passed, 4 saboteurs killed |
-| P2-GATE | 2 | **FAIL** | SIMULATED | Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first | 1 failed, 0 errors |
-| P2-LOG | 2 | **FAIL** | SIMULATED | Append-only hash-chained log; any edit, rewrite, truncation or reorder is detected against a known head; a broken log is never extended (process separation from the model is P2-GUARDRAILS) | 1 failed, 0 errors |
+| P2-GATE | 2 | **PASS** | SIMULATED | Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first | 141 passed, 2 saboteurs killed |
+| P2-LOG | 2 | **PASS** | SIMULATED | Append-only hash-chained log; any edit, rewrite, truncation or reorder is detected against a known head; a broken log is never extended (process separation from the model is P2-GUARDRAILS) | 44 passed, 2 saboteurs killed |
 | P2-GUARDRAILS | 2 | **PASS** | SIMULATED | Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations | 26 passed, 5 saboteurs killed |
 | P2-PORTABLE | 2 | **FAIL** | EMULATED | One-command launch from a read-only medium in a clean VM/container; profiler picks compute mode | missing test files: device/tests/test_portable.py |
 | P2-ZEROTRACE | 2 | **FAIL** | EMULATED | Nothing installed after unplug (no service, driver, autostart, PATH change or file outside the declared temp dir); OS residue only from the enumerated allowlist (D-010 three-arm diff) | missing test files: device/tests/test_zerotrace.py |

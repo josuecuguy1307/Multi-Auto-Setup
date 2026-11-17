@@ -1,7 +1,7 @@
 {
- "checksum": "8a29e0880953439187a8f6ec608dac464c95135ef0d4beac05c00c559610db26",
+ "checksum": "eb056ae7f642c639e9a116b0ac319a54a82bf2d9265ece6575de85a3a2b155b9",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "385e4a6",
+ "git_head_at_run": "f67e634",
  "results": {
   "P0-SECRETS": {
    "at": "2026-11-17T02:38:12",
@@ -13,14 +13,14 @@
    "title": "No credentials, keys or tokens anywhere in the repository (secret scan over the whole tree and history)"
   },
   "P1-DOCS": {
-   "at": "2026-11-17T10:05:32",
+   "at": "2026-11-17T10:19:58",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 18
    },
-   "fingerprint": "c58d7a32895ce297885080ba9e267681e345b9df4d283c3f31a3096a738dda55",
+   "fingerprint": "c9275e9bc9aba05966da237283a04361640946d80b173cbdabbcd5d2a5fdb8a2",
    "label": "REAL",
    "phase": 1,
    "reason": "18 passed",
@@ -73,33 +73,33 @@
    "title": "Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers"
   },
   "P2-GATE": {
-   "at": "2026-11-17T10:11:12",
+   "at": "2026-11-17T10:15:38",
    "counts": {
     "errors": 0,
-    "failures": 1,
+    "failures": 0,
     "skipped": 0,
     "tests": 141
    },
-   "fingerprint": "f665b831368b62bd04578c2b0b7f8a6bd75c8d5165dd6099f3156f663273e9c6",
+   "fingerprint": "203a01f67857696fd7cad392cd41dd8dc34ac41828d15542611c4f3de582f815",
    "label": "SIMULATED",
    "phase": 2,
-   "reason": "1 failed, 0 errors",
+   "reason": "141 passed, 2 saboteurs killed",
    "saboteurs": {
     "skip-post-consume-recheck": "killed",
     "skip-validate-in-run": "killed"
    },
-   "status": "FAIL",
+   "status": "PASS",
    "title": "Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first"
   },
   "P2-GUARDRAILS": {
-   "at": "2026-11-17T09:58:28",
+   "at": "2026-11-17T10:16:52",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 26
    },
-   "fingerprint": "298060756217ceec1ad87641a414a8632448b7805cebed10c05f0d78432f4940",
+   "fingerprint": "83e6e1f23099f5d6303539fbd44e733dea2cf4f3ac5655e348cc2b0877758e06",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "26 passed, 5 saboteurs killed",
@@ -114,22 +114,22 @@
    "title": "Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations"
   },
   "P2-LOG": {
-   "at": "2026-11-17T10:12:01",
+   "at": "2026-11-17T10:16:22",
    "counts": {
     "errors": 0,
-    "failures": 1,
+    "failures": 0,
     "skipped": 0,
     "tests": 44
    },
-   "fingerprint": "1020bdf6e599832dfec8f53daeea3fc58b6c46e90d8972c4f8e84a837b2e35dc",
+   "fingerprint": "e96f2dd957035592b014899548b08cbbbbcf268a21dae1475508592532b070ad",
    "label": "SIMULATED",
    "phase": 2,
-   "reason": "1 failed, 0 errors",
+   "reason": "44 passed, 2 saboteurs killed",
    "saboteurs": {
     "skip-byte-exact-line": "killed",
     "skip-known-head-hash": "killed"
    },
-   "status": "FAIL",
+   "status": "PASS",
    "title": "Append-only hash-chained log; any edit, rewrite, truncation or reorder is detected against a known head; a broken log is never extended (process separation from the model is P2-GUARDRAILS)"
   },
   "P2-MEMORY": {

@@ -196,6 +196,10 @@ class AuditLog:
             cut = data.rfind(b"\n") + 1
             fragment = data[cut:]
             whole = _chains(fragment, v.head.seq + 1, v.head.hash)
+            planned = Head(whole["seq"], whole["hash"]) if whole is not None else v.head
+            preview = _scan(data + b"\n" if whole is not None else data[:cut], expected)
+            if not preview.ok or preview.head != planned:  # checked before anything is cut: a refused repair keeps the evidence
+                raise LogBroken(f"{p}: the repair would not reach the known head ({preview.reason or 'different head'})")
             if whole is not None:  # a complete record that only lost its newline: keep it
                 _write_end(p, b"\n")
                 head, note = Head(whole["seq"], whole["hash"]), {"completed_record": whole["seq"]}

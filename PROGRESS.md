@@ -130,3 +130,5 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   and records sockets/subprocess/registry/native code/outside writes; scripted malicious model; positive controls for every detector.
   P2-LOG evaluator run 2: FAIL on 4 weak tests (repair with a known head, records() after re-chain, newline-only repair, bool/int seq test);
   nothing broken. Fixing test-first next.
+- P2-GATE run 7 (BROKE: rollback restore without a final compare; 3 weak tests) and P2-LOG run 2 (4 weak tests) fixed test-first (D-026):
+  P2-GATE 141 PASS, P2-LOG 44 PASS. Next: evaluator runs P2-GATE 8, P2-LOG 3, P2-GUARDRAILS 1; P5-PCB run 2 still running.

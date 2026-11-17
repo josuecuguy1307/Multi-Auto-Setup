@@ -506,8 +506,9 @@ class PolicyGate:
                         elif prev is None:
                             _remove_file(p)
                         else:
-                            _replace_file(p, prev)
-                except OSError:
+                            # compared again after the temporary file is on disk: a save landing during its fsync is kept
+                            _replace_file(p, prev, expect=_sha(written))
+                except (OSError, Refused):
                     left.append(rel)
                     print(f"ERROR gate rollback incomplete at {p}", file=sys.stderr)
             err = exc if isinstance(exc, Refused) else Refused("apply_failed", str(exc)[:120])

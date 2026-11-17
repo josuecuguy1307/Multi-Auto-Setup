@@ -485,3 +485,14 @@ remove a decoupling cap → net check fails.
   restricted token are later defence in depth); the model process itself is simulated by the test (it holds only the pipe); the key is the
   Python model, whose button the model's side is assumed not to reach (separate device). Replay defence itself is P1-UNIT/P2-GATE; the
   battery checks it end to end through the RPC (same daemon, restarted daemon, other session).
+
+## D-026 Gate after evaluator run 7, log after evaluator run 2; correction to D-024 (2026-11-17)
+- Correction to D-024 ("rollback never undoes the owner"): it was false while the rollback's restore had no final compare; the owner's save
+  could land during the restore's temporary-file fsync and be overwritten (3 of 80 runs). The restore now calls `_replace_file` with
+  `expect` = the bytes the gate wrote, so the last compare happens after the temporary file is on disk; a mismatch leaves the file alone and
+  names it in `left_changed`. The same declared gap as the forward path remains: between that last read and `os.replace`.
+- Tests now kill: an approved delete overwriting an edit made during the `write.approved` append; a rollback that skips restoring a
+  replaced file; a failed undo's rollback that does not remake the folders it removed.
+- Log: a repair is checked against the known head before anything is cut or appended; a refused repair leaves the file byte for byte as it
+  was. Tests now cover a repair below a known head, `records()` after a same-length re-chained rewrite, a repair that keeps a complete
+  record lacking only its newline, and the seq/at type checks on a one-record log.
