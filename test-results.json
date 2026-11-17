@@ -1,7 +1,7 @@
 {
- "checksum": "6e994260d5b1b39579226d13b56fea9b97a244a33eeab2f40f4c7cda4639d6fe",
+ "checksum": "01ff7fc77b9400f30943b520be68202476ae0a95149bd137bd53fda7f6412892",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "0d288d6",
+ "git_head_at_run": "9818c23",
  "results": {
   "P0-SECRETS": {
    "at": "2026-11-17T02:38:12",
@@ -28,14 +28,14 @@
    "title": "DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice"
   },
   "P1-HARNESS": {
-   "at": "2026-11-17T09:14:27",
+   "at": "2026-11-17T09:27:25",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 41
    },
-   "fingerprint": "a624c5a787b859c48611421f19d105278014561c41adfa19642c0bbe26cf785b",
+   "fingerprint": "34da7bdbf80ddd96b023fe800eed9f8d5ad49d5be8b4b1f7a6b6e2c9919a1165",
    "label": "REAL",
    "phase": 1,
    "reason": "41 passed",
