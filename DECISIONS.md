@@ -548,3 +548,18 @@ remove a decoupling cap → net check fails.
   once each, any order since the module's pin order is UNVERIFIED; SCL/SDA join U1.PB6/PB7 to J2) because the key shows the signed
   summary there before the press (D-008); +3V3 bulk capacitance must meet A-3 (1 uF + 4.7 uF at the LDO, 1 uF on VDDA). Mutations: J2
   VCC on GND, J2 VCC on VBUS, J2 off the I2C bus, C3 at 100 nF. HUMAN_REVIEW names U2's second VBUS via beside pad 5.
+
+## D-030 Gate daemon after P2-GUARDRAILS evaluator run 2; corrections to D-028 (2026-11-18)
+- Rule 8 was breakable through actions the model builds itself: `read` and `plan_write` refused credential paths, but `begin`/`execute`
+  passed the action to the gate, whose pre-state check read the file and answered whether a guessed content was right (a 4-digit PIN
+  in `.env` was recovered in 4822 requests, no approval). Every action given to `begin`, `execute`, `begin_undo` and `execute_undo` now
+  has all its names checked (files, mkdirs, rmdirs and its undo) before the gate reads anything: one answer, `credential_path`, whether
+  the file exists and whatever the guess. Tested through all four methods; a sixth saboteur removes the check. Side effect, intended:
+  an owner can no longer approve a write to a credential store either (e.g. `.ssh/authorized_keys`).
+- Corrections to D-028: "each has a positive control" now holds for link resolution (a weakened daemon writing through a junction the
+  host already had) and for OpenProcess; it does not hold for the hook's closure (no test can show "unreachable"; the closure only
+  removes the obvious module-level switch). Single entries of the hook's path and registry tables (os.remove, os.rename, os.mkdir,
+  _winapi.CreateFile, winreg.SetValue) are covered as categories by one control each, not one by one. The static check now also flags
+  `from os import <process function>`, `import os as ...`, `getattr(os|sys, <computed or process name>)` and `os.__dict__`; it still
+  catches plain spellings only, and the marker list is not exhaustive (scheduled-task cmdlets, Winlogon keys, configfs USB-gadget HID
+  and others are not listed yet: to extend before device/medium grows).

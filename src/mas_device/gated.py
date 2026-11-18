@@ -11,7 +11,8 @@ It holds the audit log, the pinned key and the session. The model's side holds o
 
 There is no method that changes the policy, the pinned key or the log. Every refusal is logged (`rpc.refused`) so the owner sees what the
 model tried; reads are logged with their hash; `begin` is logged with what the key will show. Paths that name credential stores are refused
-for `read` and `plan_write` (whose undo would carry the old bytes). The daemon exits when its stdin closes.
+in every request that names a path: `read`, `plan_write` (whose undo would carry the old bytes) and every action given to
+`begin`/`execute`/`begin_undo`/`execute_undo` (whose pre-state check would otherwise answer a guess). The daemon exits when its stdin closes.
 
 Bytes travel as lowercase hex (tokens, hashes, key requests) or strict base64 (file contents). Requests are at most MAX_LINE bytes.
 
@@ -116,6 +117,23 @@ def _path(v) -> str:
     return v
 
 
+def _action(action):
+    """Refuse an action that names a credential store anywhere (its files, the folders it makes or removes, and its undo), by name
+    and before the gate reads anything: otherwise the gate's pre-state check would answer whether a guessed content is right
+    (P2-GUARDRAILS run 2). Shapes are the gate's to judge; only the names are looked at here."""
+    if isinstance(action, dict):
+        for f in action.get("files") if isinstance(action.get("files"), list) else []:
+            if isinstance(f, dict) and isinstance(f.get("path"), str):
+                _path(f["path"])
+        for key in ("mkdirs", "rmdirs"):
+            for d in action.get(key) if isinstance(action.get(key), list) else []:
+                if isinstance(d, str):
+                    _path(d)
+        if isinstance(action.get("undo"), dict):
+            _action(action["undo"])
+    return action
+
+
 def _key_request(p: ap.Pending) -> dict:
     return {"session_id": p.session.hex(), "nonce": p.nonce.hex(), "action_hash": p.action_hash.hex(), "undo_hash": p.undo_hash.hex(),
             "summary": p.summary.hex(), "cls": int(p.cls), "press_window_s": p.press_window_s}
@@ -144,10 +162,11 @@ class Daemon:
 
     def rpc_begin(self, params: dict) -> dict:
         (action,) = _params(params, "action")
-        return {"key_request": self._requested(self.gate.begin(action))}
+        return {"key_request": self._requested(self.gate.begin(_action(action)))}
 
     def rpc_execute(self, params: dict) -> dict:
         token, action = _params(params, "token", "action")
+        action = _action(action)
         return self.gate.execute(_hex(token), action)
 
     def rpc_undo_for(self, params: dict) -> dict:
@@ -156,10 +175,11 @@ class Daemon:
 
     def rpc_begin_undo(self, params: dict) -> dict:
         (undo,) = _params(params, "undo")
-        return {"key_request": self._requested(self.gate.begin_undo(undo))}
+        return {"key_request": self._requested(self.gate.begin_undo(_action(undo)))}
 
     def rpc_execute_undo(self, params: dict) -> dict:
         token, undo = _params(params, "token", "undo")
+        undo = _action(undo)
         return self.gate.execute_undo(_hex(token), undo)
 
     def rpc_log_head(self, params: dict) -> dict:

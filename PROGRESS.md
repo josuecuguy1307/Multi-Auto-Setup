@@ -145,3 +145,5 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
 - P5-PCB run 3 fixed (D-027 addendum): J1 power pins asserted with two mutations; HUMAN_REVIEW wording corrected.
 - Evaluators on 1c65ad2: P2-GATE run 9 FAIL (owner deleting during the fsync untested) fixed (D-029, 149 tests); P5-PCB run 4 FAIL (J2
   OLED socket untested; no design error) fixed (D-027 addendum). P2-GUARDRAILS run 2 still running at this note.
+- P2-GUARDRAILS run 2 FAIL (BROKE: credential-content oracle through begin/execute with a crafted action) fixed (D-030): names checked
+  in every action before the gate reads; controls for link resolution and OpenProcess; broader static check. 36 tests, 6 saboteurs.

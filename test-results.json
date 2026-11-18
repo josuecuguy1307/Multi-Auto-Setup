@@ -1,7 +1,7 @@
 {
- "checksum": "28214087207626fb77bc2777eda9b35e967a52efea1e6f9e4fb0b16ada4b7c47",
+ "checksum": "a916f316a54a052ff15565e3b35e31fb16f1b9ae2d0a0c06b232f765b9fb4ef8",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "f7958ab",
+ "git_head_at_run": "ef8448f",
  "results": {
   "P0-SECRETS": {
    "at": "2026-11-17T02:38:12",
@@ -13,14 +13,14 @@
    "title": "No credentials, keys or tokens anywhere in the repository (secret scan over the whole tree and history)"
   },
   "P1-DOCS": {
-   "at": "2026-11-18T14:10:44",
+   "at": "2026-11-18T14:24:46",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 18
    },
-   "fingerprint": "010b390e0a0145438d6764e5c32249608bd4b44083563c4c23a718c0daa537a6",
+   "fingerprint": "3207cae71b924c778dab39df3410f01b2c8c80f34b1c7279048fdd9e51e8cbf7",
    "label": "REAL",
    "phase": 1,
    "reason": "18 passed",
@@ -28,14 +28,14 @@
    "title": "DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice"
   },
   "P1-HARNESS": {
-   "at": "2026-11-17T09:55:12",
+   "at": "2026-11-18T14:23:49",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 41
    },
-   "fingerprint": "6a737fc05ac6bfc1f6f05338af75e3ade217f216b978863b2c93b49fa83c7a40",
+   "fingerprint": "b276ed87b37f1b2a8302b421ce75fa6ad5b349a5ab0ee5974b2513e58afdaedc",
    "label": "REAL",
    "phase": 1,
    "reason": "41 passed",
@@ -43,7 +43,7 @@
    "title": "The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist"
   },
   "P1-UNIT": {
-   "at": "2026-11-18T14:17:04",
+   "at": "2026-11-18T14:24:48",
    "counts": {
     "errors": 0,
     "failures": 0,
@@ -73,14 +73,14 @@
    "title": "Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers"
   },
   "P2-GATE": {
-   "at": "2026-11-18T13:55:15",
+   "at": "2026-11-18T14:22:59",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 149
    },
-   "fingerprint": "6380cabb57eb21ee127250c4e2bf01afc9a8a27c6ad7f302f5c21fac9081d09c",
+   "fingerprint": "3f1a623a9b7e4637d29fddbc13a2c553e935875cdd8c9b0684a05d82d6244188",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "149 passed, 2 saboteurs killed",
@@ -92,36 +92,37 @@
    "title": "Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first"
   },
   "P2-GUARDRAILS": {
-   "at": "2026-11-18T14:14:01",
+   "at": "2026-11-18T14:19:41",
    "counts": {
     "errors": 0,
-    "failures": 1,
+    "failures": 0,
     "skipped": 0,
     "tests": 36
    },
-   "fingerprint": "39b90d8c62ded4e1fcca6fa916084e3dcbfbebd8b97bbe9847e1478d4d73ca8b",
+   "fingerprint": "022823e8d30ebd78d5a641366445e827630fd5a2303a2ea491367e6ea88d9040",
    "label": "SIMULATED",
    "phase": 2,
-   "reason": "1 failed, 0 errors",
+   "reason": "36 passed, 6 saboteurs killed",
    "saboteurs": {
+    "credential-actions-unchecked": "killed",
     "extra-params-ignored": "killed",
     "log-inside-root": "killed",
     "method-allowlist-bypass": "killed",
     "read-credentials": "killed",
     "unlogged-refusals": "killed"
    },
-   "status": "FAIL",
+   "status": "PASS",
    "title": "Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations"
   },
   "P2-LOG": {
-   "at": "2026-11-18T14:02:00",
+   "at": "2026-11-18T14:23:30",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 44
    },
-   "fingerprint": "d36af0f7900dc7a92e8e5caf21bb9b87d3c516eb021cff4b460d16a384e860af",
+   "fingerprint": "cb434357b1401512bd907edd62ef56e7acd7c8b9dd35f8172569da10ffc64bf8",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "44 passed, 2 saboteurs killed",

@@ -63,13 +63,14 @@ criteria:
     tests: [device/tests/test_guardrails.py]
     covers: [src/mas_device]
     label: SIMULATED
-    min_tests: 26
+    min_tests: 36
     saboteurs:
       - {name: read-credentials, file: src/mas_device/gated.py, old: "    if is_credential_path(v):", new: "    if False:"}
       - {name: unlogged-refusals, file: src/mas_device/gated.py, old: "            self.log.append(\"rpc.refused\", {\"id\": rid, \"method\": method, \"code\": code})", new: "            pass"}
       - {name: extra-params-ignored, file: src/mas_device/gated.py, old: "    if set(params) != set(keys):", new: "    if not set(keys) <= set(params):"}
       - {name: log-inside-root, file: src/mas_device/gated.py, old: "    if _inside(state, root) or _inside(root, state):", new: "    if False:"}
       - {name: method-allowlist-bypass, file: src/mas_device/gated.py, old: "            if method not in ALLOWED:", new: "            if method not in ALLOWED and not hasattr(self, method):"}
+      - {name: credential-actions-unchecked, file: src/mas_device/gated.py, old: "    if isinstance(action, dict):", new: "    if False:"}
   - id: P2-PORTABLE
     phase: 2
     title: One-command launch from a read-only medium in a clean VM/container; profiler picks compute mode
