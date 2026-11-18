@@ -1,7 +1,7 @@
 {
- "checksum": "6de07ee4804eec019bc694a0273b7f0b81b4adab5c408a38d587099b20f9fab5",
+ "checksum": "28214087207626fb77bc2777eda9b35e967a52efea1e6f9e4fb0b16ada4b7c47",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "40451ce",
+ "git_head_at_run": "f7958ab",
  "results": {
   "P0-SECRETS": {
    "at": "2026-11-17T02:38:12",
@@ -43,14 +43,14 @@
    "title": "The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist"
   },
   "P1-UNIT": {
-   "at": "2026-11-18T14:10:45",
+   "at": "2026-11-18T14:17:04",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 179
    },
-   "fingerprint": "05ecb2f697d45eff905e43d0dcca41528cf8474951f158f4e1f6f3c99580b37b",
+   "fingerprint": "9b9958fb41be33e4f356a469fcb11cfb650b7fae7c0c1a8602b9ca5d334d3e46",
    "label": "SIMULATED",
    "phase": 1,
    "reason": "179 passed, 4 saboteurs killed",
@@ -92,17 +92,17 @@
    "title": "Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first"
   },
   "P2-GUARDRAILS": {
-   "at": "2026-11-18T13:56:34",
+   "at": "2026-11-18T14:14:01",
    "counts": {
     "errors": 0,
-    "failures": 0,
+    "failures": 1,
     "skipped": 0,
-    "tests": 33
+    "tests": 36
    },
-   "fingerprint": "3e02b680c7260d727fa175b42b0b82bdd27259fa5db17317b0dace723d1b2518",
+   "fingerprint": "39b90d8c62ded4e1fcca6fa916084e3dcbfbebd8b97bbe9847e1478d4d73ca8b",
    "label": "SIMULATED",
    "phase": 2,
-   "reason": "33 passed, 5 saboteurs killed",
+   "reason": "1 failed, 0 errors",
    "saboteurs": {
     "extra-params-ignored": "killed",
     "log-inside-root": "killed",
@@ -110,7 +110,7 @@
     "read-credentials": "killed",
     "unlogged-refusals": "killed"
    },
-   "status": "PASS",
+   "status": "FAIL",
    "title": "Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations"
   },
   "P2-LOG": {

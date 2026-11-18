@@ -504,6 +504,38 @@ def test_every_refusal_is_logged_with_its_request(world):
 
 # ---- rule 8: credentials are never read ----------------------------------------------------------------------------------------------
 
+def _crafted(path, pre, guess):
+    write = {"kind": "files.write", "target": TARGET, "mkdirs": [],
+             "files": [{"path": path, "pre": pre, "content_b64": b64(b"x")}],
+             "undo": {"kind": "files.restore", "target": TARGET, "rmdirs": [],
+                      "files": [{"path": path, "pre": hashlib.sha256(b"x").hexdigest(), "content_b64": guess}]}}
+    return write, write["undo"]
+
+
+def test_crafted_actions_never_reveal_whether_a_credential_exists_or_what_it_holds(world):
+    """The model builds the action itself and sends it to begin/execute: the gate must refuse by name before it reads the file, so the
+    answer is the same for an existing file with the right guess, a wrong guess, and a file that does not exist (P2-GUARDRAILS run 2)."""
+    d = world.start()
+    before = snap(world.root)
+    right = hashlib.sha256(STAND_IN + b"\n").hexdigest()
+    cases = [(".env", right, b64(STAND_IN + b"\n")), (".env", hashlib.sha256(b"PIN=0000\n").hexdigest(), b64(b"PIN=0000\n")),
+             (".ssh/not_there", None, None), ("home/.aws/credentials", right, b64(STAND_IN + b"\n")), ("etc/shadow", right, None)]
+    answers = set()
+    for path, pre, guess in cases:
+        write, undo = _crafted(path, pre, guess)
+        for method, params in (("begin", {"action": write}), ("execute", {"token": "00" * 241, "action": write}),
+                               ("begin_undo", {"undo": undo}), ("execute_undo", {"token": "00" * 241, "undo": undo})):
+            r = d.call(method, **params)
+            assert not r["ok"], (method, path, r)
+            answers.add((r["error"]["code"], r["error"]["detail"]))
+    write, _ = _crafted("etc/new.conf", None, None)
+    write["mkdirs"] = [".kube"]  # a credential folder named only in mkdirs
+    r = d.call("begin", action=write)
+    answers.add((r["error"]["code"], r["error"]["detail"]) if not r["ok"] else ("ok", ""))
+    assert len(answers) == 1 and next(iter(answers))[0] == "credential_path", answers
+    assert check(d, before) == []
+
+
 def test_credentials_are_never_read_or_planned(world):
     d = world.start()
     before = snap(world.root)
@@ -597,7 +629,10 @@ WEAKENED = {
     "log_broken": WRAP_READ.format(body='    open(str(self.log._path), "ab").write(b"garbage\\n")'),
     "daemon_dead": WRAP_READ.format(body='    os._exit(0)'),
 }
+WEAKENED["write_through_link"] = WRAP_READ.format(
+    body='    open(os.path.join(str(self.gate.root), "jx", "pwned.txt"), "w").close()')  # jx: a link the host already had
 if sys.platform == "win32":
+    WEAKENED["open_process"] = WRAP_READ.format(body='    import _winapi\n    _winapi.OpenProcess(0x1000, False, os.getpid())')
     WEAKENED["junction_out"] = WRAP_READ.format(
         body='    import _winapi\n    _winapi.CreateJunction(os.path.join(os.path.dirname(str(self.gate.root)), "outside_dir"), str(self.gate.root / "j"))')
     WEAKENED["delete_on_close"] = WRAP_READ.format(
@@ -610,6 +645,12 @@ EXPECT = {"write_without_approval": "host_changed", "state_extra": "state_extra"
 def test_positive_control_battery_sees_a_weakened_daemon(world, name):
     (world.tmp / "victim.txt").write_bytes(b"outside the root")
     (world.tmp / "outside_dir").mkdir(exist_ok=True)
+    if name == "write_through_link":
+        if sys.platform == "win32":
+            import _winapi
+            _winapi.CreateJunction(str(world.tmp / "outside_dir"), str(world.root / "jx"))
+        else:
+            (world.root / "jx").symlink_to(world.tmp / "outside_dir", target_is_directory=True)
     d = world.start(weaken=WEAKENED[name], name=name)
     before = snap(world.root)
     try:
@@ -623,6 +664,7 @@ def test_positive_control_battery_sees_a_weakened_daemon(world, name):
         assert any(f.startswith("audit:") for f in found), found
     assert not (world.tmp / "outside.txt").exists()  # blocked, not just seen
     assert (world.tmp / "victim.txt").exists() and not (world.root / "j").exists()
+    assert not (world.tmp / "outside_dir" / "pwned.txt").exists()
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="registry exists only on Windows")
@@ -701,8 +743,17 @@ def import_violations(source: str, filename: str) -> list[str]:
         if isinstance(n, ast.Name) and n.id in DYNAMIC:
             bad.append(n.id)
         if isinstance(n, ast.Attribute) and isinstance(n.value, ast.Name) and (
-                (n.value.id == "os" and n.attr in OS_PROCESS) or (n.value.id == "sys" and n.attr == "modules")):
+                (n.value.id == "os" and n.attr in OS_PROCESS | {"__dict__"}) or (n.value.id == "sys" and n.attr == "modules")):
             bad.append(f"{n.value.id}.{n.attr}")
+        if isinstance(n, ast.ImportFrom) and n.module == "os" and any(a.name in OS_PROCESS or a.name == "*" for a in n.names):
+            bad.append("from os import " + ",".join(a.name for a in n.names))
+        if isinstance(n, ast.Import) and any(a.name == "os" and a.asname for a in n.names):
+            bad.append("import os as ...")
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "getattr" and n.args and \
+                isinstance(n.args[0], ast.Name) and n.args[0].id in ("os", "sys") and not (
+                    len(n.args) >= 2 and isinstance(n.args[1], ast.Constant) and isinstance(n.args[1].value, str)
+                    and n.args[1].value not in OS_PROCESS | {"__dict__", "modules"}):
+            bad.append(f"getattr({n.args[0].id}, ...)")  # getattr(os, "O_BINARY", 0) is fine; a computed or process name is not
     return bad
 
 
@@ -753,7 +804,8 @@ def test_import_check_flags_crafted_sources():
                 "from http.client import HTTPConnection", "import asyncio", "import multiprocessing", "__import__('socket')",
                 "import importlib", "exec('x')", "eval('1')", "import winreg", "os.system('x')", "os.popen('x')",
                 "os.startfile('x')", "os.spawnv(0, 'x', [])", "os.kill(1, 9)", "__builtins__['__imp' + 'ort__']('socket')",
-                "sys.modules['builtins']", "globals()['x']"]:
+                "sys.modules['builtins']", "globals()['x']", "from os import system", "from os import spawnv as s",
+                "from os import *", "import os as o", "getattr(os, 'system')('x')", "getattr(os, name)", "os.__dict__['system']"]:
         assert import_violations(src, "x.py"), src
     assert import_violations("import json\nfrom mas_device import approval", "x.py") == []
     assert import_violations("import winreg", "gate.py") == []
