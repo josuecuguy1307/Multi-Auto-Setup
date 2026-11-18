@@ -1,7 +1,7 @@
 {
- "checksum": "bb51b67d5fb9735b608b4d477018e5662e354a1012565fab34a2e021a5455f93",
+ "checksum": "67616febc7a6c3bc7778712aa237c1301ca6300451b9a2f020cd079833bddd0c",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "548ad2d",
+ "git_head_at_run": "0cab69e",
  "results": {
   "P0-SECRETS": {
    "at": "2026-11-17T02:38:12",
@@ -13,14 +13,14 @@
    "title": "No credentials, keys or tokens anywhere in the repository (secret scan over the whole tree and history)"
   },
   "P1-DOCS": {
-   "at": "2026-11-18T01:03:27",
+   "at": "2026-11-18T01:11:24",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 18
    },
-   "fingerprint": "bba447682b66c099a97efae88f4686c7da7376b2842fba1c270ccbac04a448a6",
+   "fingerprint": "3fb7f4f1ee56d866b287990b8b0aea7a425aecbed6a7e0e8f597bde25d37d03c",
    "label": "REAL",
    "phase": 1,
    "reason": "18 passed",
@@ -43,14 +43,14 @@
    "title": "The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist"
   },
   "P1-UNIT": {
-   "at": "2026-11-18T00:54:14",
+   "at": "2026-11-18T01:11:26",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 179
    },
-   "fingerprint": "b5f1147a1cc39fcf381203576700589c1d26260f0ffb680465669ee151a7ebd4",
+   "fingerprint": "553528191112ef0c1eab92ec1d1550b90191e33cf013a8ce80ebca2ea19a5896",
    "label": "SIMULATED",
    "phase": 1,
    "reason": "179 passed, 4 saboteurs killed",
@@ -277,17 +277,17 @@
    "title": "Parametric enclosure fits the board (clearances, USB-C opening, button access) by automatic check"
   },
   "P5-PCB": {
-   "at": "2026-11-17T11:21:33",
+   "at": "2026-11-18T01:04:36",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
-    "tests": 47
+    "tests": 49
    },
-   "fingerprint": "1ce71bd258425e03523aac0499d4965c8570e04b8be9a58f7e3925be73167503",
+   "fingerprint": "3069fdad5b466e3ead02d6a8899d17105e6202b9b43aede6c5fd07851ff97f2a",
    "label": "DESIGN-ONLY",
    "phase": 5,
-   "reason": "47 passed",
+   "reason": "49 passed",
    "status": "PASS",
    "title": "ERC, DRC and fabrication checks green; fab outputs marked NO FABRICAR; HUMAN_REVIEW_PCB.md present"
   },

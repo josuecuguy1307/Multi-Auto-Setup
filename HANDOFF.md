@@ -11,18 +11,17 @@
 | P1-HARNESS | PASS 41 | the oracle under test |
 | P1-DOCS | PASS 18 | reviewer R-1: all 8 must-fixes resolved with evidence |
 | P1-UNIT | PASS 179, 4 saboteurs | closed: evaluator run 7 VERDICT PASS, Code-Hash fc884e03… (commit a99fcbc) |
-| P2-GATE | PASS 141, 2 saboteurs | run 7 findings fixed (D-026, e2d6045); **evaluator run 8 not yet run** |
-| P2-LOG | PASS 44, 2 saboteurs | run 2 findings fixed (D-026); **evaluator run 3 not yet run** |
-| P2-GUARDRAILS | PASS 26, 5 saboteurs | built 385e4a6 (D-025: `mas_device/gated.py`); **evaluator run 1 not yet run** |
+| P2-GATE | PASS 143, 2 saboteurs | run 8 (nothing broken; one weak test) fixed (D-028); **evaluator run 9 not yet run** |
+| P2-LOG | PASS 44, 2 saboteurs | **evaluator run 3 PASS** (2299003) |
+| P2-GUARDRAILS | PASS 33, 5 saboteurs | run 1 FAIL (credentials*/.env* not implemented, weak tests, hook overclaimed) fixed (D-028); **evaluator run 2 not yet run** |
 | P4-FW-HOST / EMU / RENODE | PASS 328 / 27 / 4 | firmware in C; QEMU mps2-an505 and Renode run the same ELF |
-| P5-PCB | PASS 47 (DESIGN-ONLY) | board evaluator run 2 findings fixed (D-027): D± through U2's pads, no via in a pad, power/button/LED/SWD/MPN tests; **board evaluator run 3 not yet run** |
+| P5-PCB | PASS 49 (DESIGN-ONLY) | run 3 (no design error; J1 power pins untested) fixed (D-027 addendum); **board evaluator run 4 not yet run** |
 | everything else | FAIL (not built) | P2-PORTABLE, P2-ZEROTRACE, P2-FLEET, P2-MODEL, P2-MEMORY, P2-PAIRING, P3-*, P4-SECBOOT, P5-ENCLOSURE, P6-*, P0-SECRETS |
 
-Updated 2026-11-17 (second account), 10/26 PASS. Evaluators to run next (fresh context; give them the proportionality rule of §3;
-tell them to work in a `git archive HEAD` copy under `runs/eval/` and to write their report to `runs/eval/<ID>.runN.report.md` so it
-survives a usage limit): **P2-GUARDRAILS run 1**, **P2-GATE run 8**, **P2-LOG run 3**. P5-PCB run 2's findings are fixed (D-027); run board evaluator
-run 3 too (a board build takes ~5-10 min; debugging harnesses for the router are in `runs/hw/` and git-ignored). The `evaluator` agent type only loads when the session starts in this repo;
-otherwise paste `.claude/agents/evaluator.md` into a general-purpose agent and tell it not to run `device_accept.py run`.
+Updated 2026-11-18, 10/26 PASS. Next evaluator runs (fresh context, the `evaluator` agent; give them the proportionality rule of §3,
+a `git archive HEAD` copy under `runs/eval/`, and a report file `runs/eval/<ID>.runN.report.md` so it survives a usage limit; tell them
+not to run `device_accept.py run`): **P2-GUARDRAILS run 2**, **P2-GATE run 9**, **P5-PCB run 4**. If a usage limit stops them, resume
+each with SendMessage instead of starting over. Then Phase 2 continues with P2-PAIRING.
 
 ## 2. How to resume (in order)
 

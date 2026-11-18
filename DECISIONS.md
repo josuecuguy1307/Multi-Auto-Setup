@@ -532,3 +532,7 @@ remove a decoupling cap → net check fails.
 - P2-GATE run 8 (nothing broken): the "must not exist" half of the final compare is now tested: a file the owner creates during the
   gate's temporary-file fsync survives both a forward create (refused, pre_state_changed) and the rollback of a delete (named in
   left_changed).
+- Addendum after the board evaluator's run 3 (2026-11-18; nothing broken): J1's power pins are now asserted pin by pin (A4/A9/B4/B9 on
+  VBUS, A1/A12/B1/B12 and the shield on GND, A5/B5 on CC1/CC2; VBUS joins J1 to U3.VIN; no J1 pin on +3V3, no MCU pin on VBUS), with
+  mutations "J1 VBUS on +3V3" and "J1 ground floating". HUMAN_REVIEW corrected: the via under U2 is VBUS's, GND's is beside pad 2; D+/D-
+  are not a coupled pair; vias 0.05-0.1 mm from pads with tented vias and zero mask margin are listed for the fab check.

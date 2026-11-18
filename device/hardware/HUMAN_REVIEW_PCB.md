@@ -45,7 +45,8 @@ open. Tick each item, write the date and your name, and note any change made. So
       and the enclosure.
 - [ ] Inside J1's courtyard (under the USB-C body and its pad row): the D+ bridge between B6 and A6 and the D− bridge between A7 and B7,
       the VBUS bridge, CC1 (tracks on both layers and two vias, at about (10.45, 6.05) and (9.40, 5.40) mm from the board's top-left),
-      CC2, and four GND stitching vias at the courtyard's lower edge beside J1's GND pads. Check clearance to the shell and the pegs.
+      CC2, a VBUS via at about (10.90, 8.75) mm, four GND stitching vias at the courtyard's lower edge beside J1's GND pads, and a few
+      short GND tracks on F.Cu. Check clearance to the shell and the pegs.
       (Corrected after the board evaluator's run 2, which found the earlier line incomplete.)
 - [ ] ATECC608B DNP footprint (D-008) was dropped from v0; add it back only if the review wants the option.
 - [ ] J3 (SWD) sits in the middle of the board below the MCU, not on the long edge as A-3 suggested (routing space); check access for a probe.
@@ -53,8 +54,12 @@ open. Tick each item, write the date and your name, and note any change made. So
       (fixed after the board evaluator's run 1). USB D+/D- run on the top layer only, with no vias.
 - [ ] USB ESD path (fixed after the board evaluator's run 2): each data line runs J1 → U2's connector-side pin → across U2 → U2's
       MCU-side pin → U1, with no other copper from J1 to U1 (tested). U2 is turned 180° so the two lines nest without crossing; D+ is
-      about 25.6 mm and D− about 24.4 mm of copper (paired by routing, not length-tuned). No via sits in any pad (tested); U2's GND and
-      VBUS pins have their vias beside the pads, U2's GND via under the package between the pad rows.
+      about 25.6 mm and D− about 24.4 mm of copper. They are not a coupled pair: they pass U2 on opposite sides (up to about 4 mm
+      apart), then run 0.4–2 mm apart to U1; lengths are similar but not tuned. No via sits in any pad (tested). U2's VBUS via is under
+      the package between the pad rows (about (9.95, 10.20) mm) and its GND via beside pad 2 (about (12.15, 10.50) mm). (Corrected
+      after the board evaluator's run 3.)
+- [ ] Vias next to pads: about 36 vias sit 0.05–0.1 mm from a pad's edge. The board's solder-mask margin is 0 and vias are tented;
+      with a fab's usual mask expansion the via ring may show beside the pad. Check against the fab's mask rules (item 9).
 - [ ] Nets that cross under the USB D+/D- tracks on B.Cu: +3V3, I2C_SCL, I2C_SDA, VBUS. A deviation from A-3 ("unbroken
       bottom GND" under D+/D-): the USB pins are on the MCU's right side, so nets beyond them must cross. Acceptable for USB full speed
       (12 Mbit/s) over these short runs; a reviewer may prefer moving the crossings or adding stitching vias beside them.

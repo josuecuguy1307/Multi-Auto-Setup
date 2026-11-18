@@ -590,6 +590,16 @@ def circuit_violations(pins, board) -> list[str]:
     for func, net in (("VBUS", "VBUS"), ("GND", "GND")):
         if _one(pins, "U2", func) != net:
             v.append(f"U2.{func} not on {net}")
+    # the USB-C receptacle's power pins (board evaluator run 3): host 5 V reaches only VBUS, every ground and the shield reach GND
+    for nums, net in ((("A4", "A9", "B4", "B9"), "VBUS"), (("A1", "A12", "B1", "B12", "SH"), "GND"), (("A5",), "CC1"), (("B5",), "CC2")):
+        for num in nums:
+            if _one(pins, "J1", number=num) != net:
+                v.append(f"J1.{num} not on {net}")
+    on = lambda net: {(r, f) for n, r, p, f, _ in pins[0] if n == net}
+    if not {("J1", "VBUS"), ("U3", "VIN")} <= on("VBUS") or any(r == "J1" for r, _ in on("+3V3")):
+        v.append("VBUS does not join J1 to U3.VIN, or a J1 pin is on +3V3")
+    if any(r == "U1" for r, _ in on("VBUS")):
+        v.append("an MCU pin is on VBUS")
 
     def big_cap_near(ref, func, net, limit=5.0):
         at = pads.get((ref, numbers.get((ref, func))))
@@ -658,6 +668,8 @@ MUTATIONS = {
     "SWDIO/SWCLK swapped on J3": lambda p: _mutate(p, _swap_swd),
     "C8 (VDDA 1 uF) removed": lambda p: _mutate(p, lambda x: None if x[1] == "C8" else x),
     "LDO caps 100 nF": lambda p: (list(p[0]), dict(p[1], C1="100nF", C2="100nF", C3="100nF")),
+    "J1 VBUS on +3V3": lambda p: _mutate(p, lambda x: (("+3V3",) + x[1:]) if x[1] == "J1" and x[0] == "VBUS" else x),
+    "J1 ground floating": lambda p: _mutate(p, lambda x: (("unconnected-J1-GND",) + x[1:]) if x[1] == "J1" and x[0] == "GND" else x),
 }
 
 

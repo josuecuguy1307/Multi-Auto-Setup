@@ -53,7 +53,7 @@ k consecutive passing runs of each eval; limitations section lists what was only
 | P4-FW-HOST | 4 | **PASS** | SIMULATED | Firmware core (host build, HAL mocks) rejects replayed, altered and expired approvals; signs only after a press | 328 passed |
 | P4-FW-EMU | 4 | **PASS** | EMULATED | Same firmware runs in QEMU (mps2-an505, Cortex-M33) with transcripts identical to the host build; button is the only approval path | 27 passed |
 | P4-FW-RENODE | 4 | **PASS** | EMULATED | Same firmware runs in Renode with transcripts identical to the host build and QEMU | 4 passed |
-| P5-PCB | 5 | **PASS** | DESIGN-ONLY | ERC, DRC and fabrication checks green; fab outputs marked NO FABRICAR; HUMAN_REVIEW_PCB.md present | 47 passed |
+| P5-PCB | 5 | **PASS** | DESIGN-ONLY | ERC, DRC and fabrication checks green; fab outputs marked NO FABRICAR; HUMAN_REVIEW_PCB.md present | 49 passed |
 | P6-EVALS | 6 | **FAIL** | REAL | Evals reproducible with one command; every number in the paper comes from a script over raw results | missing test files: device/tests/test_evals_paper.py |
 | P6-REPO | 6 | **FAIL** | REAL | README, THIRD_PARTY.md and reproduction instructions complete | missing test files: device/tests/test_repo.py |
 | P0-SECRETS | 1 | **FAIL** | REAL | No credentials, keys or tokens anywhere in the repository (secret scan over the whole tree and history) | missing test files: device/tests/test_secrets.py |

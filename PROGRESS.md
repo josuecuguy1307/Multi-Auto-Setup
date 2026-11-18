@@ -142,3 +142,4 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
 - Evaluators on 2299003: P2-LOG run 3 PASS. P2-GUARDRAILS run 1 FAIL (credentials*/.env* declared but not implemented; 6 weak tests;
   hook overclaimed) and P2-GATE run 8 FAIL (must-not-exist compare untested) fixed test-first (D-028): P2-GUARDRAILS 33, P2-GATE 143.
   P5-PCB run 3 FAIL: J1's VBUS/GND pins never asserted (no design error); fixing next.
+- P5-PCB run 3 fixed (D-027 addendum): J1 power pins asserted with two mutations; HUMAN_REVIEW wording corrected.
