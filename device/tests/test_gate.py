@@ -1216,3 +1216,50 @@ def test_a_failed_undo_remakes_the_folders_it_removed(pg, key, root, log, monkey
     assert (root / "n" / "a" / "x.txt").read_bytes() == b"x\n"
     failed = [r for r in log.records() if r["type"] == "undo.failed"]
     assert failed and failed[0]["payload"]["left_changed"] == []
+
+
+# ---- evaluator run 8 (device/evals/evaluator/P2-GATE.run8.md): the "must not exist" half of the final compare ---------------------
+
+def _owner_writes_during_the_gate_fsync(monkeypatch, path, data, armed):
+    real_fsync = os.fsync
+
+    def fsync(fd):
+        real_fsync(fd)
+        if armed and any(f.function == "_replace_file" for f in inspect.stack()[1:3]):
+            armed.clear()
+            path.write_bytes(data)
+
+    monkeypatch.setattr(gt.os, "fsync", fsync)
+
+
+def test_a_new_file_never_overwrites_one_the_owner_created_during_the_fsync(pg, key, root, monkeypatch):
+    w = pg.plan_write({"etc/new.conf": b"gate\n"})
+    token = press(pg, key, w)
+    _owner_writes_during_the_gate_fsync(monkeypatch, root / "etc" / "new.conf", b"owner-created\n", [True])
+    with pytest.raises(gt.Refused) as e:
+        pg.execute(token, w)
+    assert e.value.code == "pre_state_changed"
+    assert (root / "etc" / "new.conf").read_bytes() == b"owner-created\n"
+
+
+def test_the_rollback_never_overwrites_a_name_the_owner_recreated_after_a_delete(pg, key, root, log, monkeypatch):
+    (root / "a.conf").write_bytes(b"a=1\n")
+    (root / "b.conf").write_bytes(b"b=1\n")
+    w = pg.plan_write({"a.conf": None, "b.conf": b"b=2\n"})
+    token = press(pg, key, w)
+    real, calls, armed = gt._replace_file, [], []
+
+    def flaky(path, data, *a, **k):
+        calls.append(path)
+        if len(calls) == 1:
+            raise OSError("disk full")  # b.conf fails after a.conf was deleted
+        armed.append(True)  # the rollback putting a.conf back
+        return real(path, data, *a, **k)
+
+    monkeypatch.setattr(gt, "_replace_file", flaky)
+    _owner_writes_during_the_gate_fsync(monkeypatch, root / "a.conf", b"owner\n", armed)
+    with pytest.raises(gt.Refused):
+        pg.execute(token, w)
+    assert (root / "a.conf").read_bytes() == b"owner\n"
+    failed = [r for r in log.records() if r["type"] == "write.failed"]
+    assert failed and failed[0]["payload"]["left_changed"] == ["a.conf"]

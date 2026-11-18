@@ -1,7 +1,7 @@
 {
- "checksum": "284ae86cfe4fc36f2489ccb1281676cd0b24387efc8d93692e26a7e8e4100c87",
+ "checksum": "78912c79f6dc09299d291f5e188965957e792d6c4ba6398707cd305210b6535a",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "38267f2",
+ "git_head_at_run": "2299003",
  "results": {
   "P0-SECRETS": {
    "at": "2026-11-17T02:38:12",
@@ -43,14 +43,14 @@
    "title": "The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist"
   },
   "P1-UNIT": {
-   "at": "2026-11-17T10:23:16",
+   "at": "2026-11-18T00:54:14",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 179
    },
-   "fingerprint": "029a03ceecb686d38ede53a4f14baec9c272ea2d5fa20899febc2a94e5b5ce7a",
+   "fingerprint": "b5f1147a1cc39fcf381203576700589c1d26260f0ffb680465669ee151a7ebd4",
    "label": "SIMULATED",
    "phase": 1,
    "reason": "179 passed, 4 saboteurs killed",
@@ -73,17 +73,17 @@
    "title": "Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers"
   },
   "P2-GATE": {
-   "at": "2026-11-17T10:15:38",
+   "at": "2026-11-18T00:53:32",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
-    "tests": 141
+    "tests": 143
    },
-   "fingerprint": "203a01f67857696fd7cad392cd41dd8dc34ac41828d15542611c4f3de582f815",
+   "fingerprint": "63b513e48cf2e5e8da30181d1be2883ca12b4b9dc40d579dd8d0c8c70cf510e0",
    "label": "SIMULATED",
    "phase": 2,
-   "reason": "141 passed, 2 saboteurs killed",
+   "reason": "143 passed, 2 saboteurs killed",
    "saboteurs": {
     "skip-post-consume-recheck": "killed",
     "skip-validate-in-run": "killed"
@@ -92,17 +92,17 @@
    "title": "Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first"
   },
   "P2-GUARDRAILS": {
-   "at": "2026-11-17T10:16:52",
+   "at": "2026-11-18T00:48:37",
    "counts": {
     "errors": 0,
-    "failures": 0,
+    "failures": 4,
     "skipped": 0,
-    "tests": 26
+    "tests": 33
    },
-   "fingerprint": "83e6e1f23099f5d6303539fbd44e733dea2cf4f3ac5655e348cc2b0877758e06",
+   "fingerprint": "b41a663549a0978112fe5c39a82f9d7c5c2ecb731bdd60717a32a0c3286b6201",
    "label": "SIMULATED",
    "phase": 2,
-   "reason": "26 passed, 5 saboteurs killed",
+   "reason": "4 failed, 0 errors",
    "saboteurs": {
     "extra-params-ignored": "killed",
     "log-inside-root": "killed",
@@ -110,7 +110,7 @@
     "read-credentials": "killed",
     "unlogged-refusals": "killed"
    },
-   "status": "PASS",
+   "status": "FAIL",
    "title": "Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations"
   },
   "P2-LOG": {
