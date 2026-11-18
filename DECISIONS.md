@@ -544,3 +544,7 @@ remove a decoupling cap → net check fails.
   kind is part of what the key shows.
 - Wording: `_apply`'s docstring names the declared gap (final read to the OS call, D-024/D-026); a failed write no longer blames
   "someone else" when the rollback stopped on the gate's own error.
+- Addendum after the board evaluator's run 4 (2026-11-18; nothing broken): the OLED socket J2 is asserted (GND, +3V3, I2C_SCL, I2C_SDA
+  once each, any order since the module's pin order is UNVERIFIED; SCL/SDA join U1.PB6/PB7 to J2) because the key shows the signed
+  summary there before the press (D-008); +3V3 bulk capacitance must meet A-3 (1 uF + 4.7 uF at the LDO, 1 uF on VDDA). Mutations: J2
+  VCC on GND, J2 VCC on VBUS, J2 off the I2C bus, C3 at 100 nF. HUMAN_REVIEW names U2's second VBUS via beside pad 5.

@@ -55,8 +55,9 @@ open. Tick each item, write the date and your name, and note any change made. So
 - [ ] USB ESD path (fixed after the board evaluator's run 2): each data line runs J1 → U2's connector-side pin → across U2 → U2's
       MCU-side pin → U1, with no other copper from J1 to U1 (tested). U2 is turned 180° so the two lines nest without crossing; D+ is
       about 25.6 mm and D− about 24.4 mm of copper. They are not a coupled pair: they pass U2 on opposite sides (up to about 4 mm
-      apart), then run 0.4–2 mm apart to U1; lengths are similar but not tuned. No via sits in any pad (tested). U2's VBUS via is under
-      the package between the pad rows (about (9.95, 10.20) mm) and its GND via beside pad 2 (about (12.15, 10.50) mm). (Corrected
+      apart), then run 0.4–2 mm apart to U1; lengths are similar but not tuned. No via sits in any pad (tested). U2's VBUS pin has two vias,
+      one under the package between the pad rows (about (9.95, 10.20) mm) and one beside pad 5 (about (7.85, 10.50) mm); its GND via is
+      beside pad 2 (about (12.15, 10.50) mm). (Corrected
       after the board evaluator's run 3.)
 - [ ] Vias next to pads: about 36 vias sit 0.05–0.1 mm from a pad's edge. The board's solder-mask margin is 0 and vias are tented;
       with a fab's usual mask expansion the via ring may show beside the pad. Check against the fab's mask rules (item 9).

@@ -600,6 +600,17 @@ def circuit_violations(pins, board) -> list[str]:
         v.append("VBUS does not join J1 to U3.VIN, or a J1 pin is on +3V3")
     if any(r == "U1" for r, _ in on("VBUS")):
         v.append("an MCU pin is on VBUS")
+    # the OLED socket (board evaluator run 4): the key shows the signed summary there before the press (D-008); the module's pin order
+    # is vendor-dependent (UNVERIFIED, review item 8), so each net must be on J2 exactly once, in any order
+    j2 = sorted(n for n, r, p, f, _ in pins[0] if r == "J2")
+    if j2 != sorted(["GND", "+3V3", "I2C_SCL", "I2C_SDA"]):
+        v.append(f"J2 carries {j2}, not GND, +3V3, I2C_SCL and I2C_SDA once each")
+    for net, func in (("I2C_SCL", "PB6"), ("I2C_SDA", "PB7")):
+        if _one(pins, "U1", func) != net or "J2" not in {r for r, _ in on(net)}:
+            v.append(f"{net} does not join U1.{func} to J2")
+    bulk = sum(farads(pins[1][c]) for c in _between(pins, "+3V3", "GND", "C") if c in pins[1] and re.fullmatch(r"[\d.]+[pnu]?F", pins[1][c]))
+    if bulk < 4.7e-6 + 1e-6 + 1e-6 - 1e-9:  # A-3: 1 uF + 4.7 uF at the LDO output, 1 uF on VDDA (plus the 100 nF decoupling)
+        v.append(f"+3V3 bulk capacitance {bulk * 1e6:.2f} uF is below A-3's")
 
     def big_cap_near(ref, func, net, limit=5.0):
         at = pads.get((ref, numbers.get((ref, func))))
@@ -670,6 +681,10 @@ MUTATIONS = {
     "LDO caps 100 nF": lambda p: (list(p[0]), dict(p[1], C1="100nF", C2="100nF", C3="100nF")),
     "J1 VBUS on +3V3": lambda p: _mutate(p, lambda x: (("+3V3",) + x[1:]) if x[1] == "J1" and x[0] == "VBUS" else x),
     "J1 ground floating": lambda p: _mutate(p, lambda x: (("unconnected-J1-GND",) + x[1:]) if x[1] == "J1" and x[0] == "GND" else x),
+    "J2 VCC on GND": lambda p: _mutate(p, lambda x: (("GND",) + x[1:]) if x[1] == "J2" and x[0] == "+3V3" else x),
+    "J2 VCC on VBUS": lambda p: _mutate(p, lambda x: (("VBUS",) + x[1:]) if x[1] == "J2" and x[0] == "+3V3" else x),
+    "J2 off the I2C bus": lambda p: _mutate(p, lambda x: ((f"unconnected-J2-{x[2]}",) + x[1:]) if x[1] == "J2" and x[0].startswith("I2C") else x),
+    "C3 100 nF": lambda p: (list(p[0]), dict(p[1], C3="100nF")),
 }
 
 
