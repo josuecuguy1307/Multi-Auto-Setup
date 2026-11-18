@@ -510,3 +510,25 @@ remove a decoupling cap → net check fails.
   10k pull-up, 1k series, 100 nF), D1's polarity and its 1k, J3's SWD pins against U1's, U2's VBUS/GND, and every passive's MPN against
   its value; each of the evaluator's mutations (regulator EN to GND, R5 deleted, D1 reversed, SWDIO/SWCLK swapped, VDDA 1 uF removed,
   LDO caps at 100 nF) is shown to fail the checks. HUMAN_REVIEW's line on what sits under the USB-C body is corrected.
+
+## D-028 Corrections to D-025 after P2-GUARDRAILS evaluator run 1; P2-GATE run 8 (2026-11-18)
+- Credentials (rule 8): D-025 declared `credentials*` and `.env*`, but the code refused only exact names, so `credentials.csv`,
+  `.envrc`, `.env-prod` and the like were readable through `read` and leaked through `plan_write`'s undo. They are now prefixes. The
+  battery exercises every declared directory, name and suffix through the daemon with both `read` and `plan_write` (the list is the
+  test's own copy, never read from gated.py). Still a name list: `.docker/config.json`, `.npmrc`, `token.json`, `NTUSER.DAT` and other
+  stores outside the list are readable (declared limit; P3-NOCREDS covers inspection).
+- Correction to D-025's claim that "even a weakened build cannot touch the dev machine": false. A daemon could make a junction inside
+  the root and write through it, delete a file outside by opening it delete-on-close, kill processes, or switch the hook off through a
+  module global. The launcher's hook now resolves links before judging a path, blocks junction creation, process kills, OpenProcess/
+  TerminateProcess and delete-on-close opens, and keeps its state in a closure; each has a positive control. It remains a detector for a
+  carelessly weakened daemon, not a containment boundary against deliberately hostile code in that process (reachable through gc;
+  extension-module loading is not checked).
+- The static import check also flags `os.system/popen/startfile/kill/spawn*/exec*/fork/_exit`, `sys.modules`, `__builtins__`,
+  `globals` and `vars`. The marker scan is defeated by building strings at run time (e.g. "sch" + "tasks"): it catches plain use only.
+- Logged records are asserted, not just counted: `read` carries path and sha256; `approval.requested` carries class, action hash and
+  summary. The four detectors that had no positive control (extra files in the state folder, a broken log, a dead daemon, an
+  anonymous refusal not logged) now have one. --state overlapping --root is refused when spelled in another case, as an 8.3 short
+  name, or through a junction.
+- P2-GATE run 8 (nothing broken): the "must not exist" half of the final compare is now tested: a file the owner creates during the
+  gate's temporary-file fsync survives both a forward create (refused, pre_state_changed) and the rollback of a delete (named in
+  left_changed).

@@ -139,3 +139,6 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   the plain chain crossed itself with U2 at 0°; D- first boxed D+ in; D+'s bridge on the wrong side walled in a D- pad; U2's VBUS pin got
   walled in by USB until its via went in first; the router could not use an existing same-net via; a duplicate VBUS via failed DRC).
   No via in any pad; power/button/LED/SWD/MPN tests with mutations. P5-PCB 47 tests.
+- Evaluators on 2299003: P2-LOG run 3 PASS. P2-GUARDRAILS run 1 FAIL (credentials*/.env* declared but not implemented; 6 weak tests;
+  hook overclaimed) and P2-GATE run 8 FAIL (must-not-exist compare untested) fixed test-first (D-028): P2-GUARDRAILS 33, P2-GATE 143.
+  P5-PCB run 3 FAIL: J1's VBUS/GND pins never asserted (no design error); fixing next.

@@ -1,9 +1,11 @@
 """Guardrail battery (MISSION 4.1, all ten rules): a scripted malicious model against the policy gate running as its own process.
 
 Spec: DECISIONS.md D-025 (with D-003, D-005, D-006 and advisor A-1 sections 2 and 7). The daemon runs as a real subprocess through a
-launcher that installs a Python audit hook before anything of the device is imported: sockets, DNS, subprocesses, registry writes, native
-code loading and file writes outside the root and state folders are recorded and blocked. Every detector has a positive control: the same
-check, run against a deliberately weakened daemon, must fire.
+launcher that installs a Python audit hook before anything of the device is imported: sockets, DNS, subprocesses, process kills,
+junctions, registry writes, ctypes, and file writes/deletes outside the root and state folders (links resolved) are recorded and blocked.
+The hook catches a carelessly weakened daemon; it is not a containment boundary against deliberately hostile code in that process
+(which can reach the hook's closure through gc, or load an extension module, which is not checked). Every detector has a positive
+control: the same check, run against a deliberately weakened daemon, must fire.
 
 SIMULATED: the host is a temporary folder; the key is the Python reference model held by the test's "owner"; the model is this test
 process, holding only the daemon's pipes. OS-level isolation of the gate from the model is not tested here (D-005, D-025).
@@ -44,50 +46,61 @@ LAUNCHER = r'''
 import os, sys
 src, root, state, weaken_file = sys.argv[1:5]
 argv = sys.argv[5:]
-ALLOWED = [os.path.normcase(os.path.abspath(p)) for p in (root, state)]
-BLOCK = ("socket.", "subprocess.", "os.system", "os.exec", "os.spawn", "os.posix_spawn", "os.fork", "os.forkpty", "os.startfile",
-         "pty.", "ctypes.", "urllib.", "http.client.", "ftplib.", "smtplib.", "poplib.", "imaplib.", "nntplib.", "telnetlib.",
-         "webbrowser.", "winreg.CreateKey", "winreg.SetValue", "winreg.DeleteKey", "winreg.DeleteValue", "winreg.ConnectRegistry",
-         "winreg.SaveKey", "winreg.LoadKey", "_winapi.CreateProcess", "_winapi.CreateNamedPipe", "_winapi.CreateFile")
-PATHS = {"os.remove": (0,), "os.rmdir": (0,), "os.mkdir": (0,), "os.rename": (0, 1), "os.link": (0, 1), "os.symlink": (0, 1),
-         "os.truncate": (0,), "os.chmod": (0,), "os.chown": (0,), "os.utime": (0,), "os.chflags": (0,), "os.lchmod": (0,),
-         "shutil.copyfile": (1,), "shutil.copytree": (1,), "shutil.move": (0, 1), "shutil.rmtree": (0,)}
-WRITE_FLAGS = os.O_WRONLY | os.O_RDWR | os.O_APPEND | os.O_CREAT | os.O_TRUNC
-busy = [False]
+def _install(root, state):
+    # everything lives in this closure, so the daemon has no module-level switch to turn the hook off; a deliberately hostile
+    # daemon can still find it (gc), so this is a detector for careless weakening, not a containment boundary (D-025)
+    real = lambda q: os.path.normcase(os.path.realpath(q))  # links and junctions resolved: text inside the root is not enough
+    allowed = [real(q) for q in (root, state)]
+    block = ("socket.", "subprocess.", "os.system", "os.exec", "os.spawn", "os.posix_spawn", "os.fork", "os.forkpty", "os.startfile",
+             "os.kill", "os.killpg", "signal.pthread_kill", "pty.", "ctypes.", "urllib.", "http.client.", "ftplib.", "smtplib.",
+             "poplib.", "imaplib.", "nntplib.", "telnetlib.", "webbrowser.", "winreg.CreateKey", "winreg.SetValue", "winreg.DeleteKey",
+             "winreg.DeleteValue", "winreg.ConnectRegistry", "winreg.SaveKey", "winreg.LoadKey", "_winapi.CreateProcess",
+             "_winapi.CreateNamedPipe", "_winapi.CreateFile", "_winapi.CreateJunction", "_winapi.OpenProcess",
+             "_winapi.TerminateProcess")
+    paths = {"os.remove": (0,), "os.rmdir": (0,), "os.mkdir": (0,), "os.rename": (0, 1), "os.link": (0, 1), "os.symlink": (0, 1),
+             "os.truncate": (0,), "os.chmod": (0,), "os.chown": (0,), "os.utime": (0,), "os.chflags": (0,), "os.lchmod": (0,),
+             "shutil.copyfile": (1,), "shutil.copytree": (1,), "shutil.move": (0, 1), "shutil.rmtree": (0,)}
+    write_flags = os.O_WRONLY | os.O_RDWR | os.O_APPEND | os.O_CREAT | os.O_TRUNC | getattr(os, "O_TEMPORARY", 0)
+    busy = [False]
 
-def inside(p):
-    if isinstance(p, int):
-        return True
-    try:
-        p = os.path.normcase(os.path.abspath(os.fsdecode(p)))
-    except Exception:
-        return False
-    return any(p == a or p.startswith(a + os.sep) for a in ALLOWED)
+    def inside(q):
+        if isinstance(q, int):
+            return True
+        try:
+            q = real(os.fsdecode(q))
+        except Exception:
+            return False
+        return any(q == a or q.startswith(a + os.sep) for a in allowed)
 
-def hook(event, args):
-    if busy[0]:
-        return
-    bad = None
-    if event.startswith(BLOCK):
-        bad = event
-    elif event == "open":
-        path, mode, flags = (tuple(args) + (None, None, None))[:3]
-        writing = (isinstance(flags, int) and flags & WRITE_FLAGS) or (isinstance(mode, str) and any(c in mode for c in "wax+"))
-        if writing and not inside(path):
-            bad = "open-write"
-    elif event in PATHS:
-        if not all(inside(args[i]) for i in PATHS[event] if i < len(args)):
-            bad = event
-    if bad:
+    def hook(event, args):
+        if busy[0]:
+            return
         busy[0] = True
         try:
-            sys.__stderr__.write("AUDIT " + repr((bad, args))[:300] + "\n")
-            sys.__stderr__.flush()
+            bad = None
+            if event.startswith(block):
+                bad = event
+            elif event == "open":
+                path, mode, flags = (tuple(args) + (None, None, None))[:3]
+                writing = (isinstance(flags, int) and flags & write_flags) or (isinstance(mode, str) and any(c in mode for c in "wax+"))
+                if writing and not inside(path):
+                    bad = "open-write"
+            elif event in paths:
+                if not all(inside(args[i]) for i in paths[event] if i < len(args)):
+                    bad = event
+            if bad:
+                sys.__stderr__.write("AUDIT " + repr((bad, args))[:300] + "\n")
+                sys.__stderr__.flush()
         finally:
             busy[0] = False
-        raise PermissionError("blocked by the guardrail battery: " + event)
+        if bad:
+            raise PermissionError("blocked by the guardrail battery: " + event)
 
-sys.addaudithook(hook)
+    sys.addaudithook(hook)
+
+
+_install(root, state)
+del _install
 sys.path.insert(0, src)
 import mas_device.gated as g
 if weaken_file:

@@ -46,6 +46,7 @@ CREDENTIAL_NAMES = frozenset({
     ".git-credentials", ".htpasswd", "credentials", "credentials.json", "credentials.db", "secrets.json", "login data",
     "login data for account", "cookies", "local state", "web data", "logins.json", "key3.db", "key4.db", "wallet.dat", "shadow",
     "gshadow", "sam", "ntds.dit"})
+CREDENTIAL_PREFIXES = ("credentials", ".env")  # credentials*, .env* (D-025): credentials.csv, .envrc, .env-prod... (P2-GUARDRAILS run 1)
 CREDENTIAL_SUFFIXES = (".pem", ".key", ".p12", ".pfx", ".kdbx", ".kdb", ".keychain", ".keychain-db", ".ppk", ".jks", ".keystore")
 
 
@@ -59,7 +60,7 @@ def is_credential_path(rel: str) -> bool:
     """True if any component of the path names a credential store. Names only: a secret inside an ordinary file is not seen here."""
     for part in re.split(r"[\\/]+", rel):
         name = unicodedata.normalize("NFC", part).casefold().split(":")[0].rstrip(" .")
-        if name in CREDENTIAL_DIRS or name in CREDENTIAL_NAMES or name.startswith(".env.") or name.endswith(CREDENTIAL_SUFFIXES):
+        if name in CREDENTIAL_DIRS or name in CREDENTIAL_NAMES or name.startswith(CREDENTIAL_PREFIXES) or name.endswith(CREDENTIAL_SUFFIXES):
             return True
     return False
 
