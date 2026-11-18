@@ -442,7 +442,7 @@ class PolicyGate:
                                                     "left_changed": left})
             except (LogBroken, OSError):
                 pass
-            raise Refused(code, str(exc)[:120] + (f"; left changed by someone else: {left}" if left else "")) from None
+            raise Refused(code, str(exc)[:120] + (f"; left as found, not rolled back (changed meanwhile, or not restorable): {left}" if left else "")) from None
         with self._lock:
             if cls == ap.Class.WRITE:
                 self._undo_by_write[approval.action_hash] = approval.undo_hash
@@ -467,7 +467,8 @@ class PolicyGate:
     def _apply(self, action: dict) -> None:
         """Make the change, or put back everything this call changed and re-raise. Each file is compared with its approved pre-state
         immediately before it is replaced or deleted, and each folder must still be absent immediately before it is made: an edit made
-        on the host after the last check (an editor's autosave during the log append) is never overwritten."""
+        on the host after the last check (an editor's autosave during the log append) is never overwritten, except in the declared gap
+        between the final read inside _replace_file (or before os.unlink) and the OS call itself (D-024, D-026)."""
         done: list[tuple] = []
         try:
             for d in action.get("mkdirs", []):

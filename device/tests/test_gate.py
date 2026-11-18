@@ -1263,3 +1263,62 @@ def test_the_rollback_never_overwrites_a_name_the_owner_recreated_after_a_delete
     assert (root / "a.conf").read_bytes() == b"owner\n"
     failed = [r for r in log.records() if r["type"] == "write.failed"]
     assert failed and failed[0]["payload"]["left_changed"] == ["a.conf"]
+
+
+# ---- evaluator run 9 (device/evals/evaluator/P2-GATE.run9.md): the owner deletes during the fsync; the kind check -----------------
+
+def _owner_deletes_during_the_gate_fsync(monkeypatch, path, armed):
+    real_fsync = os.fsync
+
+    def fsync(fd):
+        real_fsync(fd)
+        if armed and any(f.function == "_replace_file" for f in inspect.stack()[1:3]):
+            armed.clear()
+            path.unlink()
+
+    monkeypatch.setattr(gt.os, "fsync", fsync)
+
+
+def test_an_edit_never_recreates_a_file_the_owner_deleted_during_the_fsync(pg, key, root, monkeypatch):
+    w = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    token = press(pg, key, w)
+    _owner_deletes_during_the_gate_fsync(monkeypatch, root / "etc" / "app.conf", [True])
+    with pytest.raises(gt.Refused) as e:
+        pg.execute(token, w)
+    assert e.value.code == "pre_state_changed"
+    assert not (root / "etc" / "app.conf").exists()
+    assert not [q for q in (root / "etc").iterdir() if "mas-tmp" in q.name]
+
+
+def test_the_rollback_never_recreates_a_file_the_owner_deleted_during_the_restore(pg, key, root, log, monkeypatch):
+    (root / "a.conf").write_bytes(b"a=1\n")
+    (root / "b.conf").write_bytes(b"b=1\n")
+    w = pg.plan_write({"a.conf": b"a=2\n", "b.conf": b"b=2\n"})
+    token = press(pg, key, w)
+    real, calls, armed = gt._replace_file, [], []
+
+    def flaky(path, data, *a, **k):
+        calls.append(path)
+        if len(calls) == 2:
+            raise OSError("disk full")
+        if len(calls) == 3:
+            armed.append(True)  # the rollback restoring a.conf
+        return real(path, data, *a, **k)
+
+    monkeypatch.setattr(gt, "_replace_file", flaky)
+    _owner_deletes_during_the_gate_fsync(monkeypatch, root / "a.conf", armed)
+    with pytest.raises(gt.Refused):
+        pg.execute(token, w)
+    assert not (root / "a.conf").exists()
+    failed = [r for r in log.records() if r["type"] == "write.failed"]
+    assert failed and failed[0]["payload"]["left_changed"] == ["a.conf"]
+
+
+@pytest.mark.parametrize("kind", ["read.only", "files.restore", "", "WRITE host-test 1f"])
+def test_an_action_of_another_kind_never_reaches_the_key(pg, kind):
+    w = pg.plan_write({"etc/app.conf": b"port=2\n"})
+    w["kind"] = kind  # the kind is part of what the key shows: model-chosen text must never get there
+    with pytest.raises(gt.Refused) as e:
+        pg.begin(w)
+    assert e.value.code == "bad_action"
+    assert not pg._approvals._pending

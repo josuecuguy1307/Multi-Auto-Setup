@@ -1,7 +1,7 @@
 {
- "checksum": "67616febc7a6c3bc7778712aa237c1301ca6300451b9a2f020cd079833bddd0c",
+ "checksum": "155146074dd97af2a3e626e20fbafce553e1a96f391389f6708d131c129d512d",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "0cab69e",
+ "git_head_at_run": "1c65ad2",
  "results": {
   "P0-SECRETS": {
    "at": "2026-11-17T02:38:12",
@@ -13,14 +13,14 @@
    "title": "No credentials, keys or tokens anywhere in the repository (secret scan over the whole tree and history)"
   },
   "P1-DOCS": {
-   "at": "2026-11-18T01:11:24",
+   "at": "2026-11-18T14:02:33",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 18
    },
-   "fingerprint": "3fb7f4f1ee56d866b287990b8b0aea7a425aecbed6a7e0e8f597bde25d37d03c",
+   "fingerprint": "795ceb30dbcc61ccd3a7d622d84b70b1cf3221600f48e7fb5d97cd2a5808a539",
    "label": "REAL",
    "phase": 1,
    "reason": "18 passed",
@@ -43,14 +43,14 @@
    "title": "The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist"
   },
   "P1-UNIT": {
-   "at": "2026-11-18T01:11:26",
+   "at": "2026-11-18T14:02:35",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 179
    },
-   "fingerprint": "553528191112ef0c1eab92ec1d1550b90191e33cf013a8ce80ebca2ea19a5896",
+   "fingerprint": "450f6c6181762bf039dd0a463e821e081d9bf0de39eb37e458a97532a7814c60",
    "label": "SIMULATED",
    "phase": 1,
    "reason": "179 passed, 4 saboteurs killed",
@@ -73,17 +73,17 @@
    "title": "Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers"
   },
   "P2-GATE": {
-   "at": "2026-11-18T01:02:04",
+   "at": "2026-11-18T13:55:15",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
-    "tests": 143
+    "tests": 149
    },
-   "fingerprint": "57d9de2ec753ace158ae16aab7a8981f36a601f109027cafc562289217cfd618",
+   "fingerprint": "6380cabb57eb21ee127250c4e2bf01afc9a8a27c6ad7f302f5c21fac9081d09c",
    "label": "SIMULATED",
    "phase": 2,
-   "reason": "143 passed, 2 saboteurs killed",
+   "reason": "149 passed, 2 saboteurs killed",
    "saboteurs": {
     "skip-post-consume-recheck": "killed",
     "skip-validate-in-run": "killed"
@@ -92,14 +92,14 @@
    "title": "Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first"
   },
   "P2-GUARDRAILS": {
-   "at": "2026-11-18T00:57:59",
+   "at": "2026-11-18T13:56:34",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 33
    },
-   "fingerprint": "edff0363e5542ae853f137d928dea49a6ab228854878335e9eac23a26e3df828",
+   "fingerprint": "3e02b680c7260d727fa175b42b0b82bdd27259fa5db17317b0dace723d1b2518",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "33 passed, 5 saboteurs killed",
@@ -114,14 +114,14 @@
    "title": "Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations"
   },
   "P2-LOG": {
-   "at": "2026-11-18T01:03:00",
+   "at": "2026-11-18T14:02:00",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 44
    },
-   "fingerprint": "83962cf0c0df106ae8780fbc7b5227522355c5574bdbaadd57caad43345955ee",
+   "fingerprint": "d36af0f7900dc7a92e8e5caf21bb9b87d3c516eb021cff4b460d16a384e860af",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "44 passed, 2 saboteurs killed",

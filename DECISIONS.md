@@ -536,3 +536,11 @@ remove a decoupling cap → net check fails.
   VBUS, A1/A12/B1/B12 and the shield on GND, A5/B5 on CC1/CC2; VBUS joins J1 to U3.VIN; no J1 pin on +3V3, no MCU pin on VBUS), with
   mutations "J1 VBUS on +3V3" and "J1 ground floating". HUMAN_REVIEW corrected: the via under U2 is VBUS's, GND's is beside pad 2; D+/D-
   are not a coupled pair; vias 0.05-0.1 mm from pads with tented vias and zero mask margin are listed for the fab check.
+
+## D-029 Gate after evaluator run 9 (2026-11-18; nothing broken)
+- The "target vanished" half of the final compare is now tested: a file the owner deletes during the gate's temporary-file fsync stays
+  deleted, for a forward edit (refused, pre_state_changed) and for the rollback restore of a replaced file (named in left_changed).
+- The kind check is tested: a planned write whose `kind` was changed never reaches the key (refused at begin, nothing pending), since the
+  kind is part of what the key shows.
+- Wording: `_apply`'s docstring names the declared gap (final read to the OS call, D-024/D-026); a failed write no longer blames
+  "someone else" when the rollback stopped on the gate's own error.
