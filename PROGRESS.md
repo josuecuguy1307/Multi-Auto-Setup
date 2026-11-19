@@ -147,3 +147,9 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   OLED socket untested; no design error) fixed (D-027 addendum). P2-GUARDRAILS run 2 still running at this note.
 - P2-GUARDRAILS run 2 FAIL (BROKE: credential-content oracle through begin/execute with a crafted action) fixed (D-030): names checked
   in every action before the gate reads; controls for link resolution and OpenProcess; broader static check. 36 tests, 6 saboteurs.
+- P0-SECRETS PASS (17 tests): secret scan over tracked and untracked files and `git log --all -p`; key blocks need a body, tokens their
+  real shape and >= 10 distinct characters, API keys a random base64 mix (MAS fixtures like "sk-should-never-appear-..." are not keys);
+  positive controls built at run time. Failed attempt: the first rules flagged that fixture.
+- Oracle fix (P1-HARNESS 42): covered folders are walked with skipped folders pruned (status 3 min -> 1 s with runs/ full of evaluator
+  copies) and test-results.json is never part of a fingerprint (P0-SECRETS covers "." and went stale the moment it was recorded).
+  Every criterion re-run: 11/26 PASS.

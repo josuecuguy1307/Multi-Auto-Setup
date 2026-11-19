@@ -60,12 +60,23 @@ def load_criteria(path: Path | None = None) -> list[dict]:
 
 
 def _files(rel: str, root: Path) -> list[Path]:
+    """The files a covered path stands for. Skipped folders are pruned while walking (not filtered afterwards: runs/ and .venv hold tens
+    of thousands of files), and the results file this oracle writes is never part of what it judges (a criterion covering "." would
+    otherwise go stale the moment its own result is recorded)."""
     p = root / rel.split("::", 1)[0]
     if p.is_file():
         return [p]
-    if p.is_dir():
-        return sorted(f for f in p.rglob("*") if f.is_file() and not (SKIP_PARTS & set(f.relative_to(root).parts)))
-    return []
+    if not p.is_dir():
+        return []
+    out = []
+    for dirpath, dirnames, filenames in os.walk(p):
+        dirnames[:] = sorted(d for d in dirnames if d not in SKIP_PARTS)
+        for name in filenames:
+            f = Path(dirpath, name)
+            rp = f.relative_to(root)
+            if f.is_file() and rp.as_posix() != RESULTS.name and not (SKIP_PARTS & set(rp.parts)):
+                out.append(f)
+    return sorted(out)
 
 
 def _normalised(data: bytes) -> bytes:

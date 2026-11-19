@@ -280,3 +280,23 @@ def test_m2_the_loop_stops_only_on_confirm():
     import re
     assert re.search(r"if py scripts/device_accept\.py confirm[^\n]*\n[^\n]*break", text), "the loop must break on confirm"
     assert not re.search(r"if py scripts/device_accept\.py (status|verify|run)", text), "nothing but confirm may end the loop"
+
+
+def test_a_criterion_covering_the_whole_tree_is_not_made_stale_by_its_own_result_or_by_skipped_folders(world):
+    """P0-SECRETS covers ".": recording any result rewrites test-results.json, and runs/ and .venv change all the time. Neither is
+    content under judgement; a real file anywhere else still is."""
+    c = _crit(["tests/test_ok.py"], covers=(".",))
+    before = acc.fingerprint(c, world)
+    (world / "test-results.json").write_text('{"results": {"X": "anything"}}', encoding="utf-8")
+    for skipped in ("runs", ".venv", "__pycache__"):
+        (world / skipped / "deep").mkdir(parents=True, exist_ok=True)
+        (world / skipped / "deep" / "f.txt").write_text("noise", encoding="utf-8")
+    assert acc.fingerprint(c, world) == before
+    (world / "docs").mkdir(exist_ok=True)
+    (world / "docs" / "new.md").write_text("a real change", encoding="utf-8")
+    assert acc.fingerprint(c, world) != before
+    nested = world / "sub" / "test-results.json"  # only the oracle's own file at the root is excluded
+    nested.parent.mkdir(exist_ok=True)
+    after = acc.fingerprint(c, world)
+    nested.write_text("{}", encoding="utf-8")
+    assert acc.fingerprint(c, world) != after

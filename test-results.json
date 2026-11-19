@@ -1,26 +1,32 @@
 {
- "checksum": "a916f316a54a052ff15565e3b35e31fb16f1b9ae2d0a0c06b232f765b9fb4ef8",
+ "checksum": "efbe09c27e2ed49a1d225b423cb727d4ba1397945c28781f0695ac9ec1b3453f",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "ef8448f",
+ "git_head_at_run": "359571f",
  "results": {
   "P0-SECRETS": {
-   "at": "2026-11-17T02:38:12",
-   "fingerprint": "3d4ff8ba9d01b0e4498e91e4cf4f706680b71f35cc8a90bb89aaaff453409f81",
+   "at": "2026-11-18T19:10:50",
+   "counts": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 17
+   },
+   "fingerprint": "44a7eb36fae4991ea9db21226206b61a9d52e814b4ce20ce344256345d561056",
    "label": "REAL",
    "phase": 1,
-   "reason": "missing test files: device/tests/test_secrets.py",
-   "status": "FAIL",
+   "reason": "17 passed",
+   "status": "PASS",
    "title": "No credentials, keys or tokens anywhere in the repository (secret scan over the whole tree and history)"
   },
   "P1-DOCS": {
-   "at": "2026-11-18T14:24:46",
+   "at": "2026-11-18T17:01:17",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 18
    },
-   "fingerprint": "3207cae71b924c778dab39df3410f01b2c8c80f34b1c7279048fdd9e51e8cbf7",
+   "fingerprint": "0ebcbf378a2b8b6c217eb95e82445d7cda4bb78b9dedadceaf6183c48addbec5",
    "label": "REAL",
    "phase": 1,
    "reason": "18 passed",
@@ -28,29 +34,29 @@
    "title": "DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice"
   },
   "P1-HARNESS": {
-   "at": "2026-11-18T14:23:49",
+   "at": "2026-11-18T17:00:18",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
-    "tests": 41
+    "tests": 42
    },
-   "fingerprint": "b276ed87b37f1b2a8302b421ce75fa6ad5b349a5ab0ee5974b2513e58afdaedc",
+   "fingerprint": "5a6c6a2ca3cae21e86c36b4f735239d0ef105e07be4215fae3ef1cab556530c4",
    "label": "REAL",
    "phase": 1,
-   "reason": "41 passed",
+   "reason": "42 passed",
    "status": "PASS",
    "title": "The acceptance checker treats skip/missing as FAIL and detects stale PASS; continuity files exist"
   },
   "P1-UNIT": {
-   "at": "2026-11-18T14:24:48",
+   "at": "2026-11-18T17:01:19",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 179
    },
-   "fingerprint": "9b9958fb41be33e4f356a469fcb11cfb650b7fae7c0c1a8602b9ca5d334d3e46",
+   "fingerprint": "8be9372635a1291cfe2087cf7c10583afac427b53bbb08530c1905805bc685ce",
    "label": "SIMULATED",
    "phase": 1,
    "reason": "179 passed, 4 saboteurs killed",
@@ -64,8 +70,8 @@
    "title": "First unit through the full cycle: signed approval tokens (guardrail 3) with an evaluator report"
   },
   "P2-FLEET": {
-   "at": "2026-11-17T02:37:51",
-   "fingerprint": "c797f731fed808faa02fd00133198d272202c08411747cdb5c8b128744966e71",
+   "at": "2026-11-18T17:07:55",
+   "fingerprint": "a1c7d9a71788c0334f8062946eb02da2bcd87657d49a0d2969a664d12375c369",
    "label": "EMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_fleet.py",
@@ -73,14 +79,14 @@
    "title": "Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers"
   },
   "P2-GATE": {
-   "at": "2026-11-18T14:22:59",
+   "at": "2026-11-18T17:03:04",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 149
    },
-   "fingerprint": "3f1a623a9b7e4637d29fddbc13a2c553e935875cdd8c9b0684a05d82d6244188",
+   "fingerprint": "244a2cf8114d0e3cb5e8814fc17ddf30cd48c6d60ba10f9a49d8f0658e50ca83",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "149 passed, 2 saboteurs killed",
@@ -92,14 +98,14 @@
    "title": "Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first"
   },
   "P2-GUARDRAILS": {
-   "at": "2026-11-18T14:19:41",
+   "at": "2026-11-18T17:04:00",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 36
    },
-   "fingerprint": "022823e8d30ebd78d5a641366445e827630fd5a2303a2ea491367e6ea88d9040",
+   "fingerprint": "219bfaad561bfecdd67f88dc77589f0150cf2b1281bc3fb0fa5e8e0a59d121a6",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "36 passed, 6 saboteurs killed",
@@ -115,14 +121,14 @@
    "title": "Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations"
   },
   "P2-LOG": {
-   "at": "2026-11-18T14:23:30",
+   "at": "2026-11-18T17:03:38",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 44
    },
-   "fingerprint": "cb434357b1401512bd907edd62ef56e7acd7c8b9dd35f8172569da10ffc64bf8",
+   "fingerprint": "f0a3a5e4df2d5a1754cf8215b731532397181e5a4164643265be1c7407b8d237",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "44 passed, 2 saboteurs killed",
@@ -134,8 +140,8 @@
    "title": "Append-only hash-chained log; any edit, rewrite, truncation or reorder is detected against a known head; a broken log is never extended (process separation from the model is P2-GUARDRAILS)"
   },
   "P2-MEMORY": {
-   "at": "2026-11-17T02:38:12",
-   "fingerprint": "c424cebaf7afbbd5f14f5eb5bd96b7697e253f179a436c64a9b37737613fbfea",
+   "at": "2026-11-18T17:17:22",
+   "fingerprint": "08256e7f409f30306c42f71d2219fc5525a5502f94d5d157de38fcf5e8804d26",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_memory.py",
@@ -143,8 +149,8 @@
    "title": "Portable memory in an open format round-trips and is encrypted at rest"
   },
   "P2-MODEL": {
-   "at": "2026-11-17T02:38:12",
-   "fingerprint": "5790ab2372a265c69be8b42afdb06fce631317f7454dd406b7f8fc5cfbe2e4f1",
+   "at": "2026-11-18T17:17:22",
+   "fingerprint": "397d5ba254ee44774c633963864375d858f665e8fe0779fbb265dc80a39da6fe",
    "label": "EMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_model_portable.py",
@@ -152,8 +158,8 @@
    "title": "The local model answers from the read-only medium with nothing installed on the host"
   },
   "P2-PAIRING": {
-   "at": "2026-11-17T02:38:12",
-   "fingerprint": "bb7a8485f42923845133f086d1e25429b8b762efa5eefd80075e63e079565f34",
+   "at": "2026-11-18T17:17:22",
+   "fingerprint": "41162d9b7b5067f93ffb67a4352aaa1b9c2cf7c5a1f1e6abedbd1d612b26dbec",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_pairing.py",
@@ -161,8 +167,8 @@
    "title": "The gate accepts only the paired key_id; MAS chat_choice approvals are absent from the device build; the host owner's launch is the session consent (D-021)"
   },
   "P2-PORTABLE": {
-   "at": "2026-11-17T02:37:51",
-   "fingerprint": "f57c2986ad16340de2807a0078663fdc1e71f26571e11b4c1d70c0d4cb3e7a06",
+   "at": "2026-11-18T17:07:55",
+   "fingerprint": "e822561d52c234a8152a89af6f16bd3a5294f6d03682962a62cdea550f45d815",
    "label": "EMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_portable.py",
@@ -170,8 +176,8 @@
    "title": "One-command launch from a read-only medium in a clean VM/container; profiler picks compute mode"
   },
   "P2-ZEROTRACE": {
-   "at": "2026-11-17T02:37:51",
-   "fingerprint": "73cce4c72ceca503e33cc6322650562bedd4c12d521391a65ff991d3445003c2",
+   "at": "2026-11-18T17:07:55",
+   "fingerprint": "5e8334c2f7b3778df6c4272a97eee3092f4ddb689d32d0e33f924e7bd7c7852f",
    "label": "EMULATED",
    "phase": 2,
    "reason": "missing test files: device/tests/test_zerotrace.py",
@@ -179,8 +185,8 @@
    "title": "Nothing installed after unplug (no service, driver, autostart, PATH change or file outside the declared temp dir); OS residue only from the enumerated allowlist (D-010 three-arm diff)"
   },
   "P3-INSPECT": {
-   "at": "2026-11-17T02:12:10",
-   "fingerprint": "5468b3e17d3bf0db9bb44c3e04098e532e6c0a48f95ab3b9cac9ee952c499d99",
+   "at": "2026-11-18T17:07:55",
+   "fingerprint": "5783264c6b12fa470996f2cc7bc567b8b3b8029efdc260acb7ff71af6a7d4e0c",
    "label": "SIMULATED",
    "phase": 3,
    "reason": "missing test files: device/tests/test_inspect_accuracy.py",
@@ -188,8 +194,8 @@
    "title": "Inventory precision and recall against fixtures with known truth meet thresholds"
   },
   "P3-NOCREDS": {
-   "at": "2026-11-17T02:18:05",
-   "fingerprint": "30e74f84aa2d78f36c7288b632bbdba65cb4f4bc4b1285a7a6e991047d79526e",
+   "at": "2026-11-18T17:17:22",
+   "fingerprint": "16fd28347fa4fb6a7509d3563772de9c43f130c16eda999850c92abcdd126d25",
    "label": "SIMULATED",
    "phase": 3,
    "reason": "missing test files: device/tests/test_inspect_nocreds.py",
@@ -197,8 +203,8 @@
    "title": "Inspection never collects credentials; planted secrets never reach the report or the model context"
   },
   "P3-READONLY": {
-   "at": "2026-11-17T02:12:10",
-   "fingerprint": "db89a3f9a1f4523450db6bec0a96d4eb0b06a4261656cccc88612b9747673f59",
+   "at": "2026-11-18T17:07:55",
+   "fingerprint": "31cf758e1c910da5fbfcc2dabe1079d1faf59aa385e999e5af8cf1a31a230a58",
    "label": "EMULATED",
    "phase": 3,
    "reason": "missing test files: device/tests/test_inspect_readonly.py",
@@ -206,8 +212,8 @@
    "title": "Inspection makes zero writes (diff and read-only mount) and never touches the network"
   },
   "P3-REPORT": {
-   "at": "2026-11-17T02:18:05",
-   "fingerprint": "fa1e51577f5efb381f3ec422827e57333487408aaabf7e9eca4270a7e440d7c8",
+   "at": "2026-11-18T17:17:22",
+   "fingerprint": "59c5c3f3fc2037720f0ac8673eff8d1d25b84859e7c3d6bf16ee87c13a2c47c7",
    "label": "SIMULATED",
    "phase": 3,
    "reason": "missing test files: device/tests/test_inspect_report.py",
@@ -215,14 +221,14 @@
    "title": "The inspection report is readable by the owner and consumable by the agent (schema-checked)"
   },
   "P4-FW-EMU": {
-   "at": "2026-11-17T02:13:24",
+   "at": "2026-11-18T17:09:37",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 27
    },
-   "fingerprint": "c0b1f7fa79528a4abb293de4b6b5c196ebbb7e19894f104bca493fb837c2859a",
+   "fingerprint": "44820caca4951e7481985ac2cf18472e6dd8fbd07355827b90675ebbb2465e5b",
    "label": "EMULATED",
    "phase": 4,
    "reason": "27 passed",
@@ -230,14 +236,14 @@
    "title": "Same firmware runs in QEMU (mps2-an505, Cortex-M33) with transcripts identical to the host build; button is the only approval path"
   },
   "P4-FW-HOST": {
-   "at": "2026-11-17T09:17:32",
+   "at": "2026-11-18T17:07:55",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 328
    },
-   "fingerprint": "613d3fa8fc2cb6a851ccc91c0d7baf80f56e546be7a971ab249057f5ac4e5cd1",
+   "fingerprint": "4c3f6700ba377666e844267497277ff59a378826c685835d48f82461b8d03044",
    "label": "SIMULATED",
    "phase": 4,
    "reason": "328 passed",
@@ -245,14 +251,14 @@
    "title": "Firmware core (host build, HAL mocks) rejects replayed, altered and expired approvals; signs only after a press"
   },
   "P4-FW-RENODE": {
-   "at": "2026-11-17T02:15:07",
+   "at": "2026-11-18T17:11:25",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 4
    },
-   "fingerprint": "81fd2cc538057b67e19aa9cf234d7b7389a93c35cb62aa7057b6bbe494d99b73",
+   "fingerprint": "c051f24dc3eebf3039f807c4d852edcecaeeb0f24112372a6160ce76eef00f39",
    "label": "EMULATED",
    "phase": 4,
    "reason": "4 passed",
@@ -260,17 +266,23 @@
    "title": "Same firmware runs in Renode with transcripts identical to the host build and QEMU"
   },
   "P4-SECBOOT": {
-   "at": "2026-11-17T02:18:05",
-   "fingerprint": "646d2791992279d9d36d53a4ec55c7eec9af031d6ecdd92cc251ac79b71c3381",
+   "at": "2026-11-18T17:17:22",
+   "counts": {
+    "errors": 0,
+    "failures": 9,
+    "skipped": 0,
+    "tests": 9
+   },
+   "fingerprint": "9c35dffbac05d555edbf010ccc6027786aa1be4b29ec89e9066d932175170562",
    "label": "DESIGN-ONLY",
    "phase": 4,
-   "reason": "missing test files: device/tests/test_secboot_doc.py",
+   "reason": "9 failed, 0 errors",
    "status": "FAIL",
    "title": "Secure boot and lock design documented (RDP, TrustZone option bytes, key identity) and checked against the firmware's assumptions"
   },
   "P5-ENCLOSURE": {
-   "at": "2026-11-17T02:18:05",
-   "fingerprint": "0ea8f6e20d1bbf7e0da6b442218ab9b043762f4e132a3605bb385946d24058cc",
+   "at": "2026-11-18T17:17:24",
+   "fingerprint": "7d734f9988bb647fbb6e27bcc295ff9d29b148c6d115490945c094690ebe01fb",
    "label": "DESIGN-ONLY",
    "phase": 5,
    "reason": "missing test files: device/tests/test_enclosure.py",
@@ -278,14 +290,14 @@
    "title": "Parametric enclosure fits the board (clearances, USB-C opening, button access) by automatic check"
   },
   "P5-PCB": {
-   "at": "2026-11-18T14:05:40",
+   "at": "2026-11-18T17:12:20",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 53
    },
-   "fingerprint": "150d98bed61da8c3e783f77fd0a21bf3793e1d9e463d00f74b94cf23a09f77f7",
+   "fingerprint": "fb2e923f40ab02600716d1959d14851ccd880c6a4274cd36e0c8747f1bfa6e06",
    "label": "DESIGN-ONLY",
    "phase": 5,
    "reason": "53 passed",
@@ -293,8 +305,8 @@
    "title": "ERC, DRC and fabrication checks green; fab outputs marked NO FABRICAR; HUMAN_REVIEW_PCB.md present"
   },
   "P6-EVALS": {
-   "at": "2026-11-17T02:17:28",
-   "fingerprint": "c68edfe741e6f1da95064bec5249695344c3dbbb5a9f848027b8120da6e5b062",
+   "at": "2026-11-18T17:17:10",
+   "fingerprint": "fc47b3ca067a4c2a78b0b32f3c7d8735fca596a9c1edd099f3e5d78b972c1569",
    "label": "REAL",
    "phase": 6,
    "reason": "missing test files: device/tests/test_evals_paper.py",
@@ -302,8 +314,8 @@
    "title": "Evals reproducible with one command; every number in the paper comes from a script over raw results"
   },
   "P6-PAPER": {
-   "at": "2026-11-17T02:18:05",
-   "fingerprint": "193fd10e10413089f2fa319afe7fe10d1769a3221e65b8e0fa0ca499f797e34d",
+   "at": "2026-11-18T17:17:24",
+   "fingerprint": "3db0eee9110e6f7bf77a04979b9fe959104349b98b9de959a2f1531d861839c8",
    "label": "REAL",
    "phase": 6,
    "reason": "missing test files: device/tests/test_paper.py",
@@ -311,11 +323,17 @@
    "title": "Paper regenerates from raw results (LaTeX source, authors, arXiv variant with methods statement, manual-README baseline, error bars, outside judge, limitations)"
   },
   "P6-REPO": {
-   "at": "2026-11-17T02:17:28",
-   "fingerprint": "9ac081ed16e16b3f0caaa04e9c97eeb2d95c7aa6add11a0e86db78c93f2001d5",
+   "at": "2026-11-18T17:17:10",
+   "counts": {
+    "errors": 0,
+    "failures": 3,
+    "skipped": 0,
+    "tests": 8
+   },
+   "fingerprint": "fcc28d01e32476d096888776eed0156e75738dfb7b9960bdafafe3c101a62fa6",
    "label": "REAL",
    "phase": 6,
-   "reason": "missing test files: device/tests/test_repo.py",
+   "reason": "3 failed, 0 errors",
    "status": "FAIL",
    "title": "README, THIRD_PARTY.md and reproduction instructions complete"
   }

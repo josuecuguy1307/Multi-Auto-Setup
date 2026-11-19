@@ -16,7 +16,7 @@ criteria:
     tests: [device/tests/test_harness.py]
     covers: [scripts/device_accept.py, device/acceptance/criteria.yaml, CLAUDE.md, .claude/settings.json, .claude/agents]
     label: REAL
-    min_tests: 41
+    min_tests: 42
   - id: P1-DOCS
     phase: 1
     title: DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice
@@ -159,6 +159,7 @@ criteria:
     tests: [device/tests/test_secrets.py]
     covers: [.]
     label: REAL
+    min_tests: 17
   - id: P2-MODEL
     phase: 2
     title: The local model answers from the read-only medium with nothing installed on the host
