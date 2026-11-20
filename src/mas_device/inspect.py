@@ -24,6 +24,7 @@ from pathlib import Path
 
 from mas_device import approval as ap
 from mas_device import pairing as pr
+from mas_device import redact as rd
 from mas_device import report as rp
 from mas_device.log import AuditLog
 
@@ -295,6 +296,7 @@ class Session:
             self.log.append("inspect.refused", {"target": self.target, "reason": exc.code})
             raise Refused(exc.code) from None
         collectors = run_collectors(self.reader)
+        collectors, _ = rd.redact(collectors)  # D-040: credential-like host text is withheld before anything is stored
         report = {"v": 1, "target": self.target, "key_id": a.key_id.hex(), "counter": a.counter, "collectors": collectors,
                   "sources": list(self.reader.sources), "refused": list(self.reader.refused)}
         problems = rp.validate(report, rp.SCHEMA)

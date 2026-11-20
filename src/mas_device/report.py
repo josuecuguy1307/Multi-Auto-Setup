@@ -19,6 +19,8 @@ import json
 import re
 import unicodedata
 
+from mas_device.redact import count_withheld
+
 DRAFT = "https://json-schema.org/draft/2020-12/schema"
 TARGET = "^[a-z0-9][a-z0-9-]{0,31}$"
 DMI_KEYS = ("sys_vendor", "product_name", "product_version", "bios_vendor", "bios_version")
@@ -169,7 +171,8 @@ def owner_text(rep: dict) -> str:
     lines.append(f"- Kernel modules loaded: {len(c['kernel_modules'])}")
     if c["dmi"]:
         lines += ["", "## Hardware maker"] + [_line(f"- {k}: {safe(v)}") for k, v in sorted(c["dmi"].items())]
-    lines += ["", "## What was read", f"- files read: {len(rep['sources'])} (each one is listed in the JSON report)"]
+    lines += ["", "## What was read", f"- files read: {len(rep['sources'])} (each one is listed in the JSON report)",
+              f"- withheld (looked like a credential): {count_withheld(c)}"]
     lines += [_line(f"- not read (a link to a file outside the allowlist): {safe(r)}") for r in rep["refused"]] or \
         ["- not read: nothing was refused"]
     return "\n".join(lines) + "\n"

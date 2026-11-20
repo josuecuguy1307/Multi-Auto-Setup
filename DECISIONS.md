@@ -727,3 +727,17 @@ remove a decoupling cap → net check fails.
   bidi overrides, zero-width marks, line separators) is shown as \uXXXX, escaped before it is cut; lines <= 120 characters. Tested
   with a hostile os-release (escapes, bidi) and a hostile one-value sysfs file (line breaks faking a `## Refused` section).
 - The full JSON report keeps the host's raw strings (JSON escapes them); only the two views are for eyes and models.
+
+## D-040 No credentials collected: allowlist first, redaction second (2026-11-20; P3-NOCREDS; MISSION 4.1 rule 8)
+- **First line, the allowlist** (D-037): no path under /root, /home, /run, /tmp, /srv, /opt, no /proc/<pid> (environ, cmdline), no
+  shadow, no ssl/private, and nothing gated.is_credential_path names. Checked statically and end to end on a container planted
+  with secrets in /etc/shadow, ~/.ssh, ~/.aws/credentials, .env, /etc/ssl/private, .git-credentials, a browser's logins.json,
+  a gcloud credentials.db, a process environment and a process command line.
+- **Second line, mas_device.redact**: a host can put a token inside a field the inspector may read. Every string the collectors
+  return passes redact() before validation or any write; a value matching a credential shape (private-key block, AWS key id,
+  GitHub token/PAT, sk-/sk-ant-/sk-proj- keys, Slack, Google API key, JWT, URL with a password, `password=`/`api_key:`-style
+  assignments) is replaced whole by `[withheld: credential-like]`; the owner's text says how many. Shapes, not words: `password`,
+  `base-passwd`, `keyring` stay.
+- **Measured**: every planted secret is searched raw, base64, hex, UTF-16 and JSON-escaped in every file the inspection wrote
+  (full report, owner's text, agent view, audit log): none. A stock Debian: zero values withheld (no false positive). Limit: the
+  inspector's process does hold an allowed file's bytes in memory before redaction; nothing of a withheld value is stored or shown.

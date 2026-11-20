@@ -244,8 +244,14 @@ criteria:
     phase: 3
     title: Inspection never collects credentials; planted secrets never reach the report or the model context
     tests: [device/tests/test_inspect_nocreds.py]
-    covers: [src/mas_device]
+    covers: [src/mas_device, src/mas_fleet, device/medium, device/tests/mas_dockerkit.py]
     label: SIMULATED
+    min_tests: 5
+    saboteurs:
+      - {name: redaction-off, file: src/mas_device/inspect.py, old: '        collectors, _ = rd.redact(collectors)  # D-040: credential-like host text is withheld before anything is stored', new: '        pass'}
+      - {name: pem-rule-off, file: src/mas_device/redact.py, old: '    ("private_key_block", r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----"),', new: ''}
+      - {name: assignment-rule-off, file: src/mas_device/redact.py, old: 'r"\s*[:=]\s*\S+"),', new: 'r"\s*[:=]\s*\S+(?!)"),'}
+      - {name: allowlist-shadow, file: src/mas_device/inspect.py, old: '    "etc/os-release", "usr/lib/os-release", "etc/hostname",', new: '    "etc/os-release", "usr/lib/os-release", "etc/hostname", "etc/shadow",'}
   - id: P4-SECBOOT
     phase: 4
     title: Secure boot and lock design documented (RDP, TrustZone option bytes, key identity) and checked against the firmware's assumptions

@@ -61,7 +61,7 @@ k consecutive passing runs of each eval; limitations section lists what was only
 | P2-MEMORY | 2 | **PASS** | SIMULATED | Portable memory in an open format round-trips and is encrypted at rest | 11 passed, 5 saboteurs killed |
 | P2-PAIRING | 2 | **PASS** | SIMULATED | The gate accepts only the paired key_id; MAS chat_choice approvals are absent from the device build; the host owner's launch is the session consent (D-021) | 12 passed, 4 saboteurs killed |
 | P3-REPORT | 3 | **PASS** | SIMULATED | The inspection report is readable by the owner and consumable by the agent (schema-checked) | 8 passed, 5 saboteurs killed |
-| P3-NOCREDS | 3 | **FAIL** | SIMULATED | Inspection never collects credentials; planted secrets never reach the report or the model context | 0 failed, 1 errors |
+| P3-NOCREDS | 3 | **PASS** | SIMULATED | Inspection never collects credentials; planted secrets never reach the report or the model context | 5 passed, 4 saboteurs killed |
 | P4-SECBOOT | 4 | **PASS** | DESIGN-ONLY | Secure boot and lock design documented (RDP, TrustZone option bytes, key identity) and checked against the firmware's assumptions | 9 passed, 2 saboteurs killed |
 | P5-ENCLOSURE | 5 | **PASS** | DESIGN-ONLY | Parametric enclosure fits the board (clearances, USB-C opening, button access) by automatic check | 16 passed, 2 saboteurs killed |
 | P6-PAPER | 6 | **FAIL** | REAL | Paper regenerates from raw results (LaTeX source, authors, arXiv variant with methods statement, manual-README baseline, error bars, outside judge, limitations) | missing test files: device/tests/test_paper.py |

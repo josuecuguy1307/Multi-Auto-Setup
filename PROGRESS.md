@@ -227,3 +227,12 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   line breaks in os-release, which is read line by line, so they could never reach the report (the test would have passed
   trivially); moved the line-break attack to a one-value sysfs file (the disk model). A Bash heredoc patch lost escapes again
   (redone with Edit).
+- 2026-11-20 P3-NOCREDS PASS (5 tests, 4 saboteurs, D-040): secrets planted in eleven stores never read; secrets planted in
+  allowed fields (os-release, an apk database) withheld whole by mas_device.redact; every planted secret searched raw and
+  encoded in every output: none; a stock Debian loses nothing. Phase 3 complete (P3-INSPECT, -READONLY, -REPORT, -NOCREDS).
+- Oracle incident 2 (2026-11-20): in the re-run after P3-NOCREDS, P2-MEMORY again came back FAIL ("saboteur
+  checksum-unchecked survived"); a third run: PASS. Replaying the oracle's own saboteur step (its _copy_tree, _pytest,
+  _junit) with the copies under runs/ instead of %TEMP%: all five P2-MEMORY saboteurs killed 15 out of 15 times, each by the
+  expected test. Both survivals happened with the oracle's copies in %TEMP%; the mechanism is still unproven. Proposed to
+  Josué: move saboteur copies under runs/, read the sabotaged file back, keep the log of any survivor (re-runs every criterion).
+  My first replay was itself wrong (a relative repo path doubled --rootdir: pytest usage error 4).

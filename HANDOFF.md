@@ -5,7 +5,7 @@
 > `NEEDS_HUMAN.md`. `CLAUDE.md` has the working rules; `device/README.md` explains the device and how to reproduce every check.
 > Español abajo en resumen. The repo is the source of truth; this file only tells you where things stand and what bites.
 
-## 1. Where things stand: 22/26 PASS (updated 2026-11-20, fourth session) (oracle: `.venv/Scripts/python scripts/device_accept.py status`)
+## 1. Where things stand: 23/26 PASS (updated 2026-11-20, fourth session) (oracle: `.venv/Scripts/python scripts/device_accept.py status`)
 
 | Criterion | Status | Independent evaluator |
 |---|---|---|
@@ -30,6 +30,7 @@
 | P3-READONLY | PASS 10, 4 saboteurs (EMULATED) | **never evaluated** (built 2026-11-20, D-037) |
 | P3-INSPECT | PASS 8, 4 saboteurs (SIMULATED label; containers) | **never evaluated** (built 2026-11-20, D-038): 1.0/1.0 on 4 machines |
 | P3-REPORT | PASS 8, 5 saboteurs (SIMULATED) | **never evaluated** (built 2026-11-20, D-039) |
+| P3-NOCREDS | PASS 5, 4 saboteurs (SIMULATED label; containers) | **never evaluated** (built 2026-11-20, D-040); phase 3 complete |
 | P3-INSPECT, P3-REPORT, P3-NOCREDS | FAIL (not built) | can be built against fixtures |
 | P6-EVALS, P6-PAPER | FAIL (not built) | last |
 
@@ -43,8 +44,8 @@
    PowerShell window (it removes the sockets through WSL, which can). From Claude only *use* `docker` once `docker info` answers. Also:
    PowerShell 5.1 mangles double quotes passed to `wsl.exe`; put shell commands for WSL in a script file.
 2. `.venv/Scripts/python scripts/device_accept.py status` and `... verify` (both read-only; verify takes ~1 s now).
-3. Choose with Josué: either run the pending evaluators (§1, bold) or build the next units (P3-NOCREDS: extends
-   mas_device/inspect.py and report.py; then P2-MODEL, P6-EVALS, P6-PAPER). Each evaluator run
+3. Choose with Josué: either run the pending evaluators (§1, bold) or build the next units (P2-MODEL: needs Josué's
+   OK on the exact model file (STEER 2026-11-19 allows a small open GGUF); then P6-EVALS, P6-PAPER). Each evaluator run
    costs ~65k-270k tokens; several rounds in a row now find only small test gaps, so building may be the better use of budget.
 4. Unit cycle: red test commit -> implementation -> oracle PASS -> evaluator (fresh context) -> fix test-first -> commit -> push.
 
@@ -138,7 +139,8 @@ compute = host CPU, secure-boot review on a sacrificial STM32U585 (item 10), hum
 - 2026-11-20: P3-READONLY en PASS (20 de 26): inspección de solo lectura con una pulsación; diff cero, raíz de solo lectura, sin red.
 - 2026-11-20: P3-INSPECT en PASS (21 de 26): precisión y recobrado 1,0 contra verdad de herramientas independientes.
 - 2026-11-20: P3-REPORT en PASS (22 de 26): informe con esquema cerrado, vista del dueño y vista del agente; texto hostil escapado.
-- Rama `device/v0`, todo subido. **22 de 26 criterios pasan.** Hechos en esta cuenta: P0-SECRETS (sin credenciales en el repo ni en
+- 2026-11-20: P3-NOCREDS en PASS (23 de 26): fase 3 completa; ningún secreto plantado llega al informe ni al modelo.
+- Rama `device/v0`, todo subido. **23 de 26 criterios pasan.** Hechos en esta cuenta: P0-SECRETS (sin credenciales en el repo ni en
   su historia), P4-SECBOOT (diseño de arranque seguro, solo diseño), P6-REPO (`device/README.md`), P5-ENCLOSURE (carcasa paramétrica,
   solo diseño), más varias rondas de evaluadores con sus correcciones (D-027 a D-030).
 - Al retomar: `git pull`, `device_accept.py status`. Luego, con Josué: o bien correr los evaluadores pendientes (sección 1, en negrita),
