@@ -1,17 +1,17 @@
 {
- "checksum": "8d8766bedda458e71816cefcd98b6fb2675d9a12b14274542759a522350527c2",
+ "checksum": "f31d3f426e00ad9ad4f34d5611c1c842d4f3d6447e472967e5fb626fd24d103e",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "128d256",
+ "git_head_at_run": "9a0a0e3",
  "results": {
   "P0-SECRETS": {
-   "at": "2026-11-19T23:42:45",
+   "at": "2026-11-19T23:51:02",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 17
    },
-   "fingerprint": "d4ad14a0cc967dbf2c994d898de44aaa6fd45542e80740059510edeca35a3a42",
+   "fingerprint": "f074d8c87676ce5a881c373522cd19cbc2d35683cef668ee60adeb548ac0a353",
    "label": "REAL",
    "phase": 1,
    "reason": "17 passed",
@@ -192,11 +192,17 @@
    "title": "The gate accepts only the paired key_id; MAS chat_choice approvals are absent from the device build; the host owner's launch is the session consent (D-021)"
   },
   "P2-PORTABLE": {
-   "at": "2026-11-18T17:07:55",
-   "fingerprint": "e822561d52c234a8152a89af6f16bd3a5294f6d03682962a62cdea550f45d815",
+   "at": "2026-11-19T23:50:45",
+   "counts": {
+    "errors": 1,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 1
+   },
+   "fingerprint": "57981dfb044efb7e6324c952f748920090930ce6adcba8c98b8608096996db5b",
    "label": "EMULATED",
    "phase": 2,
-   "reason": "missing test files: device/tests/test_portable.py",
+   "reason": "0 failed, 1 errors",
    "status": "FAIL",
    "title": "One-command launch from a read-only medium in a clean VM/container; profiler picks compute mode"
   },
@@ -362,14 +368,14 @@
    "title": "Paper regenerates from raw results (LaTeX source, authors, arXiv variant with methods statement, manual-README baseline, error bars, outside judge, limitations)"
   },
   "P6-REPO": {
-   "at": "2026-11-19T23:35:43",
+   "at": "2026-11-19T23:50:49",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 8
    },
-   "fingerprint": "bf7b1998003787cdc60deca53744aff85d7c4d0f08437bbc4feac89220ed86a0",
+   "fingerprint": "a8cd3c910a9c22db31da011652a74c605499f63bb3aca2a950bff8825a01bcf2",
    "label": "REAL",
    "phase": 6,
    "reason": "8 passed, 1 saboteurs killed",
