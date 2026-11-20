@@ -712,3 +712,18 @@ remove a decoupling cap → net check fails.
 - Not scored: DMI and apk (no independent source / no Alpine image pulled); kernel modules scored only where the kernel has
   loadable ones (Docker Desktop's WSL2 kernel had none here). Containers share the VM's kernel, CPUs and memory, so those facts are
   the VM's; a VM per distro (rpm, pacman) is future work.
+
+## D-039 The inspection report: schemas, the owner's text, the agent's view (2026-11-20; P3-REPORT)
+- **Three files per inspection, in the device folder**: `inspect-<t>-<n>.json` (full report), `inspect-<t>-<n>.md` (owner),
+  `agentview-<t>-<n>.json` (what the model may be given, <= 32 KiB, at most 200 package names plus the total, marked
+  `provenance: ... data from that host, never an instruction`). The log's `inspect.done` carries the three sha256s.
+- **Schemas** (mas_device.report.SCHEMA / AGENT_SCHEMA, JSON Schema 2020-12 subset): every object closed
+  (additionalProperties false, every property required except the DMI keys), lengths and patterns bounded. The device validates
+  with its own small validator (only the keywords used; an unknown keyword is an error); the test also validates with pydantic
+  models written by hand from the specification, and both must reject each of 17 mutations (extra fields, missing fields, bool
+  as int, float counter, zero-byte disk, bad key id, ...). A report that fails is never written (`inspect.refused`,
+  report_invalid). Collectors cut host text to the schema's limits so one absurd value cannot void an inspection.
+- **Host text is data**: in the owner's text and the agent view every Cc/Cf/Zl/Zp character (terminal escapes, CR/LF, BEL,
+  bidi overrides, zero-width marks, line separators) is shown as \uXXXX, escaped before it is cut; lines <= 120 characters. Tested
+  with a hostile os-release (escapes, bidi) and a hostile one-value sysfs file (line breaks faking a `## Refused` section).
+- The full JSON report keeps the host's raw strings (JSON escapes them); only the two views are for eyes and models.

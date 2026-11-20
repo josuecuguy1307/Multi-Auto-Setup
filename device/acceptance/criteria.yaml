@@ -233,6 +233,13 @@ criteria:
     tests: [device/tests/test_inspect_report.py]
     covers: [src/mas_device]
     label: SIMULATED
+    min_tests: 8
+    saboteurs:
+      - {name: sanitize-off, file: src/mas_device/report.py, old: '        if unicodedata.category(ch) in ("Cc", "Cf", "Zl", "Zp"):', new: '        if False:'}
+      - {name: additional-properties-off, file: src/mas_device/report.py, old: '        if schema.get("additionalProperties") is False:', new: '        if False:'}
+      - {name: agent-cap-off, file: src/mas_device/report.py, old: '    keep = min(len(names), AGENT_MAX_PACKAGES)', new: '    keep = len(names)'}
+      - {name: invalid-written, file: src/mas_device/inspect.py, old: '        if problems:  # D-039: a report that breaks its schema is never written', new: '        if False:'}
+      - {name: bool-as-int, file: src/mas_device/report.py, old: '"integer": lambda x: type(x) is int,', new: '"integer": lambda x: isinstance(x, int),'}
   - id: P3-NOCREDS
     phase: 3
     title: Inspection never collects credentials; planted secrets never reach the report or the model context

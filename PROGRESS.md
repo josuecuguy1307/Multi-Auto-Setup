@@ -221,3 +221,9 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   catches. Two immediate re-runs: PASS, 5 saboteurs killed. My first manual reproduction was invalid (pyproject's pytest
   pythonpath put the real src first; the oracle uses its own ini). Cause unknown; second odd %TEMP% event this session
   (HANDOFF gotcha). Not fixed in the oracle yet: changing it stales every criterion.
+- 2026-11-20 P3-REPORT PASS (8 tests, 5 saboteurs, D-039): closed JSON Schemas for the report and the agent view, the device's
+  own validator plus independent pydantic models (jsonschema is not installed; pydantic is, as a MAS dependency) agreeing on 17
+  mutations; owner's Markdown and a 32 KiB agent view; Cc/Cf/Zl/Zp shown escaped. Failed attempts: my first hostile test put
+  line breaks in os-release, which is read line by line, so they could never reach the report (the test would have passed
+  trivially); moved the line-break attack to a one-value sysfs file (the disk model). A Bash heredoc patch lost escapes again
+  (redone with Edit).

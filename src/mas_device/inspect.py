@@ -24,6 +24,7 @@ from pathlib import Path
 
 from mas_device import approval as ap
 from mas_device import pairing as pr
+from mas_device import report as rp
 from mas_device.log import AuditLog
 
 ALLOWED_FILES = (
@@ -122,6 +123,11 @@ class Reader:
             return None
 
 
+def _cap(s: str | None, n: int) -> str | None:
+    """Host text is cut to the report schema's limits, so one absurd value never voids the whole inspection (D-039)."""
+    return None if s is None else s[:n]
+
+
 def _text(b: bytes | None, limit: int = 200) -> str | None:
     if b is None:
         return None
@@ -180,7 +186,7 @@ def c_memory(r: Reader) -> dict:
 
 
 def c_kernel_modules(r: Reader) -> list[str]:
-    return sorted({ln.split()[0] for ln in (r.read("proc/modules") or b"").decode("ascii", "replace").splitlines() if ln.split()})
+    return sorted({ln.split()[0][:64] for ln in (r.read("proc/modules") or b"").decode("ascii", "replace").splitlines() if ln.split()})
 
 
 def _stanzas(b: bytes | None) -> list[dict[str, str]]:
@@ -199,7 +205,7 @@ def _stanzas(b: bytes | None) -> list[dict[str, str]]:
 
 
 def c_packages_dpkg(r: Reader) -> list[dict]:
-    pk = [{"name": s["Package"], "version": s.get("Version"), "arch": s.get("Architecture")}
+    pk = [{"name": s["Package"][:200], "version": _cap(s.get("Version"), 200), "arch": _cap(s.get("Architecture"), 64)}
           for s in _stanzas(r.read("var/lib/dpkg/status")) if "Package" in s and s.get("Status", "").endswith(" installed")]
     return sorted(pk, key=lambda p: p["name"])
 
@@ -209,7 +215,7 @@ def c_packages_apk(r: Reader) -> list[dict]:
     for line in (r.read("lib/apk/db/installed") or b"").decode("utf-8", "replace").splitlines() + [""]:
         if not line.strip():
             if "P" in cur:
-                pk.append({"name": cur["P"], "version": cur.get("V"), "arch": cur.get("A")})
+                pk.append({"name": cur["P"][:200], "version": _cap(cur.get("V"), 200), "arch": _cap(cur.get("A"), 64)})
             cur = {}
         elif len(line) > 2 and line[1] == ":":
             cur[line[0]] = line[2:].strip()
@@ -291,16 +297,28 @@ class Session:
         collectors = run_collectors(self.reader)
         report = {"v": 1, "target": self.target, "key_id": a.key_id.hex(), "counter": a.counter, "collectors": collectors,
                   "sources": list(self.reader.sources), "refused": list(self.reader.refused)}
-        data = (json.dumps(report, sort_keys=True, indent=1, ensure_ascii=True) + "\n").encode("ascii")
-        out = self.state / f"inspect-{self.target}-{a.counter}.json"
-        fd = os.open(out, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0), 0o600)
-        with os.fdopen(fd, "wb") as f:
-            f.write(data)
-            f.flush()
-            os.fsync(f.fileno())
-        self.log.append("inspect.done", {"target": self.target, "report": out.name, "report_sha256": hashlib.sha256(data).hexdigest(),
-                                         "counter": a.counter, "sources": report["sources"]})
-        return out
+        problems = rp.validate(report, rp.SCHEMA)
+        view = rp.agent_view(report) if not problems else None
+        if view is not None:
+            problems = rp.validate(view, rp.AGENT_SCHEMA)
+        if problems:  # D-039: a report that breaks its schema is never written
+            self.log.append("inspect.refused", {"target": self.target, "reason": "report_invalid", "detail": problems[0][:200]})
+            raise Refused("report_invalid")
+        stem = f"{self.target}-{a.counter}"
+        blobs = {f"inspect-{stem}.json": (json.dumps(report, sort_keys=True, indent=1, ensure_ascii=True) + "\n").encode("ascii"),
+                 f"inspect-{stem}.md": rp.owner_text(report).encode("utf-8"),
+                 f"agentview-{stem}.json": (json.dumps(view, sort_keys=True, indent=1, ensure_ascii=True) + "\n").encode("ascii")}
+        for name, data in blobs.items():
+            fd = os.open(self.state / name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0), 0o600)
+            with os.fdopen(fd, "wb") as f:
+                f.write(data)
+                f.flush()
+                os.fsync(f.fileno())
+        sha = {name: hashlib.sha256(data).hexdigest() for name, data in blobs.items()}
+        self.log.append("inspect.done", {"target": self.target, "report": f"inspect-{stem}.json", "counter": a.counter,
+                                         "report_sha256": sha[f"inspect-{stem}.json"], "owner_text_sha256": sha[f"inspect-{stem}.md"],
+                                         "agent_view_sha256": sha[f"agentview-{stem}.json"], "sources": report["sources"]})
+        return self.state / f"inspect-{stem}.json"
 
 
 def main(argv: list[str], *, pairing: str) -> int:
