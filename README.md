@@ -157,6 +157,7 @@ uv venv --python 3.13 .venv && uv pip install --python .venv/bin/python -e .
 - **Harness App standard:** how a chat connects to the harness without being modified: [docs/HARNESS_APP_STANDARD.md](docs/HARNESS_APP_STANDARD.md).
 - **Style:** the logo, colors and symbols: [docs/STYLE.md](docs/STYLE.md).
 - **Licenses of what is used:** [THIRD_PARTY.md](THIRD_PARTY.md).
+- **Portable device (branch `device/v0`):** the key with a physical approval button, its firmware, board and policy gate, what is simulated, emulated or design-only, and how to reproduce every check: [device/README.md](device/README.md).
 
 ## License
 

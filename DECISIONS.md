@@ -563,3 +563,17 @@ remove a decoupling cap → net check fails.
   `from os import <process function>`, `import os as ...`, `getattr(os|sys, <computed or process name>)` and `os.__dict__`; it still
   catches plain spellings only, and the marker list is not exhaustive (scheduled-task cmdlets, Winlogon keys, configfs USB-gadget HID
   and others are not listed yet: to extend before device/medium grows).
+
+## D-031 Quick-win units: secure-boot design, enclosure, device README (2026-11-18/19)
+- P4-SECBOOT (DESIGN-ONLY): `device/firmware/SECURE_BOOT.md` maps each firmware assumption (F1-F10) to an STM32U585 mechanism (TZEN,
+  SECBOOTADD0, BOOT_LOCK, SECWM, WRP, HDP, RDP level 2) and a verification status. The test checks the document against the source
+  (opcode allowlist, flash page map, single flash writer, TRNG fail-closed, key_id derivation, button callers), so a firmware change that
+  breaks an assumption turns it red. Option-byte names are from memory: UNVERIFIED, NEEDS_HUMAN 10. v0 runs as one secure image with no
+  field update; a reflash (RDP 1 to 0 mass erase) yields a new key_id.
+- P5-ENCLOSURE (DESIGN-ONLY): `device/hardware/enclosure.py` builds the case from the board's pcbnew facts and checks the fit (cavity,
+  USB-C opening for a plug overmold, button plunger with travel and a clear column, display window over the active area). The 0.96" OLED
+  module is wider than the board and, laid back over it, would cover the approval button, so it overhangs past the board's far end: the
+  case is about 31 x 82 x 20 mm. Part heights and module dimensions are UNVERIFIED and on the human review list.
+- P6-REPO: `device/README.md` (labels, D-010's "no trace" definition, tools, a reproduction row per criterion); the test requires a table
+  row for every criterion in criteria.yaml, so the README cannot fall behind new criteria.
+- P0-SECRETS covers ".": the oracle now prunes skipped folders while walking and never fingerprints test-results.json.

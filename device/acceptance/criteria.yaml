@@ -151,6 +151,9 @@ criteria:
     tests: [device/tests/test_repo.py]
     covers: [README.md, THIRD_PARTY.md, device]
     label: REAL
+    min_tests: 8
+    saboteurs:
+      - {name: criterion-missing-from-readme, file: device/README.md, old: "| P2-GATE | SIMULATED |", new: "| P2-XATE | SIMULATED |"}
 
   # ---- added after reviewer R-1 M6 (2026-11-17): every MISSION section 2/7 item has a criterion; numbers pinned before any run ----
   - id: P0-SECRETS
@@ -196,12 +199,20 @@ criteria:
     tests: [device/tests/test_secboot_doc.py]
     covers: [device/firmware]
     label: DESIGN-ONLY
+    min_tests: 9
+    saboteurs:
+      - {name: page-size-changed, file: device/firmware/core/mas_hal.h, old: "#define MAS_PAGE_SIZE 8192u", new: "#define MAS_PAGE_SIZE 4096u"}
+      - {name: opcode-renumbered, file: device/firmware/core/mas_core.h, old: "#define MAS_OP_SIGN 0x03", new: "#define MAS_OP_SIGN 0x04"}
   - id: P5-ENCLOSURE
     phase: 5
     title: Parametric enclosure fits the board (clearances, USB-C opening, button access) by automatic check
     tests: [device/tests/test_enclosure.py]
     covers: [device/hardware]
     label: DESIGN-ONLY
+    min_tests: 16
+    saboteurs:
+      - {name: plunger-column-unchecked, file: device/hardware/enclosure.py, old: "        if p.get(\"ref\") != \"SW1\" and p[\"z\"][1] > sw[\"z\"][1] and _circle_box(pl[\"at\"], r, p[\"box\"]):", new: "        if False:"}
+      - {name: usb-recess-unchecked, file: device/hardware/enclosure.py, old: "    if j1[\"box\"][1] - u[\"face_y\"] > P[\"usb_recess_max\"] + 1e-6:", new: "    if False:"}
   - id: P6-PAPER
     phase: 6
     title: Paper regenerates from raw results (LaTeX source, authors, arXiv variant with methods statement, manual-README baseline, error bars, outside judge, limitations)

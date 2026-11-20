@@ -32,3 +32,8 @@ Each item: what, why, exact steps. The run keeps going on other units meanwhile.
    run uses the official `kicad/kicad:9.0` image; or allow a native install: `winget install KiCad.KiCad`. Say which in STEER.md.
 
 9. ~~Renode for P4-FW-RENODE~~ — done 2026-11-17: portable zip, unpacked into runs/toolchain/renode (D-019).
+
+10. **Secure boot and lock review (P4-SECBOOT, DESIGN-ONLY).** `device/firmware/SECURE_BOOT.md` names the STM32U585 option bytes
+    (TZEN, SECBOOTADD0, BOOT_LOCK, SECWM, WRP, HDP, RDP level 2) from memory: check each name and value against RM0456 and the STM32U5
+    security application notes, then provision one sacrificial part and try to read it with a debugger at each RDP level. RDP level 2
+    is permanent: never set it on a part you want to reprogram.

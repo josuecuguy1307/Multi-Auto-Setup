@@ -153,3 +153,6 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
 - Oracle fix (P1-HARNESS 42): covered folders are walked with skipped folders pruned (status 3 min -> 1 s with runs/ full of evaluator
   copies) and test-results.json is never part of a fingerprint (P0-SECRETS covers "." and went stale the moment it was recorded).
   Every criterion re-run: 11/26 PASS.
+- 2026-11-19: P4-SECBOOT, P6-REPO, P5-ENCLOSURE PASS (D-031): 14/26. Failed attempts: the first P6-REPO test let its saboteur survive
+  (P2-GATE is also named in an example command), fixed by requiring a table row per criterion; the secure-boot test first rejected a host
+  test tool that drives the button. HANDOFF.md rewritten for the third account handover.

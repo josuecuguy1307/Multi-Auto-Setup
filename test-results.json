@@ -1,17 +1,17 @@
 {
- "checksum": "efbe09c27e2ed49a1d225b423cb727d4ba1397945c28781f0695ac9ec1b3453f",
+ "checksum": "a4bea176ff9c47977d88077c2d08b2913290830274358a9de5fb34f2e0b366d2",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "359571f",
+ "git_head_at_run": "c3c8902",
  "results": {
   "P0-SECRETS": {
-   "at": "2026-11-18T19:10:50",
+   "at": "2026-11-19T22:41:45",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 17
    },
-   "fingerprint": "44a7eb36fae4991ea9db21226206b61a9d52e814b4ce20ce344256345d561056",
+   "fingerprint": "702a95e28a87f6918e6670f7c9b0176de1d7d9c01491d250f1d03456a8e5ccff",
    "label": "REAL",
    "phase": 1,
    "reason": "17 passed",
@@ -19,14 +19,14 @@
    "title": "No credentials, keys or tokens anywhere in the repository (secret scan over the whole tree and history)"
   },
   "P1-DOCS": {
-   "at": "2026-11-18T17:01:17",
+   "at": "2026-11-19T22:41:41",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 18
    },
-   "fingerprint": "0ebcbf378a2b8b6c217eb95e82445d7cda4bb78b9dedadceaf6183c48addbec5",
+   "fingerprint": "a3fb4c1c9353d16afb20c5ec166cb4297b65fe66cc71a780d1b27e607f22f384",
    "label": "REAL",
    "phase": 1,
    "reason": "18 passed",
@@ -34,14 +34,14 @@
    "title": "DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice"
   },
   "P1-HARNESS": {
-   "at": "2026-11-18T17:00:18",
+   "at": "2026-11-18T19:14:45",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 42
    },
-   "fingerprint": "5a6c6a2ca3cae21e86c36b4f735239d0ef105e07be4215fae3ef1cab556530c4",
+   "fingerprint": "157c9cc07dcb7ba2f37a1131aa727999397ab0a9a925a331ce101b75368222da",
    "label": "REAL",
    "phase": 1,
    "reason": "42 passed",
@@ -221,14 +221,14 @@
    "title": "The inspection report is readable by the owner and consumable by the agent (schema-checked)"
   },
   "P4-FW-EMU": {
-   "at": "2026-11-18T17:09:37",
+   "at": "2026-11-18T19:32:15",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 27
    },
-   "fingerprint": "44820caca4951e7481985ac2cf18472e6dd8fbd07355827b90675ebbb2465e5b",
+   "fingerprint": "6f3a5d714be60c10fbad870e41fc6db74715914d792e68474b549e4544cbaa76",
    "label": "EMULATED",
    "phase": 4,
    "reason": "27 passed",
@@ -236,14 +236,14 @@
    "title": "Same firmware runs in QEMU (mps2-an505, Cortex-M33) with transcripts identical to the host build; button is the only approval path"
   },
   "P4-FW-HOST": {
-   "at": "2026-11-18T17:07:55",
+   "at": "2026-11-18T19:16:35",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 328
    },
-   "fingerprint": "4c3f6700ba377666e844267497277ff59a378826c685835d48f82461b8d03044",
+   "fingerprint": "0e1fb007d865d7212201cac324bd1ff617587b55fdab8147d411c20639877b68",
    "label": "SIMULATED",
    "phase": 4,
    "reason": "328 passed",
@@ -251,14 +251,14 @@
    "title": "Firmware core (host build, HAL mocks) rejects replayed, altered and expired approvals; signs only after a press"
   },
   "P4-FW-RENODE": {
-   "at": "2026-11-18T17:11:25",
+   "at": "2026-11-18T19:33:59",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 4
    },
-   "fingerprint": "c051f24dc3eebf3039f807c4d852edcecaeeb0f24112372a6160ce76eef00f39",
+   "fingerprint": "e8db142728b31ea7061ff01a4b73dc556bb9698e599a4327716101556ed01320",
    "label": "EMULATED",
    "phase": 4,
    "reason": "4 passed",
@@ -266,38 +266,52 @@
    "title": "Same firmware runs in Renode with transcripts identical to the host build and QEMU"
   },
   "P4-SECBOOT": {
-   "at": "2026-11-18T17:17:22",
+   "at": "2026-11-18T19:15:53",
    "counts": {
     "errors": 0,
-    "failures": 9,
+    "failures": 0,
     "skipped": 0,
     "tests": 9
    },
-   "fingerprint": "9c35dffbac05d555edbf010ccc6027786aa1be4b29ec89e9066d932175170562",
+   "fingerprint": "eb8b5726200a2c6eca684d1830c37d7a68529fce9f39e08742a738c9cd7a7fdf",
    "label": "DESIGN-ONLY",
    "phase": 4,
-   "reason": "9 failed, 0 errors",
-   "status": "FAIL",
+   "reason": "9 passed, 2 saboteurs killed",
+   "saboteurs": {
+    "opcode-renumbered": "killed",
+    "page-size-changed": "killed"
+   },
+   "status": "PASS",
    "title": "Secure boot and lock design documented (RDP, TrustZone option bytes, key identity) and checked against the firmware's assumptions"
   },
   "P5-ENCLOSURE": {
-   "at": "2026-11-18T17:17:24",
-   "fingerprint": "7d734f9988bb647fbb6e27bcc295ff9d29b148c6d115490945c094690ebe01fb",
+   "at": "2026-11-18T19:16:17",
+   "counts": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 16
+   },
+   "fingerprint": "514e622fed4444c0228f6770cd274be62741aff4f309335ae600172b0685145c",
    "label": "DESIGN-ONLY",
    "phase": 5,
-   "reason": "missing test files: device/tests/test_enclosure.py",
-   "status": "FAIL",
+   "reason": "16 passed, 2 saboteurs killed",
+   "saboteurs": {
+    "plunger-column-unchecked": "killed",
+    "usb-recess-unchecked": "killed"
+   },
+   "status": "PASS",
    "title": "Parametric enclosure fits the board (clearances, USB-C opening, button access) by automatic check"
   },
   "P5-PCB": {
-   "at": "2026-11-18T17:12:20",
+   "at": "2026-11-19T22:28:34",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 53
    },
-   "fingerprint": "fb2e923f40ab02600716d1959d14851ccd880c6a4274cd36e0c8747f1bfa6e06",
+   "fingerprint": "eabb61d0af296ce38cef746910cee79d76e7c164e85b783190c14c0401d3f662",
    "label": "DESIGN-ONLY",
    "phase": 5,
    "reason": "53 passed",
@@ -323,18 +337,21 @@
    "title": "Paper regenerates from raw results (LaTeX source, authors, arXiv variant with methods statement, manual-README baseline, error bars, outside judge, limitations)"
   },
   "P6-REPO": {
-   "at": "2026-11-18T17:17:10",
+   "at": "2026-11-19T22:28:00",
    "counts": {
     "errors": 0,
-    "failures": 3,
+    "failures": 0,
     "skipped": 0,
     "tests": 8
    },
-   "fingerprint": "fcc28d01e32476d096888776eed0156e75738dfb7b9960bdafafe3c101a62fa6",
+   "fingerprint": "2d0144a47aa196952dcd0a563dd9f8fe78d59246baa5dff8afc4591b97d23013",
    "label": "REAL",
    "phase": 6,
-   "reason": "3 failed, 0 errors",
-   "status": "FAIL",
+   "reason": "8 passed, 1 saboteurs killed",
+   "saboteurs": {
+    "criterion-missing-from-readme": "killed"
+   },
+   "status": "PASS",
    "title": "README, THIRD_PARTY.md and reproduction instructions complete"
   }
  }

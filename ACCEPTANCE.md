@@ -55,14 +55,14 @@ k consecutive passing runs of each eval; limitations section lists what was only
 | P4-FW-RENODE | 4 | **PASS** | EMULATED | Same firmware runs in Renode with transcripts identical to the host build and QEMU | 4 passed |
 | P5-PCB | 5 | **PASS** | DESIGN-ONLY | ERC, DRC and fabrication checks green; fab outputs marked NO FABRICAR; HUMAN_REVIEW_PCB.md present | 53 passed |
 | P6-EVALS | 6 | **FAIL** | REAL | Evals reproducible with one command; every number in the paper comes from a script over raw results | missing test files: device/tests/test_evals_paper.py |
-| P6-REPO | 6 | **FAIL** | REAL | README, THIRD_PARTY.md and reproduction instructions complete | 3 failed, 0 errors |
+| P6-REPO | 6 | **PASS** | REAL | README, THIRD_PARTY.md and reproduction instructions complete | 8 passed, 1 saboteurs killed |
 | P0-SECRETS | 1 | **PASS** | REAL | No credentials, keys or tokens anywhere in the repository (secret scan over the whole tree and history) | 17 passed |
 | P2-MODEL | 2 | **FAIL** | EMULATED | The local model answers from the read-only medium with nothing installed on the host | missing test files: device/tests/test_model_portable.py |
 | P2-MEMORY | 2 | **FAIL** | SIMULATED | Portable memory in an open format round-trips and is encrypted at rest | missing test files: device/tests/test_memory.py |
 | P2-PAIRING | 2 | **FAIL** | SIMULATED | The gate accepts only the paired key_id; MAS chat_choice approvals are absent from the device build; the host owner's launch is the session consent (D-021) | missing test files: device/tests/test_pairing.py |
 | P3-REPORT | 3 | **FAIL** | SIMULATED | The inspection report is readable by the owner and consumable by the agent (schema-checked) | missing test files: device/tests/test_inspect_report.py |
 | P3-NOCREDS | 3 | **FAIL** | SIMULATED | Inspection never collects credentials; planted secrets never reach the report or the model context | missing test files: device/tests/test_inspect_nocreds.py |
-| P4-SECBOOT | 4 | **FAIL** | DESIGN-ONLY | Secure boot and lock design documented (RDP, TrustZone option bytes, key identity) and checked against the firmware's assumptions | 9 failed, 0 errors |
-| P5-ENCLOSURE | 5 | **FAIL** | DESIGN-ONLY | Parametric enclosure fits the board (clearances, USB-C opening, button access) by automatic check | missing test files: device/tests/test_enclosure.py |
+| P4-SECBOOT | 4 | **PASS** | DESIGN-ONLY | Secure boot and lock design documented (RDP, TrustZone option bytes, key identity) and checked against the firmware's assumptions | 9 passed, 2 saboteurs killed |
+| P5-ENCLOSURE | 5 | **PASS** | DESIGN-ONLY | Parametric enclosure fits the board (clearances, USB-C opening, button access) by automatic check | 16 passed, 2 saboteurs killed |
 | P6-PAPER | 6 | **FAIL** | REAL | Paper regenerates from raw results (LaTeX source, authors, arXiv variant with methods statement, manual-README baseline, error bars, outside judge, limitations) | missing test files: device/tests/test_paper.py |
 <!-- END GENERATED: device_accept.py -->

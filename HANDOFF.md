@@ -1,63 +1,76 @@
 # HANDOFF.md — traspaso de contexto (para continuar en otra cuenta o sesión)
 
-> Written 2026-11-17 at commit f2ad136 (branch `device/v0`, pushed). Read this first, then `MISSION.md`, `STEER.md`, the last entries of
-> `PROGRESS.md`, `DECISIONS.md` (D-001..D-024, A-1..A-3, R-1) and `NEEDS_HUMAN.md`. `CLAUDE.md` has the working rules and commands.
+> Written 2026-11-19 (third handover, same machine, another Claude account). Branch `device/v0`, everything committed and pushed.
+> Read this first, then `MISSION.md`, `STEER.md`, the last entries of `PROGRESS.md`, `DECISIONS.md` (D-001..D-030, A-1..A-3, R-1) and
+> `NEEDS_HUMAN.md`. `CLAUDE.md` has the working rules; `device/README.md` explains the device and how to reproduce every check.
 > Español abajo en resumen. The repo is the source of truth; this file only tells you where things stand and what bites.
 
-## 1. Where things stand (oracle: `python scripts/device_accept.py status`)
+## 1. Where things stand: 14/26 PASS (oracle: `.venv/Scripts/python scripts/device_accept.py status`)
 
-| Criterion | Status | Notes |
+| Criterion | Status | Independent evaluator |
 |---|---|---|
-| P1-HARNESS | PASS 41 | the oracle under test |
-| P1-DOCS | PASS 18 | reviewer R-1: all 8 must-fixes resolved with evidence |
-| P1-UNIT | PASS 179, 4 saboteurs | closed: evaluator run 7 VERDICT PASS, Code-Hash fc884e03… (commit a99fcbc) |
-| P2-GATE | PASS 149, 2 saboteurs | runs 8 and 9: nothing broken, one test gap each, fixed (D-028, D-029); **evaluator run 10 not yet run** |
-| P2-LOG | PASS 44, 2 saboteurs | **evaluator run 3 PASS** (2299003) |
-| P2-GUARDRAILS | PASS 36, 6 saboteurs | run 2 FAIL (credential oracle through begin/execute) fixed (D-030); **evaluator run 3 not yet run** |
-| P4-FW-HOST / EMU / RENODE | PASS 328 / 27 / 4 | firmware in C; QEMU mps2-an505 and Renode run the same ELF |
-| P5-PCB | PASS 53 (DESIGN-ONLY) | runs 3 and 4: no design error, J1/J2 pins untested, fixed (D-027 addenda); **board evaluator run 5 not yet run** |
-| everything else | FAIL (not built) | P2-PORTABLE, P2-ZEROTRACE, P2-FLEET, P2-MODEL, P2-MEMORY, P2-PAIRING, P3-*, P4-SECBOOT, P5-ENCLOSURE, P6-*, P0-SECRETS |
-
-Updated 2026-11-18, 10/26 PASS. Next evaluator runs (fresh context, the `evaluator` agent; give them the proportionality rule of §3,
-a `git archive HEAD` copy under `runs/eval/`, and a report file `runs/eval/<ID>.runN.report.md` so it survives a usage limit; tell them
-not to run `device_accept.py run`): **P2-GUARDRAILS run 3**, **P2-GATE run 10**, **P5-PCB run 5**. If a usage limit stops them, resume
-each with SendMessage instead of starting over. Then Phase 2 continues with P2-PAIRING.
+| P1-HARNESS | PASS 42 | (the oracle under test) |
+| P1-DOCS | PASS 18 | reviewer R-1 resolved |
+| P1-UNIT | PASS 179, 4 saboteurs | run 7 PASS (closed) |
+| P2-GATE | PASS 149, 2 saboteurs | run 9 findings fixed (D-029); **run 10 not yet run** |
+| P2-LOG | PASS 44, 2 saboteurs | run 3 PASS |
+| P2-GUARDRAILS | PASS 36, 6 saboteurs | run 2 FAIL (credential oracle) fixed (D-030); **run 3 not yet run** |
+| P4-FW-HOST / EMU / RENODE | PASS 328 / 27 / 4 | evaluated in earlier rounds |
+| P5-PCB | PASS 53 (DESIGN-ONLY) | run 4 findings fixed (D-027 addenda); **run 5 not yet run** |
+| P0-SECRETS | PASS 17 | **never evaluated** (built 2026-11-18) |
+| P4-SECBOOT | PASS 9, 2 saboteurs (DESIGN-ONLY) | **never evaluated** (`device/firmware/SECURE_BOOT.md`) |
+| P6-REPO | PASS 8, 1 saboteur | **never evaluated** (`device/README.md`) |
+| P5-ENCLOSURE | PASS 16, 2 saboteurs (DESIGN-ONLY) | **never evaluated** (`device/hardware/enclosure.py`) |
+| P2-PAIRING, P2-MEMORY | FAIL (not built) | next software units; no outside help needed |
+| P2-MODEL | FAIL (not built) | needs Josué's OK to download a local model |
+| P2-PORTABLE, P2-ZEROTRACE, P2-FLEET, P3-READONLY | FAIL (not built) | **blocked: need working Docker or VMs** (NEEDS_HUMAN 7) |
+| P3-INSPECT, P3-REPORT, P3-NOCREDS | FAIL (not built) | can be built against fixtures |
+| P6-EVALS, P6-PAPER | FAIL (not built) | last |
 
 ## 2. How to resume (in order)
 
 1. `cd C:\Users\Josue\code\Multi-Auto-Setup`, `git pull`, check `git status` is clean and you are on `device/v0`.
-2. `.venv/Scripts/python scripts/device_accept.py status` and `... verify` (both read-only).
-3. Re-run the evaluators of §1 with the `evaluator` subagent (fresh context, read-only). Save each report to
-   `device/evals/evaluator/<ID>.runN.md`. **Only when P1-UNIT's evaluator says PASS**, append its block (with the `Code-Hash:` line
-   computed by `python -c "import sys; sys.path.insert(0,'device/tests'); import test_unit_cycle as t; print(t.judged_hash())"`) to
-   `device/evals/evaluator/P1-UNIT.md` so its last `VERDICT:` is PASS, then `device_accept.py run --id P1-UNIT`.
-4. Fix any finding test-first (red commit, then green commit), re-run the oracle for the touched criteria, commit, push `device/v0`.
-5. Next units, in the mission's order: Phase 2 (guardrail battery, pairing incl. D-021 consent, portable launch, zero-trace, fleet,
-   model, memory), then Phase 3 (inspection), P4-SECBOOT (doc), P5-ENCLOSURE, Phase 6 (evals, paper), P0-SECRETS.
+2. `.venv/Scripts/python scripts/device_accept.py status` and `... verify` (both read-only; verify takes ~1 s now).
+3. Choose with Josué: either run the pending evaluators (§1, bold) or build the next units (P2-PAIRING, P2-MEMORY). Each evaluator run
+   costs ~65k-270k tokens; several rounds in a row now find only small test gaps, so building may be the better use of budget.
+4. Unit cycle: red test commit -> implementation -> oracle PASS -> evaluator (fresh context) -> fix test-first -> commit -> push.
+
+### Running evaluators (what worked)
+- The `evaluator` agent type only appears when the session STARTS inside this repo. Prompt: unit, run number, commit, spec entries, the
+  proportionality rule below, "work in a `git archive HEAD | tar -x` copy under `runs/eval/<dir>/tree`, write only there, do NOT run
+  `device_accept.py run` (other evaluators run in parallel), write the report to `runs/eval/<ID>.runN.report.md` AND return it".
+- If a usage limit kills them mid-run, resume each one with SendMessage (its work so far is kept) instead of starting over.
+- Save each report verbatim to `device/evals/evaluator/<ID>.runN.md` with a one-line header (unit, run, date, commit). That folder is
+  covered by P1-UNIT, so re-run P1-UNIT after adding reports.
+- Proportionality rule (it ended endless tails of tiny findings): BROKE only for paths that violate MISSION 4.1 (or, for the board, real
+  design errors); in-process misuse that fails closed, declared limits and equivalent mutants are NOTES; an untested guard whose removal
+  fails OPEN is a WEAK TEST and blocks PASS.
 
 ## 3. Rules and habits that matter here
 
-- Nothing is "done" without the oracle's PASS; only `scripts/device_accept.py run` writes `test-results.json`. `status`/`verify` write nothing.
-  The loop's stop condition is `device_accept.py confirm` (clean tree, fresh worktree at HEAD, everything re-run).
-- Unit cycle: red test commit -> implementation -> oracle PASS -> evaluator (fresh context, FAIL by default) -> fix -> commit -> push.
-- Give evaluators this proportionality rule (it ended an endless tail of tiny findings): BROKE only for paths that violate MISSION 4.1;
-  in-process-only misuse that fails closed, declared limits and equivalent mutants are NOTES; an untested guard whose removal fails OPEN
-  is a WEAK TEST that blocks PASS. Tell them to mutate with `PYTHONPATH=<copy>/src` (the editable install ignores `-o pythonpath`).
-- Advisor: Fable 5.2 via the Agent tool with `model: fable` (used for A-1, A-2, A-3). In `run.sh` the advisor is opt-in (`MAS_ADVISOR=fable`)
-  because unattended Fable is billed without asking (NEEDS_HUMAN #1).
-- Push only `device/v0`; never merge to main, never release, never send anything.
+- Nothing is "done" without the oracle's PASS; only `scripts/device_accept.py run` writes `test-results.json`. The stop condition is
+  `device_accept.py confirm` (clean tree, fresh worktree at HEAD, everything re-run).
+- A project hook refuses `git commit` while any recorded PASS is stale: run the stale criteria first (`verify` names them).
+- Advisor: Fable 5.2 via the Agent tool with `model: fable` (A-1..A-3). Push only `device/v0`; never merge to main, never release.
 
 ## 4. Gotchas that cost time (read before editing)
 
-- **The Bash tool collapses `\\` to `\`** in commands and heredocs: Python edits with `\n`, `\x..` or regex escapes get corrupted (it once put
-  a NUL byte into build.py). Write edit scripts with the Write tool into the scratchpad and run them, or use Edit.
-- The oracle runs pytest hermetically with `device/acceptance/pytest.ini` and `PYTHONPATH=<tree>/src` (an ini `pythonpath` resolves relative
-  to the ini file and silently imports the installed copy). Never name a test fixture module like a stdlib module (`code.py` broke pytest).
-- Don't run two `device_accept.py run` at once: each rewrites `test-results.json` and one overwrites the other.
-- Windows: `git show` output needs `encoding="utf-8"`; `Path.write_text` writes CRLF (use bytes for byte-exact files); KiCad files,
-  fab outputs and vendored code are `-text` in `.gitattributes`.
-- KiCad 10: netlist `pinfunction` carries the pin number (`PA12_33`); footprint fields via `SetField`/`GetField`; seed UUIDs with
-  `pcbnew.KIID.SeedGenerator` for byte-identical boards. Board routing takes ~3-6 min per build (`hwbuild.py`); P5-PCB rebuilds it.
+- **P0-SECRETS covers the whole repo (`.`)**: ANY edit anywhere (even PROGRESS.md or HANDOFF.md) makes it stale. Re-run it last, just
+  before committing (`run --id P0-SECRETS`, ~15 s).
+- **Editing `scripts/device_accept.py` makes EVERY PASS stale** (the oracle's own hash is in every fingerprint): then run
+  `device_accept.py run` for everything (~40 min, mostly the board).
+- Adding any file under `device/firmware` makes P4-FW-HOST/EMU/RENODE and P4-SECBOOT stale; under `device/hardware`, P5-PCB (~15-20 min)
+  and P5-ENCLOSURE; under `device/`, P6-REPO; under `src/mas_device`, P2-GATE/LOG/GUARDRAILS.
+- **The Bash tool collapses `\\` to `\`** in commands and heredocs: regexes and `\n` in patch scripts get corrupted (it happened again
+  three times this session). Write patch scripts with the Write tool into the scratchpad and run them.
+- Don't run two `device_accept.py run` at once. Long runs: start them in the background and wait for the notification.
+- The oracle runs pytest hermetically with `PYTHONPATH=<tree>/src`. Never name a test fixture module like a stdlib module.
+- Windows: `git show` output needs `encoding="utf-8"`; `Path.write_text` writes CRLF (use bytes for byte-exact files).
+- Board: `gen_pcb.py` is a home-made grid router. USB D± are routed as fenced chains through U2 (D-027); the board takes 5-10 min to build;
+  debugging harnesses that draw ASCII maps of the routes are in `runs/hw/` (git-ignored). KiCad 10 suffixes netlist pinfunctions with the
+  pin number (`PA12_33`).
+- Guardrail battery: the daemon runs through a launcher with an audit hook (`device/tests/test_guardrails.py`); it is a detector for
+  careless weakening, not containment (D-028/D-030).
 
 ## 5. Tools on this machine (not in git; reinstall if you change machines)
 
@@ -65,24 +78,26 @@ each with SendMessage instead of starting over. Then Phase 2 continues with P2-P
 |---|---|---|
 | Python venv | `.venv/` | uv; `.venv/Scripts/python` |
 | zig cc 0.13.0 (firmware) | `runs/toolchain/` (git-ignored) | `uv venv runs/toolchain --python 3.13` + `uv pip install --python runs/toolchain/Scripts/python.exe ziglang==0.13.0` |
-| Renode 1.17.0 portable | `runs/toolchain/renode/renode_1.17.0-portable/` | official zip from github.com/renode/renode releases v1.17.0 (sha256 18bcf145…b9db) |
+| Renode 1.17.0 portable | `runs/toolchain/renode/renode_1.17.0-portable/` | official zip from github.com/renode/renode releases v1.17.0 |
 | KiCad 10.0.8 | `%LOCALAPPDATA%\Programs\KiCad\10.0` | `winget install KiCad.KiCad` |
 | QEMU 11.1.0 | `C:\Program Files\qemu` | `winget install SoftwareFreedomConservancy.QEMU` |
 | GitHub push | Git Credential Manager | signed in once by Josué |
-| Docker | not working (engine never came up) | not needed so far |
+| Docker | not working (engine never came up) | blocks the VM/container criteria |
 
 ## 6. Open items for Josué (`NEEDS_HUMAN.md`)
 
-Hardware license (proposed CERN-OHL-P-2.0), confirm v0 compute = host CPU (no Pi/Jetson), Docker if containers are wanted, real two-machine
-test, buying boards, human PCB review (`device/hardware/HUMAN_REVIEW_PCB.md`), arXiv submission.
+Docker or VMs (blocks 4 criteria), OK to download a local model (P2-MODEL), hardware license (CERN-OHL-P-2.0 proposed), confirm v0
+compute = host CPU, secure-boot review on a sacrificial STM32U585 (item 10), human PCB and enclosure review
+(`device/hardware/HUMAN_REVIEW_PCB.md`), buying boards, a real two-machine test, arXiv submission.
 
 ---
 
 ## Resumen en español
 
-- Rama `device/v0`, todo subido (commit f2ad136). Pasan: arnés del oráculo, docs, compuerta de política, bitácora, firmware (host, QEMU,
-  Renode) y la placa (solo diseño). **P1-UNIT** solo espera un veredicto PASS del evaluador con el `Code-Hash` correcto.
-- Al retomar: `git pull`, `device_accept.py status`, volver a lanzar los evaluadores de la sección 1, corregir con pruebas primero,
-  y seguir con la Fase 2 (batería de guardrails, emparejamiento con consentimiento D-021, arranque portátil, rastro cero, flota).
-- Cuidado: la herramienta Bash corrompe las barras invertidas (`\\`); escribir los scripts de edición con Write. No correr dos `run` del
-  oráculo a la vez. Las herramientas (zig, Renode, KiCad, QEMU) están en esta máquina, no en git: sección 5 para reinstalarlas.
+- Rama `device/v0`, todo subido. **14 de 26 criterios pasan.** Hechos en esta cuenta: P0-SECRETS (sin credenciales en el repo ni en
+  su historia), P4-SECBOOT (diseño de arranque seguro, solo diseño), P6-REPO (`device/README.md`), P5-ENCLOSURE (carcasa paramétrica,
+  solo diseño), más varias rondas de evaluadores con sus correcciones (D-027 a D-030).
+- Al retomar: `git pull`, `device_accept.py status`. Luego, con Josué: o bien correr los evaluadores pendientes (sección 1, en negrita),
+  o seguir construyendo P2-PAIRING y P2-MEMORY. Cuatro criterios necesitan Docker o máquinas virtuales que funcionen.
+- Cuidado: P0-SECRETS cubre todo el repo, así que cualquier cambio lo deja "stale": correrlo al final, justo antes del commit. La
+  herramienta Bash corrompe las barras invertidas: escribir los scripts de edición con Write. No correr dos `run` del oráculo a la vez.

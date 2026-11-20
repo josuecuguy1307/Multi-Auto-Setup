@@ -5,6 +5,7 @@
 texts:  every PCB_TEXT: layer, text, visible, x, y, height, thickness, bbox
 tracks: every track segment: net, layer, start, end, width        vias: net, x, y, diameter, drill
 pads:   every pad: ref, number, net, x, y, bbox, layers             outline: Edge.Cuts bounding box
+footprints: ref, x, y, rot, layer, courtyard (front courtyard bounding box, or the footprint's own box if it has none)
 All coordinates in mm.
 """
 
@@ -39,6 +40,13 @@ def main(path: str) -> None:
         else:
             out["tracks"].append({"net": t.GetNetname(), "layer": layer, "start": [mm(t.GetStart().x), mm(t.GetStart().y)],
                                   "end": [mm(t.GetEnd().x), mm(t.GetEnd().y)], "width": mm(t.GetWidth())})
+    out["footprints"] = []
+    for fp in b.GetFootprints():
+        cy = fp.GetCourtyard(pcbnew.F_CrtYd)
+        bb = cy.BBox() if cy.OutlineCount() else fp.GetBoundingBox(False, False)
+        out["footprints"].append({"ref": fp.GetReference(), "x": mm(fp.GetPosition().x), "y": mm(fp.GetPosition().y),
+                                  "rot": round(fp.GetOrientationDegrees(), 3), "layer": b.GetLayerName(fp.GetLayer()),
+                                  "courtyard": [mm(bb.GetX()), mm(bb.GetY()), mm(bb.GetRight()), mm(bb.GetBottom())]})
     for fp in b.GetFootprints():
         for p in fp.Pads():
             pb = p.GetBoundingBox()
