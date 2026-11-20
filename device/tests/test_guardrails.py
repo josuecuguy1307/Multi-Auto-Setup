@@ -29,6 +29,7 @@ import pytest
 
 import mas_device
 from mas_device import approval as ap
+from mas_device import pairing as pr
 from mas_device.keymodel import KeyModel
 from mas_device.log import verify
 
@@ -40,7 +41,6 @@ TARGET = "host-test"
 METHODS = {"read", "plan_write", "begin", "execute", "undo_for", "begin_undo", "execute_undo", "log_head"}
 TIMEOUT = 60
 STAND_IN = b"STAND-IN-CREDENTIAL-0f3a"  # what every credential fixture holds; it must never reach the model's side
-SESSION = ap.session_id(b"\x02" * 32, b"pairing transcript for the guardrail battery")
 
 LAUNCHER = r'''
 import os, sys
@@ -114,7 +114,7 @@ sys.exit(g.main(argv))
 # ---- the daemon, as the model's side sees it ------------------------------------------------------------------------------------------
 
 class Daemon:
-    def __init__(self, workdir: Path, root: Path, state: Path, key_pub: bytes, session: bytes = SESSION, weaken: str = "",
+    def __init__(self, workdir: Path, root: Path, state: Path, record: Path, weaken: str = "",
                  argv: list[str] | None = None) -> None:
         self.root, self.state = root, state
         workdir.mkdir(parents=True, exist_ok=True)
@@ -126,7 +126,7 @@ class Daemon:
             wf.write_text(weaken, encoding="utf-8")
             weaken_file = str(wf)
         if argv is None:
-            argv = ["--root", str(root), "--state", str(state), "--pin", key_pub.hex(), "--session", session.hex(), "--target", TARGET]
+            argv = ["--root", str(root), "--state", str(state), "--pairing", str(record), "--target", TARGET]
         env = {k: v for k, v in os.environ.items() if not k.startswith(("PYTHON", "PYTEST_"))}
         env["PYTHONDONTWRITEBYTECODE"] = "1"
         cmd = [sys.executable, "-I", "-B", str(launcher), str(SRC), str(root), str(state), weaken_file, *argv]
@@ -268,15 +268,17 @@ def world(tmp_path):
     state.mkdir()
     clock = Tick()
     key = KeyModel.create(tmp_path / "key", clock=clock)
+    record = pr.provision(tmp_path / "medium", key.public_key)  # the key paired with the device's medium (P2-PAIRING)
     started: list[Daemon] = []
 
-    def start(weaken: str = "", session: bytes = SESSION, argv=None, name: str = "d") -> Daemon:
-        d = Daemon(tmp_path / f"work-{name}-{len(started)}", root.resolve(), state.resolve(), key.public_key, session, weaken, argv)
+    def start(weaken: str = "", argv=None, name: str = "d", pairing: Path | None = None) -> Daemon:
+        d = Daemon(tmp_path / f"work-{name}-{len(started)}", root.resolve(), state.resolve(), pairing or record, weaken, argv)
         started.append(d)
         return d
 
     w = type("World", (), {})()
     w.root, w.state, w.clock, w.key, w.start, w.tmp = root.resolve(), state.resolve(), clock, key, start, tmp_path
+    w.record = record
     yield w
     for d in started:
         d.close()
@@ -393,7 +395,8 @@ def test_tokens_die_with_the_daemon_and_never_cross_sessions(world):
     d2 = world.start(name="restarted")
     assert d2.refused("execute", token=token, action=action) == "unknown_nonce"
     assert check(d2, before) == []
-    d3 = world.start(session=ap.session_id(b"\x03" * 32, b"another host"), name="other-session")
+    # the same key paired with another medium: another transcript, so another session (D-004 host binding)
+    d3 = world.start(pairing=pr.provision(world.tmp / "other-medium", world.key.public_key), name="other-session")
     assert not d3.call("execute", token=token, action=action)["ok"]
     assert check(d3, before) == []
 
@@ -483,7 +486,7 @@ def test_rpc_surface_is_exactly_the_allowlist(world):
     kinds = {r["type"] for r in records(world.state)}
     assert kinds <= {"rpc.refused", "read", "approval.requested", "write.approved", "write.done", "write.refused", "write.failed",
                      "write.rejected", "undo.approved", "undo.done", "undo.refused", "undo.failed", "undo.rejected", "log.repaired",
-                     "gate.started"}
+                     "gate.started", "session.terms_shown"}
 
 
 # ---- rule 5: every refusal is in the log, which the model cannot touch ------------------------------------------------------------------
@@ -560,7 +563,6 @@ def test_daemon_refuses_a_log_the_model_could_write(world, tmp_path):
     host = tmp_path / "h2"
     inner = host / "device-state"
     inner.mkdir(parents=True)
-    pin, sid = world.key.public_key.hex(), SESSION.hex()
     pairs = [(host, inner), (inner, host), (host, host)]
     # the same overlap spelled through aliases (P2-GUARDRAILS run 1): other case, 8.3 short name, a junction or symlink outside the root
     pairs.append((host, Path(str(inner.resolve()).swapcase()) if sys.platform == "win32" else inner))
@@ -575,7 +577,7 @@ def test_daemon_refuses_a_log_the_model_could_write(world, tmp_path):
         link.symlink_to(inner.resolve(), target_is_directory=True)
     pairs.append((host, link))
     for root, state in pairs:
-        argv = ["--root", str(root.resolve() if root in (host, inner) else root), "--state", str(state), "--pin", pin, "--session", sid,
+        argv = ["--root", str(root.resolve() if root in (host, inner) else root), "--state", str(state), "--pairing", str(world.record),
                 "--target", TARGET]
         d = world.start(argv=argv, name="overlap")
         assert d.close() != 0, state

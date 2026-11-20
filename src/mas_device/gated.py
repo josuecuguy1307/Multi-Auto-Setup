@@ -2,9 +2,10 @@
 
 The host's owner starts it by hand, with every argument stated (nothing has a default and nothing starts it by itself):
 
-    python -I -m mas_device.gated --root <host folder> --state <device folder> --pin <key public key, hex> --session <hex> --target <name>
+    python -I -m mas_device.gated --root <host folder> --state <device folder> --pairing <medium>/pairing.json --target <name>
 
-It holds the audit log, the pinned key and the session. The model's side holds only its stdin/stdout and speaks JSON lines:
+It shows the owner the session's terms on stderr first (D-021), then holds the audit log, the key pinned by the pairing record on the
+read-only medium (the only key it accepts; no argument can pin another, D-032) and a fresh session derived from that pairing. The model's side holds only its stdin/stdout and speaks JSON lines:
 
     request:  {"id": <int>, "method": <one of ALLOWED>, "params": {...}}
     answer:   {"id": <int|null>, "ok": true, "result": {...}}   or   {"id": ..., "ok": false, "error": {"code": ..., "detail": ...}}
@@ -33,6 +34,7 @@ import unicodedata
 from pathlib import Path
 
 from mas_device import approval as ap
+from mas_device import pairing
 from mas_device.gate import PolicyGate, Refused
 from mas_device.log import AuditLog, LogBroken
 
@@ -258,26 +260,31 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="mas-gated", description="The MAS device's policy gate (started by the host's owner).")
     for name, what in (("--root", "the host folder the gate may read and, with approval, write"),
                        ("--state", "the device's folder for the audit log (outside --root)"),
-                       ("--pin", "the paired key's Ed25519 public key, 64 hex digits"),
-                       ("--session", "the session id from pairing, 64 hex digits"),
+                       ("--pairing", "the pairing record on the device's read-only medium (outside --root)"),
                        ("--target", "the host's name as the owner sees it")):
         parser.add_argument(name, required=True, help=what)
     a = parser.parse_args(argv)
-    try:
-        pin, session = bytes.fromhex(a.pin), bytes.fromhex(a.session)
-    except ValueError:
-        parser.error("--pin and --session are hex")
-    if len(pin) != 32 or len(session) != 32:
-        parser.error("--pin and --session are 32 bytes each")
-    root, state = Path(a.root), Path(a.state)
+    root, state, record = Path(a.root), Path(a.state), Path(a.pairing)
     if not root.is_dir() or not state.is_dir():
         parser.error("--root and --state are existing folders")
     if _inside(state, root) or _inside(root, state):
         parser.error("--state must be outside --root and --root outside --state: the model's writes must never reach the log")
+    if _inside(record, root):
+        parser.error("the pairing record must be outside --root: the model's writes must never reach the pinned key")
+    try:
+        paired = pairing.load(record)
+    except pairing.PairingError as exc:
+        parser.error(str(exc))
+    # D-021: the owner's own launch is the session's consent; they see the terms before anything is served, and the log says so
+    sys.stderr.write(pairing.TERMS)
+    sys.stderr.flush()
     log = AuditLog.open(state / "audit.log")
-    approvals = ap.Gate({ap.key_id_of(pin): pin}, session=session)
+    log.append("session.terms_shown", {"sha256": pairing.terms_sha256()})
+    session_pub, session = pairing.new_session(paired)
+    approvals = ap.Gate({paired.key_id: paired.key_pub}, session=session)  # the paired key and no other (P2-PAIRING)
     gate = PolicyGate(root, approvals, log, target=a.target)
-    log.append("gate.started", {"target": a.target, "key_id": ap.key_id_of(pin).hex(), "session": session.hex()})
+    log.append("gate.started", {"target": a.target, "key_id": paired.key_id.hex(), "medium_id": paired.medium_id.hex(),
+                                "session_pub": session_pub.hex(), "session": session.hex()})
     return Daemon(gate, log).serve(sys.stdin.buffer, sys.stdout.buffer)
 
 

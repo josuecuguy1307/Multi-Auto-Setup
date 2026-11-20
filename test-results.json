@@ -1,17 +1,17 @@
 {
- "checksum": "48ba44ff6f4bf6ab781d5dcd6267e5cac2f3077662ef1399e12a7cfe6614b8f7",
+ "checksum": "3aef6a4c112e45da8ff19dad1f0e7f6edaa394cf6742863b03cb679d1539e40c",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "b235c55",
+ "git_head_at_run": "b22e0b0",
  "results": {
   "P0-SECRETS": {
-   "at": "2026-11-19T23:07:27",
+   "at": "2026-11-19T23:24:27",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 17
    },
-   "fingerprint": "12bbb35035bde52f53a626a6ebf14041b50d498d2b07b99bc775018d1ee51f66",
+   "fingerprint": "b9a9e247e582658cf156c16d97d1ecc178208d2cb81200286fa9a6cafe622306",
    "label": "REAL",
    "phase": 1,
    "reason": "17 passed",
@@ -19,14 +19,14 @@
    "title": "No credentials, keys or tokens anywhere in the repository (secret scan over the whole tree and history)"
   },
   "P1-DOCS": {
-   "at": "2026-11-19T22:46:30",
+   "at": "2026-11-19T23:24:15",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 18
    },
-   "fingerprint": "200495c36401fcc5c09489a9d78d6d631eea380a9842ac07a67c61de7353eb33",
+   "fingerprint": "6bb94f6619a4fba8747203e8fe29d7ae43a2c006950d187a9889e1b0a3ae7b71",
    "label": "REAL",
    "phase": 1,
    "reason": "18 passed",
@@ -34,14 +34,14 @@
    "title": "DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice"
   },
   "P1-HARNESS": {
-   "at": "2026-11-18T19:14:45",
+   "at": "2026-11-19T23:23:18",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 42
    },
-   "fingerprint": "157c9cc07dcb7ba2f37a1131aa727999397ab0a9a925a331ce101b75368222da",
+   "fingerprint": "533a851bedf561bb4869f8bcf3eaa06fbb049825a0be08312c117f32c6d2623d",
    "label": "REAL",
    "phase": 1,
    "reason": "42 passed",
@@ -79,14 +79,14 @@
    "title": "Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers"
   },
   "P2-GATE": {
-   "at": "2026-11-18T17:03:04",
+   "at": "2026-11-19T23:18:34",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 149
    },
-   "fingerprint": "244a2cf8114d0e3cb5e8814fc17ddf30cd48c6d60ba10f9a49d8f0658e50ca83",
+   "fingerprint": "8501297a2607f0772e89de32dddad53656446d6f82029903f8f98489abc81147",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "149 passed, 2 saboteurs killed",
@@ -98,14 +98,14 @@
    "title": "Policy gate runs writes only with a valid single-use token bound to the exact action; undo recorded first"
   },
   "P2-GUARDRAILS": {
-   "at": "2026-11-18T17:04:00",
+   "at": "2026-11-19T23:19:33",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 36
    },
-   "fingerprint": "219bfaad561bfecdd67f88dc77589f0150cf2b1281bc3fb0fa5e8e0a59d121a6",
+   "fingerprint": "03201f3a3e5e86c41430f712f7d57afbfadfa0c45ac96d9df99df700df4d7109",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "36 passed, 6 saboteurs killed",
@@ -121,14 +121,14 @@
    "title": "Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations"
   },
   "P2-LOG": {
-   "at": "2026-11-18T17:03:38",
+   "at": "2026-11-19T23:19:10",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 44
    },
-   "fingerprint": "f0a3a5e4df2d5a1754cf8215b731532397181e5a4164643265be1c7407b8d237",
+   "fingerprint": "e33a8c9ab61cb51bfd5438f5e26ea07f5920efa37fa68b09563296242100cc6c",
    "label": "SIMULATED",
    "phase": 2,
    "reason": "44 passed, 2 saboteurs killed",
@@ -158,18 +158,24 @@
    "title": "The local model answers from the read-only medium with nothing installed on the host"
   },
   "P2-PAIRING": {
-   "at": "2026-11-19T23:07:10",
+   "at": "2026-11-19T23:16:59",
    "counts": {
-    "errors": 1,
+    "errors": 0,
     "failures": 0,
     "skipped": 0,
-    "tests": 1
+    "tests": 12
    },
-   "fingerprint": "6260e4fd5f3cbe927bdba7a0566b29b8dc1e2061682fd2207286a6fb3a0cb957",
+   "fingerprint": "b98566f276423d0c00dc8b58962b1ba74f5df29f4c3070ec2b060a424dfccff6",
    "label": "SIMULATED",
    "phase": 2,
-   "reason": "0 failed, 1 errors",
-   "status": "FAIL",
+   "reason": "12 passed, 4 saboteurs killed",
+   "saboteurs": {
+    "key-id-unchecked": "killed",
+    "non-canonical-accepted": "killed",
+    "pairing-inside-root": "killed",
+    "terms-unlogged": "killed"
+   },
+   "status": "PASS",
    "title": "The gate accepts only the paired key_id; MAS chat_choice approvals are absent from the device build; the host owner's launch is the session consent (D-021)"
   },
   "P2-PORTABLE": {
@@ -343,14 +349,14 @@
    "title": "Paper regenerates from raw results (LaTeX source, authors, arXiv variant with methods statement, manual-README baseline, error bars, outside judge, limitations)"
   },
   "P6-REPO": {
-   "at": "2026-11-19T23:07:14",
+   "at": "2026-11-19T23:24:18",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 8
    },
-   "fingerprint": "414f601a547d832b74824c67215a3d07c95f4b3ecedf23e49532928491dd1213",
+   "fingerprint": "cac842a763d9f5de48275fec5d37e1a2fa4d65c00d151182fc35139371768378",
    "label": "REAL",
    "phase": 6,
    "reason": "8 passed, 1 saboteurs killed",

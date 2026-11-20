@@ -79,7 +79,7 @@ met and every saboteur (a deliberate break of the covered code) turns its tests 
 | P2-FLEET | EMULATED | pairing, per-write approval and undo between isolated VMs | not built yet; needs VMs |
 | P2-MODEL | EMULATED | the local model answers from the read-only medium | not built yet; needs a local model |
 | P2-MEMORY | SIMULATED | portable memory in an open format, encrypted at rest | not built yet |
-| P2-PAIRING | SIMULATED | the gate accepts only the paired key; MAS chat approvals absent from the device build | not built yet |
+| P2-PAIRING | SIMULATED | the gate accepts only the key paired with the medium (`pairing.json`); the owner sees the session terms at launch; MAS chat approvals absent from the device build | Python |
 | P3-INSPECT | SIMULATED | inventory precision and recall against fixtures with known truth | not built yet |
 | P3-READONLY | EMULATED | inspection makes zero writes and no network access | not built yet; needs VMs |
 | P3-REPORT | SIMULATED | the inspection report is schema-checked | not built yet |

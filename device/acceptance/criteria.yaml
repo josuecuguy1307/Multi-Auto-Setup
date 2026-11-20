@@ -181,6 +181,12 @@ criteria:
     tests: [device/tests/test_pairing.py]
     covers: [src/mas_device]
     label: SIMULATED
+    min_tests: 12
+    saboteurs:
+      - {name: pairing-inside-root, file: src/mas_device/gated.py, old: '    if _inside(record, root):', new: '    if False:'}
+      - {name: key-id-unchecked, file: src/mas_device/pairing.py, old: '    if ap.key_id_of(raw["key_pub"]) != raw["key_id"]:', new: '    if False:'}
+      - {name: non-canonical-accepted, file: src/mas_device/pairing.py, old: '    if data != record_bytes(raw["key_pub"], raw["medium_id"]):', new: '    if False:'}
+      - {name: terms-unlogged, file: src/mas_device/gated.py, old: '    log.append("session.terms_shown", {"sha256": pairing.terms_sha256()})', new: '    pass'}
   - id: P3-REPORT
     phase: 3
     title: The inspection report is readable by the owner and consumable by the agent (schema-checked)

@@ -579,3 +579,21 @@ remove a decoupling cap → net check fails.
 - P0-SECRETS covers ".": the oracle now prunes skipped folders while walking and never fingerprints test-results.json.
 
 - D-014 decided (2026-11-19): Josué chose **CERN-OHL-S-2.0** (strongly reciprocal) for the hardware files under device/hardware/, instead of the proposed CERN-OHL-P-2.0. Recorded in LICENSE-HARDWARE.md with the source location; the software stays Apache-2.0. The full licence text still has to be copied verbatim from ohwr.org.
+
+## D-032 Pairing, the paired key only, and the launch as consent (2026-11-19; P2-PAIRING; implements D-003, D-004, D-021; amends D-025)
+- **Pairing record**: the device owner pairs one key with one medium at provisioning (`mas_device.pairing.provision`), writing
+  `pairing.json` on the medium (exposed read-only, D-003): canonical JSON `{key_id, key_pub, medium_id, v:1}`. `load` accepts only the exact
+  canonical bytes, so a record can never carry a second key, a stray field, or a key_id that is not its key's (`key_id_mismatch`).
+  Provisioning never overwrites an existing pairing (`already_paired`); re-pairing means a new medium.
+- **The paired key only**: `gated --pin/--session` are removed. The gate pins the key named by `--pairing` (refused if the record sits inside
+  `--root`, where the model could write it). A valid token from any other key is `unknown_key`; one that claims the paired key_id is
+  `bad_signature`; neither burns the pending request.
+- **Session**: every launch derives a fresh session: `transcript = sha256("MAS-PAIR-v1\0" | medium_id | key_pub)`,
+  `session_id = approval.session_id(session_pub, transcript)`; v0's `session_pub` is 32 random bytes per launch (no key exchange yet:
+  P2-FLEET adds the host-to-host part). The same key paired with another medium gives another transcript, so tokens never cross.
+- **Launch = consent (D-021)**: the gate writes TERMS (read-only by default; one press approves one write shown on the key's screen; the
+  log stays on the device; unplug to end, nothing stays installed) to stderr, where the host's owner sees it, before serving anything, and
+  logs `session.terms_shown` with its sha256 immediately before `gate.started` (which records key_id, medium_id, session_pub, session).
+- **No MAS chat_choice in the device build**: `src/mas_device` imports only the standard library, `cryptography` and itself (AST check and
+  a run-time check that no `envrec*` module is loaded); the string `chat_choice` appears nowhere in it.
+- SIMULATED: software key model; the medium is a folder. JOIN_FLEET's typed host confirmation (D-021) is P2-FLEET's.

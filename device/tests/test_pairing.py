@@ -16,6 +16,8 @@ import sys
 from pathlib import Path
 
 import pytest
+
+import mas_device
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
@@ -23,8 +25,7 @@ from mas_device import approval as ap
 from mas_device import pairing as pr
 from mas_device.keymodel import KeyModel
 
-REPO = Path(__file__).resolve().parents[2]
-SRC = REPO / "src"
+SRC = Path(mas_device.__file__).resolve().parents[1]  # the tree under test: the oracle points PYTHONPATH at its own src
 PKG = SRC / "mas_device"
 TIMEOUT = 60
 TARGET = "pairing-test-host"
@@ -317,7 +318,7 @@ def test_terms_are_shown_to_the_owner_first_and_logged_before_the_gate_starts(wo
         assert r["ok"]
         rc, err = g.close()
         assert rc == 0
-        assert err.startswith(pr.TERMS), err[:300]
+        assert err.replace("\r\n", "\n").startswith(pr.TERMS), err[:300]  # Windows text-mode stderr writes CRLF
     terms = pr.TERMS.lower()
     for words in (("read-only",), ("press", "one"), ("unplug",), ("button",)):
         assert all(w in terms for w in words), words
