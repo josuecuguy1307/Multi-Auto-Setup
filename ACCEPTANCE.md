@@ -49,7 +49,7 @@ k consecutive passing runs of each eval; limitations section lists what was only
 | P2-ZEROTRACE | 2 | **PASS** | EMULATED | Nothing installed after unplug (no service, driver, autostart, PATH change or file outside the declared temp dir); OS residue only from the enumerated allowlist (D-010 three-arm diff) | 8 passed, 5 saboteurs killed |
 | P2-FLEET | 2 | **PASS** | EMULATED | Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers | 11 passed, 5 saboteurs killed |
 | P3-INSPECT | 3 | **FAIL** | SIMULATED | Inventory precision and recall against fixtures with known truth meet thresholds | missing test files: device/tests/test_inspect_accuracy.py |
-| P3-READONLY | 3 | **FAIL** | EMULATED | Inspection makes zero writes (diff and read-only mount) and never touches the network | missing test files: device/tests/test_inspect_readonly.py |
+| P3-READONLY | 3 | **FAIL** | EMULATED | Inspection makes zero writes (diff and read-only mount) and never touches the network | 0 failed, 1 errors |
 | P4-FW-HOST | 4 | **PASS** | SIMULATED | Firmware core (host build, HAL mocks) rejects replayed, altered and expired approvals; signs only after a press | 328 passed |
 | P4-FW-EMU | 4 | **PASS** | EMULATED | Same firmware runs in QEMU (mps2-an505, Cortex-M33) with transcripts identical to the host build; button is the only approval path | 27 passed |
 | P4-FW-RENODE | 4 | **PASS** | EMULATED | Same firmware runs in Renode with transcripts identical to the host build and QEMU | 4 passed |

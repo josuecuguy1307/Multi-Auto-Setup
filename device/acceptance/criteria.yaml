@@ -123,7 +123,7 @@ criteria:
     phase: 3
     title: Inspection makes zero writes (diff and read-only mount) and never touches the network
     tests: [device/tests/test_inspect_readonly.py]
-    covers: [src/mas_device]
+    covers: [src/mas_device, src/mas_fleet, device/medium, device/tests/mas_dockerkit.py]
     label: EMULATED
 
   # ---- Phase 4: key firmware ----------------------------------------------------------------

@@ -1,17 +1,17 @@
 {
- "checksum": "9283d05a14c43cf45aebc6bdd49f2dcc87ddcb8b0bc32e65ebf3b06194622728",
+ "checksum": "10e737612c8eba6b1fd7244eb96bbbb24451026adc9e96b84ddf92095559db90",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "21fa0c9",
+ "git_head_at_run": "a1c13b6",
  "results": {
   "P0-SECRETS": {
-   "at": "2026-11-20T01:25:42",
+   "at": "2026-11-20T09:33:16",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 17
    },
-   "fingerprint": "abb623cf1803daa266f8d7b0621f9896eb2dcab65f5766016d9e30c905ccb93c",
+   "fingerprint": "9cb8ae27a1b187f89cfba7fcbd0e78f813cd967d78c602f7e2aa9d2eb37f2ed8",
    "label": "REAL",
    "phase": 1,
    "reason": "17 passed",
@@ -34,14 +34,14 @@
    "title": "DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice"
   },
   "P1-HARNESS": {
-   "at": "2026-11-20T01:24:20",
+   "at": "2026-11-20T09:31:51",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 42
    },
-   "fingerprint": "c7487c70bd74a4bcae852d1286999b8733ff902404a63b3bf38bea0401d112ad",
+   "fingerprint": "425baded6b83d3f56175e89ffd3a2718941e640d2b383fde83ba8a4eae45ed51",
    "label": "REAL",
    "phase": 1,
    "reason": "42 passed",
@@ -267,11 +267,17 @@
    "title": "Inspection never collects credentials; planted secrets never reach the report or the model context"
   },
   "P3-READONLY": {
-   "at": "2026-11-18T17:07:55",
-   "fingerprint": "31cf758e1c910da5fbfcc2dabe1079d1faf59aa385e999e5af8cf1a31a230a58",
+   "at": "2026-11-20T09:31:47",
+   "counts": {
+    "errors": 1,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 1
+   },
+   "fingerprint": "2e161ebf8585628317f9b48df37bb74d072510c737dd189122f4cda66f976b50",
    "label": "EMULATED",
    "phase": 3,
-   "reason": "missing test files: device/tests/test_inspect_readonly.py",
+   "reason": "0 failed, 1 errors",
    "status": "FAIL",
    "title": "Inspection makes zero writes (diff and read-only mount) and never touches the network"
   },
@@ -401,14 +407,14 @@
    "title": "Paper regenerates from raw results (LaTeX source, authors, arXiv variant with methods statement, manual-README baseline, error bars, outside judge, limitations)"
   },
   "P6-REPO": {
-   "at": "2026-11-20T01:25:18",
+   "at": "2026-11-20T09:33:04",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 8
    },
-   "fingerprint": "c876c494e42cedd3b70ed3b27ee029700ab91a80110a2ecbbf3ba400e2d8961f",
+   "fingerprint": "c364b4ad8281bcb5549a821d01e50803fa69933c5502c03e3a8fa17227f6726a",
    "label": "REAL",
    "phase": 6,
    "reason": "8 passed, 1 saboteurs killed",
