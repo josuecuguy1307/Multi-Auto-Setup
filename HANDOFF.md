@@ -24,7 +24,7 @@
 | P2-PAIRING | PASS 12, 4 saboteurs | **never evaluated** (built 2026-11-19, D-032) |
 | P2-MEMORY | PASS 11, 5 saboteurs | **never evaluated** (built 2026-11-19, D-033) |
 | P2-MODEL | FAIL (not built) | Josué said OK to download a small local model (STEER.md 2026-11-19) |
-| P2-PORTABLE, P2-ZEROTRACE, P2-FLEET, P3-READONLY | FAIL (not built) | Docker root cause found 2026-11-19 (§2 step 0); engine ran once, needs Josué to start it from the Start menu |
+| P2-PORTABLE, P2-ZEROTRACE, P2-FLEET, P3-READONLY | FAIL (not built) | Docker works (2026-11-19: started from the Start menu, `docker run hello-world` OK); **next to build** |
 | P3-INSPECT, P3-REPORT, P3-NOCREDS | FAIL (not built) | can be built against fixtures |
 | P6-EVALS, P6-PAPER | FAIL (not built) | last |
 
@@ -90,7 +90,7 @@
 | KiCad 10.0.8 | `%LOCALAPPDATA%\Programs\KiCad\10.0` | `winget install KiCad.KiCad` |
 | QEMU 11.1.0 | `C:\Program Files\qemu` | `winget install SoftwareFreedomConservancy.QEMU` |
 | GitHub push | Git Credential Manager | signed in once by Josué |
-| Docker Desktop 4.65.0 | engine 29.2.1 ran 2026-11-19 after the socket cleanup | start from the Start menu only (§2 step 0); recovery: `scripts/windows/start-docker.ps1` |
+| Docker Desktop (engine 29.9.3 after its own update) | works: `docker run --rm hello-world` OK 2026-11-19; only image: hello-world | start from the Start menu only, wait for "Engine running" (~1-2 min) (§2 step 0); recovery: `scripts/windows/start-docker.ps1` |
 
 ## 6. Open items for Josué (`NEEDS_HUMAN.md`)
 

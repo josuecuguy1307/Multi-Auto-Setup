@@ -174,3 +174,7 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
 - P2-MEMORY PASS (11 tests, 5 saboteurs, D-033): MacPaw `.mem` bundle as the open format (followed from its README, no code copied),
   sealed at rest with scrypt (2^15, 8, 1; pinned range) + AES-256-GCM with the header as AAD; atomic save; secretRef values refused.
   Open item: run MacPaw's own validator on an export (needs cloning, reading and running it in a container).
+- Docker verified: Josué started Docker Desktop from the Start menu; the engine answered after ~70 s (it updated itself: engine
+  29.9.3); sockets were created in the real %LOCALAPPDATA%\Docker\run, nothing in the Claude package's virtual folder; with his OK
+  `docker run --rm hello-world` pulled 25.9 kB and printed its success message. The four Docker criteria (P2-PORTABLE,
+  P2-ZEROTRACE, P2-FLEET, P3-READONLY) are unblocked; none is built yet.

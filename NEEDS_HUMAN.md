@@ -24,7 +24,7 @@ Each item: what, why, exact steps. The run keeps going on other units meanwhile.
 - Human review of the PCB before any fabrication (`HUMAN_REVIEW_PCB.md`, Phase 5).
 - arXiv submission and endorsement by an established author (Phase 6).
 
-7. **Docker Desktop: start it yourself from the Start menu** (2026-11-19). Root cause of the missing `dockerDesktopLinuxEngine` pipe:
+7. ~~Docker not working~~ — fixed 2026-11-19 (`docker run hello-world` OK). Keep starting it yourself from the Start menu. Root cause of the missing `dockerDesktopLinuxEngine` pipe:
    Docker had been started from inside the Claude app, whose AppData virtualization leaves socket files Windows cannot delete. The
    stale sockets were removed and the engine came up (29.2.1). If it breaks again, run from a normal PowerShell window:
    `powershell -ExecutionPolicy Bypass -File scripts\windows\start-docker.ps1`. Claude must never start or restart Docker itself.
