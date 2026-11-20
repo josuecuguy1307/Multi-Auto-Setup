@@ -1,17 +1,17 @@
 {
- "checksum": "815ffefd7d8ae1b031c95b20f043474e8f94b1d01b6469c5a68d226c1f711cec",
+ "checksum": "c5785d915e10eaa3f31ae41c3d548e643d542d0b2946213db4e756d802fbb372",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "e59214f",
+ "git_head_at_run": "64658a3",
  "results": {
   "P0-SECRETS": {
-   "at": "2026-11-20T00:21:00",
+   "at": "2026-11-20T00:29:10",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 17
    },
-   "fingerprint": "2cad24253c6cff3ef7ad784e6ad20989fdd34bf01a9e950ae6a7392cce928ae0",
+   "fingerprint": "545c360269748a19ed4acf9d6d5e59c9d227b1db9808291f4900421f491719a2",
    "label": "REAL",
    "phase": 1,
    "reason": "17 passed",
@@ -214,11 +214,17 @@
    "title": "One-command launch from a read-only medium in a clean VM/container; profiler picks compute mode"
   },
   "P2-ZEROTRACE": {
-   "at": "2026-11-18T17:07:55",
-   "fingerprint": "5e8334c2f7b3778df6c4272a97eee3092f4ddb689d32d0e33f924e7bd7c7852f",
+   "at": "2026-11-20T00:27:49",
+   "counts": {
+    "errors": 0,
+    "failures": 4,
+    "skipped": 0,
+    "tests": 8
+   },
+   "fingerprint": "454f8ec43faa5dc13a652c3fc9e891ab598cf6a73d161bbea4a8fb5d57cdc418",
    "label": "EMULATED",
    "phase": 2,
-   "reason": "missing test files: device/tests/test_zerotrace.py",
+   "reason": "4 failed, 0 errors",
    "status": "FAIL",
    "title": "Nothing installed after unplug (no service, driver, autostart, PATH change or file outside the declared temp dir); OS residue only from the enumerated allowlist (D-010 three-arm diff)"
   },
@@ -375,14 +381,14 @@
    "title": "Paper regenerates from raw results (LaTeX source, authors, arXiv variant with methods statement, manual-README baseline, error bars, outside judge, limitations)"
   },
   "P6-REPO": {
-   "at": "2026-11-20T00:20:40",
+   "at": "2026-11-20T00:29:00",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 8
    },
-   "fingerprint": "e334e82d2a2314531e0e9258bd42d027dad31dd1ca2bb0ec505541f57005a250",
+   "fingerprint": "d63208bd8825071018f3612312c245aaf054f162efe518cf6973dedcd2a5b243",
    "label": "REAL",
    "phase": 6,
    "reason": "8 passed, 1 saboteurs killed",
