@@ -128,12 +128,33 @@ def _text(b: bytes | None, limit: int = 200) -> str | None:
     return b.decode("utf-8", "replace").strip()[:limit]
 
 
+def _shell_value(v: str) -> str:
+    """os-release(5) values follow shell quoting: '...' is literal; inside "..." a backslash escapes $ " \\ and ` (and is kept
+    before anything else); an unquoted value is taken as written."""
+    v = v.strip()
+    if len(v) >= 2 and v[0] == v[-1] == "'":
+        return v[1:-1]
+    if len(v) >= 2 and v[0] == v[-1] == '"':
+        s, out, i = v[1:-1], [], 0
+        while i < len(s):
+            if s[i] == "\\" and i + 1 < len(s) and s[i + 1] in '$"\\`':
+                out.append(s[i + 1])
+                i += 2
+            else:
+                out.append(s[i])
+                i += 1
+        return "".join(out)
+    return v
+
+
 def _kv(b: bytes | None) -> dict[str, str]:
     out = {}
     for line in (b or b"").decode("utf-8", "replace").splitlines():
+        if line.lstrip().startswith("#"):
+            continue
         k, sep, v = line.partition("=")
-        if sep and re.fullmatch(r"[A-Z_]+", k):
-            out[k] = v.strip().strip('"')[:200]
+        if sep and re.fullmatch(r"[A-Z][A-Z0-9_]*", k):
+            out[k] = _shell_value(v)[:200]
     return out
 
 
@@ -142,8 +163,9 @@ def c_os(r: Reader) -> dict:
     if rel is None:
         rel = r.read("usr/lib/os-release")
     kv = _kv(rel)
+    m = re.match(r"Linux version (\S+)", _text(r.read("proc/version")) or "")
     return {"id": kv.get("ID"), "version_id": kv.get("VERSION_ID"), "pretty_name": kv.get("PRETTY_NAME"),
-            "hostname": _text(r.read("etc/hostname"), 64), "kernel": _text(r.read("proc/version"))}
+            "hostname": _text(r.read("etc/hostname"), 64), "kernel_release": m.group(1)[:100] if m else None}
 
 
 def c_cpu(r: Reader) -> dict:
@@ -198,8 +220,10 @@ def c_block_devices(r: Reader) -> list[dict]:
     out = []
     for name in r.listdir("sys/block") or []:
         size = _text(r.read(f"sys/block/{name}/size"))
+        if not (size and size.isdigit() and int(size) > 0):
+            continue  # an unbound loop device or an empty slot is not storage
         removable = _text(r.read(f"sys/block/{name}/removable"))
-        out.append({"name": name, "bytes": int(size) * 512 if size and size.isdigit() else None, "removable": removable == "1",
+        out.append({"name": name, "bytes": int(size) * 512, "removable": removable == "1",
                     "model": _text(r.read(f"sys/block/{name}/device/model"), 64)})
     return out
 

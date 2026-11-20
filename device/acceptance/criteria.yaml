@@ -117,8 +117,14 @@ criteria:
     phase: 3
     title: Inventory precision and recall against fixtures with known truth meet thresholds
     tests: [device/tests/test_inspect_accuracy.py]
-    covers: [src/mas_device]
+    covers: [src/mas_device, src/mas_fleet, device/medium, device/tests/mas_dockerkit.py]
     label: SIMULATED
+    min_tests: 8
+    saboteurs:
+      - {name: installed-filter-off, file: src/mas_device/inspect.py, old: 'for s in _stanzas(r.read("var/lib/dpkg/status")) if "Package" in s and s.get("Status", "").endswith(" installed")]', new: 'for s in _stanzas(r.read("var/lib/dpkg/status")) if "Package" in s]'}
+      - {name: shell-unescape-off, file: src/mas_device/inspect.py, old: '        return "".join(out)', new: '        return s'}
+      - {name: zero-size-included, file: src/mas_device/inspect.py, old: '        if not (size and size.isdigit() and int(size) > 0):', new: '        if not (size and size.isdigit()):'}
+      - {name: continuation-lines-parsed, file: src/mas_device/inspect.py, old: '        elif not line[0].isspace() and ":" in line:', new: '        elif ":" in line:'}
   - id: P3-READONLY
     phase: 3
     title: Inspection makes zero writes (diff and read-only mount) and never touches the network

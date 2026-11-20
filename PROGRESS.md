@@ -209,3 +209,15 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   my docstring used the word the static check forbids; Debian's etc/os-release is a link and /lib is merged into usr/lib, so the
   first link rule refused both (now: a link is followed only to another allowed file; absent files are None); the meminfo regex
   missed CRLF fixtures; /etc/hostname is a Docker bind mount, so the hostile-link test plants on /etc/os-release instead.
+- 2026-11-20 P3-INSPECT PASS (8 tests, 4 saboteurs, D-038): four fixture containers, truth from independent tools taken in the
+  same container right before the inspection; 1.0 precision and recall on all four after three fixes (zero-size loop devices
+  reported as disks, no kernel release, os-release quoting not shell-like). Before the fixes the scores were 0.951-0.959 /
+  >= 0.986, above the thresholds: the exact checks are what caught the bugs. Failed attempts: my first truth script printed big
+  disk sizes in awk's exponent form (3.22123e+09), fixed with printf %.0f before the red commit; a nested file mount inside a
+  read-only bind mount was avoided by writing the setup scripts into the tools folder; a Bash heredoc patch lost its backslashes
+  again (HANDOFF warns; redone with the Edit tool). The WSL2 kernel has no loadable modules, so modules were not scored here.
+- Oracle incident 2026-11-20: in the full re-run after P3-INSPECT, P2-MEMORY came back FAIL ("saboteur fixed-salt-nonce
+  survived") with memory.py and its test unchanged; that saboteur makes two saves byte-identical, which the test always
+  catches. Two immediate re-runs: PASS, 5 saboteurs killed. My first manual reproduction was invalid (pyproject's pytest
+  pythonpath put the real src first; the oracle uses its own ini). Cause unknown; second odd %TEMP% event this session
+  (HANDOFF gotcha). Not fixed in the oracle yet: changing it stales every criterion.

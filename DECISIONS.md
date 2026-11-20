@@ -694,3 +694,21 @@ remove a decoupling cap → net check fails.
   positive control (a machine that dials out is caught).
 - Not yet: rpm/pacman/flatpak/snap databases, Windows/macOS hosts, precision and recall (P3-INSPECT), the owner-readable and
   schema-checked report (P3-REPORT), planted-secret fixtures beyond the allowlist tests (P3-NOCREDS).
+
+## D-038 Inventory accuracy measured against independent truth (2026-11-20; P3-INSPECT; thresholds pinned in R-1 M6)
+- **Truth from other tools, in the same container, right before the inspection**: packages from dpkg-query (dpkg's parser,
+  inspector: its own parser of /var/lib/dpkg/status); kernel from uname -r; CPUs and memory from getconf (sysconf/sysinfo); loaded
+  modules from /sys/module/*/initstate; interfaces from ioctl (if_nameindex, SIOCGIFHWADDR, SIOCGIFMTU); disk sizes from
+  /proc/partitions; os-release values from the shell sourcing the file. A static test checks the truth script never reads the
+  inspector's files (disk names are taken from /sys/block for membership only).
+- **Fixture machines** (containers of the pinned Debian image, no network): stock; packages built with dpkg-deb and driven through
+  every state that matters (arch all, an epoch version, held, removed with conffiles, unpacked only, and a description line that
+  looks like a Status field); a tricky os-release (single quotes, escaped quotes, \$, \\, a comment); a small machine with its
+  own hostname, 1 CPU and 1 GiB.
+- **Pass**: precision >= 0.95 and recall >= 0.90 on every machine (criteria.yaml thresholds), plus exact equality for os, cpu,
+  memory, disks, interfaces, modules and the fixture packages. The exact checks matter: with three real bugs (zero-size loop
+  devices, no kernel release, shell quoting) the inspector still scored 0.951-0.959 / >= 0.986 and would have passed on thresholds
+  alone. After the fixes: 1.0 / 1.0 on all four machines (138-141 facts each). Raw scores: runs/eval/inspect-accuracy.json.
+- Not scored: DMI and apk (no independent source / no Alpine image pulled); kernel modules scored only where the kernel has
+  loadable ones (Docker Desktop's WSL2 kernel had none here). Containers share the VM's kernel, CPUs and memory, so those facts are
+  the VM's; a VM per distro (rpm, pacman) is future work.
