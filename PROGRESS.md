@@ -193,3 +193,11 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   PATH change, driver module, program and stray file are each caught by kind. The approve/undo arms passed from the first run
   (the gate already behaved); red came from the missing residue allowlist. Failed attempt: my snapshot check expected /bin/sh, but
   Debian's /bin is a link to usr/bin (fixed in the test before the red commit).
+- 2026-11-20 P2-FLEET PASS (11 tests, 5 saboteurs, EMULATED, D-036; design chosen by Josué: the device key as the fleet
+  credential, no downloads). A coordinator and a node run from the same read-only medium on an --internal network with a raw-frame
+  sentinel: typed JOIN, one JOIN_FLEET press checked against the pinned key, one press per setup step, one per undo; B ends as it
+  began; A's log keeps the typed text next to the counter. Failed attempts: inspecting a --rm container's IP raced its exit
+  (fixed IPs and MACs instead); my node.py held the literal broadcast address the static check forbids (now ip.is_reserved); the
+  sentinel saw IPv6 MLD/ND frames although every container had IPv6 off: they come from Docker's bridge in its VM (MACs of no test
+  machine), now tolerated only from such MACs; the sentinel also sees its own gratuitous ARP as incoming (ignored by MAC). The
+  MAS node's credentials.py cannot pass the gate (credentials* refused, D-025): left out of the payload; NEEDS_HUMAN 12.

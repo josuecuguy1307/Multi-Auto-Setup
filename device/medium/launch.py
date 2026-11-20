@@ -25,6 +25,14 @@ def main(argv: list[str]) -> int:
     if problems:
         sys.stderr.write("ERROR the medium does not match its manifest: " + "; ".join(problems[:5]) + "\n")
         return 3
+    if argv and argv[0] == "fleet-join":  # D-036: the host's owner asks this computer to join a fleet
+        from mas_fleet import node
+
+        return node.main(list(argv[1:]), runtime=RUNTIME)
+    if argv and argv[0] == "fleet-coordinator":  # D-036: on the device owner's own machine
+        from mas_fleet import coordinator
+
+        return coordinator.main(list(argv[1:]), pairing=os.path.join(MEDIUM, "pairing.json"))
     probe = profiler.probe()
     mode, reasons = profiler.choose(probe)
     from mas_device import gated

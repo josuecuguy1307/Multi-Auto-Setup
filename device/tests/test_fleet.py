@@ -16,7 +16,7 @@ import base64
 import hashlib
 import json
 import os
-import re
+import secrets
 import shutil
 import subprocess
 import sys
@@ -106,11 +106,14 @@ def world():
     clock = Tick()
     key = KeyModel.create(base / "key", clock=clock)
     w = type("World", (), {})()
-    w.base, w.clock, w.key, w.containers, w.networks = base, clock, key, [], []
+    w.base, w.clock, w.key, w.containers, w.networks, w.macs = base, clock, key, [], [], set()
     w.image = json.loads(LOCK.read_text(encoding="utf-8"))["base_image"]
     w.medium = md.build(base / "medium", cache=_cache(), key_pub=key.public_key, tree=TREE)
     payload = base / "payload"
-    shutil.copytree(TREE / "src" / "envrec_node", payload / "envrec_node", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    # MAS's node keeps its own key in the OS credential store (envrec_node/credentials.py); the gate refuses any file named credentials*
+    # (D-025, guardrail 8), so the v0 payload leaves it out and the installed node is not runnable yet (D-036)
+    shutil.copytree(TREE / "src" / "envrec_node", payload / "envrec_node",
+                    ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "credentials.py"))
     w.payload = payload
     yield w
     for cid in w.containers:
@@ -122,25 +125,27 @@ def world():
 
 # ---- the machines ----------------------------------------------------------------------------------------------------------------------
 
-def network(world) -> str:
-    name = f"mas-fleet-{uuid.uuid4().hex[:8]}"
-    subprocess.run(["docker", "network", "create", "--internal", name], check=True, capture_output=True, timeout=TIMEOUT)
-    world.networks.append(name)
-    return name
-
-
-def ip_of(cid: str, net: str) -> str:
-    r = subprocess.run(["docker", "inspect", "-f", "{{(index .NetworkSettings.Networks \"%s\").IPAddress}}" % net, cid],
-                       capture_output=True, text=True, check=True, timeout=TIMEOUT)
-    assert re.fullmatch(r"\d+\.\d+\.\d+\.\d+", r.stdout.strip()), r.stdout
-    return r.stdout.strip()
+def network(world) -> tuple[str, str]:
+    """An --internal network (no route out) on its own /24; every machine gets a fixed address on it (no lookups, no races)."""
+    for _ in range(20):
+        name, prefix = f"mas-fleet-{uuid.uuid4().hex[:8]}", f"10.231.{secrets.randbelow(250) + 1}"
+        r = subprocess.run(["docker", "network", "create", "--internal", "--subnet", f"{prefix}.0/24", name], capture_output=True,
+                           text=True, timeout=TIMEOUT)
+        if r.returncode == 0:
+            world.networks.append(name)
+            return name, prefix
+    pytest.fail("ERROR could not create an isolated network: " + r.stderr)
 
 
 class Machine:
-    def __init__(self, world, role: str, net: str, args: list[str], mounts: list[str], flags: list[str] = LOCKED) -> None:
+    def __init__(self, world, role: str, net: tuple[str, str], host: int, args: list[str], mounts: list[str],
+                 flags: list[str] = LOCKED) -> None:
         self.cid = f"mas-fl-{role}-{uuid.uuid4().hex[:8]}"
+        self.ip = f"{net[1]}.{host}"
+        self.mac = "02:00:0a:e7:%02x:%02x" % (int(net[1].split(".")[-1]), host)  # fixed, so every frame names its machine
         world.containers.append(self.cid)
-        cmd = ["docker", "run", "-i", "--rm", "--name", self.cid, "--network", net, *flags, "-v", f"{world.medium}:{MOUNT}:ro",
+        world.macs.add(self.mac)
+        cmd = ["docker", "run", "-i", "--rm", "--name", self.cid, "--network", net[0], "--ip", self.ip, "--mac-address", self.mac, *flags, "-v", f"{world.medium}:{MOUNT}:ro",
                *mounts, world.image, *args]
         self.p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -178,11 +183,14 @@ while True:
         if addr[2] == socket.PACKET_OUTGOING:
             continue
         et = int.from_bytes(data[12:14], "big")
-        f = {"type": hex(et), "dst_mac": data[0:6].hex()}
+        f = {"type": hex(et), "dst_mac": data[0:6].hex(), "src_mac": data[6:12].hex()}
         if et == 0x0806:
             f.update(op=int.from_bytes(data[20:22], "big"), sender=socket.inet_ntoa(data[28:32]), target=socket.inet_ntoa(data[38:42]))
         elif et == 0x0800:
             f.update(src=socket.inet_ntoa(data[26:30]), dst=socket.inet_ntoa(data[30:34]), proto=data[23])
+        elif et == 0x86DD:
+            f.update(src6=socket.inet_ntop(socket.AF_INET6, data[22:38]), dst6=socket.inet_ntop(socket.AF_INET6, data[38:54]),
+                     next=data[20])
         frames.append(f)
 print(json.dumps(frames), flush=True)
 '''
@@ -191,14 +199,14 @@ print(json.dumps(frames), flush=True)
 class Sentinel:
     """C: captures every frame it receives (CAP_NET_RAW only here); reports them when its stdin closes."""
 
-    def __init__(self, world, net: str) -> None:
+    def __init__(self, world, net: tuple[str, str]) -> None:
         script = world.base / f"canary-{uuid.uuid4().hex[:6]}"
         script.mkdir()
         (script / "canary.py").write_text(CANARY, encoding="ascii")
-        self.m = Machine(world, "canary", net, [PY, "-I", "-B", "/canary/canary.py"], ["-v", f"{script}:/canary:ro"],
+        self.m = Machine(world, "canary", net, 12, [PY, "-I", "-B", "/canary/canary.py"], ["-v", f"{script}:/canary:ro"],
                          flags=["--cap-drop", "ALL", "--cap-add", "NET_RAW", *NOV6])
         assert self.m.p.stdout.readline().strip() == b"ready", self.m.p.stderr.read()[-2000:]
-        self.ip = ip_of(self.m.cid, net)
+        self.ip, self.mac = self.m.ip, self.m.mac
 
     def frames(self) -> list[dict]:
         rc, err, out = self.m.finish()
@@ -206,19 +214,32 @@ class Sentinel:
         return json.loads(out.decode().strip().splitlines()[-1])
 
 
-def non_peer_violations(frames: list[dict], peers: set[str], canary_ip: str) -> list[dict]:
+def non_peer_violations(frames: list[dict], peers: dict[str, str], sentinel, machines: set[str]) -> list[dict]:
+    """peers: mac -> ip of the fleet's machines. Every frame names its sender by MAC (each test machine has a fixed one).
+
+    A peer may send only ARP between peers and IPv4 between peers (never to the sentinel, never broadcast or multicast). Any frame
+    from another test machine (a scanner) is a violation. Frames from MACs that belong to no test machine are the emulated switch
+    itself (Docker's bridge in its VM): only IPv6 link-local multicast (its own MLD/ND chatter) is tolerated from it, as emulator noise.
+    """
+    ips = set(peers.values())
     bad = []
     for f in frames:
-        if f["type"] == "0x806":
-            if not (f["sender"] in peers and f["target"] in peers):
-                bad.append(f)  # an ARP for anyone but the peers (a scan), or from a non-peer
-        elif f["type"] == "0x800":
-            if f["dst"] == canary_ip or f["dst"].startswith(("224.", "239.", "255.")) or f["dst"].endswith(".255"):
+        src = f["src_mac"]
+        if src == sentinel.mac.replace(":", ""):
+            continue
+        if src in {m.replace(":", "") for m in peers}:
+            if f["type"] == "0x806":
+                ok = f["sender"] in ips and f["target"] in ips
+            elif f["type"] == "0x800":
+                ok = f["src"] in ips and f["dst"] in ips and f["dst"] != sentinel.ip
+            else:
+                ok = False  # IPv6 is off on every machine: a peer sends none
+            if not ok:
                 bad.append(f)
-            elif f["src"] not in peers or f["dst"] not in peers:
-                bad.append(f)
-        else:
-            bad.append(f)  # IPv6 is off; anything else (LLDP, mDNS over v6, ...) is traffic nobody asked for
+        elif src in {m.replace(":", "") for m in machines}:
+            bad.append(f)  # a test machine that is not a peer said something on the fleet's network
+        elif not (f["type"] == "0x86dd" and f.get("dst6", "").startswith("ff02:")):
+            bad.append(f)  # the switch itself may only chatter IPv6 link-local multicast
     return bad
 
 
@@ -238,21 +259,21 @@ def fleet_round(world, *, typed: str, then: str = "leave") -> dict:
     c = Sentinel(world, net)
     a_state = world.base / f"a-state-{uuid.uuid4().hex[:6]}"
     a_state.mkdir()
-    a = Machine(world, "a", net, ["sh", f"{MOUNT}/launch.sh", "fleet-coordinator", "--state", "/a-state", "--listen", f"0.0.0.0:{PORT}",
+    a = Machine(world, "a", net, 10, ["sh", f"{MOUNT}/launch.sh", "fleet-coordinator", "--state", "/a-state", "--listen", f"0.0.0.0:{PORT}",
                                   "--fleet", FLEET, "--target", "vm-a", "--payload", "/payload", "--connections", "1"],
                 ["-v", f"{a_state}:/a-state", "-v", f"{world.payload}:/payload:ro"])
     ready = a.line()
     assert ready and ready.get("listening") == PORT, (ready, a.p.stderr.read()[-2000:] if not ready else "")
-    a_ip = ip_of(a.cid, net)
+    a_ip = a.ip
     host = world.base / f"host-{uuid.uuid4().hex[:6]}"
     (host / "etc").mkdir(parents=True)
     (host / "etc" / "app.conf").write_bytes(b"port=1\n")
     b_state = world.base / f"b-state-{uuid.uuid4().hex[:6]}"
     b_state.mkdir()
     before = tree_hashes(host)
-    b = Machine(world, "b", net, ["sh", f"{MOUNT}/launch.sh", "fleet-join", "--root", "/host", "--state", "/state", "--target", "vm-b",
+    b = Machine(world, "b", net, 11, ["sh", f"{MOUNT}/launch.sh", "fleet-join", "--root", "/host", "--state", "/state", "--target", "vm-b",
                                   "--coordinator", f"{a_ip}:{PORT}"], ["-v", f"{host}:/host", "-v", f"{b_state}:/state"])
-    b_ip = ip_of(b.cid, net)
+    b_ip = b.ip
     seen = {"prompts": [], "classes": [], "status": [], "after_setup": None}
     while (msg := b.line()) is not None:
         if "owner_prompt" in msg:
@@ -269,7 +290,8 @@ def fleet_round(world, *, typed: str, then: str = "leave") -> dict:
     seen["b"] = b.finish()
     seen["a"] = a.finish()
     seen["frames"] = c.frames()
-    seen.update(host=host, before=before, after=tree_hashes(host), a_state=a_state, b_state=b_state, peers={a_ip, b_ip}, canary=c.ip)
+    seen.update(host=host, before=before, after=tree_hashes(host), a_state=a_state, b_state=b_state, peers={a.mac: a_ip, b.mac: b_ip},
+                sentinel=c, machines=set(world.macs))
     return seen
 
 
@@ -316,7 +338,7 @@ def test_the_coordinator_logs_the_typed_confirmation_next_to_the_press_and_keeps
 
 
 def test_no_packet_reaches_a_non_peer(joined):
-    assert non_peer_violations(joined["frames"], joined["peers"], joined["canary"]) == []
+    assert non_peer_violations(joined["frames"], joined["peers"], joined["sentinel"], joined["machines"]) == []
 
 
 def test_without_the_host_owners_typed_confirmation_nothing_happens(world):
@@ -328,7 +350,7 @@ def test_without_the_host_owners_typed_confirmation_nothing_happens(world):
     kinds = [x["type"] for x in records(r["a_state"])]
     assert "fleet.joined" not in kinds and "fleet.join_refused" not in kinds  # B never even sent a join request
     assert json.loads((r["a_state"] / "roster.json").read_text(encoding="utf-8")) == {"fleet": FLEET, "nodes": {}}
-    assert non_peer_violations(r["frames"], r["peers"], r["canary"]) == []
+    assert non_peer_violations(r["frames"], r["peers"], r["sentinel"], r["machines"]) == []
 
 
 def test_the_sentinel_catches_a_scanner(world):
@@ -336,10 +358,10 @@ def test_the_sentinel_catches_a_scanner(world):
     net = network(world)
     c = Sentinel(world, net)
     probe = f"import socket; s = socket.socket(); s.settimeout(2); s.connect_ex(('{c.ip}', 22)); s.close()"
-    s = Machine(world, "scanner", net, [PY, "-I", "-B", "-c", probe], [], flags=["--cap-drop", "ALL", *NOV6])
+    s = Machine(world, "scanner", net, 13, [PY, "-I", "-B", "-c", probe], [], flags=["--cap-drop", "ALL", *NOV6])
     assert s.finish()[0] == 0
-    bad = non_peer_violations(c.frames(), {"203.0.113.1"}, c.ip)  # no peers here: the scanner is not one
-    assert any(f["type"] == "0x806" and f["target"] == c.ip for f in bad), bad
+    bad = non_peer_violations(c.frames(), {}, c, set(world.macs))  # no peers here: the scanner is not one
+    assert any(f["src_mac"] == s.mac.replace(":", "") and f["type"] == "0x806" and f["target"] == c.ip for f in bad), bad
 
 
 # ---- the coordinator, in-process -----------------------------------------------------------------------------------------------------------

@@ -654,3 +654,25 @@ remove a decoupling cap → net check fails.
   enumerated but `measured: false`: no VM image of those systems is measured in v0, so the paper makes no zero-trace claim for them.
 - v0's launcher declares no temp dir (it needs none: `-I -B`, the log is on the device). Limit: a container is not a booted OS (no
   journald, udev, desktop indexer); USB enumeration residue is out of reach until a VM arm exists.
+
+## D-036 Fleet join: the device key as the fleet credential (2026-11-20; P2-FLEET, EMULATED; implements D-006 rule 7, D-021)
+- **Chosen by Josué** over reusing MAS's network stack (envrec_net: SPAKE2, TLS, discovery): the device code may not import MAS
+  (P2-PAIRING), MAS discovery broadcasts on the LAN (packets to non-peers), and running MAS on a node needs pydantic, psutil, httpx,
+  spake2 and keyring. Instead the fleet's trust is the key itself: the coordinator runs from the same medium and pins the same key.
+- **mas_fleet** (new package, on the medium, outside the gate): `coordinator` only listens (one state machine per connection,
+  roster and audit log in its own folder); `node` opens exactly one TCP connection to the literal IP:port the host's owner typed (no
+  discovery, no name lookup, no listening socket) and drives the gate as a child process over the gate's own interface, as the model
+  does: it holds no key and no write authority. The gate still never touches the network.
+- **Join**: the node checks the offered plan first (only under `.mas/`, plain segments, no credential names, <= 8 steps, <= 4 MiB);
+  the host's owner must type exactly `JOIN <fleet>` (checked by the node and again by the coordinator); then one JOIN_FLEET press,
+  bound to the target, the plan hash and the typed text; the coordinator logs `fleet.joined` with the typed text next to the key's
+  counter. **Setup**: one gate write per plan step, one press each: the MAS node sources under `.mas/node/` and `.mas/node.json`
+  (`worker_can_deploy_further: false`). **Leave**: each step undone through the gate, one press each; B returns to its prior state.
+- **Isolation**: an `--internal` Docker network with fixed IPs and MACs; a sentinel captures raw frames (CAP_NET_RAW only there).
+  Peers may send only ARP and IPv4 between themselves; any frame from another test machine is a violation (positive control: a
+  scanner is caught). Frames from MACs of no test machine are Docker's own bridge in its VM: only its IPv6 link-local multicast
+  (MLD/ND chatter) is tolerated, as emulator noise; every container runs with IPv6 off.
+- Limits: the host owner's keyboard and the key's USB link are emulated on the node's stdin/stdout; the installed MAS node is not run
+  in v0, and `envrec_node/credentials.py` is left out of the payload because the gate refuses any file named credentials* (D-025):
+  MAS keeps the node key in the OS credential store, which conflicts with guardrail 8 and needs a decision before nodes run. No TLS
+  on the fleet link in v0: the join is authenticated by the key's signature, the setup content by the plan hash inside it.

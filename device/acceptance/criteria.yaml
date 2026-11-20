@@ -75,7 +75,7 @@ criteria:
     phase: 2
     title: One-command launch from a read-only medium in a clean VM/container; profiler picks compute mode
     tests: [device/tests/test_portable.py]
-    covers: [src/mas_device, device/medium]
+    covers: [src/mas_device, src/mas_fleet, device/medium]
     label: EMULATED
     min_tests: 10
     saboteurs:
@@ -89,7 +89,7 @@ criteria:
     title: Nothing installed after unplug (no service, driver, autostart, PATH change or file outside the declared temp dir); OS residue only from the enumerated allowlist (D-010 three-arm diff)
     thresholds: {residue_allowlist: device/acceptance/residue_allowlist.yaml}
     tests: [device/tests/test_zerotrace.py]
-    covers: [src/mas_device, device/medium, device/acceptance/residue_allowlist.yaml]
+    covers: [src/mas_device, src/mas_fleet, device/medium, device/acceptance/residue_allowlist.yaml]
     label: EMULATED
     min_tests: 8
     saboteurs:
@@ -102,8 +102,15 @@ criteria:
     phase: 2
     title: Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers
     tests: [device/tests/test_fleet.py]
-    covers: [src/mas_device, device/medium]
+    covers: [src/mas_device, src/mas_fleet, device/medium]
     label: EMULATED
+    min_tests: 11
+    saboteurs:
+      - {name: owner-confirm-skipped, file: src/mas_fleet/node.py, old: '    if _in("owner") != expected:', new: '    if _in("owner") is None:'}
+      - {name: coordinator-owner-unchecked, file: src/mas_fleet/coordinator.py, old: '            if msg["owner_typed"] != f"JOIN {self.fleet}":', new: '            if False:'}
+      - {name: plan-paths-unconfined, file: src/mas_fleet/plan.py, old: '    if len(parts) < 2 or parts[0] != ROOT_DIR:', new: '    if False:'}
+      - {name: plan-hash-unchecked, file: src/mas_fleet/coordinator.py, old: '            if msg["plan_hash"] != self.plan_hash:', new: '            if False:'}
+      - {name: leave-without-undo, file: src/mas_fleet/node.py, old: '    for ah in reversed(done):', new: '    for ah in []:'}
 
   # ---- Phase 3: inspection ------------------------------------------------------------------
   - id: P3-INSPECT

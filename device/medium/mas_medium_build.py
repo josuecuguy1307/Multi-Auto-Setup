@@ -9,7 +9,8 @@ Layout of a built medium (no links: a FAT/exFAT stick cannot hold them; link mem
     runtime/launch.py             manifest check, host profile, then the gate
     runtime/python/               python-build-standalone CPython for linux x86_64, pruned (no tcl/tk, tests, headers, terminfo, pip)
     runtime/site/                 the vendored wheels, unpacked (cryptography, cffi, pycparser), licences included
-    runtime/mas_device/*.py       the device code, byte for byte (sources only)
+    runtime/mas_device/*.py       the device code (the gate), byte for byte (sources only)
+    runtime/mas_fleet/*.py        the fleet join (D-036), byte for byte (sources only)
     pairing.json                  the key this medium is paired with (mas_device.pairing.provision)
     MANIFEST.sha256               every other file and its sha256
 
@@ -38,6 +39,7 @@ if __name__ == "__main__":
 from mas_device import medium, pairing  # noqa: E402
 
 MANIFEST = medium.MANIFEST
+PACKAGES = ("mas_device", "mas_fleet")  # the gate, and the fleet join that drives it (D-036); sources only
 PY_VER = "3.13"
 KEEP_BIN = {f"bin/python{PY_VER}"}
 KEEP_LIB_TOP = {f"lib/libpython{PY_VER}.so.1.0", "lib/libpython3.so"}
@@ -140,9 +142,10 @@ def build(out: Path, *, cache: Path, key_pub: bytes, tree: Path | None = None) -
     _extract_python(cache / lock["python"]["file"], runtime / "python")
     for w in lock["wheels"]:
         _unpack_wheel(cache / "wheels" / w["file"], runtime / "site")
-    (runtime / "mas_device").mkdir()
-    for f in sorted((tree / "src" / "mas_device").glob("*.py")):
-        (runtime / "mas_device" / f.name).write_bytes(f.read_bytes())
+    for pkg in PACKAGES:
+        (runtime / pkg).mkdir()
+        for f in sorted((tree / "src" / pkg).glob("*.py")):
+            (runtime / pkg / f.name).write_bytes(f.read_bytes())
     sh = (tree / "device" / "medium" / "launch.sh").read_bytes()
     if b"\r" in sh:
         raise ValueError("ERROR launch.sh has CR line endings (see .gitattributes: *.sh eol=lf)")

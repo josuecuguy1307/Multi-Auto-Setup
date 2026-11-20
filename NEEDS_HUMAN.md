@@ -41,3 +41,10 @@ Each item: what, why, exact steps. The run keeps going on other units meanwhile.
     is permanent: never set it on a part you want to reprogram.
 
 11. ~~Local model for P2-MODEL~~ — Josué said OK on 2026-11-19 (STEER.md).
+
+12. **MAS node key vs guardrail 8 (decide before fleet nodes run MAS).** MAS keeps each node's private key in the OS credential
+    store (`src/envrec_node/credentials.py`, keyring). The device gate refuses any file named credentials* and the mission forbids
+    storing credentials, so P2-FLEET installs the MAS node sources without that file and does not run the node (D-036). Options:
+    (a) the node keeps its key in a file under `.mas/` protected by the OS (no credential store); (b) the node key stays on the
+    device and the node asks the key to sign; (c) accept the credential store for the node's own key only, as an explicit exception.
+    Write your choice in STEER.md.
