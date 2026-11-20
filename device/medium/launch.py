@@ -25,6 +25,10 @@ def main(argv: list[str]) -> int:
     if problems:
         sys.stderr.write("ERROR the medium does not match its manifest: " + "; ".join(problems[:5]) + "\n")
         return 3
+    if argv and argv[0] == "inspect":  # D-037: read-only inspection, one INSPECT_SESSION press, report on the device
+        from mas_device import inspect
+
+        return inspect.main(list(argv[1:]), pairing=os.path.join(MEDIUM, "pairing.json"))
     if argv and argv[0] == "fleet-join":  # D-036: the host's owner asks this computer to join a fleet
         from mas_fleet import node
 

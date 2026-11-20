@@ -81,7 +81,7 @@ met and every saboteur (a deliberate break of the covered code) turns its tests 
 | P2-MEMORY | SIMULATED | portable memory in the open `.mem` bundle format round-trips; at rest it is one scrypt + AES-256-GCM sealed file | Python |
 | P2-PAIRING | SIMULATED | the gate accepts only the key paired with the medium (`pairing.json`); the owner sees the session terms at launch; MAS chat approvals absent from the device build | Python |
 | P3-INSPECT | SIMULATED | inventory precision and recall against fixtures with known truth | not built yet |
-| P3-READONLY | EMULATED | inspection makes zero writes and no network access | not built yet; needs VMs |
+| P3-READONLY | EMULATED | one INSPECT_SESSION press, then a closed set of file-only collectors behind a path allowlist: zero writes by whole-filesystem diff, works on a read-only root, a network sentinel hears nothing, a host's link from an allowed name to a secret is refused; no MAS skill or scanner on the medium | same as P2-PORTABLE (Docker running, medium cache) |
 | P3-REPORT | SIMULATED | the inspection report is schema-checked | not built yet |
 | P3-NOCREDS | SIMULATED | planted secrets never reach the report or the model | not built yet |
 | P4-FW-HOST | SIMULATED | the firmware rejects replayed, altered and expired approvals; signs only after a press | zig |

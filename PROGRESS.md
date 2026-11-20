@@ -201,3 +201,11 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   sentinel saw IPv6 MLD/ND frames although every container had IPv6 off: they come from Docker's bridge in its VM (MACs of no test
   machine), now tolerated only from such MACs; the sentinel also sees its own gratuitous ARP as incoming (ignored by MAC). The
   MAS node's credentials.py cannot pass the gate (credentials* refused, D-025): left out of the payload; NEEDS_HUMAN 12.
+- 2026-11-20 P3-READONLY PASS (10 tests, 4 saboteurs, EMULATED, D-037): mas_device.inspect with a closed file-only collector
+  registry behind a path allowlist and one INSPECT_SESSION press; zero-write whole-filesystem diff, works on a --read-only root,
+  network sentinel hears nothing, a hostile link from an allowed name to /etc/shadow is refused and listed. Shared container
+  helpers in device/tests/mas_dockerkit.py. Failed attempts: the commit hook blocked a combined run+commit command before anything
+  ran (split it); my first control arm had different mount points and I masked the difference with pops (fixed: identical mounts);
+  my docstring used the word the static check forbids; Debian's etc/os-release is a link and /lib is merged into usr/lib, so the
+  first link rule refused both (now: a link is followed only to another allowed file; absent files are None); the meminfo regex
+  missed CRLF fixtures; /etc/hostname is a Docker bind mount, so the hostile-link test plants on /etc/os-release instead.

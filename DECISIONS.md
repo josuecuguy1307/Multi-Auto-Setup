@@ -676,3 +676,21 @@ remove a decoupling cap → net check fails.
   in v0, and `envrec_node/credentials.py` is left out of the payload because the gate refuses any file named credentials* (D-025):
   MAS keeps the node key in the OS credential store, which conflicts with guardrail 8 and needs a decision before nodes run. No TLS
   on the fleet link in v0: the join is authenticated by the key's signature, the setup content by the plan hash inside it.
+
+## D-037 Read-only inspection: closed registry, path allowlist, one press (2026-11-20; P3-READONLY, EMULATED; D-011, D-012)
+- **Why read-only** (asked by Josué): the inspected machine is someone else's; the owner lets the device look, not touch (4.1 rules
+  1-2). It is also what makes D-012's single INSPECT_SESSION press acceptable instead of one press per read, and it keeps the
+  evidence untouched and the data local (rules 9-10). Proven, not promised: whole-filesystem diff and a read-only root.
+- **mas_device.inspect** is device code (P2-GUARDRAILS' import allowlist: no network, no subprocess). Its collectors form a closed
+  registry (os, cpu, memory, kernel_modules, packages_dpkg, packages_apk, block_devices, net_interfaces, dmi without serials) and
+  read only through one Reader: ALLOWED_FILES / ALLOWED_DIRS relative to --root, `*` = one plain segment. Outside /proc and /sys a
+  link is followed only to another allowed file under the root (Debian's etc/os-release -> usr/lib/os-release); a link to
+  anything else is refused, listed in the report's `refused`, and the session goes on. MAS's skills registry (88 skills, among them
+  lan-sweep, ble-scan, net-neighbors) is not on the medium at all; reusing MAS skills needs a separate, reviewed device registry.
+- **Flow**: `launch.sh inspect --root / --state <device folder> --target <name>`: nothing is read before the press; the report
+  (`inspect-<target>-<counter>.json`, with every path read) goes to the device folder; the log records `inspect.done` with its sha256
+  and the sources. Tests: zero-write diff against a blank-stick control with identical mount points, a `--read-only` root with no
+  network, a raw-frame sentinel on an internal network (only the kernel's own ARP announcement of the address is tolerated), and its
+  positive control (a machine that dials out is caught).
+- Not yet: rpm/pacman/flatpak/snap databases, Windows/macOS hosts, precision and recall (P3-INSPECT), the owner-readable and
+  schema-checked report (P3-REPORT), planted-secret fixtures beyond the allowlist tests (P3-NOCREDS).

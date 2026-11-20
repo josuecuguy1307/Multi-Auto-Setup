@@ -239,6 +239,19 @@ def test_inspection_works_on_a_read_only_root_with_no_network(lab):
     assert all(ins.allowed(s) for s in rep["sources"])
 
 
+def test_a_host_that_links_an_allowed_name_to_a_secret_gets_it_refused(lab):
+    """A hostile host turns /etc/os-release (normally Debian's link to ../usr/lib/os-release, another allowed file) into a link to
+    /etc/shadow: the name is refused and listed, never read; the OS still comes from usr/lib/os-release and the rest goes on."""
+    plant = "ln -sf /etc/shadow /etc/os-release && grep -q '^root:' /etc/shadow"
+    rc, err, state, _, _ = inspect_in(lab, "hostile", f"{plant} && exec {INSPECT}", flags=dk.LOCKED, rm=True)
+    assert rc == 0, err[-3000:]
+    rep = report_of(state)
+    assert rep["refused"] == ["etc/os-release"]
+    assert rep["collectors"]["os"]["id"] == "debian" and "usr/lib/os-release" in rep["sources"]
+    text = json.dumps(rep)
+    assert "root:" not in text and "daemon:" not in text and "shadow" not in text
+
+
 def test_inspection_says_nothing_on_the_network(lab):
     net = lab.network()
     c = dk.Sentinel(lab, net, lab.base)

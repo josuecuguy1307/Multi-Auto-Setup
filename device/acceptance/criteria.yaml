@@ -125,6 +125,12 @@ criteria:
     tests: [device/tests/test_inspect_readonly.py]
     covers: [src/mas_device, src/mas_fleet, device/medium, device/tests/mas_dockerkit.py]
     label: EMULATED
+    min_tests: 10
+    saboteurs:
+      - {name: reader-allowlist-off, file: src/mas_device/inspect.py, old: '        if not (_plain(rel) and any(_match(rel, p) for p in ALLOWED_FILES)):', new: '        if False:'}
+      - {name: press-skipped, file: src/mas_device/inspect.py, old: '            a = self.approvals.consume(token, self.action, cls=ap.Class.INSPECT_SESSION)', new: '            a = ap.Approval(self.paired.key_id, 0, ap.Class.INSPECT_SESSION, b"", b"", b"")'}
+      - {name: cache-written, file: src/mas_device/inspect.py, old: '        collectors = run_collectors(self.reader)', new: '        collectors = run_collectors(self.reader); open(os.path.join(self.reader.root, "var", "tmp", "mas-inspect.cache"), "w").close()'}
+      - {name: link-guard-off, file: src/mas_device/inspect.py, old: '        if target.startswith("..") or not (_plain(target) and any(_match(target, p) for p in ALLOWED_FILES)):', new: '        if False:'}
 
   # ---- Phase 4: key firmware ----------------------------------------------------------------
   - id: P4-FW-HOST
