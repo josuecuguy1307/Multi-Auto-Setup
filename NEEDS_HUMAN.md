@@ -16,7 +16,7 @@ Each item: what, why, exact steps. The run keeps going on other units meanwhile.
 4. ~~Pushing `device/v0`~~ — done 2026-11-17 (Git Credential Manager sign-in).
 5. **Confirm v0 compute = the host's own CPU/GPU** (DECISIONS D-003): a Pi 5 cannot be powered from most host USB ports, so Pi mode is
    VM-emulated only and the Jetson option is cut. Reply in STEER.md if you disagree.
-6. **Hardware license** (DECISIONS D-014): proposed CERN-OHL-P-2.0 for the key board. Confirm or pick another in STEER.md.
+6. ~~**Hardware license**~~ — decided 2026-11-19: CERN-OHL-S-2.0 (`LICENSE-HARDWARE.md`). Still to do: copy the full licence text verbatim from https://ohwr.org/cern_ohl_s_v2.txt into `LICENSE-CERN-OHL-S-2.0.txt` (a download: ask Josué first).
 
 ## Later (from MISSION section 10; instructions get filled in when the phase reaches them)
 - Real test between two physical machines (Phase 2 end).

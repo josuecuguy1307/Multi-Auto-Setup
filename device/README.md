@@ -100,5 +100,4 @@ The board alone: `python device/hardware/hwbuild.py --out runs/hw/out` (5 to 10 
 
 ## License
 
-Software: see `LICENSE` and `NOTICE`. Hardware (the board files): CERN-OHL-P-2.0 is proposed and not yet decided; the decision is the
-owner's (`NEEDS_HUMAN.md`, D-014).
+Software: see `LICENSE` and `NOTICE`. Hardware (the board and enclosure files): CERN-OHL-S-2.0, chosen by the owner on 2026-11-19 (`LICENSE-HARDWARE.md`, D-014). Earlier proposals (CERN-OHL-P-2.0) and the decision are recorded in `NEEDS_HUMAN.md` and D-014.

@@ -127,7 +127,7 @@ Build and test in Linux containers. Windows host support is a small cross-platfo
 this Windows dev host the existing MAS suite fails to collect 8 modules (termios, fcntl, `time.tzset`, one import) — MAS was built on
 macOS/Linux; not fixed here, out of scope.
 
-## D-014 Hardware license (proposal, Josué decides) (2026-11-17)
+## D-014 Hardware license (2026-11-17; DECIDED 2026-11-19 by Josué: CERN-OHL-S-2.0, see LICENSE-HARDWARE.md)
 The key board is an original design (no TKey/SoloKeys PCB derived), so no reciprocal obligation is inherited. Proposed: CERN-OHL-P-2.0 for
 hardware. In NEEDS_HUMAN.md.
 
@@ -577,3 +577,5 @@ remove a decoupling cap → net check fails.
 - P6-REPO: `device/README.md` (labels, D-010's "no trace" definition, tools, a reproduction row per criterion); the test requires a table
   row for every criterion in criteria.yaml, so the README cannot fall behind new criteria.
 - P0-SECRETS covers ".": the oracle now prunes skipped folders while walking and never fingerprints test-results.json.
+
+- D-014 decided (2026-11-19): Josué chose **CERN-OHL-S-2.0** (strongly reciprocal) for the hardware files under device/hardware/, instead of the proposed CERN-OHL-P-2.0. Recorded in LICENSE-HARDWARE.md with the source location; the software stays Apache-2.0. The full licence text still has to be copied verbatim from ohwr.org.

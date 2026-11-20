@@ -22,7 +22,7 @@
 | P6-REPO | PASS 8, 1 saboteur | **never evaluated** (`device/README.md`) |
 | P5-ENCLOSURE | PASS 16, 2 saboteurs (DESIGN-ONLY) | **never evaluated** (`device/hardware/enclosure.py`) |
 | P2-PAIRING, P2-MEMORY | FAIL (not built) | next software units; no outside help needed |
-| P2-MODEL | FAIL (not built) | needs Josué's OK to download a local model |
+| P2-MODEL | FAIL (not built) | Josué said OK to download a small local model (STEER.md 2026-11-19) |
 | P2-PORTABLE, P2-ZEROTRACE, P2-FLEET, P3-READONLY | FAIL (not built) | **blocked: need working Docker or VMs** (NEEDS_HUMAN 7) |
 | P3-INSPECT, P3-REPORT, P3-NOCREDS | FAIL (not built) | can be built against fixtures |
 | P6-EVALS, P6-PAPER | FAIL (not built) | last |
@@ -30,6 +30,7 @@
 ## 2. How to resume (in order)
 
 1. `cd C:\Users\Josue\code\Multi-Auto-Setup`, `git pull`, check `git status` is clean and you are on `device/v0`.
+0. **First, fix Docker with Josué** (STEER.md 2026-11-19): `docker info` fails (dockerDesktopLinuxEngine pipe missing) although WSL 2 with Ubuntu is installed. Walk him through quitting Docker Desktop, `wsl --update`, `wsl --shutdown`, reopening it until "Engine running"; if it still fails, consider Hyper-V VMs. A working Docker unblocks P2-PORTABLE, P2-ZEROTRACE, P2-FLEET, P3-READONLY.
 2. `.venv/Scripts/python scripts/device_accept.py status` and `... verify` (both read-only; verify takes ~1 s now).
 3. Choose with Josué: either run the pending evaluators (§1, bold) or build the next units (P2-PAIRING, P2-MEMORY). Each evaluator run
    costs ~65k-270k tokens; several rounds in a row now find only small test gaps, so building may be the better use of budget.
@@ -86,7 +87,7 @@
 
 ## 6. Open items for Josué (`NEEDS_HUMAN.md`)
 
-Docker or VMs (blocks 4 criteria), OK to download a local model (P2-MODEL), hardware license (CERN-OHL-P-2.0 proposed), confirm v0
+Docker or VMs (blocks 4 criteria; Josué wants to fix it together at the START of the next session), confirm v0
 compute = host CPU, secure-boot review on a sacrificial STM32U585 (item 10), human PCB and enclosure review
 (`device/hardware/HUMAN_REVIEW_PCB.md`), buying boards, a real two-machine test, arXiv submission.
 

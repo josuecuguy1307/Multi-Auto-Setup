@@ -89,6 +89,8 @@ def test_third_party_names_every_vendored_component_and_tool_with_a_license():
         assert vendored.name.lower() in tp.lower(), vendored.name
 
 
-def test_the_hardware_license_question_is_open_not_silently_decided():
+def test_the_hardware_license_is_the_one_the_owner_chose():
     t = readme()
-    assert "CERN-OHL-P-2.0" in t and "NEEDS_HUMAN.md" in t
+    assert "CERN-OHL-S-2.0" in t and "LICENSE-HARDWARE.md" in t  # Josue chose it on 2026-11-19 (D-014)
+    lic = (ROOT / "LICENSE-HARDWARE.md").read_text(encoding="utf-8")
+    assert "SPDX-License-Identifier: CERN-OHL-S-2.0" in lic and "device/hardware/" in lic
