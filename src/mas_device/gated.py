@@ -256,7 +256,8 @@ def _inside(a: Path, b: Path) -> bool:
     return os.path.commonpath([a, b]) == b
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None, *, profile: dict | None = None) -> int:
+    """`profile` comes only from the medium's launcher (never from an argument or the model): {"mode", "reasons", "probe"} (D-034)."""
     parser = argparse.ArgumentParser(prog="mas-gated", description="The MAS device's policy gate (started by the host's owner).")
     for name, what in (("--root", "the host folder the gate may read and, with approval, write"),
                        ("--state", "the device's folder for the audit log (outside --root)"),
@@ -277,14 +278,19 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(str(exc))
     # D-021: the owner's own launch is the session's consent; they see the terms before anything is served, and the log says so
     sys.stderr.write(pairing.TERMS)
+    if profile is not None:
+        sys.stderr.write(f"MAS compute mode: {profile['mode']} ({'; '.join(profile['reasons'])})\n")
     sys.stderr.flush()
     log = AuditLog.open(state / "audit.log")
     log.append("session.terms_shown", {"sha256": pairing.terms_sha256()})
     session_pub, session = pairing.new_session(paired)
     approvals = ap.Gate({paired.key_id: paired.key_pub}, session=session)  # the paired key and no other (P2-PAIRING)
     gate = PolicyGate(root, approvals, log, target=a.target)
-    log.append("gate.started", {"target": a.target, "key_id": paired.key_id.hex(), "medium_id": paired.medium_id.hex(),
-                                "session_pub": session_pub.hex(), "session": session.hex()})
+    started = {"target": a.target, "key_id": paired.key_id.hex(), "medium_id": paired.medium_id.hex(),
+               "session_pub": session_pub.hex(), "session": session.hex()}
+    if profile is not None:
+        started.update(compute_mode=profile["mode"], profile=profile["probe"])
+    log.append("gate.started", started)
     return Daemon(gate, log).serve(sys.stdin.buffer, sys.stdout.buffer)
 
 

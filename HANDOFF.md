@@ -5,7 +5,7 @@
 > `NEEDS_HUMAN.md`. `CLAUDE.md` has the working rules; `device/README.md` explains the device and how to reproduce every check.
 > Español abajo en resumen. The repo is the source of truth; this file only tells you where things stand and what bites.
 
-## 1. Where things stand: 16/26 PASS (updated 2026-11-19, fourth session) (oracle: `.venv/Scripts/python scripts/device_accept.py status`)
+## 1. Where things stand: 17/26 PASS (updated 2026-11-20, fourth session) (oracle: `.venv/Scripts/python scripts/device_accept.py status`)
 
 | Criterion | Status | Independent evaluator |
 |---|---|---|
@@ -24,7 +24,8 @@
 | P2-PAIRING | PASS 12, 4 saboteurs | **never evaluated** (built 2026-11-19, D-032) |
 | P2-MEMORY | PASS 11, 5 saboteurs | **never evaluated** (built 2026-11-19, D-033) |
 | P2-MODEL | FAIL (not built) | Josué said OK to download a small local model (STEER.md 2026-11-19) |
-| P2-PORTABLE, P2-ZEROTRACE, P2-FLEET, P3-READONLY | FAIL (not built) | Docker works (2026-11-19: started from the Start menu, `docker run hello-world` OK); **next to build** |
+| P2-PORTABLE | PASS 10, 5 saboteurs (EMULATED) | **never evaluated** (built 2026-11-20, D-034) |
+| P2-ZEROTRACE, P2-FLEET, P3-READONLY | FAIL (not built) | Docker works; reuse P2-PORTABLE's medium builder and `Session` helper |
 | P3-INSPECT, P3-REPORT, P3-NOCREDS | FAIL (not built) | can be built against fixtures |
 | P6-EVALS, P6-PAPER | FAIL (not built) | last |
 
@@ -38,8 +39,8 @@
    PowerShell window (it removes the sockets through WSL, which can). From Claude only *use* `docker` once `docker info` answers. Also:
    PowerShell 5.1 mangles double quotes passed to `wsl.exe`; put shell commands for WSL in a script file.
 2. `.venv/Scripts/python scripts/device_accept.py status` and `... verify` (both read-only; verify takes ~1 s now).
-3. Choose with Josué: either run the pending evaluators (§1, bold) or build the next units (P2-MODEL, P3-INSPECT/REPORT/NOCREDS, then
-   the Docker criteria). Each evaluator run
+3. Choose with Josué: either run the pending evaluators (§1, bold) or build the next units (P2-ZEROTRACE, P2-FLEET, P3-READONLY,
+   P2-MODEL, P3-INSPECT/REPORT/NOCREDS). Each evaluator run
    costs ~65k-270k tokens; several rounds in a row now find only small test gaps, so building may be the better use of budget.
 4. Unit cycle: red test commit -> implementation -> oracle PASS -> evaluator (fresh context) -> fix test-first -> commit -> push.
 
@@ -79,6 +80,12 @@
   pin number (`PA12_33`).
 - Guardrail battery: the daemon runs through a launcher with an audit hook (`device/tests/test_guardrails.py`); it is a detector for
   careless weakening, not containment (D-028/D-030).
+- **P2-PORTABLE needs the Docker engine** (it FAILs, never skips, without it) and the medium cache in runs/medium-cache
+  (`python device/medium/mas_medium_build.py fetch`, then `docker pull` of the image in medium.lock.json). One run takes ~3 min, ~20 min
+  with its 5 saboteurs. Its media are built under runs/portable-tests, not %TEMP%: once, zero-byte files of media in %TEMP% vanished
+  mid-run (unexplained).
+- Device code (`src/mas_device`) may import only the allowlist in test_guardrails.py (no tarfile/zipfile/urllib/subprocess): tooling
+  that needs more lives outside it (the medium builder is device/medium/mas_medium_build.py).
 
 ## 5. Tools on this machine (not in git; reinstall if you change machines)
 
@@ -90,6 +97,8 @@
 | KiCad 10.0.8 | `%LOCALAPPDATA%\Programs\KiCad\10.0` | `winget install KiCad.KiCad` |
 | QEMU 11.1.0 | `C:\Program Files\qemu` | `winget install SoftwareFreedomConservancy.QEMU` |
 | GitHub push | Git Credential Manager | signed in once by Josué |
+| Medium inputs (python-build-standalone 3.13.18, 3 wheels) | `runs/medium-cache/` (git-ignored) | `python device/medium/mas_medium_build.py fetch` (sha256 pinned) |
+| debian:bookworm-slim (pinned digest) | local Docker image | `docker pull` of `base_image` in device/medium/medium.lock.json |
 | Docker Desktop (engine 29.9.3 after its own update) | works: `docker run --rm hello-world` OK 2026-11-19; only image: hello-world | start from the Start menu only, wait for "Engine running" (~1-2 min) (§2 step 0); recovery: `scripts/windows/start-docker.ps1` |
 
 ## 6. Open items for Josué (`NEEDS_HUMAN.md`)
@@ -105,7 +114,8 @@ compute = host CPU, secure-boot review on a sacrificial STM32U585 (item 10), hum
 - 2026-11-19 (cuarta sesión): P2-PAIRING y P2-MEMORY en PASS (16 de 26). Docker: la causa era arrancarlo desde la app de Claude
   (virtualiza AppData y deja sockets que Windows no puede borrar). Arrancarlo siempre desde el menú Inicio; si se rompe,
   `scripts/windows/start-docker.ps1` desde un PowerShell normal.
-- Rama `device/v0`, todo subido. **16 de 26 criterios pasan.** Hechos en esta cuenta: P0-SECRETS (sin credenciales en el repo ni en
+- 2026-11-20: P2-PORTABLE en PASS (17 de 26): el medio lleva su propio Python y arranca con un comando en un Debian sin Python ni red.
+- Rama `device/v0`, todo subido. **17 de 26 criterios pasan.** Hechos en esta cuenta: P0-SECRETS (sin credenciales en el repo ni en
   su historia), P4-SECBOOT (diseño de arranque seguro, solo diseño), P6-REPO (`device/README.md`), P5-ENCLOSURE (carcasa paramétrica,
   solo diseño), más varias rondas de evaluadores con sus correcciones (D-027 a D-030).
 - Al retomar: `git pull`, `device_accept.py status`. Luego, con Josué: o bien correr los evaluadores pendientes (sección 1, en negrita),

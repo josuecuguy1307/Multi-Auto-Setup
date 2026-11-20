@@ -14,19 +14,21 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 import pytest
 
 import mas_device
 from mas_device import approval as ap
-from mas_device import medium as md
 from mas_device import pairing as pr
 from mas_device import profiler as pf
 from mas_device.keymodel import KeyModel
 
 SRC = Path(mas_device.__file__).resolve().parents[1]  # the tree under test: the oracle points PYTHONPATH at its own src
 TREE = SRC.parent
+sys.path.insert(0, str(TREE / "device" / "medium"))
+import mas_medium_build as md  # noqa: E402  (the builder runs on the device owner's machine; it is not part of the device code)
 LOCK = TREE / "device" / "medium" / "medium.lock.json"
 TIMEOUT = 300
 MOUNT = "/media/mas"
@@ -45,7 +47,7 @@ def _cache() -> Path:
     for c in cands:
         if c.is_dir():
             return c
-    pytest.fail("ERROR medium cache missing: run `python -m mas_device.medium fetch` (downloads pinned in device/medium/medium.lock.json)")
+    pytest.fail("ERROR medium cache missing: run `python device/medium/mas_medium_build.py fetch` (inputs pinned in medium.lock.json)")
 
 
 def _docker_ok() -> None:
@@ -66,15 +68,20 @@ class Tick:
 
 
 @pytest.fixture(scope="module")
-def built(tmp_path_factory):
+def built():
     _docker_ok()
-    base = tmp_path_factory.mktemp("portable")
+    # media are built under runs/ (git-ignored), not in %TEMP%: in one run on this Windows host the zero-byte files of three media in
+    # %TEMP% vanished mid-run, including one never mounted in a container (PROGRESS 2026-11-20, unexplained, not reproduced)
+    root = TREE / "runs" / "portable-tests"
+    root.mkdir(parents=True, exist_ok=True)
+    base = Path(tempfile.mkdtemp(prefix="run-", dir=root))
     clock = Tick()
     key = KeyModel.create(base / "key", clock=clock)
     out = md.build(base / "medium", cache=_cache(), key_pub=key.public_key, tree=TREE)
     w = type("Built", (), {})()
     w.medium, w.key, w.clock, w.base, w.lock = out, key, clock, base, json.loads(LOCK.read_text(encoding="utf-8"))
-    return w
+    yield w
+    shutil.rmtree(base, ignore_errors=True)
 
 
 def manifest_of(medium: Path) -> dict[str, str]:
@@ -217,14 +224,14 @@ def test_medium_layout_manifest_and_device_code(built):
     assert sh.startswith("#!/bin/sh\n") and " -I -B " in sh and "\r" not in sh
 
 
-def test_medium_build_is_reproducible(built, tmp_path):
-    again = md.build(tmp_path / "again", cache=_cache(), key_pub=built.key.public_key, tree=TREE)
+def test_medium_build_is_reproducible(built):
+    again = md.build(built.base / "again", cache=_cache(), key_pub=built.key.public_key, tree=TREE)
     a, b = manifest_of(built.medium), manifest_of(again)
     a.pop(pr.RECORD_NAME)
     b.pop(pr.RECORD_NAME)  # the medium id is random per medium; everything else is identical
     assert a == b
     with pytest.raises(FileExistsError):
-        md.build(tmp_path / "again", cache=_cache(), key_pub=built.key.public_key, tree=TREE)  # never builds over a medium
+        md.build(built.base / "again", cache=_cache(), key_pub=built.key.public_key, tree=TREE)  # never builds over a medium
 
 
 # ---- the clean host ---------------------------------------------------------------------------------------------------------------------
@@ -253,8 +260,8 @@ def test_one_command_session_from_the_read_only_medium(built):
     assert tree_hashes(built.medium) == before  # the medium is unchanged
 
 
-def test_the_launcher_never_writes_to_the_medium_even_when_it_could(built, tmp_path):
-    rw = tmp_path / "rw-medium"
+def test_the_launcher_never_writes_to_the_medium_even_when_it_could(built):
+    rw = built.base / "rw-medium"
     shutil.copytree(built.medium, rw)
     before = tree_hashes(rw)
     rc, err, _, _ = write_session(built, "rw", medium=rw, ro=False)
@@ -270,8 +277,8 @@ def test_the_launcher_needs_the_owners_arguments(built):
         assert os.listdir(state) == [], args
 
 
-def test_the_launcher_refuses_a_medium_that_does_not_match_its_manifest(built, tmp_path):
-    bad = tmp_path / "bad-medium"
+def test_the_launcher_refuses_a_medium_that_does_not_match_its_manifest(built):
+    bad = built.base / "bad-medium"
     shutil.copytree(built.medium, bad)
     target = bad / "runtime" / "mas_device" / "gate.py"
     original = target.read_bytes()

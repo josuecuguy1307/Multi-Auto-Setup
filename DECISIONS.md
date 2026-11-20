@@ -612,3 +612,28 @@ remove a decoupling cap → net check fails.
 - The key MCU only signs (D-004); it holds no encryption key, so the memory key comes from the owner's passphrase (minimum 8
   characters). Wrong passphrase and tampering are indistinguishable (`MemoryLocked`). Plain export (`export_dir`) is the owner's
   explicit act and never overwrites. SIMULATED: the medium is a folder.
+
+## D-034 Portable medium, one-command launch, host profiler (2026-11-20; P2-PORTABLE, EMULATED; implements D-003, A-1 §1)
+- **The medium carries its own interpreter**: python-build-standalone CPython 3.13.18 (linux x86_64), its wheels (cryptography,
+  cffi, pycparser) and the device code, so the clean host needs nothing installed. Proven on `debian:bookworm-slim` pinned by digest:
+  no Python, `--network none`, `--read-only` root, `--cap-drop ALL`, `no-new-privileges`, medium bind-mounted `:ro`. Chosen over
+  relying on the host's Python, which a Windows host does not have. Inputs pinned by sha256 in device/medium/medium.lock.json and
+  cached in runs/medium-cache (`mas_medium_build.py fetch`); the build never downloads.
+- **Builder outside the device code**: device/medium/mas_medium_build.py (tarfile, zipfile, urllib) runs on the device owner's
+  machine at provisioning and is not copied to the medium; `mas_device.medium` (manifest check) and `mas_device.profiler` stay
+  within the device import allowlist (P2-GUARDRAILS).
+- **Layout**: launch.sh, runtime/{launch.py, python/, site/, mas_device/}, pairing.json, MANIFEST.sha256. No links (a FAT/exFAT stick
+  cannot hold them): link members become copies. Pruned: tcl/tk, tests, idlelib, headers, share/ (terminfo, man), pip,
+  config dir; 733 files remain. Builds are identical except pairing.json (random medium_id).
+- **One command**: `sh <medium>/launch.sh --root ... --state ... --target ...` execs the medium's python3.13 with `-I -B`; launch.py
+  refuses a medium that differs from its manifest (missing, added or changed file) before the log is opened, refuses `--pairing`,
+  profiles the host, then runs the gate with the medium's own pairing record. The terms come first on stderr (D-021), then
+  `MAS compute mode: ...`; `gate.started` records compute_mode and the profile. Nothing is written to the medium even when it is
+  mounted writable (tested). Limit: the manifest check catches a corrupted or altered copy; it runs with the medium's own
+  interpreter, so it is no defence against someone who can rewrite the medium (the device exposes it read-only, D-003).
+- **Profiler**: reads /proc/meminfo, cgroup v2 (memory.max, cpu.max) and v1 limits, CPU affinity, /dev/nvidia0 and /dev/dri; runs no
+  command. Host mode needs >= 4 GiB and >= 2 CPUs available to the process; otherwise (or memory unknown) device mode, which in v0
+  exists only as a VM-emulated Pi (D-003), so the gate runs without a local model. Tested on fixed machines and in containers
+  limited to 1 GiB / 1 CPU (device) and 6 GiB / 2 CPUs (host).
+- Not covered: Windows and macOS hosts (no launcher yet), the vfat `showexec` trap (A-1 §1), a real USB LUN (EMULATED with a bind
+  mount). Open: licence texts of the libraries the interpreter links statically, before any medium is distributed.

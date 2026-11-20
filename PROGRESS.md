@@ -178,3 +178,12 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   29.9.3); sockets were created in the real %LOCALAPPDATA%\Docker\run, nothing in the Claude package's virtual folder; with his OK
   `docker run --rm hello-world` pulled 25.9 kB and printed its success message. The four Docker criteria (P2-PORTABLE,
   P2-ZEROTRACE, P2-FLEET, P3-READONLY) are unblocked; none is built yet.
+- 2026-11-20 P2-PORTABLE PASS (10 tests, 5 saboteurs, EMULATED, D-034). With Josué's OK downloaded and pinned: debian:bookworm-slim
+  (digest 734a72b3...), python-build-standalone cpython-3.13.18+20261110 linux x86_64 install_only (77 MB; I had estimated 30 MB),
+  cryptography 50.0.2 / cffi 2.1.1 / pycparser 3.12 wheels (PyPI sha256 checked). A spike in the clean container first: the portable
+  Python imports cryptography from unpacked wheels, signs and verifies Ed25519, writes no bytecode. Failed attempts: the .venv has
+  no pip (uv), so wheels came through PyPI's JSON API; my first cffi filename pattern missed `manylinux2014_x86_64.manylinux_2_17`;
+  a spike script with `set -e` stopped at a missing `du` path; the builder could not live in src/mas_device (import allowlist), so it
+  moved to device/medium/mas_medium_build.py and the red test's import changed accordingly (the test stayed red). One full run
+  failed: the zero-byte files of three media under %TEMP% (one never mounted in Docker) vanished mid-run while a fourth medium kept
+  them; not reproduced in a probe or the next run; test media now live under runs/portable-tests.

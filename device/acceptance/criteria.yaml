@@ -77,6 +77,13 @@ criteria:
     tests: [device/tests/test_portable.py]
     covers: [src/mas_device, device/medium]
     label: EMULATED
+    min_tests: 10
+    saboteurs:
+      - {name: bytecode-written, file: device/medium/launch.sh, old: ' -I -B "$HERE', new: ' -I "$HERE'}
+      - {name: manifest-unchecked, file: device/medium/launch.py, old: '    problems = medium.verify(MEDIUM)', new: '    problems = []'}
+      - {name: cgroup-memory-ignored, file: src/mas_device/profiler.py, old: '            mem = min(mem, int(v))', new: '            pass'}
+      - {name: cpu-quota-ignored, file: src/mas_device/profiler.py, old: '        cpus = min(cpus, max(1, -(-quota // period)))', new: '        pass'}
+      - {name: pruning-off, file: device/medium/mas_medium_build.py, old: '    return not rel.startswith(PRUNE)', new: '    return True'}
   - id: P2-ZEROTRACE
     phase: 2
     title: Nothing installed after unplug (no service, driver, autostart, PATH change or file outside the declared temp dir); OS residue only from the enumerated allowlist (D-010 three-arm diff)
