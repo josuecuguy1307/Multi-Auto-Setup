@@ -1,17 +1,17 @@
 {
- "checksum": "73368ac38e6c66896044b4e58290440bfcd339f5917fc1f12fc4c64e77e0f31a",
+ "checksum": "b186e06f3cc8dc1375fef1ef6364abe53ae0fa98ff3470ea9d90156d9a44199d",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "f18ea7f",
+ "git_head_at_run": "4450637",
  "results": {
   "P0-SECRETS": {
-   "at": "2026-11-20T10:35:29",
+   "at": "2026-11-20T10:48:25",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 17
    },
-   "fingerprint": "2c7506c3ad9c370080378c52ffd6331bc2594ead53d4d71631c766c03a2c8d27",
+   "fingerprint": "2bcadf90b47f83fe806ee4fcd335867ce39bf3702f5014e0f2566b93d2534a44",
    "label": "REAL",
    "phase": 1,
    "reason": "17 passed",
@@ -300,11 +300,17 @@
    "title": "Inspection makes zero writes (diff and read-only mount) and never touches the network"
   },
   "P3-REPORT": {
-   "at": "2026-11-18T17:17:22",
-   "fingerprint": "59c5c3f3fc2037720f0ac8673eff8d1d25b84859e7c3d6bf16ee87c13a2c47c7",
+   "at": "2026-11-20T10:48:11",
+   "counts": {
+    "errors": 1,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 1
+   },
+   "fingerprint": "3a844cc150788abd8bd81673ac5a12d320199b212c86a8792c4865eab78820a1",
    "label": "SIMULATED",
    "phase": 3,
-   "reason": "missing test files: device/tests/test_inspect_report.py",
+   "reason": "0 failed, 1 errors",
    "status": "FAIL",
    "title": "The inspection report is readable by the owner and consumable by the agent (schema-checked)"
   },
@@ -425,14 +431,14 @@
    "title": "Paper regenerates from raw results (LaTeX source, authors, arXiv variant with methods statement, manual-README baseline, error bars, outside judge, limitations)"
   },
   "P6-REPO": {
-   "at": "2026-11-20T10:31:29",
+   "at": "2026-11-20T10:48:15",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 8
    },
-   "fingerprint": "b09b5d47c4c3863c5d9c58e26afe27ec9f3632e07b12ea9069031a5f9fb41d76",
+   "fingerprint": "2f3879d8c89e96dee133a9ab03ac638931cee2bd3eac62811b0c6bf94bf2e248",
    "label": "REAL",
    "phase": 6,
    "reason": "8 passed, 1 saboteurs killed",
