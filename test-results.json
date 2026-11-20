@@ -1,17 +1,17 @@
 {
- "checksum": "2844ef1a167ff22e24f738c78bf5d748bf811df2035906015817b1bed6491990",
+ "checksum": "48ba44ff6f4bf6ab781d5dcd6267e5cac2f3077662ef1399e12a7cfe6614b8f7",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "fd7c89b",
+ "git_head_at_run": "b235c55",
  "results": {
   "P0-SECRETS": {
-   "at": "2026-11-19T22:46:34",
+   "at": "2026-11-19T23:07:27",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 17
    },
-   "fingerprint": "c399b48a2f8e4471daf16247fcde4924eea1fb18168c92e3372cd7572cf3d475",
+   "fingerprint": "12bbb35035bde52f53a626a6ebf14041b50d498d2b07b99bc775018d1ee51f66",
    "label": "REAL",
    "phase": 1,
    "reason": "17 passed",
@@ -158,11 +158,17 @@
    "title": "The local model answers from the read-only medium with nothing installed on the host"
   },
   "P2-PAIRING": {
-   "at": "2026-11-18T17:17:22",
-   "fingerprint": "41162d9b7b5067f93ffb67a4352aaa1b9c2cf7c5a1f1e6abedbd1d612b26dbec",
+   "at": "2026-11-19T23:07:10",
+   "counts": {
+    "errors": 1,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 1
+   },
+   "fingerprint": "6260e4fd5f3cbe927bdba7a0566b29b8dc1e2061682fd2207286a6fb3a0cb957",
    "label": "SIMULATED",
    "phase": 2,
-   "reason": "missing test files: device/tests/test_pairing.py",
+   "reason": "0 failed, 1 errors",
    "status": "FAIL",
    "title": "The gate accepts only the paired key_id; MAS chat_choice approvals are absent from the device build; the host owner's launch is the session consent (D-021)"
   },
@@ -337,14 +343,14 @@
    "title": "Paper regenerates from raw results (LaTeX source, authors, arXiv variant with methods statement, manual-README baseline, error bars, outside judge, limitations)"
   },
   "P6-REPO": {
-   "at": "2026-11-19T22:46:21",
+   "at": "2026-11-19T23:07:14",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 8
    },
-   "fingerprint": "bb7e4eb4e4402bbe6e84a684b06eb800b13ad1d746a16ffbf21d95c246fffe3b",
+   "fingerprint": "414f601a547d832b74824c67215a3d07c95f4b3ecedf23e49532928491dd1213",
    "label": "REAL",
    "phase": 6,
    "reason": "8 passed, 1 saboteurs killed",
