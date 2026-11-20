@@ -1,17 +1,17 @@
 {
- "checksum": "a4bea176ff9c47977d88077c2d08b2913290830274358a9de5fb34f2e0b366d2",
+ "checksum": "e11d3170242c978e72cd06239b882a4494d68e74656999b1562f02a3e1264caa",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "c3c8902",
+ "git_head_at_run": "ef7807a",
  "results": {
   "P0-SECRETS": {
-   "at": "2026-11-19T22:41:45",
+   "at": "2026-11-19T22:44:04",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 17
    },
-   "fingerprint": "702a95e28a87f6918e6670f7c9b0176de1d7d9c01491d250f1d03456a8e5ccff",
+   "fingerprint": "31e03b7738b8ddaf8289fbef88b948641a1dfa7ed23d49cb90d66a132cad34da",
    "label": "REAL",
    "phase": 1,
    "reason": "17 passed",

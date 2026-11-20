@@ -37,3 +37,5 @@ Each item: what, why, exact steps. The run keeps going on other units meanwhile.
     (TZEN, SECBOOTADD0, BOOT_LOCK, SECWM, WRP, HDP, RDP level 2) from memory: check each name and value against RM0456 and the STM32U5
     security application notes, then provision one sacrificial part and try to read it with a debugger at each RDP level. RDP level 2
     is permanent: never set it on a part you want to reprogram.
+
+11. ~~Local model for P2-MODEL~~ — Josué said OK on 2026-11-19 (STEER.md).
