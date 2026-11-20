@@ -1,17 +1,17 @@
 {
- "checksum": "52c07c9c65a2dac222c4de2d1e83305f8337eac2d26a13a475ab43a225383112",
+ "checksum": "47c4874246b98a306185c5936b42c34ae55df6a1d75d3dc5aae203dd311bdb56",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "ff57796",
+ "git_head_at_run": "505059e",
  "results": {
   "P0-SECRETS": {
-   "at": "2026-11-20T11:14:59",
+   "at": "2026-11-20T14:41:34",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 17
    },
-   "fingerprint": "baf881956de76e70e263aec55de22de4970deba8ead72a64420ef040f03f217e",
+   "fingerprint": "53676e55bed7546d0bfa098e520e35386312551584d22ef686f75e1e7e5d9ae4",
    "label": "REAL",
    "phase": 1,
    "reason": "17 passed",
@@ -270,11 +270,17 @@
    "title": "Inventory precision and recall against fixtures with known truth meet thresholds"
   },
   "P3-NOCREDS": {
-   "at": "2026-11-18T17:17:22",
-   "fingerprint": "16fd28347fa4fb6a7509d3563772de9c43f130c16eda999850c92abcdd126d25",
+   "at": "2026-11-20T14:41:17",
+   "counts": {
+    "errors": 1,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 1
+   },
+   "fingerprint": "d4ef6b125aece46e76dd2ae549afd3f0eeeecb0f48a9ddf964d2ced150d1806d",
    "label": "SIMULATED",
    "phase": 3,
-   "reason": "missing test files: device/tests/test_inspect_nocreds.py",
+   "reason": "0 failed, 1 errors",
    "status": "FAIL",
    "title": "Inspection never collects credentials; planted secrets never reach the report or the model context"
   },
@@ -438,14 +444,14 @@
    "title": "Paper regenerates from raw results (LaTeX source, authors, arXiv variant with methods statement, manual-README baseline, error bars, outside judge, limitations)"
   },
   "P6-REPO": {
-   "at": "2026-11-20T11:14:37",
+   "at": "2026-11-20T14:41:22",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 8
    },
-   "fingerprint": "ed6e9488ac7f7c1146ca07e3e25d3b2b2f3b0d6c5141128558dce969da034b97",
+   "fingerprint": "24c39d95eac97003e70f3187f3ecfa36db376eced2b029937c374ab7f8adadec",
    "label": "REAL",
    "phase": 6,
    "reason": "8 passed, 1 saboteurs killed",
