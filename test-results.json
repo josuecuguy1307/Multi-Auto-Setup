@@ -1,17 +1,17 @@
 {
- "checksum": "3aef6a4c112e45da8ff19dad1f0e7f6edaa394cf6742863b03cb679d1539e40c",
+ "checksum": "70215ba43972c7779eee774c82b5c0bfb38780f00d506f8aadbdf844198ee10f",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "b22e0b0",
+ "git_head_at_run": "f18b936",
  "results": {
   "P0-SECRETS": {
-   "at": "2026-11-19T23:24:27",
+   "at": "2026-11-19T23:25:32",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 17
    },
-   "fingerprint": "b9a9e247e582658cf156c16d97d1ecc178208d2cb81200286fa9a6cafe622306",
+   "fingerprint": "272b49e3ee430a7e238989934d04985c6b5681420417c2d678d0d3dab35f0e63",
    "label": "REAL",
    "phase": 1,
    "reason": "17 passed",
@@ -140,11 +140,17 @@
    "title": "Append-only hash-chained log; any edit, rewrite, truncation or reorder is detected against a known head; a broken log is never extended (process separation from the model is P2-GUARDRAILS)"
   },
   "P2-MEMORY": {
-   "at": "2026-11-18T17:17:22",
-   "fingerprint": "08256e7f409f30306c42f71d2219fc5525a5502f94d5d157de38fcf5e8804d26",
+   "at": "2026-11-19T23:25:20",
+   "counts": {
+    "errors": 1,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 1
+   },
+   "fingerprint": "3ff0adb2fa2f37dea237b7be78733eba08b4118d8809e12ec81d5b2381c52921",
    "label": "SIMULATED",
    "phase": 2,
-   "reason": "missing test files: device/tests/test_memory.py",
+   "reason": "0 failed, 1 errors",
    "status": "FAIL",
    "title": "Portable memory in an open format round-trips and is encrypted at rest"
   },
@@ -349,14 +355,14 @@
    "title": "Paper regenerates from raw results (LaTeX source, authors, arXiv variant with methods statement, manual-README baseline, error bars, outside judge, limitations)"
   },
   "P6-REPO": {
-   "at": "2026-11-19T23:24:18",
+   "at": "2026-11-19T23:25:23",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 8
    },
-   "fingerprint": "cac842a763d9f5de48275fec5d37e1a2fa4d65c00d151182fc35139371768378",
+   "fingerprint": "328014add1aabfbe7e0fa211f92287277eb7e3b6c0559767947872e643dba2d3",
    "label": "REAL",
    "phase": 6,
    "reason": "8 passed, 1 saboteurs killed",
