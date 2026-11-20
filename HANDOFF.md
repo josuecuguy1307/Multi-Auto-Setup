@@ -5,7 +5,7 @@
 > `NEEDS_HUMAN.md`. `CLAUDE.md` has the working rules; `device/README.md` explains the device and how to reproduce every check.
 > Español abajo en resumen. The repo is the source of truth; this file only tells you where things stand and what bites.
 
-## 1. Where things stand: 14/26 PASS (oracle: `.venv/Scripts/python scripts/device_accept.py status`)
+## 1. Where things stand: 16/26 PASS (updated 2026-11-19, fourth session) (oracle: `.venv/Scripts/python scripts/device_accept.py status`)
 
 | Criterion | Status | Independent evaluator |
 |---|---|---|
@@ -21,18 +21,25 @@
 | P4-SECBOOT | PASS 9, 2 saboteurs (DESIGN-ONLY) | **never evaluated** (`device/firmware/SECURE_BOOT.md`) |
 | P6-REPO | PASS 8, 1 saboteur | **never evaluated** (`device/README.md`) |
 | P5-ENCLOSURE | PASS 16, 2 saboteurs (DESIGN-ONLY) | **never evaluated** (`device/hardware/enclosure.py`) |
-| P2-PAIRING, P2-MEMORY | FAIL (not built) | next software units; no outside help needed |
+| P2-PAIRING | PASS 12, 4 saboteurs | **never evaluated** (built 2026-11-19, D-032) |
+| P2-MEMORY | PASS 11, 5 saboteurs | **never evaluated** (built 2026-11-19, D-033) |
 | P2-MODEL | FAIL (not built) | Josué said OK to download a small local model (STEER.md 2026-11-19) |
-| P2-PORTABLE, P2-ZEROTRACE, P2-FLEET, P3-READONLY | FAIL (not built) | **blocked: need working Docker or VMs** (NEEDS_HUMAN 7) |
+| P2-PORTABLE, P2-ZEROTRACE, P2-FLEET, P3-READONLY | FAIL (not built) | Docker root cause found 2026-11-19 (§2 step 0); engine ran once, needs Josué to start it from the Start menu |
 | P3-INSPECT, P3-REPORT, P3-NOCREDS | FAIL (not built) | can be built against fixtures |
 | P6-EVALS, P6-PAPER | FAIL (not built) | last |
 
 ## 2. How to resume (in order)
 
 1. `cd C:\Users\Josue\code\Multi-Auto-Setup`, `git pull`, check `git status` is clean and you are on `device/v0`.
-0. **First, fix Docker with Josué** (STEER.md 2026-11-19): `docker info` fails (dockerDesktopLinuxEngine pipe missing) although WSL 2 with Ubuntu is installed. Walk him through quitting Docker Desktop, `wsl --update`, `wsl --shutdown`, reopening it until "Engine running"; if it still fails, consider Hyper-V VMs. A working Docker unblocks P2-PORTABLE, P2-ZEROTRACE, P2-FLEET, P3-READONLY.
+0. **Docker (root cause found 2026-11-19, PROGRESS.md).** NEVER start Docker Desktop from a Claude session (Start-Process, `docker desktop
+   start/restart`): the Claude app is an MSIX package, Docker inherits its %LOCALAPPDATA% virtualization and leaves AF_UNIX socket files
+   (Docker\run\dockerInference, docker-secrets-engine\engine.sock) that Windows can neither open nor delete, so the engine never comes
+   up again. Josué starts it from the Start menu; if it is broken again, he runs `scripts/windows/start-docker.ps1` from a normal
+   PowerShell window (it removes the sockets through WSL, which can). From Claude only *use* `docker` once `docker info` answers. Also:
+   PowerShell 5.1 mangles double quotes passed to `wsl.exe`; put shell commands for WSL in a script file.
 2. `.venv/Scripts/python scripts/device_accept.py status` and `... verify` (both read-only; verify takes ~1 s now).
-3. Choose with Josué: either run the pending evaluators (§1, bold) or build the next units (P2-PAIRING, P2-MEMORY). Each evaluator run
+3. Choose with Josué: either run the pending evaluators (§1, bold) or build the next units (P2-MODEL, P3-INSPECT/REPORT/NOCREDS, then
+   the Docker criteria). Each evaluator run
    costs ~65k-270k tokens; several rounds in a row now find only small test gaps, so building may be the better use of budget.
 4. Unit cycle: red test commit -> implementation -> oracle PASS -> evaluator (fresh context) -> fix test-first -> commit -> push.
 
@@ -83,11 +90,11 @@
 | KiCad 10.0.8 | `%LOCALAPPDATA%\Programs\KiCad\10.0` | `winget install KiCad.KiCad` |
 | QEMU 11.1.0 | `C:\Program Files\qemu` | `winget install SoftwareFreedomConservancy.QEMU` |
 | GitHub push | Git Credential Manager | signed in once by Josué |
-| Docker | not working (engine never came up) | blocks the VM/container criteria |
+| Docker Desktop 4.65.0 | engine 29.2.1 ran 2026-11-19 after the socket cleanup | start from the Start menu only (§2 step 0); recovery: `scripts/windows/start-docker.ps1` |
 
 ## 6. Open items for Josué (`NEEDS_HUMAN.md`)
 
-Docker or VMs (blocks 4 criteria; Josué wants to fix it together at the START of the next session), confirm v0
+Docker: start it from the Start menu (root cause in §2 step 0), confirm v0
 compute = host CPU, secure-boot review on a sacrificial STM32U585 (item 10), human PCB and enclosure review
 (`device/hardware/HUMAN_REVIEW_PCB.md`), buying boards, a real two-machine test, arXiv submission.
 
@@ -95,7 +102,10 @@ compute = host CPU, secure-boot review on a sacrificial STM32U585 (item 10), hum
 
 ## Resumen en español
 
-- Rama `device/v0`, todo subido. **14 de 26 criterios pasan.** Hechos en esta cuenta: P0-SECRETS (sin credenciales en el repo ni en
+- 2026-11-19 (cuarta sesión): P2-PAIRING y P2-MEMORY en PASS (16 de 26). Docker: la causa era arrancarlo desde la app de Claude
+  (virtualiza AppData y deja sockets que Windows no puede borrar). Arrancarlo siempre desde el menú Inicio; si se rompe,
+  `scripts/windows/start-docker.ps1` desde un PowerShell normal.
+- Rama `device/v0`, todo subido. **16 de 26 criterios pasan.** Hechos en esta cuenta: P0-SECRETS (sin credenciales en el repo ni en
   su historia), P4-SECBOOT (diseño de arranque seguro, solo diseño), P6-REPO (`device/README.md`), P5-ENCLOSURE (carcasa paramétrica,
   solo diseño), más varias rondas de evaluadores con sus correcciones (D-027 a D-030).
 - Al retomar: `git pull`, `device_accept.py status`. Luego, con Josué: o bien correr los evaluadores pendientes (sección 1, en negrita),

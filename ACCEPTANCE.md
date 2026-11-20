@@ -58,7 +58,7 @@ k consecutive passing runs of each eval; limitations section lists what was only
 | P6-REPO | 6 | **PASS** | REAL | README, THIRD_PARTY.md and reproduction instructions complete | 8 passed, 1 saboteurs killed |
 | P0-SECRETS | 1 | **PASS** | REAL | No credentials, keys or tokens anywhere in the repository (secret scan over the whole tree and history) | 17 passed |
 | P2-MODEL | 2 | **FAIL** | EMULATED | The local model answers from the read-only medium with nothing installed on the host | missing test files: device/tests/test_model_portable.py |
-| P2-MEMORY | 2 | **FAIL** | SIMULATED | Portable memory in an open format round-trips and is encrypted at rest | 0 failed, 1 errors |
+| P2-MEMORY | 2 | **PASS** | SIMULATED | Portable memory in an open format round-trips and is encrypted at rest | 11 passed, 5 saboteurs killed |
 | P2-PAIRING | 2 | **PASS** | SIMULATED | The gate accepts only the paired key_id; MAS chat_choice approvals are absent from the device build; the host owner's launch is the session consent (D-021) | 12 passed, 4 saboteurs killed |
 | P3-REPORT | 3 | **FAIL** | SIMULATED | The inspection report is readable by the owner and consumable by the agent (schema-checked) | missing test files: device/tests/test_inspect_report.py |
 | P3-NOCREDS | 3 | **FAIL** | SIMULATED | Inspection never collects credentials; planted secrets never reach the report or the model context | missing test files: device/tests/test_inspect_nocreds.py |

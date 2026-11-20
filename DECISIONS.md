@@ -597,3 +597,18 @@ remove a decoupling cap → net check fails.
 - **No MAS chat_choice in the device build**: `src/mas_device` imports only the standard library, `cryptography` and itself (AST check and
   a run-time check that no `envrec*` module is loaded); the string `chat_choice` appears nowhere in it.
 - SIMULATED: software key model; the medium is a folder. JOIN_FLEET's typed host confirmation (D-021) is P2-FLEET's.
+
+## D-033 Portable memory: the .mem bundle, sealed at rest (2026-11-19; P2-MEMORY)
+- **Open format = MacPaw/portable-memory `.mem` v1.0** (MIT): a folder with `manifest.json` (`format` semver, `capabilities`,
+  `counts`, `kinds`), `items/<kind>.jsonl` (one record per line, each with a string `id`) and `CHECKSUMS` (`<sha256>  <path>`).
+  Chosen over portable-ai-memory (one JSON file) because it is line-oriented, keeps unknown kinds and fields verbatim, carries
+  per-file checksums, and its own README leaves encryption to the container. A `secretRef` is metadata only: one carrying a value,
+  secret, password, token, key, data or ciphertext field is refused (the .mem rule: secrets are never exported). Followed from the
+  README only; no code copied; MacPaw's validator has not been run against our export yet (open item).
+- **At rest**: one file, `MAGIC "MASMEM\0\1" | log2 n | r | p | salt[16] | nonce[12] | AES-256-GCM(payload, aad = header)`,
+  key = scrypt(NFC passphrase, salt, n = 2^15, r = 8, p = 1). Stored KDF parameters must lie in a pinned range (log2 n 15-18, r 8,
+  p 1-2), so a rewritten file cannot downgrade the KDF. Fresh salt and nonce per save; the whole blob is sealed in memory, written to a
+  temporary file with O_EXCL, fsynced and renamed over the old one; a failed save removes the temporary and keeps the old memory.
+- The key MCU only signs (D-004); it holds no encryption key, so the memory key comes from the owner's passphrase (minimum 8
+  characters). Wrong passphrase and tampering are indistinguishable (`MemoryLocked`). Plain export (`export_dir`) is the owner's
+  explicit act and never overwrites. SIMULATED: the medium is a folder.

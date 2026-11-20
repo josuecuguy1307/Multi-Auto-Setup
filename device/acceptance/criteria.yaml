@@ -175,6 +175,13 @@ criteria:
     tests: [device/tests/test_memory.py]
     covers: [src/mas_device]
     label: SIMULATED
+    min_tests: 11
+    saboteurs:
+      - {name: checksum-unchecked, file: src/mas_device/memory.py, old: '        if hashlib.sha256(files[p]).hexdigest() != digest:', new: '        if False:'}
+      - {name: fixed-salt-nonce, file: src/mas_device/memory.py, old: '    salt, nonce = secrets.token_bytes(SALT_LEN), secrets.token_bytes(NONCE_LEN)', new: '    salt, nonce = bytes(SALT_LEN), bytes(NONCE_LEN)'}
+      - {name: kdf-floor-unchecked, file: src/mas_device/memory.py, old: '    if log2_n not in _LOG2_N_RANGE or r not in _R_RANGE or p not in _P_RANGE:', new: '    if False:'}
+      - {name: secret-values-allowed, file: src/mas_device/memory.py, old: '            if kind == "secretRef" and _SECRET_FIELDS & {k.casefold() for k in rec if isinstance(k, str)}:', new: '            if False:'}
+      - {name: temp-left-on-failure, file: src/mas_device/memory.py, old: '                os.remove(tmp)', new: '                pass'}
   - id: P2-PAIRING
     phase: 2
     title: The gate accepts only the paired key_id; MAS chat_choice approvals are absent from the device build; the host owner's launch is the session consent (D-021)

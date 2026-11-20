@@ -95,7 +95,8 @@ from its own LICENSE file when it is cloned (into git-ignored `scout/`, read bef
 | tillitis-key1 / tk1-pcba | https://github.com/tillitis/tillitis-key1 | to read at clone | design-only: firmware-hash-derived key identity idea (D-007); no PCB derived | not cloned |
 | SoloKeys, USB Armory, tamago, armory-boot | see MISSION 8.2 | to read at clone | design reference | not cloned |
 | pocketllm (vraj00222, Looming41), llama.cpp, project-nomad | see MISSION 8.2 | to read at clone | Phase 2 candidates | not cloned |
-| portable-memory (MacPaw), portable-ai-memory | see MISSION 8.2 | to read at clone | Phase 2 memory format candidates | not cloned |
+| portable-memory (MacPaw) `.mem` format v1.0 | https://github.com/MacPaw/portable-memory | MIT (per its README, 2026-11-19) | P2-MEMORY's open format: `manifest.json` + `items/<kind>.jsonl` + `CHECKSUMS`, unknown kinds/fields verbatim, secretRef metadata only (D-033) | format followed from the README; no code copied, not cloned; its validator not yet run against our export |
+| portable-ai-memory | https://github.com/portable-ai-memory/portable-ai-memory | spec CC BY 4.0, code Apache-2.0 (per its README) | considered for P2-MEMORY: single JSON file, no encryption | not used (D-033) |
 | pi (earendil-works), pi-continual, prime-agent | see MISSION 8.2 | to read at clone | harness candidates (MAS already lists `pi` as an environment) | not cloned |
 | Syft, Grype, osquery | see MISSION 8.2 | to read at clone | Phase 3 candidates (fwupd, EMBA, binwalk, Ghidra cut for v0: D-011) | not cloned |
 | KiCad 10.0.8 (`kicad-cli`, bundled Python with pcbnew and numpy) | https://www.kicad.org (winget KiCad.KiCad) | GPL-3.0-or-later (application); stock symbol and footprint libraries CC-BY-SA-4.0 with KiCad's exception for designs that use them | P5-PCB: ERC, DRC, netlist, Gerbers, and the board built by `device/hardware/gen_pcb.py` through pcbnew; run as an external tool, nothing copied into the repo | in use |

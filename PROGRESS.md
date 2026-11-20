@@ -156,3 +156,21 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
 - 2026-11-19: P4-SECBOOT, P6-REPO, P5-ENCLOSURE PASS (D-031): 14/26. Failed attempts: the first P6-REPO test let its saboteur survive
   (P2-GATE is also named in an example command), fixed by requiring a table row per criterion; the secure-boot test first rejected a host
   test tool that drives the button. HANDOFF.md rewritten for the third account handover.
+- 2026-11-19, fourth session (new account). Docker diagnosed with Josué: `docker info` failed because the backend died at start with
+  "listening on unix://...\Docker\run\dockerInference: remove ...: The file cannot be accessed by the system". Stale AF_UNIX socket
+  files (reparse points) that no Windows tool could open or delete (`del`, `fsutil`, Go's os.Remove). Failed attempts, in order:
+  renaming `Docker\run` (got past the inference socket, then the same error on `docker-secrets-engine\engine.sock`); renaming that
+  folder too (engine came up in 17 s, but `docker desktop restart` broke it again: every socket Docker made was again undeletable).
+  WSL could unlink them. Then the root cause: `docker-secrets-engine` lived in %LOCALAPPDATA%\Packages\Claude_*\LocalCache\Local,
+  i.e. Docker had been launched from inside the Claude app (MSIX) and inherited its AppData virtualization, here and in earlier
+  sessions (the March and 11-17 starts). Rule: Josué starts Docker from the Start menu; recovery script
+  `scripts/windows/start-docker.ps1`. Mistake of mine: a PowerShell -> `wsl.exe sh -c` command with double quotes lost its variables
+  (PowerShell 5.1 quoting), so its `rm -rf` got non-existent root paths and `ls` listed the working folder; nothing was deleted
+  (checked), redone as a script file with `set -eu` and exact paths.
+- P2-PAIRING PASS (12 tests, 4 saboteurs, D-032): `pairing.json` on the medium pins one key; `gated --pin/--session` removed; session
+  derived per launch from the pairing transcript; terms shown on stderr and `session.terms_shown` logged right before `gate.started`;
+  AST and run-time checks that the device build loads no `envrec*` module. P2-GUARDRAILS' launcher moved to `--pairing`. Failed attempt:
+  the terms check compared LF text with Windows text-mode stderr (CRLF).
+- P2-MEMORY PASS (11 tests, 5 saboteurs, D-033): MacPaw `.mem` bundle as the open format (followed from its README, no code copied),
+  sealed at rest with scrypt (2^15, 8, 1; pinned range) + AES-256-GCM with the header as AAD; atomic save; secretRef values refused.
+  Open item: run MacPaw's own validator on an export (needs cloning, reading and running it in a container).
