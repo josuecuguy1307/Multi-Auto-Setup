@@ -1,17 +1,17 @@
 {
- "checksum": "4d4cc64381eb57c0f2f156308190792d2352346232a17eb58d3598331209c9a4",
+ "checksum": "8dc598aa7351e4e9eadcb9b7f4919448feb402ae6103d9193e62a796b05ad00c",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "0d1f56d",
+ "git_head_at_run": "5edb83a",
  "results": {
   "P0-SECRETS": {
-   "at": "2026-11-20T00:34:56",
+   "at": "2026-11-20T01:07:19",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 17
    },
-   "fingerprint": "16e2ddc1d9724596a7ebedd984bbee0a4c0fa30163719e443987e4523dfd3658",
+   "fingerprint": "29eb245e3ab45037ca5a9fb974246a4d2e4161632ba55cf3edb2ca80d025e5d9",
    "label": "REAL",
    "phase": 1,
    "reason": "17 passed",
@@ -70,11 +70,17 @@
    "title": "First unit through the full cycle: signed approval tokens (guardrail 3) with an evaluator report"
   },
   "P2-FLEET": {
-   "at": "2026-11-18T17:07:55",
-   "fingerprint": "a1c7d9a71788c0334f8062946eb02da2bcd87657d49a0d2969a664d12375c369",
+   "at": "2026-11-20T01:07:07",
+   "counts": {
+    "errors": 1,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 1
+   },
+   "fingerprint": "bf6b4d25de352bfb9db0e2250dac939e7f0e497127e55e3789bf1a863c4c308b",
    "label": "EMULATED",
    "phase": 2,
-   "reason": "missing test files: device/tests/test_fleet.py",
+   "reason": "0 failed, 1 errors",
    "status": "FAIL",
    "title": "Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers"
   },
@@ -388,14 +394,14 @@
    "title": "Paper regenerates from raw results (LaTeX source, authors, arXiv variant with methods statement, manual-README baseline, error bars, outside judge, limitations)"
   },
   "P6-REPO": {
-   "at": "2026-11-20T00:34:35",
+   "at": "2026-11-20T01:07:10",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 8
    },
-   "fingerprint": "931d04389492b7a3657f0d8cc6b52b703d3d6278c8b7c439a04f1d2e70fc225f",
+   "fingerprint": "314d4413ec154baa260ca9efef5077f0b10cdd29f4ff81e6bfbe5db244b23f5b",
    "label": "REAL",
    "phase": 6,
    "reason": "8 passed, 1 saboteurs killed",
