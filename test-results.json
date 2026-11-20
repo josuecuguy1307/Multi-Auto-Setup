@@ -1,17 +1,17 @@
 {
- "checksum": "0633fbcac0b8a265901992cb453d3e59aa15ac4afaa87ebcd1140292e7327cbe",
+ "checksum": "da4b8c3e43d8e2f91f6f55a671db401e0f53fb000898d1ed7274260a988a8d80",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "8a36929",
+ "git_head_at_run": "39acf3b",
  "results": {
   "P0-SECRETS": {
-   "at": "2026-11-20T10:00:41",
+   "at": "2026-11-20T10:09:32",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 17
    },
-   "fingerprint": "d2480eaddcb4df6e902d96761dd77c993dab341d270499cc270be0f55ee77dc6",
+   "fingerprint": "7e12ee62a25f201fccf6f30cbfb580ff48276eb8a4d20f820d606ee3a150f7cb",
    "label": "REAL",
    "phase": 1,
    "reason": "17 passed",
@@ -249,11 +249,17 @@
    "title": "Nothing installed after unplug (no service, driver, autostart, PATH change or file outside the declared temp dir); OS residue only from the enumerated allowlist (D-010 three-arm diff)"
   },
   "P3-INSPECT": {
-   "at": "2026-11-18T17:07:55",
-   "fingerprint": "5783264c6b12fa470996f2cc7bc567b8b3b8029efdc260acb7ff71af6a7d4e0c",
+   "at": "2026-11-20T10:08:10",
+   "counts": {
+    "errors": 0,
+    "failures": 2,
+    "skipped": 0,
+    "tests": 8
+   },
+   "fingerprint": "12c9894fca589137a44b3bb44b7027058d0d079669d41e00f051a1bf8bebf061",
    "label": "SIMULATED",
    "phase": 3,
-   "reason": "missing test files: device/tests/test_inspect_accuracy.py",
+   "reason": "2 failed, 0 errors",
    "status": "FAIL",
    "title": "Inventory precision and recall against fixtures with known truth meet thresholds"
   },
@@ -413,14 +419,14 @@
    "title": "Paper regenerates from raw results (LaTeX source, authors, arXiv variant with methods statement, manual-README baseline, error bars, outside judge, limitations)"
   },
   "P6-REPO": {
-   "at": "2026-11-20T10:00:20",
+   "at": "2026-11-20T10:09:23",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 8
    },
-   "fingerprint": "bb88b5a48765e5a28c60a23e2b78fd8e3cbb1b815535a08a448d6fddc82ab79a",
+   "fingerprint": "fe76bc8205c48442fee75923c25d7a4caf762c57636b03e84722a128843b9a99",
    "label": "REAL",
    "phase": 6,
    "reason": "8 passed, 1 saboteurs killed",
