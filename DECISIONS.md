@@ -637,3 +637,20 @@ remove a decoupling cap → net check fails.
   limited to 1 GiB / 1 CPU (device) and 6 GiB / 2 CPUs (host).
 - Not covered: Windows and macOS hosts (no launcher yet), the vfat `showexec` trap (A-1 §1), a real USB LUN (EMULATED with a bind
   mount). Open: licence texts of the libraries the interpreter links statically, before any medium is distributed.
+
+## D-035 Zero trace measured: three-arm snapshot diff in containers (2026-11-20; P2-ZEROTRACE, EMULATED; implements D-010)
+- **Arms** (A-1 §1), each a fresh container of P2-PORTABLE's pinned clean image with a *writable* root (no `--read-only`, no tmpfs,
+  so every write the session makes is captured): control (a blank stick at the same mount point running a trivial script),
+  session (the medium, reads only), approved (one approved write: a changed file plus a new folder and file), undone (the same
+  write, then its approved undo). The device log is the device's own folder (a bind mount), outside the host's filesystem.
+- **Snapshot** = `docker export` of the stopped container: every entry by type, mode, owner, size and sha256 or link target.
+  Timestamps are left out because an undo does not restore them (D-022).
+- **Pass**: session - control within this platform's allowlist (empty for a Linux container: nothing at all); approved - session
+  == the approved set exactly; undone - session == nothing. Violations are named by kind (service, autostart, PATH, driver,
+  program, file, temp_left); a bad stick that installs one of each is caught by kind (positive control).
+- **Allowlist** `device/acceptance/residue_allowlist.yaml`: linux-container measured; Linux (journald, kernel log, udev db,
+  recently-used, shell history), Windows (USBSTOR, MountedDevices, setupapi, Prefetch, Amcache, ShimCache, BAM, UserAssist, SRUM,
+  shellbags, event logs, Defender history, USN journal, NetworkList) and macOS (unified log, LaunchServices, TCC, quarantine)
+  enumerated but `measured: false`: no VM image of those systems is measured in v0, so the paper makes no zero-trace claim for them.
+- v0's launcher declares no temp dir (it needs none: `-I -B`, the log is on the device). Limit: a container is not a booted OS (no
+  journald, udev, desktop indexer); USB enumeration residue is out of reach until a VM arm exists.

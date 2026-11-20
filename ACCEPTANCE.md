@@ -46,7 +46,7 @@ k consecutive passing runs of each eval; limitations section lists what was only
 | P2-LOG | 2 | **PASS** | SIMULATED | Append-only hash-chained log; any edit, rewrite, truncation or reorder is detected against a known head; a broken log is never extended (process separation from the model is P2-GUARDRAILS) | 44 passed, 2 saboteurs killed |
 | P2-GUARDRAILS | 2 | **PASS** | SIMULATED | Scripted guardrail battery (all ten rules of MISSION 4.1) gives zero violations | 36 passed, 6 saboteurs killed |
 | P2-PORTABLE | 2 | **PASS** | EMULATED | One-command launch from a read-only medium in a clean VM/container; profiler picks compute mode | 10 passed, 5 saboteurs killed |
-| P2-ZEROTRACE | 2 | **FAIL** | EMULATED | Nothing installed after unplug (no service, driver, autostart, PATH change or file outside the declared temp dir); OS residue only from the enumerated allowlist (D-010 three-arm diff) | 4 failed, 0 errors |
+| P2-ZEROTRACE | 2 | **PASS** | EMULATED | Nothing installed after unplug (no service, driver, autostart, PATH change or file outside the declared temp dir); OS residue only from the enumerated allowlist (D-010 three-arm diff) | 8 passed, 5 saboteurs killed |
 | P2-FLEET | 2 | **FAIL** | EMULATED | Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers | missing test files: device/tests/test_fleet.py |
 | P3-INSPECT | 3 | **FAIL** | SIMULATED | Inventory precision and recall against fixtures with known truth meet thresholds | missing test files: device/tests/test_inspect_accuracy.py |
 | P3-READONLY | 3 | **FAIL** | EMULATED | Inspection makes zero writes (diff and read-only mount) and never touches the network | missing test files: device/tests/test_inspect_readonly.py |

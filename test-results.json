@@ -1,17 +1,17 @@
 {
- "checksum": "c5785d915e10eaa3f31ae41c3d548e643d542d0b2946213db4e756d802fbb372",
+ "checksum": "4d4cc64381eb57c0f2f156308190792d2352346232a17eb58d3598331209c9a4",
  "generated_by": "scripts/device_accept.py (do not edit by hand)",
- "git_head_at_run": "64658a3",
+ "git_head_at_run": "0d1f56d",
  "results": {
   "P0-SECRETS": {
-   "at": "2026-11-20T00:29:10",
+   "at": "2026-11-20T00:34:56",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 17
    },
-   "fingerprint": "545c360269748a19ed4acf9d6d5e59c9d227b1db9808291f4900421f491719a2",
+   "fingerprint": "16e2ddc1d9724596a7ebedd984bbee0a4c0fa30163719e443987e4523dfd3658",
    "label": "REAL",
    "phase": 1,
    "reason": "17 passed",
@@ -19,14 +19,14 @@
    "title": "No credentials, keys or tokens anywhere in the repository (secret scan over the whole tree and history)"
   },
   "P1-DOCS": {
-   "at": "2026-11-20T00:20:37",
+   "at": "2026-11-20T00:34:32",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 18
    },
-   "fingerprint": "8d6d861988c3182d7061bd6f3f710066557d6363bd74aaae0a35b3ddabab5846",
+   "fingerprint": "0b2d956016cb3c8d0ebb73dab908d141b8d6e184ea6f0d9f3cb8b0371f213eb6",
    "label": "REAL",
    "phase": 1,
    "reason": "18 passed",
@@ -34,14 +34,14 @@
    "title": "DECISIONS.md has architecture, threat model, guardrail spec, PCB spec and recorded advisor/reviewer advice"
   },
   "P1-HARNESS": {
-   "at": "2026-11-20T00:19:36",
+   "at": "2026-11-20T00:33:31",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 42
    },
-   "fingerprint": "ff7723280edd11fd9ca9b185e785e213e9530b54da0b57262371cd92c62303c1",
+   "fingerprint": "7b7081b63ccad40b5998b61f59f3ffca42b021e419f8f687ae9e43174bd79ee1",
    "label": "REAL",
    "phase": 1,
    "reason": "42 passed",
@@ -214,18 +214,25 @@
    "title": "One-command launch from a read-only medium in a clean VM/container; profiler picks compute mode"
   },
   "P2-ZEROTRACE": {
-   "at": "2026-11-20T00:27:49",
+   "at": "2026-11-20T00:31:44",
    "counts": {
     "errors": 0,
-    "failures": 4,
+    "failures": 0,
     "skipped": 0,
     "tests": 8
    },
-   "fingerprint": "454f8ec43faa5dc13a652c3fc9e891ab598cf6a73d161bbea4a8fb5d57cdc418",
+   "fingerprint": "437b2d4d4d8c2228a6ab3d0c246e3e0acd575a883aea6c8d4c58f42b28396bb0",
    "label": "EMULATED",
    "phase": 2,
-   "reason": "4 failed, 0 errors",
-   "status": "FAIL",
+   "reason": "8 passed, 5 saboteurs killed",
+   "saboteurs": {
+    "allowlist-widened": "killed",
+    "launcher-cache-dir": "killed",
+    "path-change": "killed",
+    "temp-file-left": "killed",
+    "undo-leaves-folders": "killed"
+   },
+   "status": "PASS",
    "title": "Nothing installed after unplug (no service, driver, autostart, PATH change or file outside the declared temp dir); OS residue only from the enumerated allowlist (D-010 three-arm diff)"
   },
   "P3-INSPECT": {
@@ -381,14 +388,14 @@
    "title": "Paper regenerates from raw results (LaTeX source, authors, arXiv variant with methods statement, manual-README baseline, error bars, outside judge, limitations)"
   },
   "P6-REPO": {
-   "at": "2026-11-20T00:29:00",
+   "at": "2026-11-20T00:34:35",
    "counts": {
     "errors": 0,
     "failures": 0,
     "skipped": 0,
     "tests": 8
    },
-   "fingerprint": "d63208bd8825071018f3612312c245aaf054f162efe518cf6973dedcd2a5b243",
+   "fingerprint": "931d04389492b7a3657f0d8cc6b52b703d3d6278c8b7c439a04f1d2e70fc225f",
    "label": "REAL",
    "phase": 6,
    "reason": "8 passed, 1 saboteurs killed",

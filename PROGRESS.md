@@ -187,3 +187,9 @@ Each entry: what was done, what failed, what is next. Failed attempts stay here.
   moved to device/medium/mas_medium_build.py and the red test's import changed accordingly (the test stayed red). One full run
   failed: the zero-byte files of three media under %TEMP% (one never mounted in Docker) vanished mid-run while a fourth medium kept
   them; not reproduced in a probe or the next run; test media now live under runs/portable-tests.
+- 2026-11-20 P2-ZEROTRACE PASS (8 tests, 5 saboteurs, EMULATED, D-035): three-arm diff (blank-stick control, session, approved
+  write, undone) over whole `docker export` snapshots of writable clean containers; session - control is empty; approved -
+  session is exactly the approved file, folder and new file; undo returns to the session arm; a bad stick's service, cron job,
+  PATH change, driver module, program and stray file are each caught by kind. The approve/undo arms passed from the first run
+  (the gate already behaved); red came from the missing residue allowlist. Failed attempt: my snapshot check expected /bin/sh, but
+  Debian's /bin is a link to usr/bin (fixed in the test before the red commit).

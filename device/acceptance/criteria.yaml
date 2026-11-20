@@ -89,8 +89,15 @@ criteria:
     title: Nothing installed after unplug (no service, driver, autostart, PATH change or file outside the declared temp dir); OS residue only from the enumerated allowlist (D-010 three-arm diff)
     thresholds: {residue_allowlist: device/acceptance/residue_allowlist.yaml}
     tests: [device/tests/test_zerotrace.py]
-    covers: [src/mas_device, device/medium]
+    covers: [src/mas_device, device/medium, device/acceptance/residue_allowlist.yaml]
     label: EMULATED
+    min_tests: 8
+    saboteurs:
+      - {name: allowlist-widened, file: device/acceptance/residue_allowlist.yaml, old: "    classes: []", new: "    classes: [{name: anything, paths: ['/*']}]"}
+      - {name: undo-leaves-folders, file: src/mas_device/gate.py, old: "    os.rmdir(path)", new: "    pass"}
+      - {name: temp-file-left, file: src/mas_device/gate.py, old: "        os.replace(tmp, path)", new: "        path.write_bytes(data)"}
+      - {name: launcher-cache-dir, file: device/medium/launch.sh, old: 'exec "$HERE/runtime', new: 'mkdir -p "$HOME/.cache/mas" && exec "$HERE/runtime'}
+      - {name: path-change, file: device/medium/launch.py, old: '    probe = profiler.probe()', new: '    probe = profiler.probe(); open(os.path.expanduser("~/.profile"), "a").write("export PATH=/media/mas:$PATH\n")'}
   - id: P2-FLEET
     phase: 2
     title: Pairing, per-write approval, auto-setup and undo between two or more isolated VMs/containers

@@ -75,7 +75,7 @@ met and every saboteur (a deliberate break of the covered code) turns its tests 
 | P2-LOG | SIMULATED | the audit log detects any edit, cut or reorder against a known head | Python |
 | P2-GUARDRAILS | SIMULATED | a scripted malicious model gets zero violations of the ten guardrails | Python |
 | P2-PORTABLE | EMULATED | one command (`sh launch.sh`) from a read-only medium in a clean Debian container with no Python and no network; the medium carries its own interpreter and is checked against its manifest; the profiler picks host or device compute from cgroup limits | Docker running; once: `python device/medium/mas_medium_build.py fetch` and `docker pull` of the pinned image |
-| P2-ZEROTRACE | EMULATED | the D-010 three-arm disk diff | not built yet; needs VMs |
+| P2-ZEROTRACE | EMULATED | the D-010 three-arm diff over whole-filesystem snapshots of clean containers: the session leaves nothing, an approved write changes exactly its files, its undo returns to the session arm; a bad stick's installs are each caught | same as P2-PORTABLE (Docker running, medium cache) |
 | P2-FLEET | EMULATED | pairing, per-write approval and undo between isolated VMs | not built yet; needs VMs |
 | P2-MODEL | EMULATED | the local model answers from the read-only medium | not built yet; needs a local model |
 | P2-MEMORY | SIMULATED | portable memory in the open `.mem` bundle format round-trips; at rest it is one scrypt + AES-256-GCM sealed file | Python |

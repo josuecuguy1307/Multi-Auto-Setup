@@ -1,0 +1,54 @@
+# Residue a session may leave on the host, by platform (DECISIONS D-010, A-1 §1, D-035). Criterion P2-ZEROTRACE.
+#
+# "Nothing installed: no service, driver, autostart, PATH change or file outside a declared temp dir removed on exit. Residual
+# OS-generated artifacts are limited to an enumerated allowlist of classes." Anything a session changes that no class below names is a
+# violation. `measured: true` means a test measures this platform today; `false` means the classes are enumerated (what the OS records
+# on its own when a USB stick is used) but no VM image of that OS is measured yet, so no claim is made for it.
+#
+# Paths are shell-style patterns ("*" also matches "/"). Registry keys are written as HKLM\... / HKCU\... for the reader.
+
+version: 1
+platforms:
+  linux-container:
+    # the clean Debian container of P2-PORTABLE: no journald, no udev, no desktop; the session must leave nothing at all
+    measured: true
+    declared_temp_dirs: []
+    classes: []
+
+  linux:
+    measured: false
+    declared_temp_dirs: []
+    classes:
+      - {name: journald, paths: ['/var/log/journal/*', '/run/log/journal/*']}
+      - {name: kernel-log, paths: ['/var/log/kern.log*', '/var/log/syslog*', '/var/log/messages*']}
+      - {name: udev-db, paths: ['/run/udev/data/*']}
+      - {name: recently-used, paths: ['/home/*/.local/share/recently-used.xbel', '/root/.local/share/recently-used.xbel']}
+      - {name: shell-history, paths: ['/home/*/.bash_history', '/root/.bash_history', '/home/*/.zsh_history']}
+
+  windows:
+    measured: false
+    declared_temp_dirs: []
+    classes:
+      - {name: usbstor, paths: ['HKLM\SYSTEM\CurrentControlSet\Enum\USBSTOR\*', 'HKLM\SYSTEM\CurrentControlSet\Enum\USB\*']}
+      - {name: mounted-devices, paths: ['HKLM\SYSTEM\MountedDevices', 'HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\*']}
+      - {name: setupapi-log, paths: ['C:\Windows\INF\setupapi.dev.log']}
+      - {name: prefetch, paths: ['C:\Windows\Prefetch\*.pf']}
+      - {name: amcache, paths: ['C:\Windows\AppCompat\Programs\Amcache.hve*']}
+      - {name: shimcache, paths: ['HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatCache']}
+      - {name: bam, paths: ['HKLM\SYSTEM\CurrentControlSet\Services\bam\State\UserSettings\*']}
+      - {name: userassist, paths: ['HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist\*']}
+      - {name: srum, paths: ['C:\Windows\System32\sru\*']}
+      - {name: shellbags, paths: ['HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bag*']}
+      - {name: event-logs, paths: ['C:\Windows\System32\winevt\Logs\*.evtx']}
+      - {name: defender-history, paths: ['C:\ProgramData\Microsoft\Windows Defender\Scans\History\*']}
+      - {name: usn-journal, paths: ['?:\$Extend\$UsnJrnl*']}
+      - {name: network-list, paths: ['HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\*']}  # only if CDC-NCM is brought up (NET_UP press)
+
+  macos:
+    measured: false
+    declared_temp_dirs: []
+    classes:
+      - {name: unified-log, paths: ['/private/var/db/diagnostics/*', '/private/var/db/uuidtext/*']}
+      - {name: launchservices, paths: ['/private/var/folders/*/com.apple.LaunchServices*', '/Users/*/Library/Preferences/com.apple.LaunchServices*']}
+      - {name: tcc, paths: ['/Library/Application Support/com.apple.TCC/TCC.db', '/Users/*/Library/Application Support/com.apple.TCC/TCC.db']}
+      - {name: quarantine-events, paths: ['/Users/*/Library/Preferences/com.apple.LaunchServices.QuarantineEventsV2']}

@@ -5,7 +5,7 @@
 > `NEEDS_HUMAN.md`. `CLAUDE.md` has the working rules; `device/README.md` explains the device and how to reproduce every check.
 > Español abajo en resumen. The repo is the source of truth; this file only tells you where things stand and what bites.
 
-## 1. Where things stand: 17/26 PASS (updated 2026-11-20, fourth session) (oracle: `.venv/Scripts/python scripts/device_accept.py status`)
+## 1. Where things stand: 18/26 PASS (updated 2026-11-20, fourth session) (oracle: `.venv/Scripts/python scripts/device_accept.py status`)
 
 | Criterion | Status | Independent evaluator |
 |---|---|---|
@@ -25,7 +25,8 @@
 | P2-MEMORY | PASS 11, 5 saboteurs | **never evaluated** (built 2026-11-19, D-033) |
 | P2-MODEL | FAIL (not built) | Josué said OK to download a small local model (STEER.md 2026-11-19) |
 | P2-PORTABLE | PASS 10, 5 saboteurs (EMULATED) | **never evaluated** (built 2026-11-20, D-034) |
-| P2-ZEROTRACE, P2-FLEET, P3-READONLY | FAIL (not built) | Docker works; reuse P2-PORTABLE's medium builder and `Session` helper |
+| P2-ZEROTRACE | PASS 8, 5 saboteurs (EMULATED) | **never evaluated** (built 2026-11-20, D-035) |
+| P2-FLEET, P3-READONLY | FAIL (not built) | Docker works; reuse the medium builder and the arm/snapshot helpers of test_zerotrace.py |
 | P3-INSPECT, P3-REPORT, P3-NOCREDS | FAIL (not built) | can be built against fixtures |
 | P6-EVALS, P6-PAPER | FAIL (not built) | last |
 
@@ -39,8 +40,8 @@
    PowerShell window (it removes the sockets through WSL, which can). From Claude only *use* `docker` once `docker info` answers. Also:
    PowerShell 5.1 mangles double quotes passed to `wsl.exe`; put shell commands for WSL in a script file.
 2. `.venv/Scripts/python scripts/device_accept.py status` and `... verify` (both read-only; verify takes ~1 s now).
-3. Choose with Josué: either run the pending evaluators (§1, bold) or build the next units (P2-ZEROTRACE, P2-FLEET, P3-READONLY,
-   P2-MODEL, P3-INSPECT/REPORT/NOCREDS). Each evaluator run
+3. Choose with Josué: either run the pending evaluators (§1, bold) or build the next units (P2-FLEET, P3-READONLY, P2-MODEL,
+   P3-INSPECT/REPORT/NOCREDS). Each evaluator run
    costs ~65k-270k tokens; several rounds in a row now find only small test gaps, so building may be the better use of budget.
 4. Unit cycle: red test commit -> implementation -> oracle PASS -> evaluator (fresh context) -> fix test-first -> commit -> push.
 
@@ -80,6 +81,8 @@
   pin number (`PA12_33`).
 - Guardrail battery: the daemon runs through a launcher with an audit hook (`device/tests/test_guardrails.py`); it is a detector for
   careless weakening, not containment (D-028/D-030).
+- **P2-ZEROTRACE** also needs Docker and the cache (~1.5 min, ~9 min with saboteurs); it leaves containers named `mas-zt-*` only if
+  killed mid-run (`docker rm -f` them). Its snapshots are whole `docker export`s; timestamps are not compared (D-022).
 - **P2-PORTABLE needs the Docker engine** (it FAILs, never skips, without it) and the medium cache in runs/medium-cache
   (`python device/medium/mas_medium_build.py fetch`, then `docker pull` of the image in medium.lock.json). One run takes ~3 min, ~20 min
   with its 5 saboteurs. Its media are built under runs/portable-tests, not %TEMP%: once, zero-byte files of media in %TEMP% vanished
@@ -115,7 +118,8 @@ compute = host CPU, secure-boot review on a sacrificial STM32U585 (item 10), hum
   (virtualiza AppData y deja sockets que Windows no puede borrar). Arrancarlo siempre desde el menú Inicio; si se rompe,
   `scripts/windows/start-docker.ps1` desde un PowerShell normal.
 - 2026-11-20: P2-PORTABLE en PASS (17 de 26): el medio lleva su propio Python y arranca con un comando en un Debian sin Python ni red.
-- Rama `device/v0`, todo subido. **17 de 26 criterios pasan.** Hechos en esta cuenta: P0-SECRETS (sin credenciales en el repo ni en
+- 2026-11-20: P2-ZEROTRACE en PASS (18 de 26): diff de tres brazos en contenedores; la sesión no deja nada en el disco del anfitrión.
+- Rama `device/v0`, todo subido. **18 de 26 criterios pasan.** Hechos en esta cuenta: P0-SECRETS (sin credenciales en el repo ni en
   su historia), P4-SECBOOT (diseño de arranque seguro, solo diseño), P6-REPO (`device/README.md`), P5-ENCLOSURE (carcasa paramétrica,
   solo diseño), más varias rondas de evaluadores con sus correcciones (D-027 a D-030).
 - Al retomar: `git pull`, `device_accept.py status`. Luego, con Josué: o bien correr los evaluadores pendientes (sección 1, en negrita),
